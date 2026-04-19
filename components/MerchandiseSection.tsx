@@ -17,7 +17,7 @@ const PRODUCTS = [
     category: 'ACCESSORI',
     icon: '🫗',
     badge: 'LIMITED',
-    gradient: 'from-[#1a0510] to-[#3a1020]',
+    gradient: 'from-[#1a0808] to-[#350A0A]',
   },
   {
     id: 102,
@@ -151,7 +151,7 @@ function ProductCard({ product, index }: { product: (typeof PRODUCTS)[0]; index:
             className={`flex items-center gap-2 px-4 py-2.5 text-[10px] tracking-[0.25em] transition-all duration-300 ${
               added
                 ? 'bg-[#2d5a2d] border border-[#4a9a4a] text-green-300'
-                : 'bg-[#722F37]/20 border border-[#722F37]/50 text-[#F5EEE6] hover:bg-[#722F37] hover:border-[#722F37]'
+                : 'bg-[#7B1F1F]/20 border border-[#7B1F1F]/50 text-[#F5EEE6] hover:bg-[#7B1F1F] hover:border-[#7B1F1F]'
             }`}
           >
             <AnimatePresence mode="wait">
@@ -194,7 +194,7 @@ export default function MerchandiseSection() {
 
   return (
     <section id="boutique" className="py-32 bg-[#0d0306] relative overflow-hidden">
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-64 bg-[#722F37]/5 rounded-full blur-[100px]" />
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-64 bg-[#4A0E0E]/8 rounded-full blur-[100px]" />
 
       <div className="max-w-7xl mx-auto px-6 lg:px-10">
         {/* Header */}

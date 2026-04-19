@@ -65,7 +65,7 @@ export default function WineriesGlobe({ wineries, onSelect, selected }: Wineries
     const sunLight = new THREE.DirectionalLight(0xffd9a0, 1.4);
     sunLight.position.set(4, 3, 5);
     scene.add(sunLight);
-    const fillLight = new THREE.DirectionalLight(0x400010, 0.6);
+    const fillLight = new THREE.DirectionalLight(0x2a0808, 0.6);
     fillLight.position.set(-4, -2, -5);
     scene.add(fillLight);
 
@@ -87,19 +87,19 @@ export default function WineriesGlobe({ wineries, onSelect, selected }: Wineries
     // --- Earth ---
     const earthGeo = new THREE.SphereGeometry(1, 72, 72);
     const earthMat = new THREE.MeshPhongMaterial({
-      color: new THREE.Color(0x120610),
-      emissive: new THREE.Color(0x200510),
+      color: new THREE.Color(0x0e0808),
+      emissive: new THREE.Color(0x180808),
       shininess: 18,
-      specular: new THREE.Color(0x661133),
+      specular: new THREE.Color(0x4a0e0e),
     });
     const earth = new THREE.Mesh(earthGeo, earthMat);
     scene.add(earth);
 
     // Latitude / longitude grid lines
     const lineMat = new THREE.LineBasicMaterial({
-      color: 0x722f37,
+      color: 0x7b1f1f,
       transparent: true,
-      opacity: 0.12,
+      opacity: 0.14,
     });
     const gridGroup = new THREE.Group();
     // Parallels
@@ -134,7 +134,7 @@ export default function WineriesGlobe({ wineries, onSelect, selected }: Wineries
         varying vec3 vNormal;
         void main(){
           float i = pow(0.75 - dot(vNormal, vec3(0,0,1.0)), 4.0);
-          gl_FragColor = vec4(0.55, 0.10, 0.20, 1.0) * i;
+          gl_FragColor = vec4(0.48, 0.12, 0.12, 1.0) * i;
         }
       `,
       side: THREE.BackSide,

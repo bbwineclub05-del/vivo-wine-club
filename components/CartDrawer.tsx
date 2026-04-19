@@ -84,7 +84,7 @@ export default function CartDrawer() {
                         transition={{ duration: 0.3 }}
                         className="flex gap-4 p-4 glass-card"
                       >
-                        <div className="w-12 h-12 bg-[#722F37]/20 flex items-center justify-center text-2xl shrink-0">
+                        <div className="w-12 h-12 bg-[#7B1F1F]/20 flex items-center justify-center text-2xl shrink-0">
                           {item.icon}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -116,7 +116,7 @@ export default function CartDrawer() {
                               </span>
                               <button
                                 onClick={() => removeItem(item.id)}
-                                className="text-[#C4B5A0]/50 hover:text-[#722F37] transition-colors"
+                                className="text-[#C4B5A0]/50 hover:text-[#9B3333] transition-colors"
                               >
                                 <Trash2 size={14} />
                               </button>
@@ -142,7 +142,7 @@ export default function CartDrawer() {
                     €{total.toFixed(2)}
                   </span>
                 </div>
-                <button className="w-full py-4 bg-[#722F37] text-[#F5EEE6] text-[11px] tracking-[0.35em] hover:bg-[#8B3A44] transition-colors duration-300">
+                <button className="w-full py-4 bg-[#7B1F1F] text-[#F5EEE6] text-[11px] tracking-[0.35em] hover:bg-[#9B3333] transition-colors duration-300">
                   PROCEDI ALL&apos;ACQUISTO
                 </button>
                 <button

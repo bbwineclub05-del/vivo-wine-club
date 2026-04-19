@@ -14,8 +14,8 @@ const EVENTS = [
       'Una serata esclusiva con una verticale di Barolo dal 2010 al 2022, guidata dal nostro Master Sommelier.',
     spots: 20,
     price: 95,
-    gradient: 'from-[#4a1020] via-[#722F37] to-[#3a0c18]',
-    accent: '#722F37',
+    gradient: 'from-[#4A0E0E] via-[#7B1F1F] to-[#350808]',
+    accent: '#7B1F1F',
     symbol: '🍷',
   },
   {
@@ -151,7 +151,7 @@ function EventCard({ event, index }: EventCardProps) {
           </div>
         </div>
 
-        <button className="w-full py-3 border border-[#722F37] text-[#F5EEE6] text-[10px] tracking-[0.3em] hover:bg-[#722F37] transition-all duration-300">
+        <button className="w-full py-3 border border-[#7B1F1F] text-[#F5EEE6] text-[10px] tracking-[0.3em] hover:bg-[#7B1F1F] transition-all duration-300">
           PRENOTA ORA
         </button>
       </div>
@@ -163,7 +163,7 @@ export default function EventsSection() {
   return (
     <section id="eventi" className="py-32 bg-[#0d0306] relative overflow-hidden">
       {/* Background accent */}
-      <div className="absolute top-0 left-0 w-96 h-96 bg-[#722F37]/5 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2" />
+      <div className="absolute top-0 left-0 w-96 h-96 bg-[#4A0E0E]/8 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2" />
       <div className="absolute bottom-0 right-0 w-80 h-80 bg-[#C9A84C]/5 rounded-full blur-[100px] translate-x-1/3 translate-y-1/3" />
 
       <div className="max-w-7xl mx-auto px-6 lg:px-10">

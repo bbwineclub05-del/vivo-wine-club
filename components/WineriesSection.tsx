@@ -162,7 +162,7 @@ export default function WineriesSection() {
     <section id="cantine" className="py-32 bg-[#0a0103] relative overflow-hidden">
       {/* Background glow */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#722F37]/6 rounded-full blur-[120px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#4A0E0E]/8 rounded-full blur-[120px]" />
       </div>
 
       <div className="max-w-7xl mx-auto px-6 lg:px-10">
@@ -244,7 +244,7 @@ export default function WineriesSection() {
                   <div className="flex items-center gap-1.5 text-[#C4B5A0] text-xs mb-6">
                     <MapPin size={11} className="text-[#C9A84C]" />
                     <span>{selected.region}</span>
-                    <span className="mx-1 text-[#722F37]">·</span>
+                    <span className="mx-1 text-[#7B1F1F]">·</span>
                     <span className="text-[#C9A84C]">Visitata nel {selected.visited}</span>
                   </div>
 
@@ -287,7 +287,7 @@ export default function WineriesSection() {
                       <button
                         key={w.id}
                         onClick={() => setSelected(w)}
-                        className="text-left p-3 border border-[#C9A84C]/10 hover:border-[#C9A84C]/40 hover:bg-[#722F37]/10 transition-all duration-200 group"
+                        className="text-left p-3 border border-[#C9A84C]/10 hover:border-[#C9A84C]/40 hover:bg-[#4A0E0E]/15 transition-all duration-200 group"
                       >
                         <div className="flex items-center justify-between">
                           <div>

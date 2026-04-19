@@ -6,10 +6,10 @@
 }
 
 @theme {
-  --color-wine: #722F37;
-  --color-wine-dark: #4a1020;
+  --color-wine: #7B1F1F;
+  --color-wine-dark: #4A0E0E;
   --color-wine-deep: #0d0306;
-  --color-wine-medium: #8B3A44;
+  --color-wine-medium: #9B3333;
   --color-gold: #C9A84C;
   --color-gold-light: #E4C97E;
   --color-cream: #F5EEE6;
@@ -50,7 +50,7 @@ body {
 /* Custom scrollbar */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: #0d0306; }
-::-webkit-scrollbar-thumb { background: #722F37; border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: #7B1F1F; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #C9A84C; }
 
 ::selection {
@@ -60,7 +60,7 @@ body {
 
 /* Luxury card glass style */
 .glass-card {
-  background: rgba(114, 47, 55, 0.08);
+  background: rgba(74, 14, 14, 0.10);
   border: 1px solid rgba(201, 168, 76, 0.15);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);

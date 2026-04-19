@@ -43,27 +43,14 @@ export default function Navbar() {
           <a
             href="#"
             onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-            className="flex items-center gap-3 group"
+            className="flex items-center group"
           >
-            <div className="w-8 h-8 relative">
-              <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-                <path d="M16 2C16 2 8 8 8 16C8 20.4 11.6 24 16 24C20.4 24 24 20.4 24 16C24 8 16 2 16 2Z" fill="#722F37" opacity="0.8"/>
-                <path d="M16 24V30" stroke="#C9A84C" strokeWidth="1.5" strokeLinecap="round"/>
-                <path d="M11 30H21" stroke="#C9A84C" strokeWidth="1.5" strokeLinecap="round"/>
-                <circle cx="16" cy="14" r="3" fill="#C9A84C" opacity="0.6"/>
-              </svg>
-            </div>
-            <div>
-              <div
-                className="text-xl font-semibold tracking-[0.35em] text-[#F5EEE6] group-hover:text-[#C9A84C] transition-colors duration-300"
-                style={{ fontFamily: 'var(--font-playfair)' }}
-              >
-                VIVO
-              </div>
-              <div className="text-[9px] tracking-[0.6em] text-[#C9A84C] -mt-0.5 font-light">
-                WINE CLUB
-              </div>
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.svg"
+              alt="Vivo Wine Club"
+              className="h-12 w-auto object-contain transition-opacity duration-300 group-hover:opacity-80"
+            />
           </a>
 
           {/* Desktop links */}
@@ -95,7 +82,7 @@ export default function Navbar() {
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     exit={{ scale: 0 }}
-                    className="absolute -top-1 -right-1 w-[18px] h-[18px] bg-[#722F37] rounded-full text-[10px] text-white flex items-center justify-center font-bold"
+                    className="absolute -top-1 -right-1 w-[18px] h-[18px] bg-[#7B1F1F] rounded-full text-[10px] text-white flex items-center justify-center font-bold"
                   >
                     {itemCount}
                   </motion.span>

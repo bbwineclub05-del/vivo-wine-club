@@ -44,21 +44,13 @@ export default function Footer() {
               viewport={{ once: true }}
               transition={{ duration: 0.7 }}
             >
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10">
-                  <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-                    <path d="M16 2C16 2 8 8 8 16C8 20.4 11.6 24 16 24C20.4 24 24 20.4 24 16C24 8 16 2 16 2Z" fill="#722F37" opacity="0.8"/>
-                    <path d="M16 24V30" stroke="#C9A84C" strokeWidth="1.5" strokeLinecap="round"/>
-                    <path d="M11 30H21" stroke="#C9A84C" strokeWidth="1.5" strokeLinecap="round"/>
-                    <circle cx="16" cy="14" r="3" fill="#C9A84C" opacity="0.6"/>
-                  </svg>
-                </div>
-                <div>
-                  <div className="text-2xl font-semibold tracking-[0.35em] text-[#F5EEE6]" style={{ fontFamily: 'var(--font-playfair)' }}>
-                    VIVO
-                  </div>
-                  <div className="text-[9px] tracking-[0.6em] text-[#C9A84C] -mt-1">WINE CLUB</div>
-                </div>
+              <div className="mb-6">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/logo.svg"
+                  alt="Vivo Wine Club"
+                  className="h-16 w-auto object-contain"
+                />
               </div>
 
               <p
@@ -134,7 +126,7 @@ export default function Footer() {
               className="flex-1 bg-[#0d0306] border border-[#C9A84C]/20 text-[#F5EEE6] px-5 py-3.5 text-sm placeholder:text-[#C4B5A0]/40 focus:outline-none focus:border-[#C9A84C]/50 transition-colors"
               style={{ fontFamily: 'var(--font-cormorant)' }}
             />
-            <button className="px-6 py-3.5 bg-[#722F37] text-[#F5EEE6] text-[10px] tracking-[0.3em] hover:bg-[#8B3A44] transition-colors whitespace-nowrap">
+            <button className="px-6 py-3.5 bg-[#7B1F1F] text-[#F5EEE6] text-[10px] tracking-[0.3em] hover:bg-[#9B3333] transition-colors whitespace-nowrap">
               ISCRIVITI
             </button>
           </div>

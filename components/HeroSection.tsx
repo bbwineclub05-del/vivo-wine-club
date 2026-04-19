@@ -40,8 +40,8 @@ export default function HeroSection() {
 
       // Animated blobs
       const blobs = [
-        { x: 0.3 + Math.sin(t * 0.7) * 0.08, y: 0.4 + Math.cos(t * 0.5) * 0.1, r: 0.35, color: '114,47,55' },
-        { x: 0.7 + Math.cos(t * 0.6) * 0.1, y: 0.6 + Math.sin(t * 0.8) * 0.08, r: 0.28, color: '74,16,32' },
+        { x: 0.3 + Math.sin(t * 0.7) * 0.08, y: 0.4 + Math.cos(t * 0.5) * 0.1, r: 0.35, color: '123,31,31' },
+        { x: 0.7 + Math.cos(t * 0.6) * 0.1, y: 0.6 + Math.sin(t * 0.8) * 0.08, r: 0.28, color: '74,14,14' },
         { x: 0.5 + Math.sin(t) * 0.15, y: 0.25 + Math.cos(t * 0.4) * 0.1, r: 0.2, color: '201,168,76' },
       ];
 
@@ -165,7 +165,7 @@ export default function HeroSection() {
         >
           <button
             onClick={() => document.querySelector('#eventi')?.scrollIntoView({ behavior: 'smooth' })}
-            className="px-12 py-4 bg-[#722F37] text-[#F5EEE6] text-[11px] tracking-[0.35em] hover:bg-[#8B3A44] hover:shadow-[0_0_40px_rgba(114,47,55,0.5)] transition-all duration-400 border border-[#722F37]"
+            className="px-12 py-4 bg-[#7B1F1F] text-[#F5EEE6] text-[11px] tracking-[0.35em] hover:bg-[#9B3333] hover:shadow-[0_0_40px_rgba(123,31,31,0.5)] transition-all duration-400 border border-[#7B1F1F]"
           >
             SCOPRI GLI EVENTI
           </button>
