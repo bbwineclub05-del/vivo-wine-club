@@ -38,18 +38,18 @@ export default function Navbar() {
             : 'bg-transparent'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-6 lg:px-10 h-[76px] flex items-center justify-between">
-          {/* Logo */}
+        <div className="max-w-7xl mx-auto px-6 lg:px-10 h-[92px] flex items-center justify-between">
+          {/* Logo — larger and prominent */}
           <a
             href="#"
             onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-            className="flex items-center group"
+            className="flex items-center group shrink-0"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/logo.svg"
               alt="Vivo Wine Club"
-              className="h-12 w-auto object-contain transition-opacity duration-300 group-hover:opacity-80"
+              className="h-20 w-auto object-contain transition-opacity duration-300 group-hover:opacity-80"
             />
           </a>
 
@@ -109,7 +109,7 @@ export default function Navbar() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.25 }}
-            className="fixed top-[76px] left-0 right-0 z-40 bg-[#0a0204]/95 backdrop-blur-xl border-b border-[#C9A84C]/20 md:hidden"
+            className="fixed top-[92px] left-0 right-0 z-40 bg-[#0a0204]/95 backdrop-blur-xl border-b border-[#C9A84C]/20 md:hidden"
           >
             <div className="px-8 py-8 flex flex-col gap-7">
               {NAV_LINKS.map((link) => (
