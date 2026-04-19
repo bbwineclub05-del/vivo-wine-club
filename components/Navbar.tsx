@@ -6,8 +6,8 @@ import { ShoppingBag, Menu, X } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 
 const NAV_LINKS = [
-  { href: '#eventi', label: 'EVENTI' },
-  { href: '#cantine', label: 'CANTINE' },
+  { href: '#eventi', label: 'EVENTS' },
+  { href: '#cantine', label: 'WINERIES' },
   { href: '#boutique', label: 'BOUTIQUE' },
 ];
 
@@ -82,7 +82,7 @@ export default function Navbar() {
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     exit={{ scale: 0 }}
-                    className="absolute -top-1 -right-1 w-[18px] h-[18px] bg-[#7B1F1F] rounded-full text-[10px] text-white flex items-center justify-center font-bold"
+                    className="absolute -top-1 -right-1 w-[18px] h-[18px] bg-[#731515] rounded-full text-[10px] text-white flex items-center justify-center font-bold"
                   >
                     {itemCount}
                   </motion.span>

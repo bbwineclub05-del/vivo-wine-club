@@ -65,7 +65,7 @@ export default function WineriesGlobe({ wineries, onSelect, selected }: Wineries
     const sunLight = new THREE.DirectionalLight(0xffd9a0, 1.4);
     sunLight.position.set(4, 3, 5);
     scene.add(sunLight);
-    const fillLight = new THREE.DirectionalLight(0x2a0808, 0.6);
+    const fillLight = new THREE.DirectionalLight(0x2a0e0e, 0.6);
     fillLight.position.set(-4, -2, -5);
     scene.add(fillLight);
 
@@ -90,14 +90,14 @@ export default function WineriesGlobe({ wineries, onSelect, selected }: Wineries
       color: new THREE.Color(0x0e0808),
       emissive: new THREE.Color(0x180808),
       shininess: 18,
-      specular: new THREE.Color(0x4a0e0e),
+      specular: new THREE.Color(0x5b1a14),
     });
     const earth = new THREE.Mesh(earthGeo, earthMat);
     scene.add(earth);
 
     // Latitude / longitude grid lines
     const lineMat = new THREE.LineBasicMaterial({
-      color: 0x7b1f1f,
+      color: 0x731515,
       transparent: true,
       opacity: 0.14,
     });
@@ -134,7 +134,7 @@ export default function WineriesGlobe({ wineries, onSelect, selected }: Wineries
         varying vec3 vNormal;
         void main(){
           float i = pow(0.75 - dot(vNormal, vec3(0,0,1.0)), 4.0);
-          gl_FragColor = vec4(0.48, 0.12, 0.12, 1.0) * i;
+          gl_FragColor = vec4(0.36, 0.10, 0.08, 1.0) * i;
         }
       `,
       side: THREE.BackSide,

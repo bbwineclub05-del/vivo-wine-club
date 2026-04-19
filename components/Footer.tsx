@@ -5,22 +5,22 @@ import { Camera, Hash, Globe, Mail, MapPin, Phone } from 'lucide-react';
 
 const LINKS = {
   'CLUB': [
-    { label: 'Chi Siamo', href: '#' },
-    { label: 'Come Funziona', href: '#' },
+    { label: 'About Us', href: '#' },
+    { label: 'How It Works', href: '#' },
     { label: 'Membership', href: '#boutique' },
     { label: 'FAQ', href: '#' },
   ],
-  'ESPERIENZE': [
-    { label: 'Eventi', href: '#eventi' },
-    { label: 'Tour Cantine', href: '#eventi' },
-    { label: 'Masterclass', href: '#eventi' },
-    { label: 'Cantine Visitate', href: '#cantine' },
+  'EXPERIENCES': [
+    { label: 'Events', href: '#eventi' },
+    { label: 'Winery Tours', href: '#eventi' },
+    { label: 'Masterclasses', href: '#eventi' },
+    { label: 'Visited Wineries', href: '#cantine' },
   ],
-  'LEGALE': [
+  'LEGAL': [
     { label: 'Privacy Policy', href: '#' },
-    { label: 'Termini di Servizio', href: '#' },
+    { label: 'Terms of Service', href: '#' },
     { label: 'Cookie Policy', href: '#' },
-    { label: 'Diritto di Recesso', href: '#' },
+    { label: 'Right of Withdrawal', href: '#' },
   ],
 };
 
@@ -55,9 +55,9 @@ export default function Footer() {
 
               <p
                 className="text-[#C4B5A0] text-base leading-relaxed mb-8 max-w-xs font-light italic"
-                style={{ fontFamily: 'var(--font-cormorant)' }}
+                style={{ fontFamily: 'var(--font-nunito)' }}
               >
-                Il club esclusivo per gli amanti del vino. Esperienze enologiche d&apos;eccezione, cantine leggendarie e una comunità di veri appassionati.
+                The exclusive club for wine lovers. Exceptional wine experiences, legendary wineries and a community of true enthusiasts.
               </p>
 
               {/* Contact */}
@@ -94,7 +94,7 @@ export default function Footer() {
                     <a
                       href={link.href}
                       className="text-sm text-[#C4B5A0] hover:text-[#F5EEE6] transition-colors duration-200"
-                      style={{ fontFamily: 'var(--font-cormorant)' }}
+                      style={{ fontFamily: 'var(--font-nunito)' }}
                     >
                       {link.label}
                     </a>
@@ -115,19 +115,19 @@ export default function Footer() {
         >
           <div>
             <h4 className="text-[9px] tracking-[0.5em] text-[#C9A84C] mb-2">NEWSLETTER</h4>
-            <p className="text-lg text-[#F5EEE6] font-light italic" style={{ fontFamily: 'var(--font-cormorant)' }}>
-              Ricevi in anteprima gli eventi e le selezioni esclusive
+            <p className="text-lg text-[#F5EEE6] font-light italic" style={{ fontFamily: 'var(--font-nunito)' }}>
+              Be the first to hear about exclusive events and curated selections
             </p>
           </div>
           <div className="flex gap-0 w-full md:w-auto md:min-w-[380px]">
             <input
               type="email"
-              placeholder="La tua email"
+              placeholder="Your email"
               className="flex-1 bg-[#0d0306] border border-[#C9A84C]/20 text-[#F5EEE6] px-5 py-3.5 text-sm placeholder:text-[#C4B5A0]/40 focus:outline-none focus:border-[#C9A84C]/50 transition-colors"
-              style={{ fontFamily: 'var(--font-cormorant)' }}
+              style={{ fontFamily: 'var(--font-nunito)' }}
             />
-            <button className="px-6 py-3.5 bg-[#7B1F1F] text-[#F5EEE6] text-[10px] tracking-[0.3em] hover:bg-[#9B3333] transition-colors whitespace-nowrap">
-              ISCRIVITI
+            <button className="px-6 py-3.5 bg-[#731515] text-[#F5EEE6] text-[10px] tracking-[0.3em] hover:bg-[#aa4848] transition-colors whitespace-nowrap">
+              SUBSCRIBE
             </button>
           </div>
         </motion.div>
@@ -135,7 +135,7 @@ export default function Footer() {
         {/* Bottom */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-8 border-t border-[#C9A84C]/10">
           <p className="text-xs text-[#C4B5A0]/50">
-            © {new Date().getFullYear()} Vivo Wine Club S.r.l. · Tutti i diritti riservati · P.IVA 12345678901
+            © {new Date().getFullYear()} Vivo Wine Club S.r.l. · All rights reserved · VAT 12345678901
           </p>
 
           <div className="flex items-center gap-4">

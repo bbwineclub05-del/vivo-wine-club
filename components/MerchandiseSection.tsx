@@ -5,26 +5,26 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingBag, Check } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 
-const CATEGORIES = ['TUTTI', 'ACCESSORI', 'ESPERIENZE', 'ABBIGLIAMENTO'] as const;
+const CATEGORIES = ['ALL', 'ACCESSORIES', 'EXPERIENCES', 'APPAREL'] as const;
 type Category = (typeof CATEGORIES)[number];
 
 const PRODUCTS = [
   {
     id: 101,
     name: 'Decanter Crystal Premium',
-    description: 'Decanter in cristallo soffiato a mano, edizione limitata numerata',
+    description: 'Hand-blown crystal decanter, limited numbered edition',
     price: 120,
-    category: 'ACCESSORI',
+    category: 'ACCESSORIES',
     icon: '🫗',
     badge: 'LIMITED',
     gradient: 'from-[#1a0808] to-[#350A0A]',
   },
   {
     id: 102,
-    name: 'Set Calici Bordeaux',
-    description: 'Set da 4 calici in cristallo Riedel, ideali per i grandi Bordeaux',
+    name: 'Bordeaux Crystal Set',
+    description: 'Set of 4 Riedel crystal glasses, ideal for great Bordeaux wines',
     price: 89,
-    category: 'ACCESSORI',
+    category: 'ACCESSORIES',
     icon: '🍷',
     badge: null,
     gradient: 'from-[#100515] to-[#2a1030]',
@@ -32,19 +32,19 @@ const PRODUCTS = [
   {
     id: 103,
     name: 'Membership Gold',
-    description: "Abbonamento annuale Gold con accesso illimitato a tutti gli eventi del club",
+    description: "Annual Gold membership with unlimited access to all club events",
     price: 299,
-    category: 'ESPERIENZE',
+    category: 'EXPERIENCES',
     icon: '⭐',
     badge: 'BESTSELLER',
     gradient: 'from-[#1a1205] to-[#3a2a10]',
   },
   {
     id: 104,
-    name: 'Wine Journal Lusso',
-    description: 'Diario da degustazione rilegato in pelle piena, 365 pagine acid-free',
+    name: 'Luxury Wine Journal',
+    description: 'Full-leather bound tasting diary, 365 acid-free pages',
     price: 55,
-    category: 'ACCESSORI',
+    category: 'ACCESSORIES',
     icon: '📖',
     badge: null,
     gradient: 'from-[#0a1505] to-[#1a2a10]',
@@ -52,9 +52,9 @@ const PRODUCTS = [
   {
     id: 105,
     name: 'Sommelier Kit Pro',
-    description: 'Set professionale: cavatappi, foil cutter, termometro, aeratore, goutte',
+    description: 'Professional set: corkscrew, foil cutter, thermometer, aerator, goutte',
     price: 75,
-    category: 'ACCESSORI',
+    category: 'ACCESSORIES',
     icon: '🔧',
     badge: null,
     gradient: 'from-[#05101a] to-[#102030]',
@@ -62,29 +62,29 @@ const PRODUCTS = [
   {
     id: 106,
     name: 'Tote Bag Premium',
-    description: 'Borsa porta-bottiglie in canvas pesante, 6 bottiglie, logo ricamato in oro',
+    description: 'Heavy canvas wine carrier, holds 6 bottles, gold embroidered logo',
     price: 35,
-    category: 'ABBIGLIAMENTO',
+    category: 'APPAREL',
     icon: '👜',
     badge: null,
     gradient: 'from-[#0a050f] to-[#1a1025]',
   },
   {
     id: 107,
-    name: 'Gift Box Esclusiva',
-    description: 'Box regalo curata: vino selezionato, calice, accessori e membership trimestrale',
+    name: 'Exclusive Gift Box',
+    description: 'Curated gift box: selected wine, glass, accessories and quarterly membership',
     price: 185,
-    category: 'ESPERIENZE',
+    category: 'EXPERIENCES',
     icon: '🎁',
-    badge: 'REGALO PERFETTO',
+    badge: 'PERFECT GIFT',
     gradient: 'from-[#150a05] to-[#2a1a10]',
   },
   {
     id: 108,
     name: 'T-Shirt Pima Cotton',
-    description: 'T-shirt unisex in cotone Pima 100%, logo ricamato in filo dorato',
+    description: 'Unisex 100% Pima cotton t-shirt, gold thread embroidered logo',
     price: 45,
-    category: 'ABBIGLIAMENTO',
+    category: 'APPAREL',
     icon: '👕',
     badge: null,
     gradient: 'from-[#101005] to-[#20201a]',
@@ -127,13 +127,13 @@ function ProductCard({ product, index }: { product: (typeof PRODUCTS)[0]; index:
       <div className="p-5 flex flex-col flex-1">
         <h3
           className="text-base font-medium text-[#F5EEE6] mb-2 group-hover:text-[#C9A84C] transition-colors duration-300"
-          style={{ fontFamily: 'var(--font-playfair)' }}
+          style={{ fontFamily: 'var(--font-syne)' }}
         >
           {product.name}
         </h3>
         <p
           className="text-sm text-[#C4B5A0] leading-relaxed mb-5 flex-1"
-          style={{ fontFamily: 'var(--font-cormorant)' }}
+          style={{ fontFamily: 'var(--font-nunito)' }}
         >
           {product.description}
         </p>
@@ -141,7 +141,7 @@ function ProductCard({ product, index }: { product: (typeof PRODUCTS)[0]; index:
         <div className="flex items-center justify-between">
           <span
             className="text-xl font-semibold text-[#C9A84C]"
-            style={{ fontFamily: 'var(--font-playfair)' }}
+            style={{ fontFamily: 'var(--font-syne)' }}
           >
             €{product.price}
           </span>
@@ -151,7 +151,7 @@ function ProductCard({ product, index }: { product: (typeof PRODUCTS)[0]; index:
             className={`flex items-center gap-2 px-4 py-2.5 text-[10px] tracking-[0.25em] transition-all duration-300 ${
               added
                 ? 'bg-[#2d5a2d] border border-[#4a9a4a] text-green-300'
-                : 'bg-[#7B1F1F]/20 border border-[#7B1F1F]/50 text-[#F5EEE6] hover:bg-[#7B1F1F] hover:border-[#7B1F1F]'
+                : 'bg-[#731515]/20 border border-[#731515]/50 text-[#F5EEE6] hover:bg-[#731515] hover:border-[#731515]'
             }`}
           >
             <AnimatePresence mode="wait">
@@ -163,7 +163,7 @@ function ProductCard({ product, index }: { product: (typeof PRODUCTS)[0]; index:
                   exit={{ scale: 0 }}
                   className="flex items-center gap-1.5"
                 >
-                  <Check size={12} /> AGGIUNTO
+                  <Check size={12} /> ADDED
                 </motion.span>
               ) : (
                 <motion.span
@@ -173,7 +173,7 @@ function ProductCard({ product, index }: { product: (typeof PRODUCTS)[0]; index:
                   exit={{ scale: 0 }}
                   className="flex items-center gap-1.5"
                 >
-                  <ShoppingBag size={12} /> AGGIUNGI
+                  <ShoppingBag size={12} /> ADD
                 </motion.span>
               )}
             </AnimatePresence>
@@ -185,16 +185,16 @@ function ProductCard({ product, index }: { product: (typeof PRODUCTS)[0]; index:
 }
 
 export default function MerchandiseSection() {
-  const [activeCategory, setActiveCategory] = useState<Category>('TUTTI');
+  const [activeCategory, setActiveCategory] = useState<Category>('ALL');
 
   const filtered =
-    activeCategory === 'TUTTI'
+    activeCategory === 'ALL'
       ? PRODUCTS
       : PRODUCTS.filter((p) => p.category === activeCategory);
 
   return (
     <section id="boutique" className="py-32 bg-[#0d0306] relative overflow-hidden">
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-64 bg-[#4A0E0E]/8 rounded-full blur-[100px]" />
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-64 bg-[#5b1a14]/8 rounded-full blur-[100px]" />
 
       <div className="max-w-7xl mx-auto px-6 lg:px-10">
         {/* Header */}
@@ -206,19 +206,19 @@ export default function MerchandiseSection() {
           className="mb-14"
         >
           <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-4">
-            SELEZIONE ESCLUSIVA
+            EXCLUSIVE SELECTION
           </div>
           <h2
             className="text-[clamp(2.5rem,6vw,5rem)] font-light text-[#F5EEE6] leading-none section-title"
-            style={{ fontFamily: 'var(--font-playfair)' }}
+            style={{ fontFamily: 'var(--font-syne)' }}
           >
             BOUTIQUE
           </h2>
           <p
             className="mt-6 text-lg text-[#C4B5A0] font-light italic max-w-md"
-            style={{ fontFamily: 'var(--font-cormorant)' }}
+            style={{ fontFamily: 'var(--font-nunito)' }}
           >
-            Accessori, esperienze e abbigliamento per i veri amanti del vino
+            Accessories, experiences and apparel for true wine lovers
           </p>
         </motion.div>
 

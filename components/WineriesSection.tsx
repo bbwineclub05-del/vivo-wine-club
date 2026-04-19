@@ -13,11 +13,11 @@ export const WINERIES: Winery[] = [
     id: 1,
     name: 'Gaja',
     region: 'Barolo / Barbaresco',
-    country: 'Italia',
+    country: 'Italy',
     lat: 44.76,
     lng: 8.03,
     description:
-      'Cantina leggendaria delle Langhe piemontesi, pioniera del Barbaresco moderno. Angelo Gaja ha rivoluzionato il vino italiano con metodi borgognoni e una visione senza compromessi.',
+      'Legendary winery of the Piedmontese Langhe, pioneer of modern Barbaresco. Angelo Gaja revolutionised Italian wine with Burgundian methods and an uncompromising vision.',
     visited: '2024',
     highlights: ['Barbaresco DOCG', 'Barolo Sperss', "Ca' Marcanda"],
   },
@@ -25,11 +25,11 @@ export const WINERIES: Winery[] = [
     id: 2,
     name: 'Marchesi Antinori',
     region: 'Toscana',
-    country: 'Italia',
+    country: 'Italy',
     lat: 43.77,
     lng: 11.25,
     description:
-      "Famiglia vitivinicola con 26 generazioni di storia, creatrice del Tignanello e pioniera dei Super Tuscans. La cantina di Bargino è un capolavoro architettonico integrato nella collina.",
+      "A winemaking family with 26 generations of history, creator of Tignanello and pioneer of the Super Tuscans. The Bargino winery is an architectural masterpiece built into the hillside.",
     visited: '2024',
     highlights: ['Tignanello', 'Solaia', 'Guado al Tasso'],
   },
@@ -37,23 +37,23 @@ export const WINERIES: Winery[] = [
     id: 3,
     name: 'Château Margaux',
     region: 'Bordeaux',
-    country: 'Francia',
+    country: 'France',
     lat: 45.04,
     lng: -0.67,
     description:
-      "Premier Grand Cru Classé di Bordeaux, simbolo dell'eleganza francese per oltre due secoli. Le sue vendemmie più celebri sono tra le bottiglie più ambite dai collezionisti di tutto il mondo.",
+      "Bordeaux's Premier Grand Cru Classé, a symbol of French elegance for over two centuries. Its most celebrated vintages rank among the most coveted bottles by collectors worldwide.",
     visited: '2023',
     highlights: ['Château Margaux', 'Pavillon Rouge', 'Pavillon Blanc'],
   },
   {
     id: 4,
     name: 'Domaine de la Romanée-Conti',
-    region: 'Borgogna',
-    country: 'Francia',
+    region: 'Burgundy',
+    country: 'France',
     lat: 47.16,
     lng: 4.95,
     description:
-      "La cantina più esclusiva e leggendaria del mondo. Produce i vini più costosi e ricercati del pianeta da un fazzoletto di terra burgundiana di soli 1,8 ettari.",
+      "The most exclusive and legendary winery in the world. It produces the most expensive and sought-after wines on the planet from a mere 1.8 hectares of Burgundian soil.",
     visited: '2023',
     highlights: ['Romanée-Conti', 'La Tâche', 'Richebourg'],
   },
@@ -61,23 +61,23 @@ export const WINERIES: Winery[] = [
     id: 5,
     name: 'Vega Sicilia',
     region: 'Ribera del Duero',
-    country: 'Spagna',
+    country: 'Spain',
     lat: 41.67,
     lng: -4.20,
     description:
-      "La cantina più prestigiosa di Spagna, con oltre 150 anni di storia. L'Único viene rilasciato solo nelle annate eccellenti dopo anni di affinamento.",
+      "Spain's most prestigious winery, with over 150 years of history. The Único is released only in exceptional vintages after years of ageing.",
     visited: '2024',
     highlights: ['Único', 'Valbuena', 'Alión'],
   },
   {
     id: 6,
     name: 'Quinta do Vesuvio',
-    region: 'Valle del Douro',
-    country: 'Portogallo',
+    region: 'Douro Valley',
+    country: 'Portugal',
     lat: 41.20,
     lng: -7.55,
     description:
-      'Uno dei più prestigiosi produttori di Porto Vintage nel cuore selvaggio del Douro. Le terrazze scolpite nella scisto producono grappoli concentrati di straordinaria intensità.',
+      'One of the most prestigious Vintage Port producers in the wild heart of the Douro. Terraces carved from schist yield concentrated grapes of extraordinary intensity.',
     visited: '2023',
     highlights: ['Quinta do Vesuvio Vintage Port', 'Pombal do Vesuvio'],
   },
@@ -89,7 +89,7 @@ export const WINERIES: Winery[] = [
     lat: -32.89,
     lng: -68.85,
     description:
-      "Pionieri del Malbec d'alta quota in Argentina, tra le cantine più innovative del Nuovo Mondo. I vigneti Adrianna, a 1.500 metri di altitudine, producono vini di livello mondiale.",
+      "Pioneers of high-altitude Malbec in Argentina and one of the most innovative wineries in the New World. The Adrianna vineyards, at 1,500 metres elevation, produce world-class wines.",
     visited: '2024',
     highlights: ['Adrianna Vineyard', 'Nicolás Catena Zapata', 'Adrianna White Bones'],
   },
@@ -101,7 +101,7 @@ export const WINERIES: Winery[] = [
     lat: 38.40,
     lng: -122.42,
     description:
-      "Frutto della storica collaborazione tra Robert Mondavi e Baron Philippe de Rothschild, Opus One è l'icona californiana per eccellenza, blend di Cabernet Sauvignon e uvaggi bordolesi.",
+      "Born from the historic partnership between Robert Mondavi and Baron Philippe de Rothschild, Opus One is the quintessential Californian icon — a blend of Cabernet Sauvignon and Bordeaux varietals.",
     visited: '2023',
     highlights: ['Opus One', 'Overture'],
   },
@@ -113,7 +113,7 @@ export const WINERIES: Winery[] = [
     lat: -34.53,
     lng: 138.96,
     description:
-      "La cantina più iconica d'Australia, produttrice del leggendario Grange Hermitage. Dal 1844, Penfolds definisce lo stile del grande Shiraz australiano.",
+      "Australia's most iconic winery, producer of the legendary Grange Hermitage. Since 1844, Penfolds has defined the style of great Australian Shiraz.",
     visited: '2024',
     highlights: ['Grange', 'RWT Shiraz', 'Bin 707'],
   },
@@ -121,11 +121,11 @@ export const WINERIES: Winery[] = [
     id: 10,
     name: 'Klein Constantia',
     region: 'Constantia',
-    country: 'Sudafrica',
+    country: 'South Africa',
     lat: -34.02,
     lng: 18.41,
     description:
-      'Storica cantina del Sudafrica, rinomata per il Vin de Constance, il vino dolce preferito di Napoleone Bonaparte durante il suo esilio a Sant\'Elena.',
+      "A historic South African estate, renowned for Vin de Constance — the sweet wine favoured by Napoleon Bonaparte during his exile on Saint Helena.",
     visited: '2023',
     highlights: ['Vin de Constance', 'Metis', 'KC Sauvignon Blanc'],
   },
@@ -133,23 +133,23 @@ export const WINERIES: Winery[] = [
     id: 11,
     name: 'Cloudy Bay',
     region: 'Marlborough',
-    country: 'Nuova Zelanda',
+    country: 'New Zealand',
     lat: -41.50,
     lng: 173.96,
     description:
-      "Icona del Sauvignon Blanc neozelandese, fondatrice del profilo aromatico che ha conquistato il mondo. Situata nella regione di Marlborough, nella punta nord dell'isola del Sud.",
+      "An icon of New Zealand Sauvignon Blanc, the winery that defined the aromatic profile that conquered the world. Located in the Marlborough region at the northern tip of the South Island.",
     visited: '2024',
     highlights: ['Sauvignon Blanc', 'Te Koko', 'Pelorus'],
   },
   {
     id: 12,
     name: 'Concha y Toro',
-    region: 'Valle del Maipo',
-    country: 'Cile',
+    region: 'Maipo Valley',
+    country: 'Chile',
     lat: -33.54,
     lng: -70.65,
     description:
-      'La più grande cantina del Cile e produttrice del leggendario Don Melchor, considerato uno dei migliori Cabernet Sauvignon del Nuovo Mondo.',
+      "Chile's largest winery and producer of the legendary Don Melchor, considered one of the finest Cabernet Sauvignons in the New World.",
     visited: '2024',
     highlights: ['Don Melchor', 'Almaviva', 'Carmin de Peumo'],
   },
@@ -162,7 +162,7 @@ export default function WineriesSection() {
     <section id="cantine" className="py-32 bg-[#0a0103] relative overflow-hidden">
       {/* Background glow */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#4A0E0E]/8 rounded-full blur-[120px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#5b1a14]/8 rounded-full blur-[120px]" />
       </div>
 
       <div className="max-w-7xl mx-auto px-6 lg:px-10">
@@ -175,19 +175,19 @@ export default function WineriesSection() {
           className="mb-16"
         >
           <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-4">
-            {WINERIES.length} CANTINE VISITATE
+            {WINERIES.length} WINERIES VISITED
           </div>
           <h2
             className="text-[clamp(2.5rem,6vw,5rem)] font-light text-[#F5EEE6] leading-none section-title"
-            style={{ fontFamily: 'var(--font-playfair)' }}
+            style={{ fontFamily: 'var(--font-syne)' }}
           >
-            CANTINE
+            WINERIES
           </h2>
           <p
             className="mt-6 text-lg text-[#C4B5A0] font-light italic max-w-md"
-            style={{ fontFamily: 'var(--font-cormorant)' }}
+            style={{ fontFamily: 'var(--font-nunito)' }}
           >
-            Esplora le cantine più leggendarie del mondo che abbiamo visitato. Clicca su un punto per scoprire la storia
+            Explore the most legendary wineries in the world that we have visited. Click a marker to discover their story
           </p>
         </motion.div>
 
@@ -209,7 +209,7 @@ export default function WineriesSection() {
               />
             </div>
             <p className="text-center text-[10px] tracking-[0.3em] text-[#C4B5A0]/50 mt-3">
-              TRASCINA · ZOOMA · CLICCA SU UN PUNTO
+              DRAG · ZOOM · CLICK A MARKER
             </p>
           </motion.div>
 
@@ -237,35 +237,35 @@ export default function WineriesSection() {
                   </div>
                   <h3
                     className="text-2xl font-medium text-[#F5EEE6] mb-1"
-                    style={{ fontFamily: 'var(--font-playfair)' }}
+                    style={{ fontFamily: 'var(--font-syne)' }}
                   >
                     {selected.name}
                   </h3>
                   <div className="flex items-center gap-1.5 text-[#C4B5A0] text-xs mb-6">
                     <MapPin size={11} className="text-[#C9A84C]" />
                     <span>{selected.region}</span>
-                    <span className="mx-1 text-[#7B1F1F]">·</span>
-                    <span className="text-[#C9A84C]">Visitata nel {selected.visited}</span>
+                    <span className="mx-1 text-[#731515]">·</span>
+                    <span className="text-[#C9A84C]">Visited in {selected.visited}</span>
                   </div>
 
                   <div className="w-10 h-px bg-[#C9A84C]/40 mb-6" />
 
                   <p
                     className="text-[#C4B5A0] text-base leading-relaxed mb-7"
-                    style={{ fontFamily: 'var(--font-cormorant)' }}
+                    style={{ fontFamily: 'var(--font-nunito)' }}
                   >
                     {selected.description}
                   </p>
 
                   <div>
                     <div className="text-[9px] tracking-[0.4em] text-[#C9A84C] mb-3">
-                      VINI DEGUSTATI
+                      WINES TASTED
                     </div>
                     <div className="flex flex-col gap-2">
                       {selected.highlights.map((h) => (
                         <div key={h} className="flex items-center gap-2 text-sm text-[#F5EEE6]">
                           <Star size={10} className="text-[#C9A84C] fill-[#C9A84C] shrink-0" />
-                          <span style={{ fontFamily: 'var(--font-cormorant)' }}>{h}</span>
+                          <span style={{ fontFamily: 'var(--font-nunito)' }}>{h}</span>
                         </div>
                       ))}
                     </div>
@@ -280,20 +280,20 @@ export default function WineriesSection() {
                   className="glass-card p-8"
                 >
                   <div className="text-[10px] tracking-[0.4em] text-[#C9A84C] mb-6">
-                    LE NOSTRE CANTINE
+                    OUR WINERIES
                   </div>
                   <div className="flex flex-col gap-3 max-h-[420px] overflow-y-auto pr-2 scrollbar-thin">
                     {WINERIES.map((w) => (
                       <button
                         key={w.id}
                         onClick={() => setSelected(w)}
-                        className="text-left p-3 border border-[#C9A84C]/10 hover:border-[#C9A84C]/40 hover:bg-[#4A0E0E]/15 transition-all duration-200 group"
+                        className="text-left p-3 border border-[#C9A84C]/10 hover:border-[#C9A84C]/40 hover:bg-[#5b1a14]/15 transition-all duration-200 group"
                       >
                         <div className="flex items-center justify-between">
                           <div>
                             <div
                               className="text-sm text-[#F5EEE6] group-hover:text-[#C9A84C] transition-colors"
-                              style={{ fontFamily: 'var(--font-playfair)' }}
+                              style={{ fontFamily: 'var(--font-syne)' }}
                             >
                               {w.name}
                             </div>

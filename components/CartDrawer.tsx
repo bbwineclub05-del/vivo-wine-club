@@ -35,7 +35,7 @@ export default function CartDrawer() {
                 <span
                   className="text-sm tracking-[0.3em] text-[#F5EEE6]"
                 >
-                  CARRELLO
+                  CART
                 </span>
                 {items.length > 0 && (
                   <span className="text-xs text-[#C4B5A0]">({items.length})</span>
@@ -59,8 +59,8 @@ export default function CartDrawer() {
                     className="flex flex-col items-center justify-center h-full text-center gap-4"
                   >
                     <div className="text-6xl opacity-20">🍷</div>
-                    <p className="text-[#C4B5A0] text-sm italic" style={{ fontFamily: 'var(--font-cormorant)' }}>
-                      Il tuo carrello è vuoto
+                    <p className="text-[#C4B5A0] text-sm italic" style={{ fontFamily: 'var(--font-nunito)' }}>
+                      Your cart is empty
                     </p>
                     <button
                       onClick={() => {
@@ -69,7 +69,7 @@ export default function CartDrawer() {
                       }}
                       className="mt-2 text-[10px] tracking-[0.3em] text-[#C9A84C] border border-[#C9A84C]/40 px-6 py-3 hover:bg-[#C9A84C]/10 transition-colors"
                     >
-                      VISITA LA BOUTIQUE
+                      VISIT THE BOUTIQUE
                     </button>
                   </motion.div>
                 ) : (
@@ -84,13 +84,13 @@ export default function CartDrawer() {
                         transition={{ duration: 0.3 }}
                         className="flex gap-4 p-4 glass-card"
                       >
-                        <div className="w-12 h-12 bg-[#7B1F1F]/20 flex items-center justify-center text-2xl shrink-0">
+                        <div className="w-12 h-12 bg-[#731515]/20 flex items-center justify-center text-2xl shrink-0">
                           {item.icon}
                         </div>
                         <div className="flex-1 min-w-0">
                           <p
                             className="text-sm text-[#F5EEE6] leading-snug mb-2 truncate"
-                            style={{ fontFamily: 'var(--font-playfair)' }}
+                            style={{ fontFamily: 'var(--font-syne)' }}
                           >
                             {item.name}
                           </p>
@@ -111,12 +111,12 @@ export default function CartDrawer() {
                               </button>
                             </div>
                             <div className="flex items-center gap-3">
-                              <span className="text-sm font-medium text-[#C9A84C]" style={{ fontFamily: 'var(--font-playfair)' }}>
+                              <span className="text-sm font-medium text-[#C9A84C]" style={{ fontFamily: 'var(--font-syne)' }}>
                                 €{(item.price * item.quantity).toFixed(2)}
                               </span>
                               <button
                                 onClick={() => removeItem(item.id)}
-                                className="text-[#C4B5A0]/50 hover:text-[#9B3333] transition-colors"
+                                className="text-[#C4B5A0]/50 hover:text-[#aa4848] transition-colors"
                               >
                                 <Trash2 size={14} />
                               </button>
@@ -134,22 +134,22 @@ export default function CartDrawer() {
             {items.length > 0 && (
               <div className="px-8 py-6 border-t border-[#C9A84C]/15 space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs tracking-[0.3em] text-[#C4B5A0]">TOTALE</span>
+                  <span className="text-xs tracking-[0.3em] text-[#C4B5A0]">TOTAL</span>
                   <span
                     className="text-2xl font-light text-[#C9A84C]"
-                    style={{ fontFamily: 'var(--font-playfair)' }}
+                    style={{ fontFamily: 'var(--font-syne)' }}
                   >
                     €{total.toFixed(2)}
                   </span>
                 </div>
-                <button className="w-full py-4 bg-[#7B1F1F] text-[#F5EEE6] text-[11px] tracking-[0.35em] hover:bg-[#9B3333] transition-colors duration-300">
-                  PROCEDI ALL&apos;ACQUISTO
+                <button className="w-full py-4 bg-[#731515] text-[#F5EEE6] text-[11px] tracking-[0.35em] hover:bg-[#aa4848] transition-colors duration-300">
+                  CHECKOUT
                 </button>
                 <button
                   onClick={clearCart}
                   className="w-full py-2.5 text-[10px] tracking-[0.3em] text-[#C4B5A0]/50 hover:text-[#C4B5A0] transition-colors"
                 >
-                  SVUOTA CARRELLO
+                  CLEAR CART
                 </button>
               </div>
             )}

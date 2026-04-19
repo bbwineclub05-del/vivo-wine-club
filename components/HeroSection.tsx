@@ -141,8 +141,8 @@ export default function HeroSection() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       const blobs = [
-        { x: 0.3 + Math.sin(t * 0.7) * 0.08, y: 0.4 + Math.cos(t * 0.5) * 0.1, r: 0.35, color: '123,31,31' },
-        { x: 0.7 + Math.cos(t * 0.6) * 0.1, y: 0.6 + Math.sin(t * 0.8) * 0.08, r: 0.28, color: '74,14,14' },
+        { x: 0.3 + Math.sin(t * 0.7) * 0.08, y: 0.4 + Math.cos(t * 0.5) * 0.1, r: 0.35, color: '115,21,21' },
+        { x: 0.7 + Math.cos(t * 0.6) * 0.1, y: 0.6 + Math.sin(t * 0.8) * 0.08, r: 0.28, color: '91,26,20' },
         { x: 0.5 + Math.sin(t) * 0.15, y: 0.25 + Math.cos(t * 0.4) * 0.1, r: 0.2, color: '201,168,76' },
       ];
 
@@ -203,7 +203,7 @@ export default function HeroSection() {
           transition={{ duration: 1.2, delay: 0.3 }}
           className="text-[10px] text-[#C9A84C] mb-10 font-light"
         >
-          EST. 2020 &nbsp;·&nbsp; ITALIA
+          EST. 2020 &nbsp;·&nbsp; ITALY
         </motion.div>
 
         {/* ── Main title ── */}
@@ -217,7 +217,7 @@ export default function HeroSection() {
             >
               <span
                 className="block text-[clamp(2.4rem,6.5vw,5.8rem)] font-light tracking-[-0.01em] text-[#F5EEE6] leading-tight"
-                style={{ fontFamily: 'var(--font-playfair)' }}
+                style={{ fontFamily: 'var(--font-syne)' }}
               >
                 The art of
               </span>
@@ -233,11 +233,11 @@ export default function HeroSection() {
             >
               <span
                 className="block text-[clamp(2.4rem,6.5vw,5.8rem)] font-light tracking-[-0.01em] text-[#F5EEE6] leading-tight"
-                style={{ fontFamily: 'var(--font-playfair)' }}
+                style={{ fontFamily: 'var(--font-syne)' }}
               >
                 <em
                   className="not-italic"
-                  style={{ fontStyle: 'italic', color: '#9B3333' }}
+                  style={{ fontStyle: 'italic', color: '#aa4848' }}
                 >
                   fine wine
                 </em>
@@ -288,7 +288,7 @@ export default function HeroSection() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.9, delay: 1.4 }}
           className="text-[clamp(1rem,2.2vw,1.25rem)] text-[#C4B5A0] font-light tracking-wide max-w-2xl mx-auto leading-relaxed"
-          style={{ fontFamily: 'var(--font-cormorant)' }}
+          style={{ fontFamily: 'var(--font-nunito)' }}
         >
           Where young people discover wine — from intimate cellar visits and guided
           tastings to themed wine parties with music, good vibes and great bottles.
@@ -303,15 +303,15 @@ export default function HeroSection() {
         >
           <button
             onClick={() => document.querySelector('#eventi')?.scrollIntoView({ behavior: 'smooth' })}
-            className="px-12 py-4 bg-[#7B1F1F] text-[#F5EEE6] text-[11px] tracking-[0.35em] hover:bg-[#9B3333] hover:shadow-[0_0_40px_rgba(123,31,31,0.45)] transition-all duration-300 border border-[#7B1F1F]"
+            className="px-12 py-4 bg-[#731515] text-[#F5EEE6] text-[11px] tracking-[0.35em] hover:bg-[#aa4848] hover:shadow-[0_0_40px_rgba(123,31,31,0.45)] transition-all duration-300 border border-[#731515]"
           >
-            SCOPRI GLI EVENTI
+            DISCOVER EVENTS
           </button>
           <button
             onClick={() => document.querySelector('#cantine')?.scrollIntoView({ behavior: 'smooth' })}
             className="px-12 py-4 border border-[#C9A84C]/40 text-[#C9A84C] text-[11px] tracking-[0.35em] hover:bg-[#C9A84C]/10 hover:border-[#C9A84C]/70 transition-all duration-300"
           >
-            LE NOSTRE CANTINE
+            OUR WINERIES
           </button>
         </motion.div>
       </div>
@@ -323,7 +323,7 @@ export default function HeroSection() {
         transition={{ duration: 1, delay: 2.2 }}
         className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
       >
-        <span className="text-[9px] tracking-[0.4em] text-[#C4B5A0]">SCORRI</span>
+        <span className="text-[9px] tracking-[0.4em] text-[#C4B5A0]">SCROLL</span>
         <motion.div
           animate={{ y: [0, 7, 0] }}
           transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
