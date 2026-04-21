@@ -47,56 +47,44 @@ function FounderCard({
       className="group flex flex-col"
     >
       {/* Photo */}
-      <div className="relative overflow-hidden rounded-xl mb-5 aspect-square">
+      <div className="relative overflow-hidden rounded-lg mb-3 aspect-square">
         <Image
           src={image}
           alt={name}
           fill
           className="object-cover object-center transition-transform duration-700 group-hover:scale-105"
-          sizes="(max-width: 768px) 100vw, 25vw"
+          sizes="(max-width: 768px) 50vw, 25vw"
         />
-        {/* Subtle gradient at bottom */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
 
-        {/* City pill — appears on hover */}
+        {/* City pill on hover */}
         <motion.div
           initial={{ opacity: 0, y: 6 }}
           whileHover={{ opacity: 1, y: 0 }}
-          className="absolute top-4 right-4 px-3 py-1 bg-[#731515]/80 backdrop-blur-sm rounded-full"
+          className="absolute top-3 right-3 px-2.5 py-1 bg-[#731515]/80 backdrop-blur-sm rounded-full"
         >
-          <span
-            className="text-[9px] tracking-[0.3em] text-[#F5EEE6]"
-            style={{ fontFamily: 'var(--font-nunito)' }}
-          >
+          <span className="text-[8px] tracking-[0.3em] text-[#F5EEE6]" style={{ fontFamily: 'var(--font-nunito)' }}>
             {city.toUpperCase()}
           </span>
         </motion.div>
       </div>
 
       {/* Text */}
-      <div className="flex flex-col gap-2">
-        {/* City — visible always on mobile, hidden on desktop (shown in hover pill) */}
-        <span
-          className="text-[9px] tracking-[0.4em] text-[#C9A84C] md:hidden"
-          style={{ fontFamily: 'var(--font-nunito)' }}
-        >
+      <div className="flex flex-col gap-1.5">
+        <span className="text-[8px] tracking-[0.4em] text-[#C9A84C] md:hidden" style={{ fontFamily: 'var(--font-nunito)' }}>
           {city.toUpperCase()}
         </span>
 
         <h3
-          className="text-lg font-medium text-[#F5EEE6] leading-snug transition-colors duration-300 group-hover:text-[#C9A84C]"
+          className="text-sm font-medium text-[#F5EEE6] leading-snug transition-colors duration-300 group-hover:text-[#C9A84C]"
           style={{ fontFamily: 'var(--font-syne)' }}
         >
           {name}
         </h3>
 
-        {/* Gold line */}
-        <div className="w-8 h-px bg-[#C9A84C]/40 mb-1 transition-all duration-300 group-hover:w-14 group-hover:bg-[#C9A84C]/70" />
+        <div className="w-6 h-px bg-[#C9A84C]/40 mb-0.5 transition-all duration-300 group-hover:w-10 group-hover:bg-[#C9A84C]/70" />
 
-        <p
-          className="text-sm text-[#C4B5A0]/80 leading-relaxed"
-          style={{ fontFamily: 'var(--font-nunito)' }}
-        >
+        <p className="text-xs text-[#C4B5A0]/80 leading-relaxed" style={{ fontFamily: 'var(--font-nunito)' }}>
           {bio}
         </p>
       </div>
@@ -150,7 +138,7 @@ export default function WhoWeAreSection() {
         />
 
         {/* Founder cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 lg:gap-4">
           {FOUNDERS.map((founder, i) => (
             <FounderCard key={founder.name} {...founder} index={i} />
           ))}

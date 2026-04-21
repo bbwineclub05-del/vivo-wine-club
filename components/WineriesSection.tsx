@@ -191,6 +191,52 @@ export default function WineriesSection() {
           </p>
         </motion.div>
 
+        {/* ── Top Wineries ranking ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7 }}
+          className="mb-14"
+        >
+          <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-3">OUR FINEST VISITS</div>
+          <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+            {[
+              { rank: '01', name: 'Château Latour',            region: 'Pauillac',         country: 'Bordeaux' },
+              { rank: '02', name: 'Mouton Rothschild',         region: 'Pauillac',         country: 'Bordeaux' },
+              { rank: '03', name: 'Château Montrose',          region: 'Saint-Estèphe',    country: 'Bordeaux' },
+              { rank: '04', name: "Ca' del Bosco",             region: 'Franciacorta',     country: 'Italy'    },
+              { rank: '05', name: 'Pellissero',                region: 'Barbaresco',       country: 'Italy'    },
+            ].map((w, i) => (
+              <motion.div
+                key={w.rank}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-20px' }}
+                transition={{ duration: 0.55, delay: i * 0.09, ease: [0.16, 1, 0.3, 1] }}
+                className="group border border-[#C9A84C]/12 hover:border-[#C9A84C]/35 p-5 transition-all duration-400 hover:bg-[#731515]/8"
+              >
+                <div
+                  className="text-[2.6rem] font-bold leading-none text-[#731515]/30 group-hover:text-[#731515]/55 transition-colors duration-300 mb-3 tabular-nums"
+                  style={{ fontFamily: 'var(--font-syne)' }}
+                >
+                  {w.rank}
+                </div>
+                <div className="w-5 h-px bg-[#C9A84C]/30 mb-3 transition-all duration-300 group-hover:w-8 group-hover:bg-[#C9A84C]/60" />
+                <div
+                  className="text-sm font-medium text-[#F5EEE6] leading-snug mb-1.5 group-hover:text-[#C9A84C] transition-colors duration-300"
+                  style={{ fontFamily: 'var(--font-syne)' }}
+                >
+                  {w.name}
+                </div>
+                <div className="text-[10px] tracking-[0.25em] text-[#C4B5A0]/60 uppercase" style={{ fontFamily: 'var(--font-nunito)' }}>
+                  {w.region} · {w.country}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+
         {/* Globe + info layout */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
           {/* Globe */}

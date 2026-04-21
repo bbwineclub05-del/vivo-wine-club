@@ -7,11 +7,19 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, X, MapPin, ChevronDown } from 'lucide-react';
 
 /* ── Gallery photos ── */
-const GALLERY = Array.from({ length: 8 }, (_, i) => ({
-  id: i + 1,
-  src: `/events/wine-party-${i + 1}.jpg`,
-  alt: `Wine Party — photo ${i + 1}`,
-}));
+const GALLERY = [
+  { id: 1,  src: '/events/wine-party1.JPG', alt: 'Wine Party — photo 1' },
+  { id: 2,  src: '/events/wine-party2.jpg', alt: 'Wine Party — photo 2' },
+  { id: 3,  src: '/events/wine-party3.jpg', alt: 'Wine Party — photo 3' },
+  { id: 4,  src: '/events/wine-party4.jpg', alt: 'Wine Party — photo 4' },
+  { id: 5,  src: '/events/wine-party5.jpg', alt: 'Wine Party — photo 5' },
+  { id: 6,  src: '/events/wine-party6.jpg', alt: 'Wine Party — photo 6' },
+  { id: 7,  src: '/events/wine-party7.jpg', alt: 'Wine Party — photo 7' },
+  { id: 8,  src: '/events/wine-party8.jpg', alt: 'Wine Party — photo 8' },
+  { id: 9,  src: '/events/wine-party9.jpg', alt: 'Wine Party — photo 9' },
+  { id: 10, src: '/events/wine-party10.JPG', alt: 'Wine Party — photo 10' },
+  { id: 11, src: '/events/wine-party11.JPG', alt: 'Wine Party — photo 11' },
+];
 
 /* ── Placeholder upcoming events ── */
 const UPCOMING = [
@@ -235,8 +243,8 @@ export default function WinePartyPage() {
                   transition={{ duration: 0.55, delay: i * 0.05, ease: [0.16, 1, 0.3, 1] }}
                   whileHover={{ scale: 1.02 }}
                   onClick={() => setLightbox({ src: photo.src, alt: photo.alt })}
-                  className={`relative overflow-hidden rounded-xl cursor-zoom-in ${
-                    i === 0 ? 'md:col-span-2 md:row-span-2 aspect-square' : 'aspect-square'
+                  className={`relative overflow-hidden rounded-xl cursor-zoom-in aspect-square ${
+                    i === 0 ? 'col-span-2 row-span-2' : ''
                   }`}
                 >
                   <Image

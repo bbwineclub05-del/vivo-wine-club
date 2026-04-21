@@ -196,16 +196,6 @@ export default function HeroSection() {
       {/* ── Content ── */}
       <div className="relative z-10 text-center px-6 max-w-5xl mx-auto w-full">
 
-        {/* Eyebrow */}
-        <motion.div
-          initial={{ opacity: 0, letterSpacing: '0.2em' }}
-          animate={{ opacity: 1, letterSpacing: '0.5em' }}
-          transition={{ duration: 1.2, delay: 0.3 }}
-          className="text-[10px] text-[#C9A84C] mb-10 font-light"
-        >
-          EST. 2020 &nbsp;·&nbsp; ITALY
-        </motion.div>
-
         {/* ── Main title ── */}
         <h1 className="mb-10">
           {/* Line 1 */}
