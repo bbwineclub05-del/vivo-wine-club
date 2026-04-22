@@ -38,12 +38,12 @@ export default function CollaborateSection() {
   };
 
   const inputBase =
-    'w-full bg-transparent border border-[#C9A84C]/20 text-[#F5EEE6] placeholder-[#C4B5A0]/40 px-5 py-4 text-sm focus:outline-none focus:border-[#C9A84C]/60 transition-colors duration-300';
+    'w-full bg-white/70 border border-[#e8d5d5] text-[#1a0505] placeholder-[#7a4a4a]/50 px-5 py-4 text-sm focus:outline-none focus:border-[#731515]/50 transition-colors duration-300';
 
   return (
-    <section id="collaborate" className="py-28 md:py-32 bg-[#080103] relative overflow-hidden">
-      {/* Background glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[#731515]/6 rounded-full blur-[120px] pointer-events-none" />
+    <section id="collaborate" className="py-28 md:py-32 relative overflow-hidden">
+      {/* Section fog — right */}
+      <div className="fog-right" style={{ top: '10%' }} />
 
       <div className="max-w-3xl mx-auto px-6 lg:px-10">
         {/* Header */}
@@ -54,17 +54,17 @@ export default function CollaborateSection() {
           transition={{ duration: 0.8 }}
           className="mb-14"
         >
-          <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-4">
+          <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-4">
             GET IN TOUCH
           </div>
           <h2
-            className="text-[clamp(2.2rem,5.5vw,4.5rem)] font-light text-[#F5EEE6] leading-tight mb-6"
+            className="text-[clamp(2.2rem,5.5vw,4.5rem)] font-light text-[#1a0505] leading-tight mb-6"
             style={{ fontFamily: 'var(--font-syne)' }}
           >
             Let&apos;s work together.
           </h2>
           <p
-            className="text-base text-[#C4B5A0] font-light leading-relaxed max-w-xl"
+            className="text-base text-[#7a4a4a] font-light leading-relaxed max-w-xl"
             style={{ fontFamily: 'var(--font-nunito)' }}
           >
             Are you a winery, wine bar, restaurant or industry organisation? We&apos;re always open
@@ -109,12 +109,12 @@ export default function CollaborateSection() {
               required
               value={form.type}
               onChange={set('type')}
-              className={`${inputBase} appearance-none cursor-pointer ${form.type === '' ? 'text-[#C4B5A0]/40' : 'text-[#F5EEE6]'} bg-[#080103]`}
+              className={`${inputBase} appearance-none cursor-pointer ${form.type === '' ? 'text-[#7a4a4a]/50' : 'text-[#1a0505]'}`}
               style={{ fontFamily: 'var(--font-nunito)' }}
             >
               <option value="" disabled>Type of collaboration</option>
               {COLLABORATION_TYPES.map((t) => (
-                <option key={t} value={t} className="bg-[#0d0306] text-[#F5EEE6]">
+                <option key={t} value={t} className="bg-white text-[#1a0505]">
                   {t}
                 </option>
               ))}

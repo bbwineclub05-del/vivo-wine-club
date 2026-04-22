@@ -1,12 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { MapPin, Star, X } from 'lucide-react';
 import type { Winery } from './WineriesGlobe';
 
 const WineriesGlobe = dynamic(() => import('./WineriesGlobe'), { ssr: false });
+
+// Defined at module level — never recreated on re-render
+const TOP_WINERIES = [
+  { rank: '01', name: 'Château Latour',   region: 'Pauillac',      country: 'Bordeaux' },
+  { rank: '02', name: 'Mouton Rothschild',region: 'Pauillac',      country: 'Bordeaux' },
+  { rank: '03', name: 'Château Montrose', region: 'Saint-Estèphe', country: 'Bordeaux' },
+  { rank: '04', name: "Ca' del Bosco",    region: 'Franciacorta',  country: 'Italy'    },
+  { rank: '05', name: 'Pellissero',       region: 'Barbaresco',    country: 'Italy'    },
+] as const;
 
 export const WINERIES: Winery[] = [
   {
@@ -157,34 +166,36 @@ export const WINERIES: Winery[] = [
 
 export default function WineriesSection() {
   const [selected, setSelected] = useState<Winery | null>(null);
+  const reducedMotion = useReducedMotion();
+  const handleSelect = useCallback((w: Winery | null) => setSelected(w), []);
+  const handleDeselect = useCallback(() => setSelected(null), []);
+  const d = (n: number) => (reducedMotion ? 0 : n);
 
   return (
-    <section id="cantine" className="py-32 bg-[#0a0103] relative overflow-hidden">
-      {/* Background glow */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#5b1a14]/8 rounded-full blur-[120px]" />
-      </div>
+    <section id="cantine" className="py-32 relative overflow-hidden">
+      {/* Section fog — right */}
+      <div className="fog-right" />
 
       <div className="max-w-7xl mx-auto px-6 lg:px-10">
         {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: reducedMotion ? 1 : 0, y: reducedMotion ? 0 : 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
+          transition={{ duration: d(0.8) }}
           className="mb-16"
         >
-          <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-4">
+          <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-4">
             {WINERIES.length} WINERIES VISITED
           </div>
           <h2
-            className="text-[clamp(2.5rem,6vw,5rem)] font-light text-[#F5EEE6] leading-none section-title"
+            className="text-[clamp(2.5rem,6vw,5rem)] font-light text-[#1a0505] leading-none section-title"
             style={{ fontFamily: 'var(--font-syne)' }}
           >
             WINERIES
           </h2>
           <p
-            className="mt-6 text-lg text-[#C4B5A0] font-light italic max-w-md"
+            className="mt-6 text-lg text-[#7a4a4a] font-light italic max-w-md"
             style={{ fontFamily: 'var(--font-nunito)' }}
           >
             Explore the most legendary wineries in the world that we have visited. Click a marker to discover their story
@@ -193,43 +204,37 @@ export default function WineriesSection() {
 
         {/* ── Top Wineries ranking ── */}
         <motion.div
-          initial={{ opacity: 0, y: 24 }}
+          initial={{ opacity: reducedMotion ? 1 : 0, y: reducedMotion ? 0 : 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.7 }}
+          transition={{ duration: d(0.7) }}
           className="mb-14"
         >
-          <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-3">OUR FINEST VISITS</div>
+          <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-3">OUR FINEST VISITS</div>
           <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
-            {[
-              { rank: '01', name: 'Château Latour',            region: 'Pauillac',         country: 'Bordeaux' },
-              { rank: '02', name: 'Mouton Rothschild',         region: 'Pauillac',         country: 'Bordeaux' },
-              { rank: '03', name: 'Château Montrose',          region: 'Saint-Estèphe',    country: 'Bordeaux' },
-              { rank: '04', name: "Ca' del Bosco",             region: 'Franciacorta',     country: 'Italy'    },
-              { rank: '05', name: 'Pellissero',                region: 'Barbaresco',       country: 'Italy'    },
-            ].map((w, i) => (
+            {TOP_WINERIES.map((w, i) => (
               <motion.div
                 key={w.rank}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: reducedMotion ? 1 : 0, y: reducedMotion ? 0 : 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: '-20px' }}
-                transition={{ duration: 0.55, delay: i * 0.09, ease: [0.16, 1, 0.3, 1] }}
-                className="group border border-[#C9A84C]/12 hover:border-[#C9A84C]/35 p-5 transition-all duration-400 hover:bg-[#731515]/8"
+                transition={{ duration: d(0.55), delay: d(i * 0.09), ease: [0.16, 1, 0.3, 1] }}
+                className="group border border-[#e8d5d5] hover:border-[#731515]/30 p-5 transition-all duration-400 hover:bg-[#731515]/5 bg-white"
               >
                 <div
-                  className="text-[2.6rem] font-bold leading-none text-[#731515]/30 group-hover:text-[#731515]/55 transition-colors duration-300 mb-3 tabular-nums"
+                  className="text-[2.6rem] font-bold leading-none text-[#731515]/20 group-hover:text-[#731515]/40 transition-colors duration-300 mb-3 tabular-nums"
                   style={{ fontFamily: 'var(--font-syne)' }}
                 >
                   {w.rank}
                 </div>
-                <div className="w-5 h-px bg-[#C9A84C]/30 mb-3 transition-all duration-300 group-hover:w-8 group-hover:bg-[#C9A84C]/60" />
+                <div className="w-5 h-px bg-[#731515]/30 mb-3 transition-all duration-300 group-hover:w-8 group-hover:bg-[#731515]/60" />
                 <div
-                  className="text-sm font-medium text-[#F5EEE6] leading-snug mb-1.5 group-hover:text-[#C9A84C] transition-colors duration-300"
+                  className="text-sm font-medium text-[#1a0505] leading-snug mb-1.5 group-hover:text-[#731515] transition-colors duration-300"
                   style={{ fontFamily: 'var(--font-syne)' }}
                 >
                   {w.name}
                 </div>
-                <div className="text-[10px] tracking-[0.25em] text-[#C4B5A0]/60 uppercase" style={{ fontFamily: 'var(--font-nunito)' }}>
+                <div className="text-[10px] tracking-[0.25em] text-[#7a4a4a]/70 uppercase" style={{ fontFamily: 'var(--font-nunito)' }}>
                   {w.region} · {w.country}
                 </div>
               </motion.div>
@@ -241,20 +246,20 @@ export default function WineriesSection() {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
           {/* Globe */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
+            initial={{ opacity: reducedMotion ? 1 : 0, scale: reducedMotion ? 1 : 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: d(1), ease: [0.16, 1, 0.3, 1] }}
             className="lg:col-span-3 relative"
           >
             <div className="aspect-square max-h-[560px] w-full mx-auto">
               <WineriesGlobe
                 wineries={WINERIES}
-                onSelect={setSelected}
+                onSelect={handleSelect}
                 selected={selected}
               />
             </div>
-            <p className="text-center text-[10px] tracking-[0.3em] text-[#C4B5A0]/50 mt-3">
+            <p className="text-center text-[10px] tracking-[0.3em] text-[#7a4a4a]/50 mt-3">
               DRAG · ZOOM · CLICK A MARKER
             </p>
           </motion.div>
@@ -265,52 +270,52 @@ export default function WineriesSection() {
               {selected ? (
                 <motion.div
                   key={selected.id}
-                  initial={{ opacity: 0, x: 20 }}
+                  initial={{ opacity: reducedMotion ? 1 : 0, x: reducedMotion ? 0 : 20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                  exit={{ opacity: reducedMotion ? 1 : 0, x: reducedMotion ? 0 : -20 }}
+                  transition={{ duration: d(0.4), ease: [0.16, 1, 0.3, 1] }}
                   className="glass-card p-8 relative"
                 >
                   <button
-                    onClick={() => setSelected(null)}
+                    onClick={handleDeselect}
                     className="absolute top-5 right-5 text-[#C4B5A0] hover:text-[#C9A84C] transition-colors"
                   >
                     <X size={16} />
                   </button>
 
-                  <div className="text-[9px] tracking-[0.4em] text-[#C9A84C] mb-2">
+                  <div className="text-[9px] tracking-[0.4em] text-[#731515] mb-2">
                     {selected.country.toUpperCase()}
                   </div>
                   <h3
-                    className="text-2xl font-medium text-[#F5EEE6] mb-1"
+                    className="text-2xl font-medium text-[#1a0505] mb-1"
                     style={{ fontFamily: 'var(--font-syne)' }}
                   >
                     {selected.name}
                   </h3>
-                  <div className="flex items-center gap-1.5 text-[#C4B5A0] text-xs mb-6">
-                    <MapPin size={11} className="text-[#C9A84C]" />
+                  <div className="flex items-center gap-1.5 text-[#7a4a4a] text-xs mb-6">
+                    <MapPin size={11} className="text-[#731515]" />
                     <span>{selected.region}</span>
                     <span className="mx-1 text-[#731515]">·</span>
-                    <span className="text-[#C9A84C]">Visited in {selected.visited}</span>
+                    <span className="text-[#731515]">Visited in {selected.visited}</span>
                   </div>
 
-                  <div className="w-10 h-px bg-[#C9A84C]/40 mb-6" />
+                  <div className="w-10 h-px bg-[#731515]/30 mb-6" />
 
                   <p
-                    className="text-[#C4B5A0] text-base leading-relaxed mb-7"
+                    className="text-[#7a4a4a] text-base leading-relaxed mb-7"
                     style={{ fontFamily: 'var(--font-nunito)' }}
                   >
                     {selected.description}
                   </p>
 
                   <div>
-                    <div className="text-[9px] tracking-[0.4em] text-[#C9A84C] mb-3">
+                    <div className="text-[9px] tracking-[0.4em] text-[#731515] mb-3">
                       WINES TASTED
                     </div>
                     <div className="flex flex-col gap-2">
                       {selected.highlights.map((h) => (
-                        <div key={h} className="flex items-center gap-2 text-sm text-[#F5EEE6]">
-                          <Star size={10} className="text-[#C9A84C] fill-[#C9A84C] shrink-0" />
+                        <div key={h} className="flex items-center gap-2 text-sm text-[#1a0505]">
+                          <Star size={10} className="text-[#731515] fill-[#731515] shrink-0" />
                           <span style={{ fontFamily: 'var(--font-nunito)' }}>{h}</span>
                         </div>
                       ))}
@@ -325,29 +330,29 @@ export default function WineriesSection() {
                   exit={{ opacity: 0 }}
                   className="glass-card p-8"
                 >
-                  <div className="text-[10px] tracking-[0.4em] text-[#C9A84C] mb-6">
+                  <div className="text-[10px] tracking-[0.4em] text-[#731515] mb-6">
                     OUR WINERIES
                   </div>
                   <div className="flex flex-col gap-3 max-h-[420px] overflow-y-auto pr-2 scrollbar-thin">
                     {WINERIES.map((w) => (
                       <button
                         key={w.id}
-                        onClick={() => setSelected(w)}
-                        className="text-left p-3 border border-[#C9A84C]/10 hover:border-[#C9A84C]/40 hover:bg-[#5b1a14]/15 transition-all duration-200 group"
+                        onClick={() => handleSelect(w)}
+                        className="text-left p-3 border border-[#e8d5d5] hover:border-[#731515]/40 hover:bg-[#731515]/5 transition-all duration-200 group"
                       >
                         <div className="flex items-center justify-between">
                           <div>
                             <div
-                              className="text-sm text-[#F5EEE6] group-hover:text-[#C9A84C] transition-colors"
+                              className="text-sm text-[#1a0505] group-hover:text-[#731515] transition-colors"
                               style={{ fontFamily: 'var(--font-syne)' }}
                             >
                               {w.name}
                             </div>
-                            <div className="text-xs text-[#C4B5A0] mt-0.5">
+                            <div className="text-xs text-[#7a4a4a] mt-0.5">
                               {w.region} · {w.country}
                             </div>
                           </div>
-                          <div className="text-[9px] text-[#C9A84C]/60">{w.visited}</div>
+                          <div className="text-[9px] text-[#731515]/60">{w.visited}</div>
                         </div>
                       </button>
                     ))}

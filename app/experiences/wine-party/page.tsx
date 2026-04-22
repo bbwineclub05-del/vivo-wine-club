@@ -8,30 +8,26 @@ import { ArrowLeft, X, MapPin, ChevronDown } from 'lucide-react';
 
 /* ── Gallery photos ── */
 const GALLERY = [
-  { id: 1,  src: '/events/wine-party1.JPG', alt: 'Wine Party — photo 1' },
-  { id: 2,  src: '/events/wine-party2.jpg', alt: 'Wine Party — photo 2' },
-  { id: 3,  src: '/events/wine-party3.jpg', alt: 'Wine Party — photo 3' },
-  { id: 4,  src: '/events/wine-party4.jpg', alt: 'Wine Party — photo 4' },
-  { id: 5,  src: '/events/wine-party5.jpg', alt: 'Wine Party — photo 5' },
-  { id: 6,  src: '/events/wine-party6.jpg', alt: 'Wine Party — photo 6' },
-  { id: 7,  src: '/events/wine-party7.jpg', alt: 'Wine Party — photo 7' },
-  { id: 8,  src: '/events/wine-party8.jpg', alt: 'Wine Party — photo 8' },
-  { id: 9,  src: '/events/wine-party9.jpg', alt: 'Wine Party — photo 9' },
+  { id: 1,  src: '/events/wine-party1.JPG',  alt: 'Wine Party — photo 1' },
+  { id: 2,  src: '/events/wine-party2.jpg',  alt: 'Wine Party — photo 2' },
+  { id: 3,  src: '/events/wine-party3.jpg',  alt: 'Wine Party — photo 3' },
+  { id: 4,  src: '/events/wine-party4.jpg',  alt: 'Wine Party — photo 4' },
+  { id: 5,  src: '/events/wine-party5.jpg',  alt: 'Wine Party — photo 5' },
+  { id: 6,  src: '/events/wine-party6.jpg',  alt: 'Wine Party — photo 6' },
+  { id: 7,  src: '/events/wine-party7.jpg',  alt: 'Wine Party — photo 7' },
+  { id: 8,  src: '/events/wine-party8.jpg',  alt: 'Wine Party — photo 8' },
+  { id: 9,  src: '/events/wine-party9.jpg',  alt: 'Wine Party — photo 9' },
   { id: 10, src: '/events/wine-party10.JPG', alt: 'Wine Party — photo 10' },
   { id: 11, src: '/events/wine-party11.JPG', alt: 'Wine Party — photo 11' },
 ];
 
-/* ── Placeholder upcoming events ── */
 const UPCOMING = [
-  { month: 'MAY', day: '24', title: 'Wine Party #12', location: 'Milan, Italy', price: 30 },
+  { month: 'MAY', day: '24', title: 'Wine Party #12', location: 'Milan, Italy',    price: 30 },
   { month: 'JUN', day: '14', title: 'Wine Party #13', location: 'Florence, Italy', price: 30 },
-  { month: 'JUL', day: '5',  title: 'Wine Party #14', location: 'Turin, Italy', price: 30 },
+  { month: 'JUL', day: '5',  title: 'Wine Party #14', location: 'Turin, Italy',    price: 30 },
 ];
 
-/* ── Pills ── */
 const PILLS = ['Great Wine', 'Live DJ Set', 'Curated Crowd'];
-
-/* ────────────────────────────── Components ────────────────────────────── */
 
 function Lightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
   return (
@@ -58,19 +54,11 @@ function Lightbox({ src, alt, onClose }: { src: string; alt: string; onClose: ()
         className="relative max-w-5xl max-h-[85vh] w-full h-full"
         onClick={(e) => e.stopPropagation()}
       >
-        <Image
-          src={src}
-          alt={alt}
-          fill
-          className="object-contain"
-          sizes="90vw"
-        />
+        <Image src={src} alt={alt} fill className="object-contain" sizes="90vw" />
       </motion.div>
     </motion.div>
   );
 }
-
-/* ────────────────────────────── Page ────────────────────────────── */
 
 export default function WinePartyPage() {
   const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
@@ -85,7 +73,6 @@ export default function WinePartyPage() {
 
   return (
     <>
-      {/* ── Lightbox ── */}
       <AnimatePresence>
         {lightbox && <Lightbox {...lightbox} onClose={() => setLightbox(null)} />}
       </AnimatePresence>
@@ -94,19 +81,16 @@ export default function WinePartyPage() {
 
         {/* ── 1. HERO ── */}
         <section className="relative h-screen flex flex-col justify-end overflow-hidden">
-          {/* Background image */}
           <Image
-            src="/events/wine-party-1.jpg"
+            src="/events/wine-party1.JPG"
             alt="Wine Party"
             fill
             className="object-cover"
             priority
           />
-          {/* Overlays */}
           <div className="absolute inset-0 bg-black/50" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-          {/* Back link */}
           <motion.div
             initial={{ opacity: 0, x: -16 }}
             animate={{ opacity: 1, x: 0 }}
@@ -115,14 +99,13 @@ export default function WinePartyPage() {
           >
             <Link
               href="/"
-              className="flex items-center gap-2 text-[#7a4a4a] hover:text-[#731515] transition-colors duration-300 text-[10px] tracking-[0.35em] group"
+              className="flex items-center gap-2 text-[#C4B5A0] hover:text-[#F5EEE6] transition-colors duration-300 text-[10px] tracking-[0.35em] group"
             >
               <ArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform duration-300" />
               BACK
             </Link>
           </motion.div>
 
-          {/* Hero text */}
           <div className="relative z-10 px-8 md:px-16 pb-20 max-w-5xl">
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -158,7 +141,6 @@ export default function WinePartyPage() {
             </div>
           </div>
 
-          {/* Scroll hint */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -183,9 +165,7 @@ export default function WinePartyPage() {
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
             >
-              <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-6">
-                THE CONCEPT
-              </div>
+              <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-6">THE CONCEPT</div>
               <p
                 className="text-xl md:text-2xl text-[#C4B5A0] font-light leading-relaxed"
                 style={{ fontFamily: 'var(--font-nunito)' }}
@@ -196,7 +176,6 @@ export default function WinePartyPage() {
               </p>
             </motion.div>
 
-            {/* ── 3. PILLS ── */}
             <div className="flex flex-wrap gap-4 mt-14">
               {PILLS.map((pill, i) => (
                 <motion.div
@@ -214,7 +193,7 @@ export default function WinePartyPage() {
           </div>
         </section>
 
-        {/* ── 4. GALLERY ── */}
+        {/* ── 3. GALLERY ── */}
         <section className="py-20 bg-[#090103]">
           <div className="max-w-7xl mx-auto px-8 md:px-10">
             <motion.div
@@ -261,7 +240,7 @@ export default function WinePartyPage() {
           </div>
         </section>
 
-        {/* ── 5. UPCOMING EVENTS ── */}
+        {/* ── 4. UPCOMING EVENTS ── */}
         <section className="py-24 md:py-32 bg-[#0d0203]">
           <div className="max-w-4xl mx-auto px-8 md:px-16">
             <motion.div
@@ -290,11 +269,8 @@ export default function WinePartyPage() {
                   transition={{ duration: 0.55, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
                 >
                   <div className="flex items-center gap-6 md:gap-10 py-7 group">
-                    {/* Date */}
                     <div className="flex flex-col items-end w-14 shrink-0">
-                      <span className="text-[8px] tracking-[0.4em] text-[#C9A84C] mb-0.5">
-                        {event.month}
-                      </span>
+                      <span className="text-[8px] tracking-[0.4em] text-[#C9A84C] mb-0.5">{event.month}</span>
                       <span
                         className="text-[2.8rem] font-light leading-none text-[#F5EEE6] group-hover:text-[#C9A84C] transition-colors duration-300"
                         style={{ fontFamily: 'var(--font-syne)' }}
@@ -325,23 +301,20 @@ export default function WinePartyPage() {
                     </button>
                   </div>
 
-                  {/* Mobile button */}
                   <div className="sm:hidden pb-5 pl-20">
                     <button className="text-[9px] tracking-[0.28em] px-5 py-2.5 bg-[#731515] text-[#F5EEE6] border border-[#731515] hover:bg-[#aa4848] transition-all duration-300">
                       BUY TICKETS
                     </button>
                   </div>
 
-                  {i < UPCOMING.length - 1 && (
-                    <div className="h-px bg-[#C9A84C]/8" />
-                  )}
+                  {i < UPCOMING.length - 1 && <div className="h-px bg-[#C9A84C]/8" />}
                 </motion.div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* ── 6. NOTIFY CTA ── */}
+        {/* ── 5. NOTIFY CTA ── */}
         <section className="py-24 md:py-32 bg-[#080103] relative overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_60%,rgba(115,21,21,0.12),transparent_65%)] pointer-events-none" />
 
@@ -352,9 +325,7 @@ export default function WinePartyPage() {
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
             >
-              <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-5">
-                STAY IN THE LOOP
-              </div>
+              <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-5">STAY IN THE LOOP</div>
               <h2
                 className="text-[clamp(2rem,5vw,4rem)] font-light text-[#F5EEE6] leading-tight mb-5"
                 style={{ fontFamily: 'var(--font-syne)' }}

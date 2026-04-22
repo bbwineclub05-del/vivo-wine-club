@@ -85,14 +85,14 @@ export default function WineriesGlobe({ wineries, onSelect, selected }: Wineries
 
     /* ── Stars ── */
     const starGeo = new THREE.BufferGeometry();
-    const starCount = 3000;
+    const starCount = 1200;
     const starPos = new Float32Array(starCount * 3);
     for (let i = 0; i < starCount * 3; i++) starPos[i] = (Math.random() - 0.5) * 60;
     starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
     scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.035, sizeAttenuation: true })));
 
-    /* ── Earth — texture + higher resolution ── */
-    const earthGeo = new THREE.SphereGeometry(1, 96, 96);
+    /* ── Earth — texture + reduced resolution for performance ── */
+    const earthGeo = new THREE.SphereGeometry(1, 32, 32);
     const earthMat = new THREE.MeshPhongMaterial({
       color: new THREE.Color(0x2a3a5a),
       emissive: new THREE.Color(0x050d1a),
@@ -268,15 +268,16 @@ export default function WineriesGlobe({ wineries, onSelect, selected }: Wineries
     renderer.domElement.addEventListener('mousemove', onMove);
     renderer.domElement.addEventListener('click', onClick);
 
-    /* ── Animation loop ── */
+    /* ── Animation loop — paused when off-screen ── */
     const clock = new THREE.Clock();
-    let rafId: number;
+    let rafId = 0;
+    let visible = false;
 
-    const animate = () => {
-      rafId = requestAnimationFrame(animate);
+    const tick = () => {
+      if (!visible) { rafId = 0; return; }
+      rafId = requestAnimationFrame(tick);
       const t = clock.getElapsedTime();
 
-      /* Pulse winery markers */
       markerMeshes.forEach((m, i) => {
         const isSel = selectedRef.current?.id === (m.userData as Winery).id;
         m.scale.setScalar(1 + Math.sin(t * 2.2 + i * 0.8) * (isSel ? 0.3 : 0.12));
@@ -285,13 +286,11 @@ export default function WineriesGlobe({ wineries, onSelect, selected }: Wineries
       glowMeshes.forEach((g, i) => {
         g.scale.setScalar(1 + Math.sin(t * 1.8 + i * 0.8) * 0.25);
       });
-
-      /* Pulse region markers */
       regionMeshes.forEach((m, i) => {
         m.scale.setScalar(1 + Math.sin(t * 1.5 + i * 1.1) * 0.2);
       });
       regionGlows.forEach((g, i) => {
-        const s = 1 + Math.sin(t * 1.2 + i * 1.0) * 0.35;
+        const s = 1 + Math.sin(t * 1.2 + i) * 0.35;
         g.scale.setScalar(s);
         (g.material as THREE.MeshBasicMaterial).opacity = 0.20 + Math.sin(t * 1.2 + i) * 0.15;
       });
@@ -299,7 +298,16 @@ export default function WineriesGlobe({ wineries, onSelect, selected }: Wineries
       controls.update();
       renderer.render(scene, camera);
     };
-    animate();
+
+    /* Start/stop rendering based on visibility */
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        visible = entry.isIntersecting;
+        if (visible && rafId === 0) { clock.start(); tick(); }
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(mount);
 
     /* ── Resize ── */
     const onResize = () => {
@@ -311,6 +319,7 @@ export default function WineriesGlobe({ wineries, onSelect, selected }: Wineries
     window.addEventListener('resize', onResize);
 
     return () => {
+      observer.disconnect();
       clearTimeout(resumeTimer);
       cancelAnimationFrame(rafId);
       renderer.domElement.removeEventListener('mousemove', onMove);
