@@ -3,6 +3,7 @@ import Navbar from '@/components/Navbar';
 import HeroSection from '@/components/HeroSection';
 import StatsSection from '@/components/StatsSection';
 import EventsSection from '@/components/EventsSection';
+import PartnersSection from '@/components/PartnersSection';
 import Footer from '@/components/Footer';
 import CartDrawer from '@/components/CartDrawer';
 
@@ -28,6 +29,7 @@ export default function Home() {
         <ExperiencesSection />
         <EventsSection />
         <WineriesSection />
+        <PartnersSection />
       </main>
       <Footer />
       <CartDrawer />

@@ -1,6 +1,7 @@
 'use client';
 
 import { memo } from 'react';
+import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import { MapPin } from 'lucide-react';
 
@@ -54,9 +55,9 @@ const EVENTS: Event[] = [
 const StatusBadge = memo(function StatusBadge({ status }: { status: EventStatus }) {
   if (status === 'open') {
     return (
-      <button className="text-[9px] tracking-[0.28em] px-4 lg:px-5 py-2.5 bg-[#731515] text-[#F5EEE6] border border-[#731515] hover:bg-[#aa4848] hover:border-[#aa4848] transition-all duration-300 whitespace-nowrap">
+      <Link href="/events" className="text-[9px] tracking-[0.28em] px-4 lg:px-5 py-2.5 bg-[#731515] text-[#F5EEE6] border border-[#731515] hover:bg-[#aa4848] hover:border-[#aa4848] transition-all duration-300 whitespace-nowrap">
         BUY TICKETS
-      </button>
+      </Link>
     );
   }
   if (status === 'soon') {

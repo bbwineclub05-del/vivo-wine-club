@@ -8,7 +8,7 @@ import { Menu, X } from 'lucide-react';
 
 const NAV_LINKS = [
   { href: '#eventi',      label: 'EVENTS',        page: false },
-  { href: '#cantine',     label: 'WINERIES',       page: false },
+  { href: '#cantine',     label: 'WINE MAP',       page: false },
   { href: '/wear-the-club', label: 'WEAR THE CLUB', page: true  },
   { href: '/who-we-are',  label: 'WHO WE ARE',     page: true  },
   { href: '/collaborate', label: 'COLLABORATE',    page: true  },
