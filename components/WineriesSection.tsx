@@ -56,7 +56,7 @@ export default function WineriesSection() {
             transition={{ duration: d(1), ease: [0.16, 1, 0.3, 1] }}
             className="lg:col-span-3 relative"
           >
-            <div className="w-full" style={{ aspectRatio: '800 / 580' }}>
+            <div className="w-full max-h-[320px] sm:max-h-[420px] lg:max-h-none" style={{ aspectRatio: '800 / 580' }}>
               <WineriesMap
                 regions={WINE_REGIONS}
                 onSelect={handleSelect}

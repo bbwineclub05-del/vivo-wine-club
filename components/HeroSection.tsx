@@ -225,9 +225,9 @@ export default function HeroSection() {
         >
           {CITIES.map((city, i) => (
             <div key={city.name} className="flex items-start">
-              <div className="flex flex-col items-center gap-2 px-5 md:px-7">
-                <span className="text-[9px] tracking-[0.45em] text-[#6b3333] font-light">{city.name}</span>
-                <city.Icon className="w-5 h-8 text-[#6b3333]/50 md:w-6 md:h-9" />
+              <div className="flex flex-col items-center gap-2 px-3 sm:px-5 md:px-7">
+                <span className="text-[7px] sm:text-[9px] tracking-[0.3em] sm:tracking-[0.45em] text-[#6b3333] font-light">{city.name}</span>
+                <city.Icon className="w-4 h-7 sm:w-5 sm:h-8 md:w-6 md:h-9 text-[#6b3333]/50" />
               </div>
               {i < CITIES.length - 1 && (
                 <div className="flex flex-col items-center self-start pt-[7px]">

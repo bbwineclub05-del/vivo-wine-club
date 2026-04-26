@@ -221,7 +221,7 @@ export default function WhoWeArePage() {
               </h2>
             </motion.div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
               {FOUNDERS.map((founder, i) => (
                 <FounderCard key={founder.name} {...founder} index={i} />
               ))}

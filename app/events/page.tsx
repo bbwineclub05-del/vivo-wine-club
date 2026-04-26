@@ -43,15 +43,15 @@ function EventRow({ event, isLast }: { event: EventData; isLast: boolean }) {
 
   return (
     <div>
-      <div className="flex items-start gap-5 md:gap-8 py-8 md:py-10 group">
+      <div className="flex items-start gap-4 sm:gap-5 md:gap-8 py-6 sm:py-8 md:py-10 group">
 
         {/* Date column */}
-        <div className="flex flex-col items-end w-12 md:w-[72px] shrink-0 pt-1">
+        <div className="flex flex-col items-end w-10 sm:w-12 md:w-[72px] shrink-0 pt-1">
           <span className={`text-[8px] tracking-[0.4em] mb-0.5 ${faded ? 'text-[#ccc]' : 'text-[#731515]'}`}>
             {event.month}
           </span>
           <span
-            className={`text-[2.6rem] md:text-[3.2rem] font-light leading-none ${
+            className={`text-[2rem] sm:text-[2.6rem] md:text-[3.2rem] font-light leading-none ${
               faded ? 'text-[#ddd]' : 'text-[#1a0505] group-hover:text-[#731515] transition-colors duration-300'
             }`}
             style={{ fontFamily: 'var(--font-syne)' }}
@@ -90,8 +90,8 @@ function EventRow({ event, isLast }: { event: EventData; isLast: boolean }) {
             {event.description}
           </p>
 
-          {/* Mobile badge */}
-          <div className="mt-5 sm:hidden">
+          {/* Mobile badge — shown below description */}
+          <div className="mt-4 sm:hidden">
             <StatusBadge status={event.status} slug={event.slug} />
           </div>
         </div>

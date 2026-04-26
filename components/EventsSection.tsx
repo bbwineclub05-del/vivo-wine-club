@@ -51,15 +51,15 @@ function EventRow({
       viewport={{ once: true, margin: '-30px' }}
       transition={{ duration: reducedMotion ? 0 : 0.55, delay: reducedMotion ? 0 : index * 0.06, ease: [0.16, 1, 0.3, 1] }}
     >
-      <div className="flex items-center gap-5 md:gap-8 py-6 md:py-7 group">
+      <div className="flex items-center gap-4 sm:gap-5 md:gap-8 py-5 md:py-7 group">
 
         {/* Date column */}
-        <div className="flex flex-col items-end w-12 md:w-[72px] shrink-0">
+        <div className="flex flex-col items-end w-10 sm:w-12 md:w-[72px] shrink-0">
           <span className={`text-[8px] tracking-[0.4em] mb-0.5 ${faded ? 'text-[#ccc]' : 'text-[#731515]'}`}>
             {event.month}
           </span>
           <span
-            className={`text-[2.6rem] md:text-[3.2rem] font-light leading-none transition-colors duration-300 ${
+            className={`text-[2rem] sm:text-[2.6rem] md:text-[3.2rem] font-light leading-none transition-colors duration-300 ${
               faded ? 'text-[#ddd]' : 'text-[#1a0505] group-hover:text-[#731515]'
             }`}
             style={{ fontFamily: 'var(--font-syne)' }}
@@ -97,7 +97,7 @@ function EventRow({
       </div>
 
       {/* Mobile badge */}
-      <div className="sm:hidden pb-5 pl-[72px]">
+      <div className="sm:hidden pb-5 pl-[56px]">
         <StatusBadge status={event.status} />
       </div>
 

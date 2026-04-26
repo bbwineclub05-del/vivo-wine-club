@@ -27,12 +27,12 @@ export default function PartnersSection() {
         {/* Divider */}
         <div className="w-full h-px bg-gradient-to-r from-transparent via-[#731515]/20 to-transparent mb-14" />
 
-        {/* Logo row */}
-        <div className="flex flex-wrap items-center justify-center gap-10 md:gap-16">
+        {/* Logo grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-8 md:gap-10 items-center justify-items-center">
           {PARTNERS.map((partner) => (
             <div
               key={partner.name}
-              className="relative w-32 h-14 opacity-80 hover:opacity-100 transition-opacity duration-300"
+              className="relative w-28 sm:w-32 h-12 sm:h-14 opacity-80 hover:opacity-100 transition-opacity duration-300"
             >
               <Image
                 src={partner.src}

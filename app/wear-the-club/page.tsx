@@ -164,7 +164,7 @@ export default function WearTheClubPage() {
               className="origin-left w-full h-px bg-gradient-to-r from-[#731515]/30 via-[#731515]/10 to-transparent mb-14"
             />
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-6 md:gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 sm:gap-6 md:gap-8">
               {PRODUCTS.map((product, i) => (
                 <ProductCard
                   key={product.id}
