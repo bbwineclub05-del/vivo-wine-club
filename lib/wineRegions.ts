@@ -9,6 +9,8 @@ export interface WineRegion {
   description: string;     // full paragraph for the /wine-regions/[slug] page
   grapes: string[];        // key grape varieties
   mustTry: string[];       // iconic wines / producers to know
+  wineries?: string[];     // real wineries visited by the club
+  wineriesNote?: string;   // optional trailing note, e.g. "...and many more"
 }
 
 export const WINE_REGIONS: WineRegion[] = [
@@ -25,6 +27,7 @@ export const WINE_REGIONS: WineRegion[] = [
       'Barolo is often called the King of Italian wines — a DOCG appellation in the Langhe hills of Piedmont producing some of the most age-worthy reds on earth. Made exclusively from Nebbiolo, the wines are characterised by high tannin, high acidity, and haunting aromas of dried roses, tar, cherry, and leather. The best crus — Cannubi, Brunate, Cerequio, Castiglione Falletto — can age for 30+ years. The zone is divided between traditionalist and modernist producers, creating a rich diversity of styles.',
     grapes: ['Nebbiolo'],
     mustTry: ['Barolo DOCG', 'Barolo Riserva', 'Single-vineyard Cru Barolo'],
+    wineries: ['Aldo Conterno', 'Clerico', 'Giovanni Rosso'],
   },
   {
     id: 2,
@@ -39,6 +42,17 @@ export const WINE_REGIONS: WineRegion[] = [
       'Bordeaux is the reference point for fine wine worldwide. Spanning both banks of the Gironde estuary, it produces legendary blends dominated by Cabernet Sauvignon on the Left Bank (Médoc, Graves) and Merlot on the Right Bank (Saint-Émilion, Pomerol). The 1855 Classification still governs prestige, with estates like Château Lafite, Latour, Margaux, Haut-Brion and Mouton Rothschild commanding extraordinary prices. Dry white wines from Pessac-Léognan and sweet Sauternes complete the picture.',
     grapes: ['Cabernet Sauvignon', 'Merlot', 'Cabernet Franc', 'Sémillon'],
     mustTry: ['Château Margaux', 'Pétrus', 'Château d\'Yquem', 'Lynch-Bages'],
+    wineries: [
+      'Château Latour',
+      'Château Mouton Rothschild',
+      'Château Margaux',
+      'Château Mission Haut-Brion',
+      'Château Lynch-Bages',
+      'Château Léoville Poyferré',
+      'Château Pavie Macquin',
+      'Château Montrose',
+    ],
+    wineriesNote: '...and many more',
   },
   {
     id: 3,
@@ -81,6 +95,7 @@ export const WINE_REGIONS: WineRegion[] = [
       'Barbaresco is Barolo\'s twin DOCG — both made from Nebbiolo in the Langhe hills of Piedmont, both world-class, both deeply Italian. Yet Barbaresco is often described as more feminine, more approachable in youth, with a silkier texture that comes from its lower altitude and sandier soils. The late Angelo Gaja transformed the appellation from the 1970s onwards, proving it could match Burgundy\'s finest. Key villages include Barbaresco, Treiso and Neive. Crus like Asili, Rabajà, Santo Stefano and Starderi produce wines of astonishing complexity.',
     grapes: ['Nebbiolo'],
     mustTry: ['Gaja Barbaresco', 'Produttori del Barbaresco', 'Bruno Giacosa Asili'],
+    wineries: ['Gaja', 'Pellissero'],
   },
   {
     id: 6,
@@ -95,6 +110,7 @@ export const WINE_REGIONS: WineRegion[] = [
       'Franciacorta is the only Italian DOCG for méthode classique sparkling wine — produced, like Champagne, with secondary fermentation in the bottle. Located on the glacial moraine soils south of Lake Iseo in Lombardy, the zone was pioneered by Ca\' del Bosco and Bellavista in the 1970s. Today Franciacorta Satèn (blanc de blancs), Rosé and Riserva wines compete seriously with grower Champagnes. The unique combination of Alpine freshness, lake influence and mineral soils gives Franciacorta its distinctive identity.',
     grapes: ['Chardonnay', 'Pinot Nero', 'Pinot Bianco'],
     mustTry: ['Ca\' del Bosco Annamaria Clementi', 'Bellavista Teatro', 'Berlucchi'],
+    wineries: ['Monterossa', 'Ca\' del Bosco', 'Berlucchi', 'Barone Pizzini', 'Boccadoro'],
   },
   {
     id: 7,

@@ -4,52 +4,7 @@ import { memo } from 'react';
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import { MapPin } from 'lucide-react';
-
-type EventStatus = 'completed' | 'open' | 'soon';
-
-interface Event {
-  id: number;
-  title: string;
-  type: string;
-  month: string;
-  day: string;
-  location: string;
-  price: number;
-  status: EventStatus;
-}
-
-const EVENTS: Event[] = [
-  {
-    id: 3,
-    title: 'Barolo Vertical Tasting',
-    type: 'TASTING',
-    month: 'MAY',
-    day: '15',
-    location: 'Milan, Italy',
-    price: 95,
-    status: 'open',
-  },
-  {
-    id: 4,
-    title: 'Tuscany Winery Tour',
-    type: 'TOUR · 3 DAYS',
-    month: 'JUN',
-    day: '6',
-    location: 'Montalcino, Tuscany',
-    price: 450,
-    status: 'open',
-  },
-  {
-    id: 7,
-    title: 'Harvest Experience',
-    type: 'EXPERIENCE · 3 DAYS',
-    month: 'SEP',
-    day: '15',
-    location: 'Langhe, Piedmont',
-    price: 680,
-    status: 'soon',
-  },
-];
+import { EVENTS, type EventData, type EventStatus } from '@/lib/events';
 
 // Memoised — pure display, props never change after mount
 const StatusBadge = memo(function StatusBadge({ status }: { status: EventStatus }) {
@@ -58,6 +13,13 @@ const StatusBadge = memo(function StatusBadge({ status }: { status: EventStatus 
       <Link href="/events" className="text-[9px] tracking-[0.28em] px-4 lg:px-5 py-2.5 bg-[#731515] text-[#F5EEE6] border border-[#731515] hover:bg-[#aa4848] hover:border-[#aa4848] transition-all duration-300 whitespace-nowrap">
         BUY TICKETS
       </Link>
+    );
+  }
+  if (status === 'soldout') {
+    return (
+      <span className="text-[9px] tracking-[0.28em] px-4 lg:px-5 py-2.5 bg-[#3a3a3a] text-white whitespace-nowrap">
+        SOLD OUT
+      </span>
     );
   }
   if (status === 'soon') {
@@ -79,7 +41,7 @@ function EventRow({
   index,
   isLast,
   reducedMotion,
-}: { event: Event; index: number; isLast: boolean; reducedMotion: boolean | null }) {
+}: { event: EventData; index: number; isLast: boolean; reducedMotion: boolean | null }) {
   const faded = event.status === 'completed';
 
   return (
@@ -125,12 +87,6 @@ function EventRow({
           <div className={`flex items-center gap-2 text-xs ${faded ? 'text-[#ccc]' : 'text-[#7a4a4a]'}`}>
             <MapPin size={10} className={faded ? 'text-[#ccc] shrink-0' : 'text-[#731515] shrink-0'} />
             <span>{event.location}</span>
-            {!faded && (
-              <>
-                <span className="text-[#731515]/25 mx-0.5">·</span>
-                <span>€{event.price}</span>
-              </>
-            )}
           </div>
         </div>
 
@@ -149,6 +105,8 @@ function EventRow({
     </motion.div>
   );
 }
+
+const HOME_EVENTS = EVENTS.slice(0, 3);
 
 export default function EventsSection() {
   const reducedMotion = useReducedMotion();
@@ -181,12 +139,12 @@ export default function EventsSection() {
         </motion.div>
 
         <div>
-          {EVENTS.map((event, i) => (
+          {HOME_EVENTS.map((event, i) => (
             <EventRow
-              key={event.id}
+              key={event.slug}
               event={event}
               index={i}
-              isLast={i === EVENTS.length - 1}
+              isLast={i === HOME_EVENTS.length - 1}
               reducedMotion={reducedMotion}
             />
           ))}

@@ -10,23 +10,58 @@ export function generateStaticParams() {
   return WINE_REGIONS.map((r) => ({ slug: r.slug }));
 }
 
-/* ── Placeholder winery card ── */
-function WineryPlaceholder({ index }: { index: number }) {
+/* ── Bottle icon ── */
+function BottleIcon() {
   return (
-    <div className="border border-[#e8d5d5] bg-white p-6 flex flex-col gap-3">
-      <div className="text-[2rem] font-bold leading-none text-[#731515]/15 tabular-nums"
-        style={{ fontFamily: 'var(--font-syne)' }}
-      >
-        {String(index + 1).padStart(2, '0')}
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8 2h8" />
+      <path d="M9 2v2.5c0 .8-.4 1.5-1 2L6 8.5C5.4 9 5 9.7 5 10.5V20a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9.5c0-.8-.4-1.5-1-2L16 6.5c-.6-.5-1-1.2-1-2V2" />
+    </svg>
+  );
+}
+
+/* ── Real winery card ── */
+function WineryCard({ name, index }: { name: string; index: number }) {
+  return (
+    <div className="border border-[#e8d5d5] bg-white p-6 flex flex-col gap-3 hover:border-[#731515]/40 transition-colors duration-300 group">
+      <div className="flex items-start justify-between gap-2">
+        <div
+          className="text-[2rem] font-bold leading-none text-[#731515]/12 tabular-nums"
+          style={{ fontFamily: 'var(--font-syne)' }}
+        >
+          {String(index + 1).padStart(2, '0')}
+        </div>
+        <span className="text-[8px] tracking-[0.3em] px-2.5 py-1 bg-[#731515] text-white shrink-0">
+          VISITED
+        </span>
       </div>
       <div className="w-5 h-px bg-[#731515]/25" />
-      <div className="h-4 w-3/4 bg-[#e8d5d5] rounded" />
-      <div className="h-3 w-1/2 bg-[#e8d5d5]/70 rounded" />
-      <div className="mt-2 text-[9px] tracking-[0.3em] text-[#7a4a4a]/40"
+      <div className="flex items-center gap-2 text-[#731515]/60 group-hover:text-[#731515] transition-colors duration-300">
+        <BottleIcon />
+      </div>
+      <div
+        className="text-sm font-medium text-[#1a0505] leading-snug"
+        style={{ fontFamily: 'var(--font-syne)' }}
+      >
+        {name}
+      </div>
+    </div>
+  );
+}
+
+/* ── "And many more" trailing card ── */
+function MoreCard() {
+  return (
+    <div className="border border-dashed border-[#c9a0a0] bg-white/60 p-6 flex flex-col items-center justify-center gap-2 text-center">
+      <div className="text-[#731515]/40">
+        <BottleIcon />
+      </div>
+      <p
+        className="text-[11px] tracking-[0.2em] text-[#7a4a4a]/60 italic"
         style={{ fontFamily: 'var(--font-nunito)' }}
       >
-        COMING SOON
-      </div>
+        ...and many more
+      </p>
     </div>
   );
 }
@@ -149,19 +184,24 @@ export default async function WineRegionPage({
               >
                 Wineries We Visited
               </h2>
-              <p
-                className="mt-4 text-sm text-[#7a4a4a] font-light italic"
-                style={{ fontFamily: 'var(--font-nunito)' }}
-              >
-                Detailed winery profiles coming soon — we&apos;re curating each story carefully.
-              </p>
+              {!region.wineries && (
+                <p
+                  className="mt-4 text-sm text-[#7a4a4a] font-light italic"
+                  style={{ fontFamily: 'var(--font-nunito)' }}
+                >
+                  Winery profiles coming soon — we&apos;re curating each story carefully.
+                </p>
+              )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {[0, 1, 2].map((i) => (
-                <WineryPlaceholder key={i} index={i} />
-              ))}
-            </div>
+            {region.wineries && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {region.wineries.map((name, i) => (
+                  <WineryCard key={name} name={name} index={i} />
+                ))}
+                {region.wineriesNote && <MoreCard />}
+              </div>
+            )}
           </div>
         </section>
 

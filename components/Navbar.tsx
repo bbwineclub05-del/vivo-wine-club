@@ -149,10 +149,10 @@ export default function Navbar() {
             </div>
             <div className="w-px h-4 bg-[#e8d5d5]" />
             <Link
-              href="/events"
+              href="/membership"
               className="px-5 py-2 bg-[#731515] text-white text-[10px] tracking-[0.3em] hover:bg-[#aa4848] transition-colors duration-300 whitespace-nowrap"
             >
-              BUY TICKETS
+              APPLY FOR MEMBERSHIP
             </Link>
           </div>
 
@@ -208,11 +208,11 @@ export default function Navbar() {
                   ))}
                 </div>
                 <Link
-                  href="/events"
+                  href="/membership"
                   onClick={() => setMobileOpen(false)}
                   className="px-5 py-2.5 bg-[#731515] text-white text-[10px] tracking-[0.3em] hover:bg-[#aa4848] transition-colors"
                 >
-                  BUY TICKETS
+                  APPLY FOR MEMBERSHIP
                 </Link>
               </div>
             </div>

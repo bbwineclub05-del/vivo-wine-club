@@ -16,6 +16,13 @@ function StatusBadge({ status, slug }: { status: EventStatus; slug: string }) {
       </Link>
     );
   }
+  if (status === 'soldout') {
+    return (
+      <span className="inline-block text-[9px] tracking-[0.28em] px-5 py-2.5 bg-[#3a3a3a] text-white whitespace-nowrap">
+        SOLD OUT
+      </span>
+    );
+  }
   if (status === 'soon') {
     return (
       <span className="inline-block text-[9px] tracking-[0.28em] px-5 py-2.5 border border-[#ccc] text-[#aaa] whitespace-nowrap">
@@ -74,13 +81,7 @@ function EventRow({ event, isLast }: { event: EventData; isLast: boolean }) {
           </h2>
           <div className={`flex items-center gap-2 text-xs mb-3 ${faded ? 'text-[#ccc]' : 'text-[#7a4a4a]'}`}>
             <MapPin size={10} className={faded ? 'text-[#ccc] shrink-0' : 'text-[#731515] shrink-0'} />
-            <span>{event.location}</span>
-            {!faded && (
-              <>
-                <span className="text-[#731515]/25 mx-0.5">·</span>
-                <span>€{event.price} per person</span>
-              </>
-            )}
+            <span>{event.locationFull}</span>
           </div>
           <p
             className={`text-sm leading-relaxed max-w-xl ${faded ? 'text-[#ccc]' : 'text-[#7a4a4a]'}`}
@@ -108,10 +109,7 @@ function EventRow({ event, isLast }: { event: EventData; isLast: boolean }) {
 
 /* ── Page ── */
 export default function EventsPage() {
-  const open      = EVENTS.filter((e) => e.status === 'open');
-  const soon      = EVENTS.filter((e) => e.status === 'soon');
-  const completed = EVENTS.filter((e) => e.status === 'completed');
-  const ordered   = [...open, ...soon, ...completed];
+  const ordered = EVENTS;
 
   return (
     <>
