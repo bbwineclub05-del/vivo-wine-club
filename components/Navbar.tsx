@@ -8,7 +8,7 @@ import { Menu, X } from 'lucide-react';
 
 const NAV_LINKS = [
   { href: '/events',      label: 'EVENTS',        page: true  },
-  { href: '#cantine',     label: 'WINE MAP',       page: false },
+  { href: '/wine-map',    label: 'WINE MAP',       page: true  },
   { href: '/wear-the-club', label: 'WEAR THE CLUB', page: true  },
   { href: '/who-we-are',  label: 'WHO WE ARE',     page: true  },
   { href: '/collaborate', label: 'COLLABORATE',    page: true  },
@@ -102,7 +102,7 @@ export default function Navbar() {
             <img
               src="/logo.svg"
               alt="Vivo Wine Club"
-              className="h-28 w-auto object-contain transition-opacity duration-300 group-hover:opacity-70"
+              className="h-24 w-auto object-contain transition-opacity duration-300 group-hover:opacity-70"
             />
           </Link>
 

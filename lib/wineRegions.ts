@@ -9,8 +9,8 @@ export interface WineRegion {
   description: string;     // full paragraph for the /wine-regions/[slug] page
   grapes: string[];        // key grape varieties
   mustTry: string[];       // iconic wines / producers to know
-  wineries?: string[];     // real wineries visited by the club
-  wineriesNote?: string;   // optional trailing note, e.g. "...and many more"
+  wineries?: { name: string; logo?: string; slug?: string }[];  // real wineries visited by the club
+  wineriesNote?: string;                         // optional trailing note, e.g. "...and many more"
 }
 
 export const WINE_REGIONS: WineRegion[] = [
@@ -27,7 +27,12 @@ export const WINE_REGIONS: WineRegion[] = [
       'Barolo is often called the King of Italian wines — a DOCG appellation in the Langhe hills of Piedmont producing some of the most age-worthy reds on earth. Made exclusively from Nebbiolo, the wines are characterised by high tannin, high acidity, and haunting aromas of dried roses, tar, cherry, and leather. The best crus — Cannubi, Brunate, Cerequio, Castiglione Falletto — can age for 30+ years. The zone is divided between traditionalist and modernist producers, creating a rich diversity of styles.',
     grapes: ['Nebbiolo'],
     mustTry: ['Barolo DOCG', 'Barolo Riserva', 'Single-vineyard Cru Barolo'],
-    wineries: ['Aldo Conterno', 'Clerico', 'Giovanni Rosso'],
+    wineries: [
+      { name: 'Aldo Conterno',   slug: 'aldo-conterno'   },
+      { name: 'Clerico',         slug: 'clerico'         },
+      { name: 'Giovanni Rosso',  slug: 'giovanni-rosso'  },
+      { name: 'Luciano Sandrone', logo: '/wineries/luciano-sandrone.avif', slug: 'luciano-sandrone' },
+    ],
   },
   {
     id: 2,
@@ -43,14 +48,21 @@ export const WINE_REGIONS: WineRegion[] = [
     grapes: ['Cabernet Sauvignon', 'Merlot', 'Cabernet Franc', 'Sémillon'],
     mustTry: ['Château Margaux', 'Pétrus', 'Château d\'Yquem', 'Lynch-Bages'],
     wineries: [
-      'Château Latour',
-      'Château Mouton Rothschild',
-      'Château Margaux',
-      'Château Mission Haut-Brion',
-      'Château Lynch-Bages',
-      'Château Léoville Poyferré',
-      'Château Pavie Macquin',
-      'Château Montrose',
+      { name: 'Château Latour',             logo: '/wineries/chateau-latour.webp',          slug: 'chateau-latour'            },
+      { name: 'Château Mouton Rothschild',  logo: '/wineries/chateau-mouton.jpg',            slug: 'chateau-mouton-rothschild' },
+      { name: 'Château Margaux',            logo: '/wineries/chateau-margaux.png',           slug: 'chateau-margaux'           },
+      { name: 'Château Mission Haut-Brion', logo: '/wineries/chateau-la-mission.webp',       slug: 'chateau-mission-haut-brion'},
+      { name: 'Château Lynch-Bages',        logo: '/wineries/lynch-bages.png',               slug: 'chateau-lynch-bages'       },
+      { name: 'Château Léoville Poyferré',  logo: '/wineries/leoville-poyferré.jpg',         slug: 'chateau-leoville-poyferre' },
+      { name: 'Château Pavie Macquin',      logo: '/wineries/chateau-pavie-macquin.png',      slug: 'chateau-pavie-macquin'     },
+      { name: 'Château Montrose',           logo: '/wineries/chateau-montrose.jpg',           slug: 'chateau-montrose'          },
+      { name: "Cos d'Estournel",            logo: "/wineries/cos-d'estournel.png",            slug: 'cos-destournel'            },
+      { name: 'Ducru-Beaucaillou',          logo: '/wineries/ducru-beaucaillou.webp',         slug: 'ducru-beaucaillou'         },
+      { name: 'Pontet-Canet',              logo: '/wineries/pontet-canet.jpeg',              slug: 'pontet-canet'              },
+      { name: 'Haut-Bailly',               logo: '/wineries/haut-bailly.jpeg',               slug: 'haut-bailly'               },
+      { name: 'Clos Fourtet',              logo: '/wineries/clos-fourtet.jpg',               slug: 'clos-fourtet'              },
+      { name: 'Dehours',                   logo: '/wineries/dehours.png',                    slug: 'dehours'                   },
+      { name: 'Domaine de Chevalier',      logo: '/wineries/domaine-de-chevalier.png',       slug: 'domaine-de-chevalier'      },
     ],
     wineriesNote: '...and many more',
   },
@@ -67,6 +79,9 @@ export const WINE_REGIONS: WineRegion[] = [
       'Champagne is the only region in the world legally entitled to produce Champagne. Located in northeastern France around Reims and Épernay, its vineyards sit on deep chalk subsoils that drain perfectly and reflect heat onto the vines. The méthode champenoise — secondary fermentation in bottle — creates the iconic bubbles. Blending across villages, vintages and grape varieties (Chardonnay, Pinot Noir, Pinot Meunier) is the art. Grandes Marques like Krug, Dom Pérignon, Salon and Cristal set the benchmark, while Grower Champagnes reveal terroir in an entirely new way.',
     grapes: ['Chardonnay', 'Pinot Noir', 'Pinot Meunier'],
     mustTry: ['Krug Grande Cuvée', 'Dom Pérignon', 'Salon Blanc de Blancs', 'Billecart-Salmon'],
+    wineries: [
+      { name: 'Taittinger', logo: '/wineries/taittinger.png', slug: 'taittinger' },
+    ],
   },
   {
     id: 4,
@@ -95,7 +110,10 @@ export const WINE_REGIONS: WineRegion[] = [
       'Barbaresco is Barolo\'s twin DOCG — both made from Nebbiolo in the Langhe hills of Piedmont, both world-class, both deeply Italian. Yet Barbaresco is often described as more feminine, more approachable in youth, with a silkier texture that comes from its lower altitude and sandier soils. The late Angelo Gaja transformed the appellation from the 1970s onwards, proving it could match Burgundy\'s finest. Key villages include Barbaresco, Treiso and Neive. Crus like Asili, Rabajà, Santo Stefano and Starderi produce wines of astonishing complexity.',
     grapes: ['Nebbiolo'],
     mustTry: ['Gaja Barbaresco', 'Produttori del Barbaresco', 'Bruno Giacosa Asili'],
-    wineries: ['Gaja', 'Pellissero'],
+    wineries: [
+      { name: 'Gaja',       logo: '/wineries/gaja.webp', slug: 'gaja'       },
+      { name: 'Pellissero',                              slug: 'pellissero' },
+    ],
   },
   {
     id: 6,
@@ -110,7 +128,13 @@ export const WINE_REGIONS: WineRegion[] = [
       'Franciacorta is the only Italian DOCG for méthode classique sparkling wine — produced, like Champagne, with secondary fermentation in the bottle. Located on the glacial moraine soils south of Lake Iseo in Lombardy, the zone was pioneered by Ca\' del Bosco and Bellavista in the 1970s. Today Franciacorta Satèn (blanc de blancs), Rosé and Riserva wines compete seriously with grower Champagnes. The unique combination of Alpine freshness, lake influence and mineral soils gives Franciacorta its distinctive identity.',
     grapes: ['Chardonnay', 'Pinot Nero', 'Pinot Bianco'],
     mustTry: ['Ca\' del Bosco Annamaria Clementi', 'Bellavista Teatro', 'Berlucchi'],
-    wineries: ['Monterossa', 'Ca\' del Bosco', 'Berlucchi', 'Barone Pizzini', 'Boccadoro'],
+    wineries: [
+      { name: 'Monterossa',    slug: 'monterossa'    },
+      { name: "Ca' del Bosco", slug: 'ca-del-bosco'  },
+      { name: 'Berlucchi',     slug: 'berlucchi'     },
+      { name: 'Barone Pizzini', slug: 'barone-pizzini' },
+      { name: 'Boccadoro',     slug: 'boccadoro'     },
+    ],
   },
   {
     id: 7,

@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft, MapPin } from 'lucide-react';
 import Navbar from '@/components/Navbar';
@@ -21,9 +22,9 @@ function BottleIcon() {
 }
 
 /* ── Real winery card ── */
-function WineryCard({ name, index }: { name: string; index: number }) {
-  return (
-    <div className="border border-[#e8d5d5] bg-white p-6 flex flex-col gap-3 hover:border-[#731515]/40 transition-colors duration-300 group">
+function WineryCard({ winery, index }: { winery: { name: string; logo?: string; slug?: string }; index: number }) {
+  const inner = (
+    <div className="border border-[#e8d5d5] bg-white p-6 flex flex-col gap-3 hover:border-[#731515]/40 transition-colors duration-300 group h-full">
       <div className="flex items-start justify-between gap-2">
         <div
           className="text-[2rem] font-bold leading-none text-[#731515]/12 tabular-nums"
@@ -36,17 +37,43 @@ function WineryCard({ name, index }: { name: string; index: number }) {
         </span>
       </div>
       <div className="w-5 h-px bg-[#731515]/25" />
-      <div className="flex items-center gap-2 text-[#731515]/60 group-hover:text-[#731515] transition-colors duration-300">
-        <BottleIcon />
+      <div className="relative w-full" style={{ height: '120px' }}>
+        {winery.logo ? (
+          <Image
+            src={winery.logo}
+            alt={winery.name}
+            fill
+            className="object-contain"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-[#731515]/60 group-hover:text-[#731515] transition-colors duration-300">
+            <BottleIcon />
+          </div>
+        )}
       </div>
       <div
-        className="text-sm font-medium text-[#1a0505] leading-snug"
+        className="text-sm font-medium text-[#1a0505] leading-snug group-hover:text-[#731515] transition-colors duration-300"
         style={{ fontFamily: 'var(--font-syne)' }}
       >
-        {name}
+        {winery.name}
       </div>
+      {winery.slug && (
+        <div className="text-[9px] tracking-[0.25em] text-[#7a4a4a]/50 group-hover:text-[#731515]/60 transition-colors duration-300 mt-auto pt-1">
+          VIEW PROFILE →
+        </div>
+      )}
     </div>
   );
+
+  if (winery.slug) {
+    return (
+      <Link href={`/wineries/${winery.slug}`} className="block">
+        {inner}
+      </Link>
+    );
+  }
+  return inner;
 }
 
 /* ── "And many more" trailing card ── */
@@ -196,8 +223,8 @@ export default async function WineRegionPage({
 
             {region.wineries && (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {region.wineries.map((name, i) => (
-                  <WineryCard key={name} name={name} index={i} />
+                {region.wineries.map((winery, i) => (
+                  <WineryCard key={winery.name} winery={winery} index={i} />
                 ))}
                 {region.wineriesNote && <MoreCard />}
               </div>
