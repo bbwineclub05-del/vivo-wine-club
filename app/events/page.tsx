@@ -116,17 +116,21 @@ export default function EventsPage() {
       <Navbar />
       <main className="min-h-screen pt-[115px]">
 
+        {/* ── Back link ── */}
+        <div className="max-w-5xl mx-auto px-6 lg:px-10 pt-6">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] text-[#7a4a4a] hover:text-[#731515] transition-colors duration-300 group"
+          >
+            <ArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform duration-300" />
+            BACK
+          </Link>
+        </div>
+
         {/* ── Hero header ── */}
         <section className="relative overflow-hidden py-20 md:py-28">
           <div className="fog-center" />
           <div className="max-w-5xl mx-auto px-6 lg:px-10">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] text-[#7a4a4a] hover:text-[#731515] transition-colors duration-300 mb-10 group"
-            >
-              <ArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform duration-300" />
-              BACK
-            </Link>
 
             <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-4">
               2026 CALENDAR

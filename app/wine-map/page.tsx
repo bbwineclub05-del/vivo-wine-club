@@ -114,19 +114,22 @@ export default function WineMapPage() {
       <Navbar />
       <main className="min-h-screen pt-[115px]">
 
+        {/* ── Back link ── */}
+        <div className="max-w-5xl mx-auto px-6 lg:px-10 pt-6">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] text-[#7a4a4a] hover:text-[#731515] transition-colors duration-300 group"
+          >
+            <ArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform duration-300" />
+            BACK
+          </Link>
+        </div>
+
         {/* ── HERO ── */}
         <section className="relative overflow-hidden py-20 md:py-28">
           <div className="fog-center" />
 
           <div className="max-w-5xl mx-auto px-6 lg:px-10">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] text-[#7a4a4a] hover:text-[#731515] transition-colors duration-300 mb-10 group"
-            >
-              <ArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform duration-300" />
-              BACK
-            </Link>
-
             <motion.div
               initial={{ opacity: reducedMotion ? 1 : 0, y: reducedMotion ? 0 : 24 }}
               animate={{ opacity: 1, y: 0 }}
@@ -367,9 +370,9 @@ export default function WineMapPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#e8d5d5]">
 
               {[
-                { value: '9',          label: 'Regions visited',  sub: 'Across France & Italy' },
-                { value: '20+',        label: 'Estates visited',  sub: 'And counting'           },
-                { value: 'FR · IT',    label: 'Countries',        sub: 'France and Italy'       },
+                { value: '10',             label: 'Regions visited',  sub: 'Across France, Italy & Portugal' },
+                { value: '20+',           label: 'Estates visited',  sub: 'And counting'                   },
+                { value: 'FR · IT · PT',  label: 'Countries',        sub: 'France, Italy and Portugal'     },
               ].map(({ value, label, sub }, i) => (
                 <motion.div
                   key={label}

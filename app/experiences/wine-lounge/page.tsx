@@ -43,7 +43,7 @@ export default function WineLoungeePage() {
           initial={{ opacity: 0, x: -16 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.7, delay: 0.3 }}
-          className="absolute top-8 left-8 z-10"
+          className="absolute top-[130px] left-8 z-10"
         >
           <Link
             href="/"

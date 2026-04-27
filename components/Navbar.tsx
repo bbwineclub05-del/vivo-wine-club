@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, User } from 'lucide-react';
+import { useAuth } from '@/lib/auth';
 
 const NAV_LINKS = [
   { href: '/events',      label: 'EVENTS',        page: true  },
@@ -59,6 +60,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const router = useRouter();
+  const { user } = useAuth();
 
   useEffect(() => {
     let lastRun = 0;
@@ -149,6 +151,14 @@ export default function Navbar() {
             </div>
             <div className="w-px h-4 bg-[#e8d5d5]" />
             <Link
+              href={user ? '/members' : '/login'}
+              className="flex items-center gap-1.5 text-[10px] tracking-[0.28em] text-[#6b3333] hover:text-[#731515] transition-colors duration-300 group whitespace-nowrap"
+            >
+              <User size={13} className="shrink-0" />
+              {user ? 'MY AREA' : 'SIGN IN'}
+            </Link>
+            <div className="w-px h-4 bg-[#e8d5d5]" />
+            <Link
               href="/membership"
               className="px-5 py-2 bg-[#731515] text-white text-[10px] tracking-[0.3em] hover:bg-[#aa4848] transition-colors duration-300 whitespace-nowrap"
             >
@@ -198,6 +208,14 @@ export default function Navbar() {
                   </button>
                 )
               )}
+              <Link
+                href={user ? '/members' : '/login'}
+                onClick={() => setMobileOpen(false)}
+                className="text-left text-[11px] tracking-[0.4em] text-[#6b3333] hover:text-[#731515] transition-colors flex items-center gap-2"
+              >
+                <User size={13} />
+                {user ? 'MY AREA' : 'SIGN IN'}
+              </Link>
               <div className="pt-4 border-t border-[#e8d5d5] flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   {SOCIALS.map(({ label, href, Icon }) => (

@@ -1,20 +1,21 @@
 'use client';
 
+import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Camera, Hash, Globe, Mail, MapPin, Phone } from 'lucide-react';
 
-const LINKS = {
+const LINKS: Record<string, { label: string; href: string; external?: boolean }[]> = {
   'CLUB': [
-    { label: 'About Us',    href: '#' },
-    { label: 'How It Works',href: '#' },
-    { label: 'Membership',  href: '#boutique' },
-    { label: 'FAQ',         href: '#' },
+    { label: 'About Us',    href: '/who-we-are'  },
+    { label: 'How It Works',href: '/membership'  },
+    { label: 'Membership',  href: '/membership'  },
+    { label: 'FAQ',         href: '#'            },
   ],
   'EXPERIENCES': [
-    { label: 'Events',          href: '#eventi' },
-    { label: 'Winery Tours',    href: '#eventi' },
-    { label: 'Masterclasses',   href: '#eventi' },
-    { label: 'Visited Wineries',href: '#cantine' },
+    { label: 'Events',           href: '/events'                   },
+    { label: 'Winery Tours',     href: '/experiences/winery-visits'},
+    { label: 'Masterclasses',    href: '#'                         },
+    { label: 'Visited Wineries', href: '/wine-map'                 },
   ],
   'LEGAL': [
     { label: 'Privacy Policy',      href: '#' },
@@ -25,9 +26,9 @@ const LINKS = {
 };
 
 const SOCIALS = [
-  { icon: Camera, label: 'Instagram', href: '#' },
-  { icon: Hash,   label: 'TikTok',    href: '#' },
-  { icon: Globe,  label: 'Website',   href: '#' },
+  { icon: Camera,   label: 'Instagram', href: 'https://www.instagram.com/vivo.wineclub/',                              external: true },
+  { icon: Hash,     label: 'TikTok',    href: '#',                                                                     external: false },
+  { icon: Globe,    label: 'LinkedIn',  href: 'https://www.linkedin.com/company/vivowineclub/?viewAsMember=true',      external: true },
 ];
 
 export default function Footer() {
@@ -84,13 +85,25 @@ export default function Footer() {
               <ul className="flex flex-col gap-3">
                 {links.map((link) => (
                   <li key={link.label}>
-                    <a
-                      href={link.href}
-                      className="text-sm text-[#7a4a4a] hover:text-[#1a0505] transition-colors duration-200"
-                      style={{ fontFamily: 'var(--font-nunito)' }}
-                    >
-                      {link.label}
-                    </a>
+                    {link.external ? (
+                      <a
+                        href={link.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-[#7a4a4a] hover:text-[#1a0505] transition-colors duration-200"
+                        style={{ fontFamily: 'var(--font-nunito)' }}
+                      >
+                        {link.label}
+                      </a>
+                    ) : (
+                      <Link
+                        href={link.href}
+                        className="text-sm text-[#7a4a4a] hover:text-[#1a0505] transition-colors duration-200"
+                        style={{ fontFamily: 'var(--font-nunito)' }}
+                      >
+                        {link.label}
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -136,6 +149,7 @@ export default function Footer() {
                 key={s.label}
                 href={s.href}
                 aria-label={s.label}
+                {...(s.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                 className="w-8 h-8 border border-[#e8d5d5] flex items-center justify-center text-[#7a4a4a] hover:border-[#731515]/50 hover:text-[#731515] transition-all duration-300"
               >
                 <s.icon size={14} />

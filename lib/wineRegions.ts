@@ -165,6 +165,24 @@ export const WINE_REGIONS: WineRegion[] = [
     mustTry: ['Sassicaia', 'Ornellaia', 'Masseto', 'Le Macchiole Messorio'],
   },
   {
+    id: 10,
+    slug: 'porto',
+    name: 'Porto',
+    country: 'Portugal',
+    lat: 41.15,
+    lng: -7.8,
+    shortDesc:
+      'The home of Port wine. The steep schist terraces of the Douro Valley produce some of the world\'s most complex fortified wines — and increasingly, exceptional dry reds.',
+    description:
+      'The Douro Valley is one of the oldest demarcated wine regions in the world, designated in 1756. Carved by the Douro river through layers of schist rock, its dramatic terraced vineyards are a UNESCO World Heritage Site. The region is best known for Port — a fortified wine produced from indigenous varieties including Touriga Nacional, Touriga Franca, Tinta Roriz and Tinto Cão — but in recent decades has gained international recognition for its powerful, age-worthy dry red wines. The combination of extreme heat, thin schist soils and century-old vines gives Douro wines an intensity and complexity that is entirely their own.',
+    grapes: ['Touriga Nacional', 'Touriga Franca', 'Tinta Roriz', 'Tinto Cão'],
+    mustTry: ['Quinta do Noval Nacional', "Graham's Vintage Port", 'Niepoort Charme', 'Ramos Pinto'],
+    wineries: [
+      { name: 'Quinta do Noval', slug: 'quinta-do-noval' },
+      { name: "Graham's",        slug: 'grahams'         },
+    ],
+  },
+  {
     id: 9,
     slug: 'montalcino',
     name: 'Montalcino',

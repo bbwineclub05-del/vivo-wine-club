@@ -12,25 +12,29 @@ const FOUNDERS = [
     name: 'Giacomo Gallo',
     city: 'Turin',
     role: 'Co-Founder',
-    image: '/giacomo.png',
+    image: '/giacomo2.png',
+    bio: 'Certified sommelier, raised in a family deeply rooted in wine culture. Spent a year in Bordeaux, visiting some of the most prestigious châteaux in the world. His passion was born at home, among the Langa vineyards. Currently studying at ESCP.',
   },
   {
     name: 'Filippo Lombardi',
     city: 'Brescia',
     role: 'Co-Founder',
-    image: '/filippo.jpeg',
+    image: '/filippo.png',
+    bio: 'Spent a year in Bordeaux, gaining hands-on experience in the wine world. Deeply connected to his home region through Franciacorta, one of Italy\'s finest sparkling wine territories. Currently studying at ESCP.',
   },
   {
     name: 'Cristiano Michelotti',
     city: 'Florence',
     role: 'Co-Founder & Creative Director',
     image: '/cristiano.png',
+    bio: 'A true Tuscan wine enthusiast, with a deep passion for the great wines of his region — from Chianti to Montalcino and Bolgheri. Currently studying at ESCP.',
   },
   {
     name: 'Riccardo Consalvo',
     city: 'Milan',
     role: 'Co-Founder',
-    image: '/riccardo.jpeg',
+    image: '/riccardo.png',
+    bio: 'A passionate lover of Piedmontese wines. The most recent addition to the team, but already a key contributor with a special impact. Currently studying at ESCP.',
   },
 ];
 
@@ -39,6 +43,7 @@ function FounderCard({
   city,
   role,
   image,
+  bio,
   index,
 }: (typeof FOUNDERS)[number] & { index: number }) {
   return (
@@ -51,13 +56,13 @@ function FounderCard({
       style={{ willChange: 'transform' }}
       className="group flex flex-col"
     >
-      {/* Photo — white bg, square, rounded */}
+      {/* Photo — neutral bg, square, rounded */}
       <div className="relative overflow-hidden rounded-2xl mb-5 aspect-square bg-white shadow-sm border border-[#e8d5d5]">
         <Image
           src={image}
           alt={name}
           fill
-          className="object-cover object-top transition-transform duration-700 group-hover:scale-105"
+          className="object-contain transition-transform duration-700 group-hover:scale-105"
           sizes="(max-width: 768px) 50vw, 25vw"
         />
       </div>
@@ -82,6 +87,12 @@ function FounderCard({
         >
           {role}
         </p>
+        <p
+          className="text-xs text-[#7a4a4a]/80 leading-relaxed mt-3"
+          style={{ fontFamily: 'var(--font-nunito)' }}
+        >
+          {bio}
+        </p>
       </div>
     </motion.div>
   );
@@ -93,19 +104,22 @@ export default function WhoWeArePage() {
       <Navbar />
       <main className="min-h-screen pt-[115px]">
 
+        {/* ── Back link ── */}
+        <div className="max-w-5xl mx-auto px-6 lg:px-10 pt-6">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] text-[#7a4a4a] hover:text-[#731515] transition-colors duration-300 group"
+          >
+            <ArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform duration-300" />
+            BACK
+          </Link>
+        </div>
+
         {/* ── HERO ── */}
         <section className="relative overflow-hidden py-20 md:py-28">
           <div className="fog-center" />
 
           <div className="max-w-5xl mx-auto px-6 lg:px-10">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] text-[#7a4a4a] hover:text-[#731515] transition-colors duration-300 mb-10 group"
-            >
-              <ArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform duration-300" />
-              BACK
-            </Link>
-
             <motion.div
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
@@ -221,7 +235,7 @@ export default function WhoWeArePage() {
               </h2>
             </motion.div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 lg:gap-10">
               {FOUNDERS.map((founder, i) => (
                 <FounderCard key={founder.name} {...founder} index={i} />
               ))}

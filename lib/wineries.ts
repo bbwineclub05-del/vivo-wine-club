@@ -454,6 +454,38 @@ export const WINERIES: Winery[] = [
     ],
   },
 
+
+  /* ── PORTO ── */
+
+  {
+    slug: 'quinta-do-noval',
+    name: 'Quinta do Noval',
+    region: 'Porto',
+    regionSlug: 'porto',
+    country: 'Portugal',
+    classification: 'Douro DOC · Pinhão',
+    shortDesc: 'One of the Douro\'s most iconic estates, famous above all for Nacional — a Vintage Port from ungrafted pre-phylloxera vines that is among the rarest and most sought-after wines on earth.',
+    description: [
+      "Quinta do Noval sits high above the Douro river near Pinhão, on schist terraces that have been producing wine since at least the seventeenth century. Acquired by AXA Millésimes — the same group behind Pichon Baron and Suduiraut — in 1993, the estate was painstakingly restored and now stands as one of the reference points for both vintage Port and dry Douro reds.",
+      "The crown jewel is Nacional: a tiny parcel of ungrafted pre-phylloxera vines that survived the late-nineteenth-century devastation that wiped out most of Europe's vineyards. Nacional is produced only in exceptional years and in tiny quantities — rarely more than 250 cases. It is widely considered one of the most complex and age-worthy fortified wines in the world, capable of lasting a century.",
+      "Beyond Nacional, Quinta do Noval produces a full range of Vintage Ports — Silval, Colheita, LBV — and increasingly impressive dry reds from old Touriga Nacional and Tinta Roriz vines. The combination of extreme terroir, historic vineyards and meticulous winemaking makes Noval an essential visit for any serious wine lover in the Douro.",
+    ],
+  },
+  {
+    slug: 'grahams',
+    name: "Graham's",
+    region: 'Porto',
+    regionSlug: 'porto',
+    country: 'Portugal',
+    classification: 'Douro DOC · Vila Nova de Gaia',
+    shortDesc: 'One of the great British Port houses, founded in 1820. Graham\'s Vintage Port — produced only in the finest years — is among the most consistently celebrated in the world.',
+    description: [
+      "Graham's was founded in 1820 by William Graham, a Scottish merchant who accepted a consignment of Port in payment of a debt — and, so the story goes, was so captivated by the wine that he built one of the great Port houses around it. Today owned by the Symington family, who also own Dow's, Warre's and Cockburn's, Graham's combines centuries of tradition with rigorous modern winemaking.",
+      "The estate's most prized holding is Quinta dos Malvedos, a steeply terraced estate in the upper Douro planted with Touriga Nacional, Touriga Franca and Tinta Roriz. Malvedos provides the backbone of Graham's finest Vintage Ports — wines of extraordinary depth, dark fruit concentration and structure that require decades to fully open.",
+      "Graham's Vintage Port is declared only in exceptional years and consistently receives some of the highest scores of any Port house. Beyond Vintage, the house produces outstanding 20 Year and 30 Year Tawnies, a celebrated LBV, and — in recent years — impressive dry Douro reds that showcase the valley's potential beyond fortified wine.",
+    ],
+  },
+
 ];
 
 export function getWineryBySlug(slug: string): Winery | undefined {

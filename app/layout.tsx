@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Syne, Nunito } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/contexts/CartContext";
+import { AuthProvider } from "@/lib/auth";
 
 const syne = Syne({
   subsets: ["latin"],
@@ -34,7 +35,9 @@ export default function RootLayout({
       className={`${syne.variable} ${nunito.variable}`}
     >
       <body className="antialiased">
-        <CartProvider>{children}</CartProvider>
+        <AuthProvider>
+          <CartProvider>{children}</CartProvider>
+        </AuthProvider>
       </body>
     </html>
   );
