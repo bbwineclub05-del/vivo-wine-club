@@ -1,18 +1,8 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
-
-// Fixed at module level — never recreated on re-render
-const PARTICLES = Array.from({ length: 8 }, (_, i) => ({
-  id: i,
-  left: `${5 + (i / 8) * 90}%`,
-  delay: i * 0.75,
-  duration: 8 + (i % 3) * 2,
-  size: i % 3 === 0 ? 2 : 1,
-}));
 
 /* ─── Line-art landmark SVGs ─── */
 
@@ -91,95 +81,31 @@ const CITIES = [
 ];
 
 export default function HeroSection() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const reducedMotion = useReducedMotion();
-
-  useEffect(() => {
-    // Skip canvas animation when user prefers reduced motion
-    if (reducedMotion) return;
-
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    let raf: number;
-    let t = 0;
-    let lastFrame = 0;
-    const INTERVAL = 1000 / 20; // throttle to 20 fps
-
-    const resize = () => {
-      canvas.width  = Math.round(canvas.offsetWidth  / 2);
-      canvas.height = Math.round(canvas.offsetHeight / 2);
-    };
-    resize();
-    window.addEventListener('resize', resize, { passive: true });
-
-    const BLOBS = [
-      { sx: 0.7, sy: 0.4, ax: 0.08, ay: 0.10, fx: 0.7, fy: 0.5, r: 0.38, color: '115,21,21' },
-      { sx: 0.5, sy: 0.6, ax: 0.10, ay: 0.08, fx: 0.6, fy: 0.8, r: 0.25, color: '201,168,76' },
-    ];
-
-    const draw = (ts: number) => {
-      raf = requestAnimationFrame(draw);
-      if (ts - lastFrame < INTERVAL) return;
-      lastFrame = ts;
-      t += 0.004;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      BLOBS.forEach((b) => {
-        const x = b.sx + Math.sin(t * b.fx) * b.ax;
-        const y = b.sy + Math.cos(t * b.fy) * b.ay;
-        const grd = ctx.createRadialGradient(
-          x * canvas.width, y * canvas.height, 0,
-          x * canvas.width, y * canvas.height, b.r * canvas.width
-        );
-        grd.addColorStop(0, `rgba(${b.color},0.20)`);
-        grd.addColorStop(1, `rgba(${b.color},0)`);
-        ctx.fillStyle = grd;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-      });
-    };
-    raf = requestAnimationFrame(draw);
-
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener('resize', resize);
-    };
-  }, [reducedMotion]);
 
   // Durations collapse to 0 for users who prefer reduced motion
   const d = (n: number) => (reducedMotion ? 0 : n);
 
   return (
     <section className="relative min-h-screen min-h-[100svh] flex flex-col items-center justify-center overflow-hidden">
-      <div className="fog-center" />
 
-      {/* Canvas blobs — hidden when reduced motion */}
-      {!reducedMotion && <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />}
+      {/* Video background */}
+      <video
+        autoPlay
+        muted
+        loop
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover"
+        style={{ zIndex: 0 }}
+      >
+        <source src="/prova-sito.mp4" type="video/mp4" />
+      </video>
 
-      {/* Subtle grid */}
-      <div
-        className="absolute inset-0 opacity-[0.04]"
-        style={{
-          backgroundImage:
-            'linear-gradient(rgba(115,21,21,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(115,21,21,0.4) 1px, transparent 1px)',
-          backgroundSize: '90px 90px',
-        }}
-      />
-
-      {/* Floating particles — skip entirely for reduced motion */}
-      {!reducedMotion && PARTICLES.map((p) => (
-        <motion.div
-          key={p.id}
-          className="absolute rounded-full bg-[#731515]"
-          style={{ left: p.left, width: p.size, height: p.size, willChange: 'transform, opacity' }}
-          animate={{ y: ['100vh', '-5vh'], opacity: [0, 0.3, 0.3, 0] }}
-          transition={{ duration: p.duration, delay: p.delay, repeat: Infinity, ease: 'linear' }}
-        />
-      ))}
+      {/* Bordeaux overlay */}
+      <div className="absolute inset-0 bg-[#1a0505]/50" style={{ zIndex: 1 }} />
 
       {/* ── Content ── */}
-      <div className="relative z-10 text-center px-6 max-w-5xl mx-auto w-full">
+      <div className="relative z-[2] text-center px-6 max-w-5xl mx-auto w-full">
 
         <h1 className="mb-10">
           <div className="overflow-hidden">
@@ -189,7 +115,7 @@ export default function HeroSection() {
               transition={{ duration: d(1.1), delay: d(0.5), ease: [0.16, 1, 0.3, 1] }}
             >
               <span
-                className="block text-[clamp(2.4rem,6.5vw,5.8rem)] font-light tracking-[-0.01em] text-[#1a0505] leading-tight"
+                className="block text-[clamp(2.4rem,6.5vw,5.8rem)] font-light tracking-[-0.01em] text-white leading-tight"
                 style={{ fontFamily: 'var(--font-syne)' }}
               >
                 The art of
@@ -204,10 +130,10 @@ export default function HeroSection() {
               transition={{ duration: d(1.1), delay: d(0.68), ease: [0.16, 1, 0.3, 1] }}
             >
               <span
-                className="block text-[clamp(2.4rem,6.5vw,5.8rem)] font-light tracking-[-0.01em] text-[#1a0505] leading-tight"
+                className="block text-[clamp(2.4rem,6.5vw,5.8rem)] font-light tracking-[-0.01em] text-white leading-tight"
                 style={{ fontFamily: 'var(--font-syne)' }}
               >
-                <em className="not-italic" style={{ fontStyle: 'italic', color: '#731515' }}>
+                <em className="not-italic" style={{ fontStyle: 'italic', color: '#e8b4b4' }}>
                   fine wine
                 </em>
                 {', shared.'}
@@ -226,12 +152,12 @@ export default function HeroSection() {
           {CITIES.map((city, i) => (
             <div key={city.name} className="flex items-start">
               <div className="flex flex-col items-center gap-2 px-3 sm:px-5 md:px-7">
-                <span className="text-[7px] sm:text-[9px] tracking-[0.3em] sm:tracking-[0.45em] text-[#6b3333] font-light">{city.name}</span>
-                <city.Icon className="w-4 h-7 sm:w-5 sm:h-8 md:w-6 md:h-9 text-[#6b3333]/50" />
+                <span className="text-[7px] sm:text-[9px] tracking-[0.3em] sm:tracking-[0.45em] text-white/70 font-light">{city.name}</span>
+                <city.Icon className="w-4 h-7 sm:w-5 sm:h-8 md:w-6 md:h-9 text-white/40" />
               </div>
               {i < CITIES.length - 1 && (
                 <div className="flex flex-col items-center self-start pt-[7px]">
-                  <span className="text-[#731515]/30 text-xs leading-none select-none">✦</span>
+                  <span className="text-white/25 text-xs leading-none select-none">✦</span>
                 </div>
               )}
             </div>
@@ -243,7 +169,7 @@ export default function HeroSection() {
           initial={{ scaleX: reducedMotion ? 1 : 0 }}
           animate={{ scaleX: 1 }}
           transition={{ duration: d(1), delay: d(1.2), ease: [0.16, 1, 0.3, 1] }}
-          className="w-32 h-px bg-gradient-to-r from-transparent via-[#731515]/40 to-transparent mx-auto mb-8"
+          className="w-32 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent mx-auto mb-8"
         />
 
         {/* Subtitle */}
@@ -251,7 +177,7 @@ export default function HeroSection() {
           initial={{ opacity: reducedMotion ? 1 : 0, y: reducedMotion ? 0 : 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: d(0.9), delay: d(1.4) }}
-          className="text-[clamp(1rem,2.2vw,1.25rem)] text-[#7a4a4a] font-light tracking-wide max-w-2xl mx-auto leading-relaxed"
+          className="text-[clamp(1rem,2.2vw,1.25rem)] text-white/70 font-light tracking-wide max-w-2xl mx-auto leading-relaxed"
           style={{ fontFamily: 'var(--font-nunito)' }}
         >
           Where young people discover wine — from intimate cellar visits and guided
@@ -282,15 +208,15 @@ export default function HeroSection() {
         transition={{ duration: d(1), delay: d(2.2) }}
         className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
       >
-        <span className="text-[9px] tracking-[0.4em] text-[#6b3333]">SCROLL</span>
+        <span className="text-[9px] tracking-[0.4em] text-white/60">SCROLL</span>
         {reducedMotion ? (
-          <ChevronDown size={18} className="text-[#731515]" />
+          <ChevronDown size={18} className="text-white/60" />
         ) : (
           <motion.div
             animate={{ y: [0, 7, 0] }}
             transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
           >
-            <ChevronDown size={18} className="text-[#731515]" />
+            <ChevronDown size={18} className="text-white/60" />
           </motion.div>
         )}
       </motion.div>

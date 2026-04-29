@@ -34,6 +34,26 @@ export default function RootLayout({
       lang="en"
       className={`${syne.variable} ${nunito.variable}`}
     >
+      <head>
+        {/* Preload desktop hero video — only fetched on wider screens */}
+        <link
+          rel="preload"
+          as="video"
+          href="/video-desktop.mp4"
+          type="video/mp4"
+          // @ts-expect-error — media is a valid preload attribute
+          media="(min-width: 769px)"
+        />
+        {/* Preload mobile hero video */}
+        <link
+          rel="preload"
+          as="video"
+          href="/video-mobile.mp4"
+          type="video/mp4"
+          // @ts-expect-error — media is a valid preload attribute
+          media="(max-width: 768px)"
+        />
+      </head>
       <body className="antialiased">
         <AuthProvider>
           <CartProvider>{children}</CartProvider>

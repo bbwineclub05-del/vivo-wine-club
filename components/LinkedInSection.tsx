@@ -89,6 +89,7 @@ export default function LinkedInSection() {
                   src={post.image}
                   alt={post.title}
                   fill
+                  loading="lazy"
                   className="object-contain p-4"
                   sizes="(max-width: 768px) 100vw, 50vw"
                 />
