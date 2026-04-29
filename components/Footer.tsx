@@ -1,170 +1,221 @@
 'use client';
 
 import Link from 'next/link';
-import { motion, useReducedMotion } from 'framer-motion';
-import { Camera, Hash, Globe, Mail, MapPin, Phone } from 'lucide-react';
 
-const LINKS: Record<string, { label: string; href: string; external?: boolean }[]> = {
-  'CLUB': [
-    { label: 'About Us',    href: '/who-we-are'  },
-    { label: 'How It Works',href: '/membership'  },
-    { label: 'Membership',  href: '/membership'  },
-    { label: 'FAQ',         href: '/faq'         },
-  ],
-  'EXPERIENCES': [
-    { label: 'Events',           href: '/events'                   },
-    { label: 'Winery Tours',     href: '/experiences/winery-visits'},
-    { label: 'Masterclasses',    href: '#'                         },
-    { label: 'Visited Wineries', href: '/wine-map'                 },
-  ],
-  'LEGAL': [
-    { label: 'Privacy Policy',      href: '#' },
-    { label: 'Terms of Service',    href: '#' },
-    { label: 'Cookie Policy',       href: '#' },
-    { label: 'Right of Withdrawal', href: '#' },
-  ],
-};
+/* ── Social icon SVGs ── */
+function InstagramIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+      <circle cx="12" cy="12" r="4" />
+      <circle cx="17.5" cy="6.5" r="0.8" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function LinkedInIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M4.98 3.5A2.49 2.49 0 0 0 2.5 5.99C2.5 7.37 3.6 8.49 4.98 8.49a2.49 2.49 0 0 0 0-4.99ZM2.76 10.2h4.44V21H2.76V10.2ZM9.35 10.2h4.25v1.49h.06c.59-1.12 2.04-2.3 4.2-2.3 4.49 0 5.32 2.96 5.32 6.8V21h-4.43v-4.27c0-1.02-.02-2.33-1.42-2.33-1.43 0-1.64 1.11-1.64 2.26V21H9.35V10.2Z" />
+    </svg>
+  );
+}
+
+function TikTokIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.76a4.85 4.85 0 0 1-1.01-.07Z" />
+    </svg>
+  );
+}
+
+function MailIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="4" width="20" height="16" rx="2" />
+      <path d="m2 7 10 7 10-7" />
+    </svg>
+  );
+}
+
+const NAV_LINKS = [
+  { label: 'Events',         href: '/events'        },
+  { label: 'Wine Map',       href: '/wine-map'       },
+  { label: 'Wear the Club',  href: '/wear-the-club'  },
+  { label: 'Who We Are',     href: '/who-we-are'     },
+  { label: 'Collaborate',    href: '/collaborate'    },
+  { label: 'FAQ',            href: '/faq'            },
+];
+
+const CONTACTS = [
+  {
+    Icon: InstagramIcon,
+    label: 'INSTAGRAM',
+    value: '@vivo.wineclub',
+    href: 'https://www.instagram.com/vivo.wineclub/',
+  },
+  {
+    Icon: LinkedInIcon,
+    label: 'LINKEDIN',
+    value: 'Vivo Wine Club',
+    href: 'https://www.linkedin.com/company/vivowineclub/?viewAsMember=true',
+  },
+  {
+    Icon: MailIcon,
+    label: 'EMAIL',
+    value: 'info@vivowineclub.com',
+    href: 'mailto:info@vivowineclub.com',
+  },
+];
 
 const SOCIALS = [
-  { icon: Camera,   label: 'Instagram', href: 'https://www.instagram.com/vivo.wineclub/',                              external: true },
-  { icon: Hash,     label: 'TikTok',    href: '#',                                                                     external: false },
-  { icon: Globe,    label: 'LinkedIn',  href: 'https://www.linkedin.com/company/vivowineclub/?viewAsMember=true',      external: true },
+  { Icon: InstagramIcon, label: 'Instagram', href: 'https://www.instagram.com/vivo.wineclub/' },
+  { Icon: LinkedInIcon,  label: 'LinkedIn',  href: 'https://www.linkedin.com/company/vivowineclub/?viewAsMember=true' },
+  { Icon: TikTokIcon,    label: 'TikTok',    href: '#' },
+];
+
+const LEGAL = [
+  { label: 'Privacy Policy',   href: '#' },
+  { label: 'Terms of Service', href: '#' },
+  { label: 'Cookie Policy',    href: '#' },
 ];
 
 export default function Footer() {
-  const reducedMotion = useReducedMotion();
-  const d = (n: number) => (reducedMotion ? 0 : n);
-
   return (
-    <footer className="bg-[#F5E6E6] pt-20 pb-8 relative overflow-hidden">
-      <div className="fog-left" style={{ top: '0%', height: '100%', opacity: 0.7 }} />
-      <div className="max-w-7xl mx-auto px-6 lg:px-10">
+    <footer>
 
-        {/* Top section */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 mb-16">
+      {/* ── TOP: Get in Touch ── */}
+      <div className="bg-[#731515] px-6 lg:px-16 py-20">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
 
-          {/* Brand */}
-          <div className="lg:col-span-2">
-            <motion.div
-              initial={{ opacity: reducedMotion ? 1 : 0, y: reducedMotion ? 0 : 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: d(0.7) }}
-            >
-              <div className="mb-6">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/logo.svg"
-                  alt="Vivo Wine Club"
-                  width={113}
-                  height={64}
-                  className="w-auto object-contain"
-                  style={{ height: 64, imageRendering: '-webkit-optimize-contrast' }}
-                />
-              </div>
-              <p
-                className="text-[#7a4a4a] text-base leading-relaxed mb-8 max-w-xs font-light italic"
-                style={{ fontFamily: 'var(--font-nunito)' }}
-              >
-                The exclusive club for wine lovers. Exceptional wine experiences, legendary wineries and a community of true enthusiasts.
-              </p>
-              <div className="flex flex-col gap-3 text-xs text-[#7a4a4a]">
-                <a href="mailto:info@vivowineclub.it" className="flex items-center gap-2 hover:text-[#731515] transition-colors">
-                  <Mail size={13} className="text-[#731515]" />
-                  info@vivowineclub.it
-                </a>
-                <a href="tel:+390212345678" className="flex items-center gap-2 hover:text-[#731515] transition-colors">
-                  <Phone size={13} className="text-[#731515]" />
-                  +39 02 1234 5678
-                </a>
-                <div className="flex items-start gap-2">
-                  <MapPin size={13} className="text-[#731515] mt-0.5 shrink-0" />
-                  Via Montenapoleone 8, Milano
-                </div>
-              </div>
-            </motion.div>
-          </div>
-
-          {/* Link columns — no motion wrappers, they're below the fold anyway */}
-          {Object.entries(LINKS).map(([title, links]) => (
-            <div key={title}>
-              <h4 className="text-[9px] tracking-[0.5em] text-[#731515] mb-5">{title}</h4>
-              <ul className="flex flex-col gap-3">
-                {links.map((link) => (
-                  <li key={link.label}>
-                    {link.external ? (
-                      <a
-                        href={link.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-[#7a4a4a] hover:text-[#1a0505] transition-colors duration-200"
-                        style={{ fontFamily: 'var(--font-nunito)' }}
-                      >
-                        {link.label}
-                      </a>
-                    ) : (
-                      <Link
-                        href={link.href}
-                        className="text-sm text-[#7a4a4a] hover:text-[#1a0505] transition-colors duration-200"
-                        style={{ fontFamily: 'var(--font-nunito)' }}
-                      >
-                        {link.label}
-                      </Link>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-
-        {/* Newsletter */}
-        <motion.div
-          initial={{ opacity: reducedMotion ? 1 : 0, y: reducedMotion ? 0 : 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: d(0.7) }}
-          className="glass-card p-8 mb-16 flex flex-col md:flex-row items-start md:items-center gap-6 justify-between"
-        >
+          {/* Left */}
           <div>
-            <h4 className="text-[9px] tracking-[0.5em] text-[#731515] mb-2">NEWSLETTER</h4>
-            <p className="text-lg text-[#1a0505] font-light italic" style={{ fontFamily: 'var(--font-nunito)' }}>
-              Be the first to hear about exclusive events and curated selections
+            <div className="text-[10px] tracking-[0.5em] text-white/50 mb-5">GET IN TOUCH</div>
+            <h2
+              className="text-[clamp(2.4rem,5vw,4rem)] font-light text-white leading-none mb-6"
+              style={{ fontFamily: 'var(--font-syne)' }}
+            >
+              Contact Us
+            </h2>
+            <div className="w-12 h-px bg-white/25 mb-6" />
+            <p
+              className="text-sm text-white/65 font-light leading-relaxed max-w-sm"
+              style={{ fontFamily: 'var(--font-nunito)' }}
+            >
+              Interested in joining, partnering, or simply learning more about what we do?
+              Reach out through any of the channels below.
             </p>
           </div>
-          <div className="flex gap-0 w-full md:w-auto md:min-w-[380px]">
-            <input
-              type="email"
-              placeholder="Your email"
-              className="flex-1 bg-white border border-[#e8d5d5] text-[#1a0505] px-5 py-3.5 text-sm placeholder:text-[#7a4a4a]/50 focus:outline-none focus:border-[#731515]/50 transition-colors"
-              style={{ fontFamily: 'var(--font-nunito)' }}
-            />
-            <button className="px-6 py-3.5 bg-[#731515] text-white text-[10px] tracking-[0.3em] hover:bg-[#aa4848] transition-colors whitespace-nowrap">
-              SUBSCRIBE
-            </button>
-          </div>
-        </motion.div>
 
-        {/* Bottom */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-8">
-          <p className="text-xs text-[#7a4a4a]/60">
-            © {new Date().getFullYear()} Vivo Wine Club S.r.l. · All rights reserved · VAT 12345678901
-          </p>
-          <div className="flex items-center gap-4">
-            {SOCIALS.map((s) => (
+          {/* Right: contact rows */}
+          <div className="flex flex-col divide-y divide-white/10">
+            {CONTACTS.map(({ Icon, label, value, href }) => (
               <a
-                key={s.label}
-                href={s.href}
-                aria-label={s.label}
-                {...(s.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                className="w-8 h-8 border border-[#e8d5d5] flex items-center justify-center text-[#7a4a4a] hover:border-[#731515]/50 hover:text-[#731515] transition-all duration-300"
+                key={label}
+                href={href}
+                target={href.startsWith('http') ? '_blank' : undefined}
+                rel={href.startsWith('http') ? 'noopener noreferrer' : undefined}
+                className="group flex items-center gap-5 py-6 hover:pl-2 transition-all duration-300"
               >
-                <s.icon size={14} />
+                <span className="w-9 h-9 border border-white/20 flex items-center justify-center text-white/60 group-hover:border-white/50 group-hover:text-white transition-all duration-300 shrink-0">
+                  <Icon />
+                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[9px] tracking-[0.4em] text-white/45 mb-0.5">{label}</div>
+                  <div
+                    className="text-sm text-white/80 group-hover:text-white transition-colors duration-300"
+                    style={{ fontFamily: 'var(--font-nunito)' }}
+                  >
+                    {value}
+                  </div>
+                </div>
+                <span className="text-white/25 group-hover:text-white/60 transition-colors duration-300 text-lg">→</span>
               </a>
             ))}
           </div>
+
         </div>
       </div>
+
+      {/* ── BOTTOM ── */}
+      <div className="bg-[#5b1a14] px-6 lg:px-16 pt-12 pb-6">
+        <div className="max-w-7xl mx-auto">
+
+          {/* Main row: logo | nav | socials */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 items-start pb-10 border-b border-white/10">
+
+            {/* Logo + name */}
+            <Link href="/" className="flex items-center group">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/logo.svg"
+                alt="Vivo Wine Club"
+                className="h-14 w-auto object-contain"
+                style={{ imageRendering: '-webkit-optimize-contrast' }}
+              />
+              <span
+                className="text-base font-light tracking-[0.06em] text-white/80 group-hover:text-white transition-colors duration-300"
+                style={{ fontFamily: 'var(--font-syne)' }}
+              >
+                Vivo Wine Club
+              </span>
+            </Link>
+
+            {/* Nav links */}
+            <nav className="flex flex-col gap-3">
+              {NAV_LINKS.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="text-[11px] tracking-[0.25em] text-white/55 hover:text-white transition-colors duration-200"
+                  style={{ fontFamily: 'var(--font-nunito)' }}
+                >
+                  {link.label.toUpperCase()}
+                </Link>
+              ))}
+            </nav>
+
+            {/* Socials */}
+            <div className="flex flex-col gap-4 md:items-end">
+              <div className="text-[9px] tracking-[0.4em] text-white/35 mb-1">FOLLOW US</div>
+              <div className="flex items-center gap-3">
+                {SOCIALS.map(({ Icon, label, href }) => (
+                  <a
+                    key={label}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={label}
+                    className="w-9 h-9 border border-white/20 flex items-center justify-center text-white/55 hover:border-white/50 hover:text-white transition-all duration-300"
+                  >
+                    <Icon />
+                  </a>
+                ))}
+              </div>
+            </div>
+
+          </div>
+
+          {/* Bottom bar */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-6 text-[10px] text-white/30">
+            <span style={{ fontFamily: 'var(--font-nunito)' }}>
+              © {new Date().getFullYear()} Vivo Wine Club S.r.l. · All rights reserved · VAT 12345678901
+            </span>
+            <div className="flex items-center gap-4 flex-wrap justify-center">
+              <span className="text-white/25">info@vivowineclub.com</span>
+              <span className="text-white/15">|</span>
+              {LEGAL.map((l, i) => (
+                <span key={l.label} className="flex items-center gap-4">
+                  <Link href={l.href} className="hover:text-white/60 transition-colors duration-200">{l.label}</Link>
+                  {i < LEGAL.length - 1 && <span className="text-white/15">|</span>}
+                </span>
+              ))}
+            </div>
+          </div>
+
+        </div>
+      </div>
+
     </footer>
   );
 }
