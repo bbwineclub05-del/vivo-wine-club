@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 
 export default function LoginPage() {
@@ -17,7 +18,6 @@ export default function LoginPage() {
   const [error, setError]       = useState('');
   const [loading, setLoading]   = useState(false);
 
-  // Redirect if already logged in
   useEffect(() => {
     if (user) router.replace('/members');
   }, [user, router]);
@@ -26,7 +26,6 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
     setLoading(true);
-    // Simulate a brief network delay
     await new Promise((r) => setTimeout(r, 600));
     const ok = login(email, password);
     if (ok) {
@@ -38,63 +37,76 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fdf6f6] flex flex-col">
+    <div className="min-h-screen flex">
 
-      {/* Top bar */}
-      <div className="px-8 pt-8">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] text-[#7a4a4a] hover:text-[#731515] transition-colors duration-300 group"
-        >
-          <ArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform duration-300" />
-          BACK TO SITE
-        </Link>
+      {/* ── Left column: image ── */}
+      <div className="hidden lg:block lg:w-1/2 relative">
+        <Image
+          src="/tavolo.jpg"
+          alt="Vivo Wine Club"
+          fill
+          className="object-cover"
+          priority
+          sizes="50vw"
+        />
+        <div className="absolute inset-0 bg-[#731515]/60" />
+        {/* Logo watermark bottom-left */}
+        <div className="absolute bottom-10 left-10 z-10">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.svg" alt="Vivo Wine Club" className="h-14 w-auto object-contain opacity-80" style={{ imageRendering: '-webkit-optimize-contrast' }} />
+        </div>
       </div>
 
-      {/* Centered card */}
-      <div className="flex-1 flex items-center justify-center px-6 py-16">
-        <motion.div
-          initial={{ opacity: 0, y: 28 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full max-w-md"
-        >
-          {/* Logo */}
-          <div className="flex justify-center mb-10">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.svg" alt="Vivo Wine Club" className="h-20 w-auto object-contain" />
-          </div>
+      {/* ── Right column: form ── */}
+      <div className="w-full lg:w-1/2 flex flex-col bg-[#fdf6f6]">
 
-          {/* Header */}
-          <div className="text-center mb-10">
-            <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-3">MEMBERS AREA</div>
-            <h1
-              className="text-3xl font-light text-[#1a0505] mb-3 leading-tight"
-              style={{ fontFamily: 'var(--font-syne)' }}
-            >
-              Welcome back.
-            </h1>
-            <p
-              className="text-sm text-[#7a4a4a] font-light italic"
-              style={{ fontFamily: 'var(--font-nunito)' }}
-            >
-              Access your exclusive benefits and upcoming events.
-            </p>
-          </div>
+        {/* Back link */}
+        <div className="px-8 pt-8 shrink-0">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] text-[#7a4a4a] hover:text-[#731515] transition-colors duration-300 group"
+          >
+            <ArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform duration-300" />
+            BACK TO HOMEPAGE
+          </Link>
+        </div>
 
-          {/* Card */}
-          <div className="bg-white border border-[#e8d5d5] p-8 shadow-sm">
+        {/* Centered form */}
+        <div className="flex-1 flex items-center justify-center px-8 py-12">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="w-full max-w-sm"
+          >
+            {/* Logo — mobile only */}
+            <div className="flex justify-center mb-10 lg:hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.svg" alt="Vivo Wine Club" className="h-16 w-auto object-contain" style={{ imageRendering: '-webkit-optimize-contrast' }} />
+            </div>
 
+            {/* Header */}
+            <div className="mb-10">
+              <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-3">MEMBERS AREA</div>
+              <h1
+                className="text-3xl font-light text-[#1a0505] mb-2 leading-tight"
+                style={{ fontFamily: 'var(--font-syne)' }}
+              >
+                Welcome back.
+              </h1>
+              <p
+                className="text-sm text-[#7a4a4a] font-light italic"
+                style={{ fontFamily: 'var(--font-nunito)' }}
+              >
+                Sign in to access exclusive benefits.
+              </p>
+            </div>
+
+            {/* Form */}
             <form onSubmit={handleSubmit} className="flex flex-col gap-5">
 
-              {/* Email */}
               <div className="flex flex-col gap-1.5">
-                <label
-                  htmlFor="email"
-                  className="text-[10px] tracking-[0.3em] text-[#731515]"
-                >
-                  EMAIL
-                </label>
+                <label htmlFor="email" className="text-[10px] tracking-[0.3em] text-[#731515]">EMAIL</label>
                 <input
                   id="email"
                   type="email"
@@ -103,19 +115,13 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your@email.com"
-                  className="w-full bg-[#fdf6f6] border border-[#e8d5d5] text-[#1a0505] px-4 py-3 text-sm placeholder:text-[#7a4a4a]/40 focus:outline-none focus:border-[#731515]/50 transition-colors duration-200"
+                  className="w-full bg-white border border-[#e8d5d5] text-[#1a0505] px-4 py-3 text-sm placeholder:text-[#7a4a4a]/40 focus:outline-none focus:border-[#731515]/50 transition-colors duration-200"
                   style={{ fontFamily: 'var(--font-nunito)' }}
                 />
               </div>
 
-              {/* Password */}
               <div className="flex flex-col gap-1.5">
-                <label
-                  htmlFor="password"
-                  className="text-[10px] tracking-[0.3em] text-[#731515]"
-                >
-                  PASSWORD
-                </label>
+                <label htmlFor="password" className="text-[10px] tracking-[0.3em] text-[#731515]">PASSWORD</label>
                 <div className="relative">
                   <input
                     id="password"
@@ -125,7 +131,7 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full bg-[#fdf6f6] border border-[#e8d5d5] text-[#1a0505] px-4 py-3 pr-11 text-sm placeholder:text-[#7a4a4a]/40 focus:outline-none focus:border-[#731515]/50 transition-colors duration-200"
+                    className="w-full bg-white border border-[#e8d5d5] text-[#1a0505] px-4 py-3 pr-11 text-sm placeholder:text-[#7a4a4a]/40 focus:outline-none focus:border-[#731515]/50 transition-colors duration-200"
                     style={{ fontFamily: 'var(--font-nunito)' }}
                   />
                   <button
@@ -139,7 +145,6 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              {/* Error */}
               {error && (
                 <motion.p
                   initial={{ opacity: 0, y: -6 }}
@@ -151,7 +156,6 @@ export default function LoginPage() {
                 </motion.p>
               )}
 
-              {/* Submit */}
               <button
                 type="submit"
                 disabled={loading}
@@ -160,37 +164,29 @@ export default function LoginPage() {
                 {loading ? 'SIGNING IN…' : 'SIGN IN'}
               </button>
 
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => alert('Please contact us at info@vivowineclub.it to reset your password.')}
+                  className="text-xs text-[#7a4a4a]/60 hover:text-[#731515] transition-colors duration-200 underline underline-offset-2"
+                  style={{ fontFamily: 'var(--font-nunito)' }}
+                >
+                  Forgot password?
+                </button>
+              </div>
             </form>
 
-            {/* Forgot password */}
-            <div className="mt-5 text-center">
-              <button
-                type="button"
-                onClick={() => alert('Please contact us at info@vivowineclub.it to reset your password.')}
-                className="text-xs text-[#7a4a4a]/60 hover:text-[#731515] transition-colors duration-200 underline underline-offset-2"
-                style={{ fontFamily: 'var(--font-nunito)' }}
-              >
-                Forgot password?
-              </button>
-            </div>
-
-          </div>
-
-          {/* Not a member yet */}
-          <p
-            className="text-center text-xs text-[#7a4a4a]/60 mt-7"
-            style={{ fontFamily: 'var(--font-nunito)' }}
-          >
-            Not a member yet?{' '}
-            <Link
-              href="/membership"
-              className="text-[#731515] hover:underline underline-offset-2 transition-colors"
+            <p
+              className="text-center text-xs text-[#7a4a4a]/60 mt-8"
+              style={{ fontFamily: 'var(--font-nunito)' }}
             >
-              Apply for membership
-            </Link>
-          </p>
-
-        </motion.div>
+              Not a member yet?{' '}
+              <Link href="/membership" className="text-[#731515] hover:underline underline-offset-2">
+                Apply for membership
+              </Link>
+            </p>
+          </motion.div>
+        </div>
       </div>
 
     </div>

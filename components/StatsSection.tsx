@@ -8,21 +8,20 @@ const STATS = [
 
 export default function StatsSection() {
   return (
-    <section className="py-20 relative overflow-hidden">
-      <div className="fog-right" style={{ top: '-10%', height: '120%' }} />
+    <section className="relative overflow-hidden bg-[#731515]">
       <div className="max-w-4xl mx-auto px-6 lg:px-10 py-16">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-0 sm:gap-8 md:gap-16 divide-y sm:divide-y-0 divide-[#e8d5d5]">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-0 sm:gap-8 md:gap-16 divide-y sm:divide-y-0 divide-white/10">
           {STATS.map((stat) => (
             <div key={stat.label} className="flex flex-col items-center gap-3 py-8 sm:py-0">
               <span
-                className="text-[clamp(3.5rem,8vw,6rem)] font-bold leading-none tabular-nums"
-                style={{ fontFamily: 'var(--font-syne)', color: '#731515' }}
+                className="text-[clamp(3.5rem,8vw,6rem)] font-bold leading-none tabular-nums text-white"
+                style={{ fontFamily: 'var(--font-syne)' }}
               >
                 {stat.value}
               </span>
-              <div className="w-8 h-px bg-[#731515]/30" />
+              <div className="w-8 h-px bg-white/20" />
               <span
-                className="text-[11px] tracking-[0.35em] text-[#7a4a4a] uppercase text-center"
+                className="text-[11px] tracking-[0.35em] text-[#e8d5d5]/60 uppercase text-center"
                 style={{ fontFamily: 'var(--font-nunito)' }}
               >
                 {stat.label}

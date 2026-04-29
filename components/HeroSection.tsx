@@ -151,7 +151,7 @@ export default function HeroSection() {
   const d = (n: number) => (reducedMotion ? 0 : n);
 
   return (
-    <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden">
+    <section className="relative min-h-screen min-h-[100svh] flex flex-col items-center justify-center overflow-hidden">
       <div className="fog-center" />
 
       {/* Canvas blobs — hidden when reduced motion */}
@@ -263,7 +263,7 @@ export default function HeroSection() {
           initial={{ opacity: reducedMotion ? 1 : 0, y: reducedMotion ? 0 : 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: d(0.9), delay: d(1.65) }}
-          className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-12"
+          className="flex items-center justify-center mt-12"
         >
           <Link
             href="/events"
@@ -271,13 +271,8 @@ export default function HeroSection() {
           >
             BUY TICKETS
           </Link>
-          <button
-            onClick={() => document.querySelector('#cantine')?.scrollIntoView({ behavior: 'smooth' })}
-            className="px-12 py-4 border border-[#731515]/40 text-[#731515] text-[11px] tracking-[0.35em] hover:bg-[#731515]/8 hover:border-[#731515]/70 transition-all duration-300"
-          >
-            OUR WINERIES
-          </button>
         </motion.div>
+
       </div>
 
       {/* Scroll indicator — skip infinite bounce for reduced motion */}

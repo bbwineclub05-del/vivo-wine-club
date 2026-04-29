@@ -90,7 +90,8 @@ export default function Navbar() {
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+        style={{ willChange: 'auto' }}
+        className={`fixed top-0 left-0 right-0 z-[200] transition-all duration-500 ${
           scrolled
             ? 'bg-white/95 backdrop-blur-xl border-b border-[#e8d5d5] shadow-sm'
             : 'bg-transparent'
@@ -104,8 +105,17 @@ export default function Navbar() {
             <img
               src="/logo.svg"
               alt="Vivo Wine Club"
-              className="h-24 w-auto object-contain transition-opacity duration-300 group-hover:opacity-70"
+              width={170}
+              height={96}
+              className="w-auto object-contain group-hover:opacity-70 transition-[opacity] duration-300"
+              style={{ height: 96, imageRendering: '-webkit-optimize-contrast' }}
             />
+            <span
+              className="text-[17px] font-light tracking-[0.08em] text-[#1a0505] group-hover:text-[#731515] transition-colors duration-300 leading-tight hidden sm:block"
+              style={{ fontFamily: 'var(--font-syne)' }}
+            >
+              Vivo Wine Club
+            </span>
           </Link>
 
           {/* Desktop nav links */}
@@ -157,13 +167,6 @@ export default function Navbar() {
               <User size={13} className="shrink-0" />
               {user ? 'MY AREA' : 'SIGN IN'}
             </Link>
-            <div className="w-px h-4 bg-[#e8d5d5]" />
-            <Link
-              href="/membership"
-              className="px-5 py-2 bg-[#731515] text-white text-[10px] tracking-[0.3em] hover:bg-[#aa4848] transition-colors duration-300 whitespace-nowrap"
-            >
-              APPLY FOR MEMBERSHIP
-            </Link>
           </div>
 
           {/* Hamburger */}
@@ -185,7 +188,7 @@ export default function Navbar() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.25 }}
-            className="fixed top-[115px] left-0 right-0 z-40 bg-white/97 backdrop-blur-xl border-b border-[#e8d5d5] lg:hidden shadow-sm"
+            className="fixed top-[115px] left-0 right-0 z-[190] bg-white/97 backdrop-blur-xl border-b border-[#e8d5d5] lg:hidden shadow-sm"
           >
             <div className="px-8 py-8 flex flex-col gap-7">
               {NAV_LINKS.map((link) =>
@@ -216,22 +219,13 @@ export default function Navbar() {
                 <User size={13} />
                 {user ? 'MY AREA' : 'SIGN IN'}
               </Link>
-              <div className="pt-4 border-t border-[#e8d5d5] flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  {SOCIALS.map(({ label, href, Icon }) => (
-                    <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label}
-                      className="text-[#9a6060] hover:text-[#731515] transition-colors">
-                      <Icon size={16} />
-                    </a>
-                  ))}
-                </div>
-                <Link
-                  href="/membership"
-                  onClick={() => setMobileOpen(false)}
-                  className="px-5 py-2.5 bg-[#731515] text-white text-[10px] tracking-[0.3em] hover:bg-[#aa4848] transition-colors"
-                >
-                  APPLY FOR MEMBERSHIP
-                </Link>
+              <div className="pt-4 border-t border-[#e8d5d5] flex items-center gap-4">
+                {SOCIALS.map(({ label, href, Icon }) => (
+                  <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label}
+                    className="text-[#9a6060] hover:text-[#731515] transition-colors">
+                    <Icon size={16} />
+                  </a>
+                ))}
               </div>
             </div>
           </motion.div>

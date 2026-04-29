@@ -4,8 +4,37 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
+
+function LinkedInIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M4.98 3.5A2.49 2.49 0 0 0 2.5 5.99C2.5 7.37 3.6 8.49 4.98 8.49a2.49 2.49 0 0 0 0-4.99ZM2.76 10.2h4.44V21H2.76V10.2ZM9.35 10.2h4.25v1.49h.06c.59-1.12 2.04-2.3 4.2-2.3 4.49 0 5.32 2.96 5.32 6.8V21h-4.43v-4.27c0-1.02-.02-2.33-1.42-2.33-1.43 0-1.64 1.11-1.64 2.26V21H9.35V10.2Z" />
+    </svg>
+  );
+}
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+
+const TEAM_MEMBERS = [
+  {
+    name: 'Carolina Maria Carra',
+    initials: 'CC',
+    role: 'Team Media',
+    linkedin: 'https://www.linkedin.com/in/carolina-maria-carra/',
+  },
+  {
+    name: 'Giulia Zalum',
+    initials: 'GZ',
+    role: 'Team Media',
+    linkedin: 'https://www.linkedin.com/in/giulia-zalum-391a83255/',
+  },
+  {
+    name: 'Gabriele Lisanti',
+    initials: 'GL',
+    role: 'Team Events',
+    linkedin: 'https://www.linkedin.com/in/gabrielelisanti/',
+  },
+];
 
 const FOUNDERS = [
   {
@@ -14,6 +43,7 @@ const FOUNDERS = [
     role: 'Co-Founder',
     image: '/giacomo2.png',
     bio: 'Certified sommelier, raised in a family deeply rooted in wine culture. Spent a year in Bordeaux, visiting some of the most prestigious châteaux in the world. His passion was born at home, among the Langa vineyards. Currently studying at ESCP.',
+    linkedin: 'https://www.linkedin.com/in/giacomo-gallo-520a85286/',
   },
   {
     name: 'Filippo Lombardi',
@@ -21,6 +51,7 @@ const FOUNDERS = [
     role: 'Co-Founder',
     image: '/filippo.png',
     bio: 'Spent a year in Bordeaux, gaining hands-on experience in the wine world. Deeply connected to his home region through Franciacorta, one of Italy\'s finest sparkling wine territories. Currently studying at ESCP.',
+    linkedin: 'https://www.linkedin.com/in/filippolombardiofficial/',
   },
   {
     name: 'Cristiano Michelotti',
@@ -28,6 +59,7 @@ const FOUNDERS = [
     role: 'Co-Founder & Creative Director',
     image: '/cristiano.png',
     bio: 'A true Tuscan wine enthusiast, with a deep passion for the great wines of his region — from Chianti to Montalcino and Bolgheri. Currently studying at ESCP.',
+    linkedin: 'https://www.linkedin.com/in/cristiano-michelotti-799a49299/',
   },
   {
     name: 'Riccardo Consalvo',
@@ -35,6 +67,7 @@ const FOUNDERS = [
     role: 'Co-Founder',
     image: '/riccardo.png',
     bio: 'A passionate lover of Piedmontese wines. The most recent addition to the team, but already a key contributor with a special impact. Currently studying at ESCP.',
+    linkedin: 'https://www.linkedin.com/in/riccardo-consalvo-76aba124b/',
   },
 ];
 
@@ -44,6 +77,7 @@ function FounderCard({
   role,
   image,
   bio,
+  linkedin,
   index,
 }: (typeof FOUNDERS)[number] & { index: number }) {
   return (
@@ -93,6 +127,15 @@ function FounderCard({
         >
           {bio}
         </p>
+        <a
+          href={linkedin}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`${name} on LinkedIn`}
+          className="mt-3 w-7 h-7 border border-[#e8d5d5] flex items-center justify-center text-[#7a4a4a] hover:border-[#731515]/50 hover:text-[#731515] transition-all duration-300"
+        >
+          <LinkedInIcon />
+        </a>
       </div>
     </motion.div>
   );
@@ -235,9 +278,89 @@ export default function WhoWeArePage() {
               </h2>
             </motion.div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 lg:gap-10">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
               {FOUNDERS.map((founder, i) => (
                 <FounderCard key={founder.name} {...founder} index={i} />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── THE TEAM ── */}
+        <section className="relative overflow-hidden pb-28 md:pb-32">
+          <div className="fog-left" style={{ top: '10%' }} />
+
+          <div className="max-w-5xl mx-auto px-6 lg:px-10">
+            {/* Divider */}
+            <motion.div
+              initial={{ scaleX: 0 }}
+              whileInView={{ scaleX: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+              className="origin-left w-full h-px bg-gradient-to-r from-[#731515]/30 via-[#731515]/10 to-transparent mb-16"
+            />
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7 }}
+              className="mb-14"
+            >
+              <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-3">THE TEAM</div>
+              <h2
+                className="text-[clamp(2rem,5vw,4rem)] font-light text-[#1a0505] leading-none"
+                style={{ fontFamily: 'var(--font-syne)' }}
+              >
+                OUR TEAM
+              </h2>
+            </motion.div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 lg:gap-8">
+              {TEAM_MEMBERS.map((member, i) => (
+                <motion.div
+                  key={member.name}
+                  initial={{ opacity: 0, y: 24 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: '-30px' }}
+                  transition={{ duration: 0.6, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
+                  className="flex flex-col items-center text-center gap-4 p-8 bg-[#731515] hover:bg-[#aa4848] transition-colors duration-300"
+                >
+                  {/* Avatar */}
+                  <div className="w-16 h-16 rounded-full border-2 border-white/30 flex items-center justify-center shrink-0">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" opacity="0.7">
+                      <circle cx="12" cy="8" r="4" />
+                      <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+                    </svg>
+                  </div>
+
+                  {/* Name */}
+                  <div className="flex flex-col gap-1">
+                    <h3
+                      className="text-base font-medium text-white leading-snug"
+                      style={{ fontFamily: 'var(--font-syne)' }}
+                    >
+                      {member.name}
+                    </h3>
+                    <p
+                      className="text-[10px] tracking-[0.25em] text-white/70"
+                      style={{ fontFamily: 'var(--font-nunito)' }}
+                    >
+                      {member.role.toUpperCase()}
+                    </p>
+                  </div>
+
+                  {/* LinkedIn */}
+                  <a
+                    href={member.linkedin}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`${member.name} on LinkedIn`}
+                    className="w-8 h-8 border border-white/30 flex items-center justify-center text-white/70 hover:border-white hover:text-white transition-all duration-300"
+                  >
+                    <LinkedInIcon />
+                  </a>
+                </motion.div>
               ))}
             </div>
           </div>

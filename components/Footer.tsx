@@ -9,7 +9,7 @@ const LINKS: Record<string, { label: string; href: string; external?: boolean }[
     { label: 'About Us',    href: '/who-we-are'  },
     { label: 'How It Works',href: '/membership'  },
     { label: 'Membership',  href: '/membership'  },
-    { label: 'FAQ',         href: '#'            },
+    { label: 'FAQ',         href: '/faq'         },
   ],
   'EXPERIENCES': [
     { label: 'Events',           href: '/events'                   },
@@ -53,7 +53,14 @@ export default function Footer() {
             >
               <div className="mb-6">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/logo.svg" alt="Vivo Wine Club" className="h-16 w-auto object-contain" />
+                <img
+                  src="/logo.svg"
+                  alt="Vivo Wine Club"
+                  width={113}
+                  height={64}
+                  className="w-auto object-contain"
+                  style={{ height: 64, imageRendering: '-webkit-optimize-contrast' }}
+                />
               </div>
               <p
                 className="text-[#7a4a4a] text-base leading-relaxed mb-8 max-w-xs font-light italic"

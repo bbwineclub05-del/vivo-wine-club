@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
 import Navbar from '@/components/Navbar';
@@ -58,37 +59,45 @@ export default function MembershipPage() {
       <Navbar />
       <main className="min-h-screen pt-[115px]">
 
-        {/* ── Back link ── */}
-        <div className="max-w-5xl mx-auto px-6 lg:px-10 pt-6">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] text-[#7a4a4a] hover:text-[#731515] transition-colors duration-300 group"
-          >
-            <ArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform duration-300" />
-            BACK
-          </Link>
-        </div>
-
-        {/* ── HERO ── */}
-        <section className="relative overflow-hidden py-20 md:py-28">
-          <div className="fog-center" />
-          <div className="max-w-2xl mx-auto px-6 lg:px-10">
-
-            <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-4">VIVO WINE CLUB</div>
+        {/* ── HERO IMAGE ── */}
+        <div className="relative w-full" style={{ height: 350 }}>
+          <Image
+            src="/vigna.jpg"
+            alt="Apply for Membership — Vivo Wine Club"
+            fill
+            className="object-cover"
+            priority
+            sizes="100vw"
+          />
+          {/* Bordeaux overlay */}
+          <div className="absolute inset-0 bg-[#731515]/60" />
+          {/* Centered text */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6">
+            <div className="text-[10px] tracking-[0.5em] text-white/70 mb-4">VIVO WINE CLUB</div>
             <h1
-              className="text-[clamp(2.6rem,7vw,5rem)] font-light text-[#1a0505] leading-none section-title mb-5"
+              className="text-[clamp(2rem,5vw,4rem)] font-light text-white leading-tight"
               style={{ fontFamily: 'var(--font-syne)' }}
             >
               Apply for Membership
             </h1>
             <p
-              className="text-base md:text-lg text-[#7a4a4a] font-light italic leading-relaxed"
+              className="mt-4 text-sm md:text-base text-white/75 font-light italic max-w-lg leading-relaxed"
               style={{ fontFamily: 'var(--font-nunito)' }}
             >
               Join a community of young wine lovers. Limited spots available.
             </p>
           </div>
-        </section>
+          {/* Back link — top left */}
+          <div className="absolute top-6 left-6 md:left-10 z-10">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] text-white/70 hover:text-white transition-colors duration-300 group"
+            >
+              <ArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform duration-300" />
+              BACK
+            </Link>
+          </div>
+        </div>
 
         {/* ── FORM / CONFIRMATION ── */}
         <section className="relative overflow-hidden pb-32">

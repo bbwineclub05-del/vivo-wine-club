@@ -36,10 +36,21 @@ html {
 }
 
 body {
-  background: radial-gradient(ellipse at 30% 20%, #e8b4b4 0%, #F5E6E6 40%, #f0d5d5 100%);
-  background-attachment: fixed;
+  background: #F5E6E6;
   color: #1a0505;
   overflow-x: hidden;
+}
+
+/* Fixed gradient background — uses ::before so it works on Android/Windows Chrome.
+   background-attachment:fixed is broken on Android Chrome and has compositing
+   issues on Windows Chrome; a fixed pseudo-element is the cross-browser equivalent. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(ellipse at 30% 20%, #e8b4b4 0%, #F5E6E6 40%, #f0d5d5 100%);
+  pointer-events: none;
 }
 
 /* ── Custom scrollbar ─────────────────────────────────────────────── */
@@ -123,6 +134,8 @@ body {
 }
 
 /* ── Subtle noise texture ────────────────────────────────────────── */
+/* z-index: -1 keeps it below all content including the navbar.
+   Previously was 9998 which sat above the navbar (z-index:200) visually. */
 body::after {
   content: '';
   position: fixed;
@@ -130,5 +143,5 @@ body::after {
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
   opacity: 0.022;
   pointer-events: none;
-  z-index: 9998;
+  z-index: 0;
 }

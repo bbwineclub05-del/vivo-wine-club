@@ -2,10 +2,10 @@ import dynamic from 'next/dynamic';
 import Navbar from '@/components/Navbar';
 import HeroSection from '@/components/HeroSection';
 import StatsSection from '@/components/StatsSection';
+import MembershipSection from '@/components/MembershipSection';
 import EventsSection from '@/components/EventsSection';
 import PartnersSection from '@/components/PartnersSection';
 import LinkedInSection from '@/components/LinkedInSection';
-import FaqSection from '@/components/FaqSection';
 import Footer from '@/components/Footer';
 import CartDrawer from '@/components/CartDrawer';
 
@@ -18,22 +18,18 @@ function SectionSkeleton({ height = 'h-[500px]' }: { height?: string }) {
 const ExperiencesSection = dynamic(() => import('@/components/ExperiencesSection'), {
   loading: () => <SectionSkeleton height="h-[680px]" />,
 });
-const WineriesSection = dynamic(() => import('@/components/WineriesSection'), {
-  loading: () => <SectionSkeleton height="h-[900px]" />,
-});
 export default function Home() {
   return (
     <>
       <Navbar />
       <main>
         <HeroSection />
+        <MembershipSection />
         <StatsSection />
         <ExperiencesSection />
         <EventsSection />
-        <WineriesSection />
         <LinkedInSection />
         <PartnersSection />
-        <FaqSection />
       </main>
       <Footer />
       <CartDrawer />
