@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
 
 /* ── Social icon SVGs ── */
 function InstagramIcon() {
@@ -89,12 +88,15 @@ export default function Footer() {
   async function handleNewsletter(e: React.FormEvent) {
     e.preventDefault();
     setNlState('loading');
-    const { error } = await supabase.from('subscribers').insert({ email: nlEmail });
-    // code 23505 = unique_violation (already subscribed) — treat as success
-    if (error && error.code !== '23505') {
-      setNlState('error');
-    } else {
+    const res = await fetch('/api/newsletter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: nlEmail }),
+    });
+    if (res.ok) {
       setNlState('done');
+    } else {
+      setNlState('error');
     }
   }
 

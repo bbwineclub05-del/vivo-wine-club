@@ -87,9 +87,9 @@ export default function MembersPage() {
                   style={{ fontFamily: 'var(--font-syne)' }}
                 >
                   {user.name ? (
-                    <>Welcome,<br /><span className="text-[#731515]">{user.name}!</span></>
+                    <>Ciao,<br /><span className="text-[#731515]">{user.name}!</span></>
                   ) : (
-                    <>Welcome!</>
+                    <>Ciao!</>
                   )}
                 </h1>
                 <p
@@ -198,19 +198,21 @@ export default function MembersPage() {
                       className="text-xl font-light"
                       style={{ fontFamily: 'var(--font-syne)' }}
                     >
-                      Explorer
+                      Founder
                     </div>
                     <div className="mt-3 flex items-center gap-2">
                       <Wine size={12} className="text-white/50" />
-                      <span className="text-[10px] text-white/60 tracking-wider">ACTIVE MEMBER</span>
+                      <span className="text-[10px] text-white/60 tracking-wider">CO-FOUNDER</span>
                     </div>
                   </div>
 
                   <div className="flex flex-col gap-2">
                     {[
-                      'Priority event access',
+                      'Full access to all events',
+                      'Exclusive winery visits',
                       'Members-only experiences',
-                      'Wine education content',
+                      'Vivo merch access',
+                      'Priority everything',
                     ].map((benefit) => (
                       <div key={benefit} className="flex items-center gap-2.5 text-xs text-[#7a4a4a]" style={{ fontFamily: 'var(--font-nunito)' }}>
                         <span className="w-1 h-1 rounded-full bg-[#731515] shrink-0" />

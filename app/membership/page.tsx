@@ -4,7 +4,6 @@ import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
@@ -48,15 +47,19 @@ export default function MembershipPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    await supabase.from('applications').insert({
-      name:       form.fullName,
-      email:      form.email,
-      phone:      form.phone  || null,
-      city:       form.city,
-      age:        form.age    ? parseInt(form.age) : null,
-      source:     form.source,
-      experience: form.experience,
-      motivation: form.motivation,
+    await fetch('/api/apply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name:       form.fullName,
+        email:      form.email,
+        phone:      form.phone,
+        city:       form.city,
+        age:        form.age,
+        source:     form.source,
+        experience: form.experience,
+        motivation: form.motivation,
+      }),
     });
     setLoading(false);
     setSubmitted(true);
