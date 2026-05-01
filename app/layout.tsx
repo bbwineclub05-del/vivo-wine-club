@@ -41,7 +41,6 @@ export default function RootLayout({
           as="video"
           href="/video-desktop.mp4"
           type="video/mp4"
-          // @ts-expect-error — media is a valid preload attribute
           media="(min-width: 769px)"
         />
         {/* Preload mobile hero video */}
@@ -50,7 +49,6 @@ export default function RootLayout({
           as="video"
           href="/video-mobile.mp4"
           type="video/mp4"
-          // @ts-expect-error — media is a valid preload attribute
           media="(max-width: 768px)"
         />
       </head>
