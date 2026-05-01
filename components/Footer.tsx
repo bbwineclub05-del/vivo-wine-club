@@ -1,6 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
 
 /* ── Social icon SVGs ── */
 function InstagramIcon() {
@@ -81,6 +83,21 @@ const LEGAL = [
 ];
 
 export default function Footer() {
+  const [nlEmail, setNlEmail] = useState('');
+  const [nlState, setNlState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
+
+  async function handleNewsletter(e: React.FormEvent) {
+    e.preventDefault();
+    setNlState('loading');
+    const { error } = await supabase.from('subscribers').insert({ email: nlEmail });
+    // code 23505 = unique_violation (already subscribed) — treat as success
+    if (error && error.code !== '23505') {
+      setNlState('error');
+    } else {
+      setNlState('done');
+    }
+  }
+
   return (
     <footer>
 
@@ -134,6 +151,50 @@ export default function Footer() {
             ))}
           </div>
 
+        </div>
+      </div>
+
+      {/* ── NEWSLETTER ── */}
+      <div className="bg-[#5b0f0f] px-6 lg:px-16 py-10 border-t border-white/10">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center gap-6">
+          <div className="shrink-0">
+            <div className="text-[9px] tracking-[0.5em] text-white/40 mb-1">STAY UPDATED</div>
+            <p className="text-sm font-light text-white/75" style={{ fontFamily: 'var(--font-syne)' }}>
+              Subscribe to our newsletter
+            </p>
+          </div>
+          <div className="flex-1">
+            {nlState === 'done' ? (
+              <p className="text-sm text-white/70 italic" style={{ fontFamily: 'var(--font-nunito)' }}>
+                You&apos;re in. Welcome to the club.
+              </p>
+            ) : (
+              <form onSubmit={handleNewsletter} className="flex gap-0 max-w-md">
+                <input
+                  type="email"
+                  required
+                  placeholder="your@email.com"
+                  value={nlEmail}
+                  onChange={(e) => setNlEmail(e.target.value)}
+                  disabled={nlState === 'loading'}
+                  className="flex-1 bg-white/10 border border-white/20 text-white text-sm px-4 py-2.5 placeholder:text-white/35 focus:outline-none focus:border-white/50 transition-colors duration-200 disabled:opacity-50"
+                  style={{ fontFamily: 'var(--font-nunito)' }}
+                />
+                <button
+                  type="submit"
+                  disabled={nlState === 'loading'}
+                  className="px-5 py-2.5 bg-white/15 hover:bg-white/25 border border-white/20 text-white text-[10px] tracking-[0.3em] transition-colors duration-200 disabled:opacity-50 whitespace-nowrap"
+                >
+                  {nlState === 'loading' ? '…' : 'SUBSCRIBE'}
+                </button>
+              </form>
+            )}
+            {nlState === 'error' && (
+              <p className="text-xs text-white/50 mt-1.5" style={{ fontFamily: 'var(--font-nunito)' }}>
+                Something went wrong. Try again.
+              </p>
+            )}
+          </div>
         </div>
       </div>
 

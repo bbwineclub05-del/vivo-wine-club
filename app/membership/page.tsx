@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
@@ -44,14 +45,21 @@ export default function MembershipPage() {
       setForm(prev => ({ ...prev, [field]: e.target.value }));
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    // Simulate async submission
-    setTimeout(() => {
-      setLoading(false);
-      setSubmitted(true);
-    }, 900);
+    await supabase.from('applications').insert({
+      name:       form.fullName,
+      email:      form.email,
+      phone:      form.phone  || null,
+      city:       form.city,
+      age:        form.age    ? parseInt(form.age) : null,
+      source:     form.source,
+      experience: form.experience,
+      motivation: form.motivation,
+    });
+    setLoading(false);
+    setSubmitted(true);
   }
 
   return (

@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { MapPin, ArrowLeft } from 'lucide-react';
 import Navbar from '@/components/Navbar';
@@ -116,39 +117,42 @@ export default function EventsPage() {
       <Navbar />
       <main className="min-h-screen pt-[115px]">
 
-        {/* ── Back link ── */}
-        <div className="max-w-5xl mx-auto px-6 lg:px-10 pt-6">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] text-[#7a4a4a] hover:text-[#731515] transition-colors duration-300 group"
-          >
-            <ArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform duration-300" />
-            BACK
-          </Link>
-        </div>
-
-        {/* ── Hero header ── */}
-        <section className="relative overflow-hidden py-20 md:py-28">
-          <div className="fog-center" />
-          <div className="max-w-5xl mx-auto px-6 lg:px-10">
-
-            <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-4">
-              2026 CALENDAR
-            </div>
+        {/* ── HERO IMAGE ── */}
+        <div className="relative w-full" style={{ height: 350 }}>
+          <Image
+            src="/events/wine-party8.jpg"
+            alt="Events — Vivo Wine Club"
+            fill
+            className="object-cover"
+            priority
+            sizes="100vw"
+          />
+          <div className="absolute inset-0 bg-[#731515]/60" />
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6">
+            <div className="text-[10px] tracking-[0.5em] text-white/70 mb-4">2026 CALENDAR</div>
             <h1
-              className="text-[clamp(3rem,8vw,6rem)] font-light text-[#1a0505] leading-none section-title mb-6"
+              className="text-[clamp(2rem,5vw,4rem)] font-light text-white leading-tight"
               style={{ fontFamily: 'var(--font-syne)' }}
             >
-              EVENTS
+              Events
             </h1>
             <p
-              className="text-base md:text-lg text-[#7a4a4a] font-light max-w-lg leading-relaxed"
+              className="mt-4 text-sm md:text-base text-white/75 font-light italic max-w-lg leading-relaxed"
               style={{ fontFamily: 'var(--font-nunito)' }}
             >
               All our upcoming and past experiences — tastings, winery tours, and wine parties across Europe.
             </p>
           </div>
-        </section>
+          <div className="absolute top-6 left-6 md:left-10 z-10">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] text-white/70 hover:text-white transition-colors duration-300 group"
+            >
+              <ArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform duration-300" />
+              BACK
+            </Link>
+          </div>
+        </div>
 
         {/* ── Event list ── */}
         <section className="relative overflow-hidden pb-28">

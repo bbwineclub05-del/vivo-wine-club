@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Calendar, CreditCard, User, LogOut, ArrowRight, Wine } from 'lucide-react';
+import { Calendar, CreditCard, User, LogOut, ArrowRight, Wine, KeyRound } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
@@ -19,21 +20,45 @@ export default function MembersPage() {
   const { user, logout } = useAuth();
   const router = useRouter();
 
+  const [newPassword, setNewPassword]     = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [pwStatus, setPwStatus]           = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [pwError, setPwError]             = useState('');
+
+  async function handlePasswordUpdate(e: React.FormEvent) {
+    e.preventDefault();
+    setPwError('');
+    if (newPassword !== confirmPassword) {
+      setPwError('Passwords do not match.');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPwError('Password must be at least 6 characters.');
+      return;
+    }
+    setPwStatus('loading');
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) {
+      setPwError(error.message);
+      setPwStatus('error');
+    } else {
+      setPwStatus('success');
+      setNewPassword('');
+      setConfirmPassword('');
+    }
+  }
+
   // Guard: redirect to login if not authenticated
   useEffect(() => {
     if (user === null) {
-      // Give time for localStorage to rehydrate (useEffect fires after mount)
-      const t = setTimeout(() => {
-        if (!localStorage.getItem('vivo_member_session')) {
-          router.replace('/login');
-        }
-      }, 100);
+      // Give Supabase time to restore the session before redirecting
+      const t = setTimeout(() => router.replace('/login'), 500);
       return () => clearTimeout(t);
     }
   }, [user, router]);
 
-  function handleLogout() {
-    logout();
+  async function handleLogout() {
+    await logout();
     router.push('/');
   }
 
@@ -61,8 +86,11 @@ export default function MembersPage() {
                   className="text-[clamp(2rem,6vw,4rem)] font-light text-[#1a0505] leading-none"
                   style={{ fontFamily: 'var(--font-syne)' }}
                 >
-                  Welcome,<br />
-                  <span className="text-[#731515]">{user.name}.</span>
+                  {user.name ? (
+                    <>Welcome,<br /><span className="text-[#731515]">{user.name}!</span></>
+                  ) : (
+                    <>Welcome!</>
+                  )}
                 </h1>
                 <p
                   className="mt-4 text-sm text-[#7a4a4a] font-light italic"
@@ -240,6 +268,82 @@ export default function MembersPage() {
                 >
                   * Profile editing will be available when the platform launches.
                 </p>
+              </motion.div>
+
+              {/* CHANGE PASSWORD */}
+              <motion.div
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.34, ease: [0.16, 1, 0.3, 1] }}
+                className="md:col-span-2 lg:col-span-3 bg-white border border-[#e8d5d5] p-8"
+              >
+                <div className="flex items-center gap-3 mb-7">
+                  <div className="w-8 h-8 bg-[#731515]/8 flex items-center justify-center">
+                    <KeyRound size={15} className="text-[#731515]" />
+                  </div>
+                  <h2 className="text-[10px] tracking-[0.4em] text-[#1a0505]">
+                    CHANGE PASSWORD
+                  </h2>
+                </div>
+
+                {pwStatus === 'success' ? (
+                  <motion.p
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-sm text-[#2d6e2d] bg-[#2d6e2d]/8 border border-[#2d6e2d]/20 px-4 py-3 max-w-md"
+                    style={{ fontFamily: 'var(--font-nunito)' }}
+                  >
+                    Password updated successfully.
+                  </motion.p>
+                ) : (
+                  <form onSubmit={handlePasswordUpdate} className="grid grid-cols-1 sm:grid-cols-3 gap-6 items-end">
+                    <div>
+                      <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-2">
+                        NEW PASSWORD
+                      </label>
+                      <input
+                        type="password"
+                        required
+                        placeholder="••••••••"
+                        value={newPassword}
+                        onChange={(e) => { setNewPassword(e.target.value); setPwStatus('idle'); }}
+                        className="w-full bg-[#fdf6f6] border border-[#e8d5d5] text-[#1a0505] px-4 py-3 text-sm placeholder:text-[#7a4a4a]/40 focus:outline-none focus:border-[#731515]/50 transition-colors duration-200"
+                        style={{ fontFamily: 'var(--font-nunito)' }}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-2">
+                        CONFIRM PASSWORD
+                      </label>
+                      <input
+                        type="password"
+                        required
+                        placeholder="••••••••"
+                        value={confirmPassword}
+                        onChange={(e) => { setConfirmPassword(e.target.value); setPwStatus('idle'); }}
+                        className="w-full bg-[#fdf6f6] border border-[#e8d5d5] text-[#1a0505] px-4 py-3 text-sm placeholder:text-[#7a4a4a]/40 focus:outline-none focus:border-[#731515]/50 transition-colors duration-200"
+                        style={{ fontFamily: 'var(--font-nunito)' }}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      {pwError && (
+                        <p
+                          className="text-xs text-[#731515]"
+                          style={{ fontFamily: 'var(--font-nunito)' }}
+                        >
+                          {pwError}
+                        </p>
+                      )}
+                      <button
+                        type="submit"
+                        disabled={pwStatus === 'loading'}
+                        className="w-full py-3 bg-[#731515] text-white text-[10px] tracking-[0.3em] hover:bg-[#aa4848] disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-300"
+                      >
+                        {pwStatus === 'loading' ? 'UPDATING…' : 'UPDATE PASSWORD'}
+                      </button>
+                    </div>
+                  </form>
+                )}
               </motion.div>
 
             </div>

@@ -11,12 +11,14 @@ import CartDrawer from '@/components/CartDrawer';
 import { useCart } from '@/contexts/CartContext';
 
 const PRODUCTS = [
-  { id: 201, name: 'Classic Tee',  price: 35, icon: '👕', image: '/events/wine-party10.JPG',  description: 'Soft 100% cotton tee with embroidered club crest.' },
-  { id: 202, name: 'Club Cap',     price: 30, icon: '🧢', image: 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=400', description: 'Structured 6-panel cap with tonal logo.' },
-  { id: 203, name: 'Tote Bag',     price: 25, icon: '👜', image: '/events/wine-party1.JPG',   description: 'Heavy canvas tote — fits two bottles.' },
-  { id: 204, name: 'Corkscrew',    price: 20, icon: '🔩', image: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=400', description: 'Professional-grade waiter\'s corkscrew.' },
-  { id: 205, name: 'Wine Bag',     price: 45, icon: '🍶', image: 'https://images.unsplash.com/photo-1547595628-c61a29f496f0?w=400', description: 'Insulated carrier for up to 4 bottles.' },
-  { id: 206, name: 'Club Hoodie',  price: 65, icon: '🧥', image: '/events/wine-party11.JPG',  description: 'Heavyweight fleece with chest logo.' },
+  { id: 201, name: 'Classic Tee',    price: 35, icon: '👕', image: '/merch/maglietta.png',      description: 'Soft 100% cotton tee with embroidered club crest.' },
+  { id: 202, name: 'Club Cap',       price: 30, icon: '🧢', image: '/merch/cappellino.png',     description: 'Structured 6-panel cap with tonal logo.' },
+  { id: 203, name: 'Tote Bag',       price: 25, icon: '👜', image: '/merch/totebag.png',        description: 'Heavy canvas tote — fits two bottles.' },
+  { id: 204, name: 'Corkscrew',      price: 20, icon: '🔩', image: '/merch/cavatappi.png',      description: 'Professional-grade waiter\'s corkscrew.' },
+  { id: 205, name: 'Wine Carrier',   price: 45, icon: '🍶', image: '/merch/portabicchiere.png', description: 'Insulated carrier for up to 4 bottles.' },
+  { id: 206, name: 'Club Hoodie',    price: 65, icon: '🧥', image: '/merch/felpa.png',          description: 'Heavyweight fleece with chest logo.' },
+  { id: 207, name: 'Wine Glass',     price: 18, icon: '🍷', image: '/merch/bicchiere.png',      description: 'Crystal-clear glass with engraved club logo.' },
+  { id: 208, name: 'IQOS Case',      price: 22, icon: '📦', image: '/merch/iqos.png',           description: 'Slim protective case with Vivo Wine Club branding.' },
 ] as const;
 
 type Product = (typeof PRODUCTS)[number];
