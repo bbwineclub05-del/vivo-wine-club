@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { X, Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
@@ -9,6 +9,26 @@ export default function CartDrawer() {
   const { items, isOpen, setIsOpen, removeItem, updateQuantity, total, clearCart } = useCart();
   const reducedMotion = useReducedMotion();
   const d = (n: number) => (reducedMotion ? 0 : n);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError]     = useState('');
+
+  const handleCheckout = useCallback(async () => {
+    setCheckoutError('');
+    setCheckoutLoading(true);
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.url) throw new Error(data.error ?? 'Checkout failed');
+      window.location.href = data.url;
+    } catch (err) {
+      setCheckoutError(err instanceof Error ? err.message : 'Checkout failed');
+      setCheckoutLoading(false);
+    }
+  }, [items]);
 
   const handleClose = useCallback(() => setIsOpen(false), [setIsOpen]);
   const handleBoutique = useCallback(() => {
@@ -140,8 +160,17 @@ export default function CartDrawer() {
                     €{total.toFixed(2)}
                   </span>
                 </div>
-                <button className="w-full py-4 bg-[#731515] text-white text-[11px] tracking-[0.35em] hover:bg-[#aa4848] transition-colors duration-300">
-                  CHECKOUT
+                {checkoutError && (
+                  <p className="text-xs text-[#731515] text-center" style={{ fontFamily: 'var(--font-nunito)' }}>
+                    {checkoutError}
+                  </p>
+                )}
+                <button
+                  onClick={handleCheckout}
+                  disabled={checkoutLoading}
+                  className="w-full py-4 bg-[#731515] text-white text-[11px] tracking-[0.35em] hover:bg-[#aa4848] disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-300"
+                >
+                  {checkoutLoading ? 'REDIRECTING…' : 'CHECKOUT'}
                 </button>
                 <button
                   onClick={clearCart}
