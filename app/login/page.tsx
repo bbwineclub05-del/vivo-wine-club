@@ -94,12 +94,10 @@ export default function LoginPage() {
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             className="w-full max-w-sm"
           >
-            {/* Logo bordeaux — always visible */}
-            <div className="flex justify-center mb-8">
-              <div className="bg-[#6b1a1a] rounded px-5 py-4">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/logo.svg" alt="Vivo Wine Club" className="h-12 w-auto object-contain" style={{ imageRendering: '-webkit-optimize-contrast' }} />
-              </div>
+            {/* Logo */}
+            <div className="flex justify-center mb-6">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.svg" alt="Vivo Wine Club" className="h-16 w-auto object-contain" style={{ imageRendering: '-webkit-optimize-contrast' }} />
             </div>
 
             {/* Header */}
