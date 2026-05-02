@@ -11,36 +11,61 @@ import { supabase } from '@/lib/supabase';
 export default function ResetPasswordPage() {
   const router = useRouter();
 
-  const [password, setPassword]             = useState('');
+  const [password, setPassword]               = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPw, setShowPw]                 = useState(false);
-  const [showConfirmPw, setShowConfirmPw]   = useState(false);
-  const [error, setError]                   = useState('');
-  const [success, setSuccess]               = useState(false);
-  const [loading, setLoading]               = useState(false);
-  const [tokenReady, setTokenReady]         = useState(false);
+  const [showPw, setShowPw]                   = useState(false);
+  const [showConfirmPw, setShowConfirmPw]     = useState(false);
+  const [error, setError]                     = useState('');
+  const [success, setSuccess]                 = useState(false);
+  const [loading, setLoading]                 = useState(false);
+  const [tokenReady, setTokenReady]           = useState(false);
 
   useEffect(() => {
-    // Supabase appends #access_token=…&refresh_token=…&type=recovery to the redirect URL
-    const hash   = window.location.hash.substring(1);
-    const params = new URLSearchParams(hash);
-    const accessToken  = params.get('access_token');
-    const refreshToken = params.get('refresh_token');
-    const type         = params.get('type');
+    async function initSession() {
+      // ── Path 1: PKCE flow ──────────────────────────────────────────────
+      // Supabase (v2 default) redirects to /auth/callback?code=xxx, which
+      // forwards here as /reset-password?code=xxx.
+      // exchangeCodeForSession uses the PKCE verifier from localStorage.
+      const searchParams = new URLSearchParams(window.location.search);
+      const code = searchParams.get('code');
 
-    if (accessToken && refreshToken && type === 'recovery') {
-      supabase.auth
-        .setSession({ access_token: accessToken, refresh_token: refreshToken })
-        .then(({ error: sessionError }) => {
-          if (sessionError) {
-            setError('This reset link has expired or is invalid. Please request a new one.');
-          } else {
-            setTokenReady(true);
-          }
+      if (code) {
+        const { error: pkceError } = await supabase.auth.exchangeCodeForSession(code);
+        if (pkceError) {
+          setError('This reset link has expired or is invalid. Please request a new one.');
+        } else {
+          setTokenReady(true);
+        }
+        return;
+      }
+
+      // ── Path 2: implicit flow fallback ─────────────────────────────────
+      // Older Supabase config or manually constructed links may still send
+      // #access_token=…&refresh_token=…&type=recovery in the hash.
+      const hash       = window.location.hash.substring(1);
+      const hashParams = new URLSearchParams(hash);
+      const accessToken  = hashParams.get('access_token');
+      const refreshToken = hashParams.get('refresh_token');
+      const type         = hashParams.get('type');
+
+      if (accessToken && refreshToken && type === 'recovery') {
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token:  accessToken,
+          refresh_token: refreshToken,
         });
-    } else {
+        if (sessionError) {
+          setError('This reset link has expired or is invalid. Please request a new one.');
+        } else {
+          setTokenReady(true);
+        }
+        return;
+      }
+
+      // Nothing found.
       setError('No valid reset token found. Please request a new password reset link.');
     }
+
+    initSession();
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {

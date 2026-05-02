@@ -32,7 +32,7 @@ export default function LoginPage() {
     }
     setResetLoading(true);
     await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: 'https://vivowineclub.com/reset-password',
+      redirectTo: 'https://vivowineclub.com/auth/callback',
     });
     setResetLoading(false);
     setResetSent(true);
