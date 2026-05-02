@@ -7,20 +7,36 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
 
 export default function LoginPage() {
   const { user, login } = useAuth();
   const router = useRouter();
 
-  const [email, setEmail]       = useState('');
-  const [password, setPassword] = useState('');
-  const [showPw, setShowPw]     = useState(false);
-  const [error, setError]       = useState('');
-  const [loading, setLoading]   = useState(false);
+  const [email, setEmail]             = useState('');
+  const [password, setPassword]       = useState('');
+  const [showPw, setShowPw]           = useState(false);
+  const [error, setError]             = useState('');
+  const [loading, setLoading]         = useState(false);
+  const [resetSent, setResetSent]     = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
 
   useEffect(() => {
     if (user) router.replace('/members');
   }, [user, router]);
+
+  async function handleForgotPassword() {
+    if (!email) {
+      setError('Enter your email address above, then click "Forgot password?".');
+      return;
+    }
+    setResetLoading(true);
+    await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: 'https://vivowineclub.com/reset-password',
+    });
+    setResetLoading(false);
+    setResetSent(true);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -164,14 +180,24 @@ export default function LoginPage() {
               </button>
 
               <div className="text-center">
-                <button
-                  type="button"
-                  onClick={() => alert('Please contact us at info@vivowineclub.it to reset your password.')}
-                  className="text-xs text-[#7a4a4a]/60 hover:text-[#731515] transition-colors duration-200 underline underline-offset-2"
-                  style={{ fontFamily: 'var(--font-nunito)' }}
-                >
-                  Forgot password?
-                </button>
+                {resetSent ? (
+                  <p
+                    className="text-xs text-[#731515]"
+                    style={{ fontFamily: 'var(--font-nunito)' }}
+                  >
+                    Reset link sent — check your inbox.
+                  </p>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    disabled={resetLoading}
+                    className="text-xs text-[#7a4a4a]/60 hover:text-[#731515] transition-colors duration-200 underline underline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ fontFamily: 'var(--font-nunito)' }}
+                  >
+                    {resetLoading ? 'Sending…' : 'Forgot password?'}
+                  </button>
+                )}
               </div>
             </form>
 
