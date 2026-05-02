@@ -97,7 +97,7 @@ export default function LoginPage() {
             {/* Logo */}
             <div className="flex justify-center mb-6">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo.svg" alt="Vivo Wine Club" className="h-16 w-auto object-contain" style={{ imageRendering: '-webkit-optimize-contrast' }} />
+              <img src="/logo.svg" alt="Vivo Wine Club" className="h-20 w-auto object-contain" style={{ imageRendering: '-webkit-optimize-contrast' }} />
             </div>
 
             {/* Header */}
