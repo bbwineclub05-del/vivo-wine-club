@@ -98,7 +98,7 @@ export default function LoginPage() {
             <div className="flex justify-center mb-8">
               <div className="bg-[#6b1a1a] rounded px-5 py-4">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/logobianco.png" alt="Vivo Wine Club" className="h-12 w-auto object-contain" />
+                <img src="/logo.svg" alt="Vivo Wine Club" className="h-12 w-auto object-contain" style={{ imageRendering: '-webkit-optimize-contrast' }} />
               </div>
             </div>
 
