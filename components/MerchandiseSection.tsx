@@ -96,7 +96,7 @@ function ProductCard({ product, index }: { product: (typeof PRODUCTS)[0]; index:
   const [added, setAdded] = useState(false);
 
   const handleAdd = () => {
-    addItem({ id: product.id, name: product.name, price: product.price, icon: product.icon });
+    addItem({ id: product.id, name: product.name, price: product.price, icon: product.icon, image: '' });
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   };

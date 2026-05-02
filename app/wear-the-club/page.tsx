@@ -10,15 +10,18 @@ import Footer from '@/components/Footer';
 import CartDrawer from '@/components/CartDrawer';
 import { useCart } from '@/contexts/CartContext';
 
+const SIZES = ['S', 'M', 'L', 'XL'] as const;
+type Size = (typeof SIZES)[number];
+
 const PRODUCTS = [
-  { id: 201, name: 'Classic Tee',    price: 35, icon: '👕', image: '/merch/maglietta.png',      description: 'Soft 100% cotton tee with embroidered club crest.' },
-  { id: 202, name: 'Club Cap',       price: 30, icon: '🧢', image: '/merch/cappellino.png',     description: 'Structured 6-panel cap with tonal logo.' },
-  { id: 203, name: 'Tote Bag',       price: 25, icon: '👜', image: '/merch/totebag.png',        description: 'Heavy canvas tote — fits two bottles.' },
-  { id: 204, name: 'Corkscrew',      price: 20, icon: '🔩', image: '/merch/cavatappi.png',      description: 'Professional-grade waiter\'s corkscrew.' },
-  { id: 205, name: 'Wine Carrier',   price: 45, icon: '🍶', image: '/merch/portabicchiere.png', description: 'Insulated carrier for up to 4 bottles.' },
-  { id: 206, name: 'Club Hoodie',    price: 65, icon: '🧥', image: '/merch/felpa.png',          description: 'Heavyweight fleece with chest logo.' },
-  { id: 207, name: 'Wine Glass',     price: 18, icon: '🍷', image: '/merch/bicchiere.png',      description: 'Crystal-clear glass with engraved club logo.' },
-  { id: 208, name: 'IQOS Case',      price: 22, icon: '📦', image: '/merch/iqos.png',           description: 'Slim protective case with Vivo Wine Club branding.' },
+  { id: 201, name: 'Classic Tee',    price: 35, icon: '👕', image: '/merch/maglietta.png',      description: 'Soft 100% cotton tee with embroidered club crest.',   hasSize: true  },
+  { id: 202, name: 'Club Cap',       price: 30, icon: '🧢', image: '/merch/cappellino.png',     description: 'Structured 6-panel cap with tonal logo.',             hasSize: false },
+  { id: 203, name: 'Tote Bag',       price: 25, icon: '👜', image: '/merch/totebag.png',        description: 'Heavy canvas tote — fits two bottles.',               hasSize: false },
+  { id: 204, name: 'Corkscrew',      price: 20, icon: '🔩', image: '/merch/cavatappi.png',      description: 'Professional-grade waiter\'s corkscrew.',             hasSize: false },
+  { id: 205, name: 'Wine Carrier',   price: 45, icon: '🍶', image: '/merch/portabicchiere.png', description: 'Insulated carrier for up to 4 bottles.',              hasSize: false },
+  { id: 206, name: 'Club Hoodie',    price: 65, icon: '🧥', image: '/merch/felpa.png',          description: 'Heavyweight fleece with chest logo.',                 hasSize: true  },
+  { id: 207, name: 'Wine Glass',     price: 18, icon: '🍷', image: '/merch/bicchiere.png',      description: 'Crystal-clear glass with engraved club logo.',        hasSize: false },
+  { id: 208, name: 'IQOS Case',      price: 22, icon: '📦', image: '/merch/iqos.png',           description: 'Slim protective case with Vivo Wine Club branding.',  hasSize: false },
 ] as const;
 
 type Product = (typeof PRODUCTS)[number];
@@ -31,14 +34,24 @@ interface ProductCardProps {
 
 const ProductCard = memo(function ProductCard({ product, index, reducedMotion }: ProductCardProps) {
   const { addItem } = useCart();
-  const [added, setAdded] = useState(false);
+  const [added, setAdded]   = useState(false);
+  const [size, setSize]     = useState<Size>('M');
+  const [sizeError, setSizeError] = useState(false);
 
   const handleAdd = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    addItem({ id: product.id, name: product.name, price: product.price, icon: product.icon });
+    const cartName = product.hasSize ? `${product.name} — ${size}` : product.name;
+    addItem({
+      id:    product.id,
+      name:  cartName,
+      price: product.price,
+      icon:  product.icon,
+      image: product.image,
+    });
     setAdded(true);
+    setSizeError(false);
     setTimeout(() => setAdded(false), 1800);
-  }, [addItem, product]);
+  }, [addItem, product, size]);
 
   return (
     <motion.div
@@ -100,9 +113,29 @@ const ProductCard = memo(function ProductCard({ product, index, reducedMotion }:
             €{product.price}
           </span>
         </div>
-        <p className="text-xs text-[#7a4a4a] leading-relaxed" style={{ fontFamily: 'var(--font-nunito)' }}>
+        <p className="text-xs text-[#7a4a4a] leading-relaxed mb-3" style={{ fontFamily: 'var(--font-nunito)' }}>
           {product.description}
         </p>
+
+        {/* Size selector — only for clothing */}
+        {product.hasSize && (
+          <div className="flex items-center gap-1.5">
+            {SIZES.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => { setSize(s); setSizeError(false); }}
+                className={`w-8 h-8 text-[10px] tracking-widest border transition-colors duration-150 ${
+                  size === s
+                    ? 'border-[#731515] bg-[#731515] text-white'
+                    : 'border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515] hover:text-[#731515]'
+                } ${sizeError ? 'border-red-400' : ''}`}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </motion.div>
   );

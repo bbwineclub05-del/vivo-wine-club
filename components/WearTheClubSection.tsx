@@ -7,12 +7,12 @@ import { Check, Plus } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 
 const PRODUCTS = [
-  { id: 201, name: 'Classic Tee',  price: 35, icon: '👕', image: '/events/wine-party10.JPG' },
-  { id: 202, name: 'Club Cap',     price: 30, icon: '🧢', image: 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=400' },
-  { id: 203, name: 'Tote Bag',     price: 25, icon: '👜', image: '/events/wine-party1.JPG' },
-  { id: 204, name: 'Corkscrew',    price: 20, icon: '🔩', image: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=400' },
-  { id: 205, name: 'Wine Bag',     price: 45, icon: '🍶', image: 'https://images.unsplash.com/photo-1547595628-c61a29f496f0?w=400' },
-  { id: 206, name: 'Club Hoodie',  price: 65, icon: '🧥', image: '/events/wine-party11.JPG' },
+  { id: 201, name: 'Classic Tee',  price: 35, icon: '👕', image: '/merch/maglietta.png' },
+  { id: 202, name: 'Club Cap',     price: 30, icon: '🧢', image: '/merch/cappellino.png' },
+  { id: 203, name: 'Tote Bag',     price: 25, icon: '👜', image: '/merch/totebag.png' },
+  { id: 204, name: 'Corkscrew',    price: 20, icon: '🔩', image: '/merch/cavatappi.png' },
+  { id: 205, name: 'Wine Bag',     price: 45, icon: '🍶', image: '/merch/portabicchiere.png' },
+  { id: 206, name: 'Club Hoodie',  price: 65, icon: '🧥', image: '/merch/felpa.png' },
 ] as const;
 
 type Product = (typeof PRODUCTS)[number];
@@ -30,7 +30,7 @@ const ProductCard = memo(function ProductCard({ product, index, reducedMotion }:
 
   const handleAdd = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    addItem({ id: product.id, name: product.name, price: product.price, icon: product.icon });
+    addItem({ id: product.id, name: product.name, price: product.price, icon: product.icon, image: product.image });
     setAdded(true);
     setTimeout(() => setAdded(false), 1800);
   }, [addItem, product]);

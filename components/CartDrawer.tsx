@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { X, Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
@@ -11,6 +12,12 @@ export default function CartDrawer() {
   const d = (n: number) => (reducedMotion ? 0 : n);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError]     = useState('');
+
+  const handleClose    = useCallback(() => setIsOpen(false), [setIsOpen]);
+  const handleBoutique = useCallback(() => {
+    setIsOpen(false);
+    document.querySelector('#boutique')?.scrollIntoView({ behavior: 'smooth' });
+  }, [setIsOpen]);
 
   const handleCheckout = useCallback(async () => {
     setCheckoutError('');
@@ -29,12 +36,6 @@ export default function CartDrawer() {
       setCheckoutLoading(false);
     }
   }, [items]);
-
-  const handleClose = useCallback(() => setIsOpen(false), [setIsOpen]);
-  const handleBoutique = useCallback(() => {
-    setIsOpen(false);
-    document.querySelector('#boutique')?.scrollIntoView({ behavior: 'smooth' });
-  }, [setIsOpen]);
 
   return (
     <AnimatePresence>
@@ -97,7 +98,7 @@ export default function CartDrawer() {
                   <div className="flex flex-col gap-4">
                     {items.map((item) => (
                       <motion.div
-                        key={item.id}
+                        key={item.name}
                         layout={!reducedMotion}
                         initial={{ opacity: 0, x: reducedMotion ? 0 : 20 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -105,9 +106,21 @@ export default function CartDrawer() {
                         transition={{ duration: d(0.3) }}
                         className="flex gap-4 p-4 glass-card"
                       >
-                        <div className="w-12 h-12 bg-[#731515]/10 flex items-center justify-center text-2xl shrink-0">
-                          {item.icon}
+                        {/* Product thumbnail */}
+                        <div className="w-[60px] h-[60px] rounded-lg overflow-hidden shrink-0 bg-[#f5eded] relative flex items-center justify-center">
+                          {item.image ? (
+                            <Image
+                              src={item.image}
+                              alt={item.name}
+                              fill
+                              className="object-cover"
+                              sizes="60px"
+                            />
+                          ) : (
+                            <span className="text-2xl">{item.icon}</span>
+                          )}
                         </div>
+
                         <div className="flex-1 min-w-0">
                           <p
                             className="text-sm text-[#1a0505] leading-snug mb-2 truncate"
@@ -118,14 +131,14 @@ export default function CartDrawer() {
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                               <button
-                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                onClick={() => updateQuantity(item.name, item.quantity - 1)}
                                 className="w-6 h-6 flex items-center justify-center border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515] hover:text-[#731515] transition-colors"
                               >
                                 <Minus size={10} />
                               </button>
                               <span className="text-sm text-[#1a0505] w-5 text-center">{item.quantity}</span>
                               <button
-                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                onClick={() => updateQuantity(item.name, item.quantity + 1)}
                                 className="w-6 h-6 flex items-center justify-center border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515] hover:text-[#731515] transition-colors"
                               >
                                 <Plus size={10} />
@@ -136,7 +149,7 @@ export default function CartDrawer() {
                                 €{(item.price * item.quantity).toFixed(2)}
                               </span>
                               <button
-                                onClick={() => removeItem(item.id)}
+                                onClick={() => removeItem(item.name)}
                                 className="text-[#7a4a4a]/50 hover:text-[#aa4848] transition-colors"
                               >
                                 <Trash2 size={14} />
