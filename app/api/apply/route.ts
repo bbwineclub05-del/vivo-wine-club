@@ -45,7 +45,7 @@ function notificationHtml(data: Record<string, string>) {
 
 export async function POST(request: Request) {
   const body = await request.json();
-  const { name, email, phone, city, age, source, experience, motivation } = body;
+  const { name, email, phone, city, date_of_birth, source, experience, motivation } = body;
 
   if (!name || !email) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -55,12 +55,12 @@ export async function POST(request: Request) {
   const { error: dbError } = await supabase.from('applications').insert({
     name,
     email,
-    phone:      phone      || null,
-    city:       city       || null,
-    age:        age        ? parseInt(age) : null,
-    source:     source     || null,
-    experience: experience || null,
-    motivation: motivation || null,
+    phone:         phone         || null,
+    city:          city          || null,
+    date_of_birth: date_of_birth || null,
+    source:        source        || null,
+    experience:    experience    || null,
+    motivation:    motivation    || null,
   });
 
   if (dbError) {
@@ -79,7 +79,7 @@ export async function POST(request: Request) {
       from: 'noreply@vivowineclub.com',
       to: 'info@vivowineclub.com',
       subject: 'New membership application',
-      html: notificationHtml({ name, email, phone, city, age, source, experience, motivation }),
+      html: notificationHtml({ name, email, phone, city, date_of_birth, source, experience, motivation }),
     }),
   ]);
 

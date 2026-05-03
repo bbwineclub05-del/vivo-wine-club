@@ -25,7 +25,7 @@ export default function WineLoungeePage() {
   };
 
   return (
-    <div className="bg-[#0a0204] min-h-screen text-[#F5EEE6]">
+    <div className="bg-[#5C1A2E] min-h-screen text-[#F5EEE6]">
 
       {/* ── 1. HERO ── */}
       <section className="relative h-screen flex flex-col justify-end overflow-hidden">
@@ -105,7 +105,7 @@ export default function WineLoungeePage() {
       </section>
 
       {/* ── 2. CONCEPT ── */}
-      <section className="py-24 md:py-32 bg-[#0d0203]">
+      <section className="py-24 md:py-32 bg-[#4A1525]">
         <div className="max-w-4xl mx-auto px-8 md:px-16">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -143,7 +143,7 @@ export default function WineLoungeePage() {
       </section>
 
       {/* ── 3. UPCOMING EVENTS ── */}
-      <section className="py-24 md:py-32 bg-[#0d0203]">
+      <section className="py-24 md:py-32 bg-[#4A1525]">
         <div className="max-w-4xl mx-auto px-8 md:px-16">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -217,7 +217,7 @@ export default function WineLoungeePage() {
       </section>
 
       {/* ── 4. NOTIFY CTA ── */}
-      <section className="py-24 md:py-32 bg-[#080103] relative overflow-hidden">
+      <section className="py-24 md:py-32 bg-[#3D1020] relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_60%,rgba(115,21,21,0.12),transparent_65%)] pointer-events-none" />
 
         <div className="max-w-2xl mx-auto px-8 md:px-16 text-center relative z-10">

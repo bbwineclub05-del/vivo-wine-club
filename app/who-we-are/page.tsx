@@ -150,7 +150,7 @@ export default function WhoWeArePage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen pt-[115px]">
+      <main className="min-h-screen pt-16">
 
         {/* ── HERO IMAGE ── */}
         <div className="relative w-full" style={{ height: 350 }}>

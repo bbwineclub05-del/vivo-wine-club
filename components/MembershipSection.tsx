@@ -64,7 +64,7 @@ export default function MembershipSection() {
         </motion.div>
 
         {/* Benefits grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-[#731515]/10 mb-14">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-[#731515]/10 mb-14">
           {BENEFITS.map((b, i) => (
             <motion.div
               key={b.number}
@@ -74,7 +74,7 @@ export default function MembershipSection() {
               transition={{ duration: d(0.7), delay: d(i * 0.1), ease: [0.16, 1, 0.3, 1] }}
               whileHover={reducedMotion ? {} : { scale: 1.03 }}
               style={{ transition: 'transform 0.3s ease' }}
-              className="bg-[#fdf6f6] p-10 flex flex-col gap-5 cursor-default"
+              className="bg-[#fdf6f6] p-7 flex flex-col gap-4 cursor-default"
             >
               <span
                 className="text-[2.6rem] font-light leading-none tabular-nums text-[#731515]"

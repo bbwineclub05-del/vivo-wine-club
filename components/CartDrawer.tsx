@@ -12,12 +12,38 @@ export default function CartDrawer() {
   const d = (n: number) => (reducedMotion ? 0 : n);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError]     = useState('');
+  const [discountCode, setDiscountCode]       = useState('');
+  const [discountApplied, setDiscountApplied] = useState(false);
+  const [discountError, setDiscountError]     = useState('');
+  const [discountLoading, setDiscountLoading] = useState(false);
 
   const handleClose    = useCallback(() => setIsOpen(false), [setIsOpen]);
   const handleBoutique = useCallback(() => {
     setIsOpen(false);
     document.querySelector('#boutique')?.scrollIntoView({ behavior: 'smooth' });
   }, [setIsOpen]);
+
+  const handleApplyCode = useCallback(async () => {
+    const code = discountCode.trim().toUpperCase();
+    if (!code) return;
+    setDiscountError('');
+    setDiscountLoading(true);
+    // Validate by attempting a dry-run checkout (we just peek at the code validity)
+    const res  = await fetch('/api/checkout', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ items, discountCode: code, validateOnly: true }),
+    });
+    const data = await res.json();
+    setDiscountLoading(false);
+    if (!res.ok) {
+      setDiscountError(data.error ?? 'Invalid code.');
+      setDiscountApplied(false);
+    } else {
+      setDiscountApplied(true);
+      setDiscountError('');
+    }
+  }, [discountCode, items]);
 
   const handleCheckout = useCallback(async () => {
     setCheckoutError('');
@@ -26,7 +52,7 @@ export default function CartDrawer() {
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items }),
+        body: JSON.stringify({ items, discountCode: discountApplied ? discountCode.trim().toUpperCase() : undefined }),
       });
       const data = await res.json();
       if (!res.ok || !data.url) throw new Error(data.error ?? 'Checkout failed');
@@ -35,7 +61,7 @@ export default function CartDrawer() {
       setCheckoutError(err instanceof Error ? err.message : 'Checkout failed');
       setCheckoutLoading(false);
     }
-  }, [items]);
+  }, [items, discountCode, discountApplied]);
 
   return (
     <AnimatePresence>
@@ -57,7 +83,7 @@ export default function CartDrawer() {
             animate={{ x: '0%' }}
             exit={{ x: reducedMotion ? '0%' : '100%' }}
             transition={reducedMotion ? { duration: 0 } : { type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed right-0 top-0 bottom-0 z-[70] w-full max-w-md bg-white border-l border-[#e8d5d5] flex flex-col"
+            className="fixed right-0 z-[70] w-full max-w-md bg-white border-l border-[#e8d5d5] flex flex-col" style={{ top: 64, height: 'calc(100vh - 64px)' }}
           >
             {/* Header */}
             <div className="flex items-center justify-between px-8 py-6 border-b border-[#e8d5d5]">
@@ -173,6 +199,42 @@ export default function CartDrawer() {
                     €{total.toFixed(2)}
                   </span>
                 </div>
+                {/* Discount code */}
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={discountCode}
+                      onChange={(e) => {
+                        setDiscountCode(e.target.value);
+                        setDiscountApplied(false);
+                        setDiscountError('');
+                      }}
+                      placeholder="Discount code"
+                      className="flex-1 bg-white border border-[#e8d5d5] px-3 py-2 text-xs text-[#1a0505] placeholder-[#b09090] focus:outline-none focus:border-[#731515] transition-colors uppercase"
+                      style={{ fontFamily: 'var(--font-nunito)' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleApplyCode}
+                      disabled={discountLoading || !discountCode.trim()}
+                      className="px-3 py-2 border border-[#731515] text-[#731515] text-[10px] tracking-[0.2em] hover:bg-[#731515] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors duration-200"
+                    >
+                      {discountLoading ? '…' : 'APPLY'}
+                    </button>
+                  </div>
+                  {discountApplied && (
+                    <p className="text-[10px] text-green-700" style={{ fontFamily: 'var(--font-nunito)' }}>
+                      ✓ Code applied — discount will be shown at checkout.
+                    </p>
+                  )}
+                  {discountError && (
+                    <p className="text-[10px] text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>
+                      {discountError}
+                    </p>
+                  )}
+                </div>
+
                 {checkoutError && (
                   <p className="text-xs text-[#731515] text-center" style={{ fontFamily: 'var(--font-nunito)' }}>
                     {checkoutError}

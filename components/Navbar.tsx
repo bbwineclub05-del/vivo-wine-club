@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -57,22 +57,9 @@ const NAV_UNDERLINE =
   'absolute -bottom-0.5 left-0 h-px w-0 bg-[#731515] group-hover:w-full transition-all duration-300';
 
 export default function Navbar() {
-  const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const router = useRouter();
   const { user } = useAuth();
-
-  useEffect(() => {
-    let lastRun = 0;
-    const onScroll = () => {
-      const now = Date.now();
-      if (now - lastRun < 100) return; // throttle to ~10 checks/sec
-      lastRun = now;
-      setScrolled(window.scrollY > 60);
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
 
   function handleHashLink(href: string) {
     setMobileOpen(false);
@@ -91,13 +78,9 @@ export default function Navbar() {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
         style={{ willChange: 'auto' }}
-        className={`fixed top-0 left-0 right-0 z-[200] transition-all duration-500 ${
-          scrolled
-            ? 'bg-white/95 backdrop-blur-xl border-b border-[#e8d5d5] shadow-sm'
-            : 'bg-transparent'
-        }`}
+        className="fixed top-0 left-0 right-0 z-[200] bg-white border-b border-[#e8d5d5] shadow-sm"
       >
-        <div className="max-w-7xl mx-auto px-6 lg:px-10 h-[115px] flex items-center justify-between gap-6">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10 h-16 flex items-center justify-between gap-6">
 
           {/* Logo — links to home */}
           <Link href="/" className="flex items-center group shrink-0">
@@ -105,10 +88,10 @@ export default function Navbar() {
             <img
               src="/logo.svg"
               alt="Vivo Wine Club"
-              width={170}
-              height={96}
+              width={120}
+              height={44}
               className="w-auto object-contain group-hover:opacity-70 transition-[opacity] duration-300"
-              style={{ height: 96, imageRendering: '-webkit-optimize-contrast' }}
+              style={{ height: 44, imageRendering: '-webkit-optimize-contrast' }}
             />
             <span
               className="text-[17px] font-light tracking-[0.08em] text-[#1a0505] group-hover:text-[#731515] transition-colors duration-300 leading-tight hidden sm:block"
@@ -188,7 +171,7 @@ export default function Navbar() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.25 }}
-            className="fixed top-[115px] left-0 right-0 z-[190] bg-white/97 backdrop-blur-xl border-b border-[#e8d5d5] lg:hidden shadow-sm"
+            className="fixed top-16 left-0 right-0 z-[190] bg-white border-b border-[#e8d5d5] lg:hidden shadow-sm"
           >
             <div className="px-8 py-8 flex flex-col gap-7">
               {NAV_LINKS.map((link) =>

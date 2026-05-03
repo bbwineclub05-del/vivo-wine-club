@@ -68,7 +68,7 @@ export default function MembersPage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen pt-[115px] bg-[#fdf6f6]">
+      <main className="min-h-screen pt-16 bg-[#fdf6f6]">
 
         {/* ── HERO STRIP ── */}
         <section className="relative overflow-hidden py-16 md:py-20 bg-white border-b border-[#e8d5d5]">

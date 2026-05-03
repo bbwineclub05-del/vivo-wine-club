@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
@@ -101,6 +101,43 @@ function RankRow({ estate, index, reducedMotion }: {
   );
 }
 
+/* ── Country flag SVGs (inline, no emoji) ── */
+function FlagIT() {
+  return (
+    <svg width="22" height="15" viewBox="0 0 22 15" style={{ borderRadius: 2, display: 'block', flexShrink: 0 }}>
+      <rect width="22" height="15" fill="#CE2B37" />
+      <rect width="14.67" height="15" fill="#FFFFFF" />
+      <rect width="7.33" height="15" fill="#009246" />
+    </svg>
+  );
+}
+function FlagFR() {
+  return (
+    <svg width="22" height="15" viewBox="0 0 22 15" style={{ borderRadius: 2, display: 'block', flexShrink: 0 }}>
+      <rect width="22" height="15" fill="#ED2939" />
+      <rect width="14.67" height="15" fill="#FFFFFF" />
+      <rect width="7.33" height="15" fill="#002395" />
+    </svg>
+  );
+}
+function FlagPT() {
+  return (
+    <svg width="22" height="15" viewBox="0 0 22 15" style={{ borderRadius: 2, display: 'block', flexShrink: 0 }}>
+      <rect width="22" height="15" fill="#FF0000" />
+      <rect width="8.8" height="15" fill="#006600" />
+      <circle cx="8.8" cy="7.5" r="3" fill="#FFD700" opacity="0.85" />
+      <circle cx="8.8" cy="7.5" r="2" fill="#FF0000" />
+      <circle cx="8.8" cy="7.5" r="1.1" fill="#FFD700" opacity="0.85" />
+    </svg>
+  );
+}
+
+const COUNTRY_META: Record<string, { label: string; Flag: () => React.ReactElement }> = {
+  Italy:    { label: 'Italy',    Flag: FlagIT },
+  France:   { label: 'France',   Flag: FlagFR },
+  Portugal: { label: 'Portugal', Flag: FlagPT },
+};
+
 /* ── Page ── */
 export default function WineMapPage() {
   const [selected, setSelected] = useState<WineRegion | null>(null);
@@ -112,7 +149,7 @@ export default function WineMapPage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen pt-[115px]">
+      <main className="min-h-screen pt-16">
 
         {/* ── HERO IMAGE ── */}
         <div className="relative w-full" style={{ height: 350 }}>
@@ -260,35 +297,86 @@ export default function WineMapPage() {
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
                       transition={{ duration: d(0.3) }}
-                      className="glass-card p-8"
+                      className="glass-card p-7"
                     >
-                      <div className="text-[10px] tracking-[0.4em] text-[#731515] mb-5">WINE REGIONS</div>
-                      <p
-                        className="text-sm text-[#7a4a4a] mb-6 leading-relaxed"
-                        style={{ fontFamily: 'var(--font-nunito)' }}
-                      >
-                        Click any marker on the map to discover a wine region.
-                      </p>
-                      <div className="flex flex-col gap-2">
-                        {WINE_REGIONS.map((r) => (
-                          <button
-                            key={r.id}
-                            onClick={() => handleSelect(r)}
-                            className="text-left px-4 py-3 border border-[#e8d5d5] hover:border-[#731515]/40 hover:bg-[#731515]/5 transition-all duration-200 group"
-                          >
-                            <div className="flex items-center justify-between">
-                              <span
-                                className="text-sm text-[#1a0505] group-hover:text-[#731515] transition-colors"
-                                style={{ fontFamily: 'var(--font-syne)' }}
-                              >
-                                {r.name}
-                              </span>
-                              <span className="text-[9px] tracking-[0.2em] text-[#7a4a4a]/50">
-                                {r.country.toUpperCase()}
-                              </span>
+                      {/* Panel header */}
+                      <div className="mb-6">
+                        <div className="text-[9px] tracking-[0.5em] text-[#731515] mb-2">WINE REGIONS</div>
+                        <p
+                          className="text-xs text-[#7a4a4a]/70 leading-relaxed"
+                          style={{ fontFamily: 'var(--font-nunito)' }}
+                        >
+                          Select a marker or a region below.
+                        </p>
+                      </div>
+
+                      {/* Grouped by country */}
+                      <div className="flex flex-col gap-6">
+                        {Object.entries(
+                          WINE_REGIONS.reduce<Record<string, typeof WINE_REGIONS>>((acc, r) => {
+                            (acc[r.country] ??= []).push(r);
+                            return acc;
+                          }, {})
+                        ).map(([country, regions], groupIdx) => {
+                          const meta = COUNTRY_META[country];
+                          const Flag = meta?.Flag;
+                          return (
+                            <div key={country}>
+                              {/* Country header */}
+                              <div className="flex items-center gap-2.5 mb-3">
+                                {Flag && <Flag />}
+                                <span
+                                  className="text-[9px] tracking-[0.4em] text-[#7a4a4a]/60 uppercase"
+                                  style={{ fontFamily: 'var(--font-nunito)' }}
+                                >
+                                  {meta?.label ?? country}
+                                </span>
+                                <div className="flex-1 h-px bg-[#e8d5d5]" />
+                              </div>
+
+                              {/* Region rows */}
+                              <div className="flex flex-col">
+                                {regions.map((r, i) => (
+                                  <button
+                                    key={r.id}
+                                    onClick={() => handleSelect(r)}
+                                    className={`group relative text-left flex items-center justify-between gap-3 py-3 px-3 -mx-3 transition-all duration-200 hover:bg-[#731515]/5 ${
+                                      i < regions.length - 1 ? 'border-b border-[#f0e4e4]' : ''
+                                    }`}
+                                  >
+                                    {/* Left accent line on hover */}
+                                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-0 bg-[#731515] group-hover:h-5 transition-all duration-200 rounded-full" />
+
+                                    <div className="min-w-0">
+                                      <div
+                                        className="text-sm font-medium text-[#1a0505] group-hover:text-[#731515] transition-colors duration-200 leading-snug"
+                                        style={{ fontFamily: 'var(--font-syne)' }}
+                                      >
+                                        {r.name}
+                                      </div>
+                                      <div
+                                        className="text-[10px] text-[#7a4a4a]/50 mt-0.5 truncate"
+                                        style={{ fontFamily: 'var(--font-nunito)' }}
+                                      >
+                                        {r.grapes[0]}
+                                      </div>
+                                    </div>
+
+                                    <ArrowRight
+                                      size={13}
+                                      className="shrink-0 text-[#731515]/20 group-hover:text-[#731515] group-hover:translate-x-0.5 transition-all duration-200"
+                                    />
+                                  </button>
+                                ))}
+                              </div>
+
+                              {/* Separator between country groups */}
+                              {groupIdx < Object.keys(WINE_REGIONS.reduce((a, r) => ({ ...a, [r.country]: true }), {})).length - 1 && (
+                                <div className="mt-2 h-px bg-gradient-to-r from-[#731515]/15 via-[#731515]/5 to-transparent" />
+                              )}
                             </div>
-                          </button>
-                        ))}
+                          );
+                        })}
                       </div>
                     </motion.div>
                   )}

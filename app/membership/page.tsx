@@ -17,7 +17,7 @@ interface FormState {
   email: string;
   phone: string;
   city: string;
-  age: string;
+  dateOfBirth: string;
   source: string;
   motivation: string;
   experience: string;
@@ -28,11 +28,23 @@ const INITIAL: FormState = {
   email: '',
   phone: '',
   city: '',
-  age: '',
+  dateOfBirth: '',
   source: '',
   motivation: '',
   experience: '',
 };
+
+// Max date = 18 years ago, min date = 100 years ago
+function maxDobDate() {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - 18);
+  return d.toISOString().split('T')[0];
+}
+function minDobDate() {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - 100);
+  return d.toISOString().split('T')[0];
+}
 
 export default function MembershipPage() {
   const [form, setForm] = useState<FormState>(INITIAL);
@@ -51,14 +63,14 @@ export default function MembershipPage() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        name:       form.fullName,
-        email:      form.email,
-        phone:      form.phone,
-        city:       form.city,
-        age:        form.age,
-        source:     form.source,
-        experience: form.experience,
-        motivation: form.motivation,
+        name:          form.fullName,
+        email:         form.email,
+        phone:         form.phone,
+        city:          form.city,
+        date_of_birth: form.dateOfBirth,
+        source:        form.source,
+        experience:    form.experience,
+        motivation:    form.motivation,
       }),
     });
     setLoading(false);
@@ -68,7 +80,7 @@ export default function MembershipPage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen pt-[115px]">
+      <main className="min-h-screen pt-16">
 
         {/* ── HERO IMAGE ── */}
         <div className="relative w-full" style={{ height: 350 }}>
@@ -201,19 +213,18 @@ export default function MembershipPage() {
                   </div>
                 </div>
 
-                {/* Row: Age + How did you hear */}
+                {/* Row: Date of Birth + How did you hear */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
-                    <label className={LABEL_CLASS}>AGE *</label>
+                    <label className={LABEL_CLASS}>DATE OF BIRTH *</label>
                     <input
-                      type="number"
+                      type="date"
                       required
-                      min={18}
-                      max={99}
-                      placeholder="e.g. 24"
-                      value={form.age}
-                      onChange={set('age')}
-                      className={INPUT_CLASS}
+                      min={minDobDate()}
+                      max={maxDobDate()}
+                      value={form.dateOfBirth}
+                      onChange={set('dateOfBirth')}
+                      className={`${INPUT_CLASS} [color-scheme:light]`}
                     />
                   </div>
                   <div>

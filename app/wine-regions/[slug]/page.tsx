@@ -106,7 +106,7 @@ export default async function WineRegionPage({
   return (
     <>
       <Navbar />
-      <main className="min-h-screen pt-[115px]">
+      <main className="min-h-screen pt-16">
 
         {/* ── Back link ── */}
         <div className="max-w-5xl mx-auto px-6 lg:px-10 pt-6">

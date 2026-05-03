@@ -6,21 +6,27 @@ import { CheckCircle, ArrowLeft } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useCart } from '@/contexts/CartContext';
 
 export default function CheckoutSuccessPage() {
   const { clearCart } = useCart();
+  const searchParams  = useSearchParams();
 
-  // Clear the cart once the user lands on the success page
   useEffect(() => {
     clearCart();
+    // Mark discount code as used (fire-and-forget)
+    const sessionId = searchParams.get('session_id');
+    if (sessionId) {
+      fetch(`/api/checkout/confirm?session_id=${sessionId}`).catch(() => {});
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <>
       <Navbar />
-      <main className="min-h-screen pt-[115px] bg-[#fdf6f6]">
+      <main className="min-h-screen pt-16 bg-[#fdf6f6]">
         <div className="max-w-5xl mx-auto px-6 lg:px-10 pt-6">
           <Link
             href="/wear-the-club"
