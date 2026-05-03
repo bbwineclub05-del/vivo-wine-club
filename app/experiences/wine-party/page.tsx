@@ -8,17 +8,21 @@ import { ArrowLeft, X, MapPin, ChevronDown } from 'lucide-react';
 
 /* ── Gallery photos ── */
 const GALLERY = [
-  { id: 1,  src: '/events/wine-party1.JPG',  alt: 'Wine Party — photo 1' },
-  { id: 2,  src: '/events/wine-party2.jpg',  alt: 'Wine Party — photo 2' },
-  { id: 3,  src: '/events/wine-party3.jpg',  alt: 'Wine Party — photo 3' },
-  { id: 4,  src: '/events/wine-party4.jpg',  alt: 'Wine Party — photo 4' },
-  { id: 5,  src: '/events/wine-party5.jpg',  alt: 'Wine Party — photo 5' },
-  { id: 6,  src: '/events/wine-party6.jpg',  alt: 'Wine Party — photo 6' },
-  { id: 7,  src: '/events/wine-party7.jpg',  alt: 'Wine Party — photo 7' },
-  { id: 8,  src: '/events/wine-party8.jpg',  alt: 'Wine Party — photo 8' },
-  { id: 9,  src: '/events/wine-party9.jpg',  alt: 'Wine Party — photo 9' },
-  { id: 10, src: '/events/wine-party10.JPG', alt: 'Wine Party — photo 10' },
-  { id: 11, src: '/events/wine-party11.JPG', alt: 'Wine Party — photo 11' },
+  { id: 1,  src: '/events/wp1.jpg',          alt: 'Wine Party — photo 1' },
+  { id: 2,  src: '/events/wp2.jpg',          alt: 'Wine Party — photo 2' },
+  { id: 3,  src: '/events/wp3.jpg',          alt: 'Wine Party — photo 3' },
+  { id: 4,  src: '/events/wp4.jpg',          alt: 'Wine Party — photo 4' },
+  { id: 5,  src: '/events/wine-party1.JPG',  alt: 'Wine Party — photo 5' },
+  { id: 6,  src: '/events/wine-party2.jpg',  alt: 'Wine Party — photo 6' },
+  { id: 7,  src: '/events/wine-party3.jpg',  alt: 'Wine Party — photo 7' },
+  { id: 8,  src: '/events/wine-party4.jpg',  alt: 'Wine Party — photo 8' },
+  { id: 9,  src: '/events/wine-party5.jpg',  alt: 'Wine Party — photo 9' },
+  { id: 10, src: '/events/wine-party6.jpg',  alt: 'Wine Party — photo 10' },
+  { id: 11, src: '/events/wine-party7.jpg',  alt: 'Wine Party — photo 11' },
+  { id: 12, src: '/events/wine-party8.jpg',  alt: 'Wine Party — photo 12' },
+  { id: 13, src: '/events/wine-party9.jpg',  alt: 'Wine Party — photo 13' },
+  { id: 14, src: '/events/wine-party10.JPG', alt: 'Wine Party — photo 14' },
+  { id: 15, src: '/events/wine-party11.JPG', alt: 'Wine Party — photo 15' },
 ];
 
 const UPCOMING = [

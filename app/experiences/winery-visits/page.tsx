@@ -4,7 +4,52 @@ import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, MapPin, ChevronDown } from 'lucide-react';
+import { ArrowLeft, MapPin, ChevronDown, X } from 'lucide-react';
+
+/* ── Gallery photos ── */
+const GALLERY = [
+  { id: 1,  src: '/events/Winery visits/wv1.jpg',  alt: 'Winery Visit — photo 1' },
+  { id: 2,  src: '/events/Winery visits/wv2.jpg',  alt: 'Winery Visit — photo 2' },
+  { id: 3,  src: '/events/Winery visits/wv3.jpg',  alt: 'Winery Visit — photo 3' },
+  { id: 4,  src: '/events/Winery visits/wv4.jpg',  alt: 'Winery Visit — photo 4' },
+  { id: 5,  src: '/events/Winery visits/wv5.jpg',  alt: 'Winery Visit — photo 5' },
+  { id: 6,  src: '/events/Winery visits/wv6.jpg',  alt: 'Winery Visit — photo 6' },
+  { id: 7,  src: '/events/Winery visits/wv7.jpg',  alt: 'Winery Visit — photo 7' },
+  { id: 8,  src: '/events/Winery visits/wv8.jpg',  alt: 'Winery Visit — photo 8' },
+  { id: 9,  src: '/events/Winery visits/wv9.jpg',  alt: 'Winery Visit — photo 9' },
+  { id: 10, src: '/events/Winery visits/wv10.jpg', alt: 'Winery Visit — photo 10' },
+];
+
+function Lightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.25 }}
+      className="fixed inset-0 z-[90] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <button
+        onClick={onClose}
+        className="absolute top-6 right-6 text-[#C4B5A0] hover:text-[#F5EEE6] transition-colors z-10"
+        aria-label="Close"
+      >
+        <X size={24} />
+      </button>
+      <motion.div
+        initial={{ scale: 0.92, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.92, opacity: 0 }}
+        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        className="relative max-w-5xl max-h-[85vh] w-full h-full"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <Image src={src} alt={alt} fill className="object-contain" sizes="90vw" />
+      </motion.div>
+    </motion.div>
+  );
+}
 
 const UPCOMING = [
   { month: 'MAY', day: '17', title: 'Barolo — Piedmont',      location: 'Barolo, Italy',    price: 95 },
@@ -15,6 +60,7 @@ const UPCOMING = [
 const PILLS = ['Private Access', 'Expert Guides', 'Iconic Estates'];
 
 export default function WineryVisitsPage() {
+  const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
   const [notifyEmail, setNotifyEmail] = useState('');
   const [notified, setNotified] = useState(false);
 
@@ -25,12 +71,17 @@ export default function WineryVisitsPage() {
   };
 
   return (
+    <>
+      <AnimatePresence>
+        {lightbox && <Lightbox {...lightbox} onClose={() => setLightbox(null)} />}
+      </AnimatePresence>
+
     <div className="bg-[#1A2E5C] min-h-screen text-[#F5EEE6]">
 
       {/* ── 1. HERO ── */}
       <section className="relative h-screen flex flex-col justify-end overflow-hidden">
         <Image
-          src="/events/wine-party3.jpg"
+          src="/events/Winery visits/wv5.jpg"
           alt="Winery Visits"
           fill
           className="object-cover"
@@ -141,7 +192,54 @@ export default function WineryVisitsPage() {
         </div>
       </section>
 
-      {/* ── 3. UPCOMING EVENTS ── */}
+      {/* ── 3. GALLERY ── */}
+      <section className="py-20 bg-[#101D3A]">
+        <div className="max-w-7xl mx-auto px-8 md:px-10">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7 }}
+            className="mb-12"
+          >
+            <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-3">GALLERY</div>
+            <h2
+              className="text-[clamp(2rem,4vw,3.5rem)] font-light text-[#F5EEE6] leading-none"
+              style={{ fontFamily: 'var(--font-syne)' }}
+            >
+              THE VISITS
+            </h2>
+          </motion.div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {GALLERY.map((photo, i) => (
+              <motion.button
+                key={photo.id}
+                initial={{ opacity: 0, scale: 0.97 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true, margin: '-30px' }}
+                transition={{ duration: 0.55, delay: i * 0.05, ease: [0.16, 1, 0.3, 1] }}
+                whileHover={{ scale: 1.02 }}
+                onClick={() => setLightbox({ src: photo.src, alt: photo.alt })}
+                className={`relative overflow-hidden rounded-xl cursor-zoom-in aspect-square ${
+                  i === 0 ? 'col-span-2 row-span-2' : ''
+                }`}
+              >
+                <Image
+                  src={photo.src}
+                  alt={photo.alt}
+                  fill
+                  className="object-cover transition-transform duration-500 hover:scale-105"
+                  sizes="(max-width: 768px) 50vw, 25vw"
+                />
+                <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition-colors duration-300" />
+              </motion.button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── 4. UPCOMING EVENTS ── */}
       <section className="py-24 md:py-32 bg-[#162549]">
         <div className="max-w-4xl mx-auto px-8 md:px-16">
           <motion.div
@@ -282,5 +380,6 @@ export default function WineryVisitsPage() {
       </section>
 
     </div>
+    </>
   );
 }

@@ -11,7 +11,7 @@ const EXPERIENCES = [
     id: 1,
     title: 'Wine Party',
     description: 'Themed wine nights with music, curated bottles and a crowd that loves both',
-    image: '/events/wine-party1.JPG',
+    image: '/events/copertina.jpg',
     href: '/experiences/wine-party',
   },
   {
@@ -25,7 +25,7 @@ const EXPERIENCES = [
     id: 3,
     title: 'Winery Visits',
     description: 'Private cellar tours and guided tastings at iconic estates',
-    image: '/events/wine-party3.jpg',
+    image: '/events/Winery visits/wcopertina.jpg',
     href: '/experiences/winery-visits',
   },
 ] as const;
