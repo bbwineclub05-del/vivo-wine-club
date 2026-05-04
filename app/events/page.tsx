@@ -75,7 +75,7 @@ function EventRow({ event, isLast }: { event: EventData; isLast: boolean }) {
           <h2
             className={`text-lg md:text-xl font-medium leading-snug mb-2 ${
               faded ? 'text-[#ccc]' : 'text-[#1a0505] group-hover:text-[#731515] transition-colors duration-300'
-            }`}
+            } ${event.titleStrikethrough ? 'line-through decoration-[#731515]/60' : ''}`}
             style={{ fontFamily: 'var(--font-syne)' }}
           >
             {event.title}

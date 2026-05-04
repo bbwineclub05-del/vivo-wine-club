@@ -12,23 +12,10 @@ export interface EventData {
   description: string;
   price: number;
   status: EventStatus;
+  titleStrikethrough?: boolean;
 }
 
 export const EVENTS: EventData[] = [
-  {
-    slug: 'wine-aperitif-torino-apr-2026',
-    title: 'Wine Aperitif',
-    type: 'APERITIF',
-    month: 'APR',
-    day: '24',
-    year: '2026',
-    location: 'Il Canto del Gallo, Torino',
-    locationFull: 'Il Canto del Gallo, Via Cosmo 4, Torino',
-    description:
-      'An intimate wine aperitif in one of Turin\'s finest wine bars. Curated pours, small bites and good company — the Vivo format at its purest.',
-    price: 0,
-    status: 'open',
-  },
   {
     slug: 'winery-visit-ca-del-bosco-apr-2026',
     title: 'Winery Visit · Ca\' del Bosco',
@@ -42,6 +29,21 @@ export const EVENTS: EventData[] = [
       'A private visit to Ca\' del Bosco, one of Italy\'s most iconic sparkling wine producers. Guided cellar tour, barrel tasting and a masterclass on the Franciacorta method.',
     price: 0,
     status: 'soldout',
+    titleStrikethrough: true,
+  },
+  {
+    slug: 'winery-visit-quintarelli-may-2026',
+    title: 'Winery Visit · Quintarelli',
+    type: 'WINERY VISIT',
+    month: 'MAY',
+    day: '9',
+    year: '2026',
+    location: 'Negrar, Valpolicella',
+    locationFull: 'Giuseppe Quintarelli, Negrar, Valpolicella',
+    description:
+      'An exclusive visit to one of Italy\'s most legendary estates. Private cellar access, vertical tasting and a rare glimpse into the Quintarelli method.',
+    price: 30,
+    status: 'open',
   },
   {
     slug: 'winery-visit-berlucchi-may-2026',
@@ -68,6 +70,20 @@ export const EVENTS: EventData[] = [
     locationFull: 'Boccadoro, Franciacorta',
     description:
       'Our signature wine party format comes to Franciacorta. Great local bottles, music and a crowd that lives for wine. One night in the heart of Italy\'s sparkling wine country.',
+    price: 0,
+    status: 'open',
+  },
+  {
+    slug: 'wine-weekend-forte-dei-marmi-may-2026',
+    title: 'Wine Weekend · Forte dei Marmi',
+    type: 'APERITIF',
+    month: 'MAY',
+    day: '30',
+    year: '2026',
+    location: 'Forte dei Marmi, Tuscany',
+    locationFull: 'Forte dei Marmi, Tuscany',
+    description:
+      'A summer Sunday on the Versilian coast — curated wines, sea breeze and good company.',
     price: 0,
     status: 'open',
   },

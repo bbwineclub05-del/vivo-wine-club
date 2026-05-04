@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Prevent Next.js from bundling these Node.js-only packages —
+  // they must run as-is in the Node.js runtime (API routes).
+  serverExternalPackages: ['pdf-lib', 'qrcode'],
+
   // Enable gzip + brotli compression for all responses
   compress: true,
 

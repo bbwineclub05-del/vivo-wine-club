@@ -6,11 +6,10 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { MapPin } from 'lucide-react';
 import { EVENTS, type EventData, type EventStatus } from '@/lib/events';
 
-// Memoised — pure display, props never change after mount
-const StatusBadge = memo(function StatusBadge({ status }: { status: EventStatus }) {
+const StatusBadge = memo(function StatusBadge({ status, slug }: { status: EventStatus; slug: string }) {
   if (status === 'open') {
     return (
-      <Link href="/events" className="text-[9px] tracking-[0.28em] px-4 lg:px-5 py-2.5 bg-[#731515] text-[#F5EEE6] border border-[#731515] hover:bg-[#aa4848] hover:border-[#aa4848] transition-all duration-300 whitespace-nowrap">
+      <Link href={`/checkout/${slug}`} className="text-[9px] tracking-[0.28em] px-4 lg:px-5 py-2.5 bg-[#731515] text-[#F5EEE6] border border-[#731515] hover:bg-[#aa4848] hover:border-[#aa4848] transition-all duration-300 whitespace-nowrap">
         BUY TICKETS
       </Link>
     );
@@ -79,7 +78,7 @@ function EventRow({
           <h3
             className={`text-base md:text-lg font-medium leading-snug mb-2 transition-colors duration-300 ${
               faded ? 'text-[#ccc]' : 'text-[#1a0505] group-hover:text-[#731515]'
-            }`}
+            } ${event.titleStrikethrough ? 'line-through decoration-[#731515]/60' : ''}`}
             style={{ fontFamily: 'var(--font-syne)' }}
           >
             {event.title}
@@ -92,21 +91,19 @@ function EventRow({
 
         {/* Status badge — desktop */}
         <div className="shrink-0 self-center hidden sm:block">
-          <StatusBadge status={event.status} />
+          <StatusBadge status={event.status} slug={event.slug} />
         </div>
       </div>
 
       {/* Mobile badge */}
       <div className="sm:hidden pb-5 pl-[56px]">
-        <StatusBadge status={event.status} />
+        <StatusBadge status={event.status} slug={event.slug} />
       </div>
 
       {!isLast && <div className={`h-px ${faded ? 'bg-[#e8d5d5]' : 'bg-[#731515]/8'}`} />}
     </motion.div>
   );
 }
-
-const HOME_EVENTS = EVENTS.slice(0, 3);
 
 export default function EventsSection() {
   const reducedMotion = useReducedMotion();
@@ -139,12 +136,12 @@ export default function EventsSection() {
         </motion.div>
 
         <div>
-          {HOME_EVENTS.map((event, i) => (
+          {EVENTS.map((event, i) => (
             <EventRow
               key={event.slug}
               event={event}
               index={i}
-              isLast={i === HOME_EVENTS.length - 1}
+              isLast={i === EVENTS.length - 1}
               reducedMotion={reducedMotion}
             />
           ))}

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Calendar, CreditCard, User, LogOut, ArrowRight, Wine, KeyRound } from 'lucide-react';
+import { Calendar, CreditCard, User, LogOut, ArrowRight, Wine, KeyRound, ScanLine } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import Navbar from '@/components/Navbar';
@@ -24,6 +24,14 @@ export default function MembersPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [pwStatus, setPwStatus]           = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [pwError, setPwError]             = useState('');
+  const [isStaff, setIsStaff]             = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const role = session?.user?.app_metadata?.role ?? session?.user?.user_metadata?.role;
+      setIsStaff(role === 'staff');
+    });
+  }, []);
 
   async function handlePasswordUpdate(e: React.FormEvent) {
     e.preventDefault();
@@ -271,6 +279,44 @@ export default function MembersPage() {
                   * Profile editing will be available when the platform launches.
                 </p>
               </motion.div>
+
+              {/* STAFF AREA */}
+              {isStaff && (
+                <motion.div
+                  initial={{ opacity: 0, y: 24 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                  className="md:col-span-2 lg:col-span-3 bg-[#1a0505] border border-[#3d1010] p-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-white/10 flex items-center justify-center shrink-0">
+                      <ScanLine size={18} className="text-white" />
+                    </div>
+                    <div>
+                      <div className="text-[9px] tracking-[0.4em] text-white/40 mb-1">STAFF TOOLS</div>
+                      <h2
+                        className="text-lg font-light text-white"
+                        style={{ fontFamily: 'var(--font-syne)' }}
+                      >
+                        Event Check-in Scanner
+                      </h2>
+                      <p
+                        className="text-xs text-white/50 mt-1"
+                        style={{ fontFamily: 'var(--font-nunito)' }}
+                      >
+                        Scan QR codes or enter order IDs to validate tickets at the door.
+                      </p>
+                    </div>
+                  </div>
+                  <Link
+                    href="/checkin"
+                    className="shrink-0 inline-flex items-center gap-2 text-[10px] tracking-[0.3em] text-white bg-[#731515] px-8 py-3.5 hover:bg-[#aa4848] transition-colors duration-300"
+                  >
+                    OPEN SCANNER
+                    <ArrowRight size={12} />
+                  </Link>
+                </motion.div>
+              )}
 
               {/* CHANGE PASSWORD */}
               <motion.div
