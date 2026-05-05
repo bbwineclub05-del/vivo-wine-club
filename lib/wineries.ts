@@ -293,7 +293,7 @@ export const WINERIES: Winery[] = [
   {
     slug: 'pellissero',
     name: 'Pellissero',
-    logo: undefined,
+    logo: '/wineries/pellissero.png',
     region: 'Barbaresco',
     regionSlug: 'barbaresco',
     country: 'Italy',
@@ -311,7 +311,7 @@ export const WINERIES: Winery[] = [
   {
     slug: 'ca-del-bosco',
     name: "Ca' del Bosco",
-    logo: undefined,
+    logo: '/wineries/ca-del-bosco.svg',
     region: 'Franciacorta',
     regionSlug: 'franciacorta',
     country: 'Italy',
@@ -327,7 +327,7 @@ export const WINERIES: Winery[] = [
   {
     slug: 'berlucchi',
     name: 'Berlucchi',
-    logo: undefined,
+    logo: '/wineries/berlucchi.svg',
     region: 'Franciacorta',
     regionSlug: 'franciacorta',
     country: 'Italy',
@@ -343,7 +343,7 @@ export const WINERIES: Winery[] = [
   {
     slug: 'monterossa',
     name: 'Monterossa',
-    logo: undefined,
+    logo: '/wineries/monterossa.png',
     region: 'Franciacorta',
     regionSlug: 'franciacorta',
     country: 'Italy',
@@ -359,7 +359,7 @@ export const WINERIES: Winery[] = [
   {
     slug: 'barone-pizzini',
     name: 'Barone Pizzini',
-    logo: undefined,
+    logo: '/wineries/barone-pizzini.svg',
     region: 'Franciacorta',
     regionSlug: 'franciacorta',
     country: 'Italy',
@@ -375,7 +375,7 @@ export const WINERIES: Winery[] = [
   {
     slug: 'boccadoro',
     name: 'Boccadoro',
-    logo: undefined,
+    logo: '/wineries/boccadoro.png',
     region: 'Franciacorta',
     regionSlug: 'franciacorta',
     country: 'Italy',
@@ -460,6 +460,7 @@ export const WINERIES: Winery[] = [
   {
     slug: 'quinta-do-noval',
     name: 'Quinta do Noval',
+    logo: '/wineries/quinta-do-noval.svg',
     region: 'Porto',
     regionSlug: 'porto',
     country: 'Portugal',
@@ -474,6 +475,7 @@ export const WINERIES: Winery[] = [
   {
     slug: 'grahams',
     name: "Graham's",
+    logo: '/wineries/grahams.svg',
     region: 'Porto',
     regionSlug: 'porto',
     country: 'Portugal',
