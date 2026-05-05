@@ -108,11 +108,13 @@ function EventRow({
 export default function EventsSection() {
   const reducedMotion = useReducedMotion();
 
+  const visibleEvents = EVENTS.filter((e) => !e.titleStrikethrough).slice(0, 3);
+
   return (
-    <section id="eventi" className="py-28 md:py-32 relative overflow-hidden">
+    <section id="eventi" className="pt-4 pb-12 md:pt-6 md:pb-16 relative overflow-hidden">
       <div className="fog-center" />
 
-      <div className="max-w-5xl mx-auto px-6 lg:px-10">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10">
         <motion.div
           initial={{ opacity: reducedMotion ? 1 : 0, y: reducedMotion ? 0 : 24 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -128,24 +130,41 @@ export default function EventsSection() {
             EVENTS
           </h2>
           <p
-            className="mt-6 text-lg text-[#7a4a4a] font-light italic max-w-md"
+            className="mt-6 text-lg text-[#7a4a4a] font-light italic max-w-xl whitespace-nowrap"
             style={{ fontFamily: 'var(--font-nunito)' }}
           >
-            Exclusive experiences reserved for our members — tastings, tours and unforgettable evenings
+            Exclusive experiences reserved for our members, tastings, tours and unforgettable evenings
           </p>
         </motion.div>
 
         <div>
-          {EVENTS.map((event, i) => (
+          {visibleEvents.map((event, i) => (
             <EventRow
               key={event.slug}
               event={event}
               index={i}
-              isLast={i === EVENTS.length - 1}
+              isLast={i === visibleEvents.length - 1}
               reducedMotion={reducedMotion}
             />
           ))}
         </div>
+
+        <motion.div
+          initial={{ opacity: reducedMotion ? 1 : 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: reducedMotion ? 0 : 0.5, delay: reducedMotion ? 0 : 0.3 }}
+          className="mt-10 flex justify-end"
+        >
+          <Link
+            href="/events"
+            className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] text-[#731515] hover:text-[#aa4848] transition-colors duration-300 group"
+            style={{ fontFamily: 'var(--font-nunito)' }}
+          >
+            EXPLORE MORE
+            <span className="group-hover:translate-x-0.5 transition-transform duration-300">→</span>
+          </Link>
+        </motion.div>
       </div>
     </section>
   );

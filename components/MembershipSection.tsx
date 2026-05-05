@@ -32,10 +32,10 @@ export default function MembershipSection() {
   const d = (n: number) => (reducedMotion ? 0 : n);
 
   return (
-    <section className="py-28 md:py-32 relative overflow-hidden">
+    <section className="py-16 md:py-20 relative overflow-hidden">
       <div className="fog-left" style={{ top: '10%' }} />
 
-      <div className="max-w-5xl mx-auto px-6 lg:px-10">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10">
 
         {/* Divider */}
         <motion.div
@@ -56,7 +56,7 @@ export default function MembershipSection() {
         >
           <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-5">MEMBERSHIP</div>
           <h2
-            className="text-[clamp(1.8rem,4.5vw,3.5rem)] font-light text-[#1a0505] leading-tight max-w-2xl"
+            className="text-[clamp(2rem,4.5vw,3.5rem)] font-light text-[#1a0505] leading-tight max-w-3xl"
             style={{ fontFamily: 'var(--font-syne)' }}
           >
             What You&apos;ll Experience as a Member of Vivo Wine Club

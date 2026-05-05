@@ -52,12 +52,11 @@ export default function ExperiencesSection() {
   const slideDuration = reducedMotion ? 0 : 0.55;
 
   return (
-    <section id="esperienze" className="py-28 md:py-32 relative overflow-hidden">
+    <section id="esperienze" className="py-16 md:py-20 relative overflow-hidden">
       <div className="fog-left" />
 
+      {/* Header — same max-w as slider */}
       <div className="max-w-7xl mx-auto px-6 lg:px-10">
-
-        {/* Header */}
         <motion.div
           initial={{ opacity: reducedMotion ? 1 : 0, y: reducedMotion ? 0 : 24 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -73,12 +72,16 @@ export default function ExperiencesSection() {
             EXPERIENCES
           </h2>
           <p
-            className="mt-6 text-lg text-[#7a4a4a] font-light italic max-w-md"
+            className="mt-6 text-lg text-[#7a4a4a] font-light italic max-w-xl whitespace-nowrap"
             style={{ fontFamily: 'var(--font-nunito)' }}
           >
-            Experiences for every taste — from lively wine parties to intimate cellar visits
+            Experiences for every taste, from lively wine parties to intimate cellar visits
           </p>
         </motion.div>
+      </div>
+
+      {/* Slider — max-w-7xl for wider card layout */}
+      <div className="max-w-7xl mx-auto px-6 lg:px-10">
 
         {/* Slider */}
         <motion.div

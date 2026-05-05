@@ -130,7 +130,7 @@ export const WINE_REGIONS: WineRegion[] = [
     mustTry: ['Ca\' del Bosco Annamaria Clementi', 'Bellavista Teatro', 'Berlucchi'],
     wineries: [
       { name: 'Monterossa',    logo: '/wineries/monterossa.png',      slug: 'monterossa'    },
-      { name: "Ca' del Bosco", logo: '/wineries/ca-del-bosco.svg',   slug: 'ca-del-bosco'  },
+      { name: "Ca' del Bosco", logo: '/sponsors/ca-del-bosco.png',   slug: 'ca-del-bosco'  },
       { name: 'Berlucchi',     logo: '/wineries/berlucchi.svg',       slug: 'berlucchi'     },
       { name: 'Barone Pizzini', logo: '/wineries/barone-pizzini.svg', slug: 'barone-pizzini' },
       { name: 'Boccadoro',     logo: '/wineries/boccadoro.png',       slug: 'boccadoro'     },

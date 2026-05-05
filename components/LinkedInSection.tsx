@@ -30,10 +30,10 @@ export default function LinkedInSection() {
   const d = (n: number) => (reducedMotion ? 0 : n);
 
   return (
-    <section className="py-28 md:py-32 relative overflow-hidden">
+    <section className="pt-4 pb-16 md:pt-6 md:pb-20 relative overflow-hidden">
       <div className="fog-right" style={{ top: '10%' }} />
 
-      <div className="max-w-5xl mx-auto px-6 lg:px-10">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10">
 
         {/* Header */}
         <motion.div
@@ -41,22 +41,20 @@ export default function LinkedInSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: d(0.8) }}
-          className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-10 lg:gap-20 items-start mb-14"
+          className="mb-14"
         >
-          <div>
-            <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-4">LATEST NEWS</div>
-            <h2
-              className="text-[clamp(2.2rem,5vw,4rem)] font-light text-[#1a0505] leading-tight section-title"
-              style={{ fontFamily: 'var(--font-syne)' }}
-            >
-              Our Latest<br />News
-            </h2>
-          </div>
+          <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-4">LATEST NEWS</div>
+          <h2
+            className="text-[clamp(2.5rem,6vw,5rem)] font-light text-[#1a0505] leading-none section-title"
+            style={{ fontFamily: 'var(--font-syne)' }}
+          >
+            Our Latest News
+          </h2>
           <p
-            className="text-base md:text-lg text-[#7a4a4a] font-light italic leading-relaxed self-end pb-1"
+            className="mt-6 text-lg text-[#7a4a4a] font-light italic max-w-xl"
             style={{ fontFamily: 'var(--font-nunito)' }}
           >
-            Behind-the-scenes stories, winery visits and exclusive moments — shared with our community on LinkedIn.
+            Behind-the-scenes stories, winery visits and exclusive moments, shared with our community on LinkedIn.
           </p>
         </motion.div>
 

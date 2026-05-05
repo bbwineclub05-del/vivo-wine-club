@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 
 /* ── Social icon SVGs ── */
@@ -22,14 +21,6 @@ function LinkedInIcon() {
   );
 }
 
-function TikTokIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.76a4.85 4.85 0 0 1-1.01-.07Z" />
-    </svg>
-  );
-}
-
 function MailIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -40,12 +31,12 @@ function MailIcon() {
 }
 
 const NAV_LINKS = [
-  { label: 'Events',         href: '/events'        },
-  { label: 'Wine Map',       href: '/wine-map'       },
-  { label: 'Wear the Club',  href: '/wear-the-club'  },
-  { label: 'Who We Are',     href: '/who-we-are'     },
-  { label: 'Collaborate',    href: '/collaborate'    },
-  { label: 'FAQ',            href: '/faq'            },
+  { label: 'Events',        href: '/events'       },
+  { label: 'Wine Map',      href: '/wine-map'      },
+  { label: 'Wear the Club', href: '/wear-the-club' },
+  { label: 'Who We Are',    href: '/who-we-are'    },
+  { label: 'Collaborate',   href: '/collaborate'   },
+  { label: 'FAQ',           href: '/faq'           },
 ];
 
 const CONTACTS = [
@@ -69,12 +60,6 @@ const CONTACTS = [
   },
 ];
 
-const SOCIALS = [
-  { Icon: InstagramIcon, label: 'Instagram', href: 'https://www.instagram.com/vivo.wineclub/' },
-  { Icon: LinkedInIcon,  label: 'LinkedIn',  href: 'https://www.linkedin.com/company/vivowineclub/?viewAsMember=true' },
-  { Icon: TikTokIcon,    label: 'TikTok',    href: '#' },
-];
-
 const LEGAL = [
   { label: 'Privacy Policy',   href: '#' },
   { label: 'Terms of Service', href: '#' },
@@ -82,200 +67,95 @@ const LEGAL = [
 ];
 
 export default function Footer() {
-  const [nlEmail, setNlEmail] = useState('');
-  const [nlState, setNlState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
-
-  async function handleNewsletter(e: React.FormEvent) {
-    e.preventDefault();
-    setNlState('loading');
-    const res = await fetch('/api/newsletter', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: nlEmail }),
-    });
-    if (res.ok) {
-      setNlState('done');
-    } else {
-      setNlState('error');
-    }
-  }
-
   return (
     <footer>
 
-      {/* ── TOP: Get in Touch ── */}
+      {/* ── CONTACT US ── */}
       <div className="bg-[#731515] px-6 lg:px-16 py-20">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+        <div className="max-w-7xl mx-auto">
 
-          {/* Left */}
-          <div>
-            <div className="text-[10px] tracking-[0.5em] text-white/50 mb-5">GET IN TOUCH</div>
-            <h2
-              className="text-[clamp(2.4rem,5vw,4rem)] font-light text-white leading-none mb-6"
-              style={{ fontFamily: 'var(--font-syne)' }}
-            >
-              Contact Us
-            </h2>
-            <div className="w-12 h-px bg-white/25 mb-6" />
-            <p
-              className="text-sm text-white/65 font-light leading-relaxed max-w-sm"
-              style={{ fontFamily: 'var(--font-nunito)' }}
-            >
-              Interested in joining, partnering, or simply learning more about what we do?
-              Reach out through any of the channels below.
-            </p>
+          {/* Two-column: description + contact rows */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+
+            {/* Left */}
+            <div>
+              <div className="text-[10px] tracking-[0.5em] text-white/50 mb-5">GET IN TOUCH</div>
+              <h2
+                className="text-[clamp(2.4rem,5vw,4rem)] font-light text-white leading-none mb-6"
+                style={{ fontFamily: 'var(--font-syne)' }}
+              >
+                Contact Us
+              </h2>
+              <div className="w-12 h-px bg-white/25 mb-6" />
+              <p
+                className="text-sm text-white/65 font-light leading-relaxed max-w-sm"
+                style={{ fontFamily: 'var(--font-nunito)' }}
+              >
+                Interested in joining, partnering, or simply learning more about what we do?
+                Reach out through any of the channels below.
+              </p>
+            </div>
+
+            {/* Right: contact rows */}
+            <div className="flex flex-col divide-y divide-white/10">
+              {CONTACTS.map(({ Icon, label, value, href }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target={href.startsWith('http') ? '_blank' : undefined}
+                  rel={href.startsWith('http') ? 'noopener noreferrer' : undefined}
+                  className="group flex items-center gap-5 py-6 hover:pl-2 transition-all duration-300"
+                >
+                  <span className="w-9 h-9 border border-white/20 flex items-center justify-center text-white/60 group-hover:border-white/50 group-hover:text-white transition-all duration-300 shrink-0">
+                    <Icon />
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[9px] tracking-[0.4em] text-white/45 mb-0.5">{label}</div>
+                    <div
+                      className="text-sm text-white/80 group-hover:text-white transition-colors duration-300"
+                      style={{ fontFamily: 'var(--font-nunito)' }}
+                    >
+                      {value}
+                    </div>
+                  </div>
+                  <span className="text-white/25 group-hover:text-white/60 transition-colors duration-300 text-lg">→</span>
+                </a>
+              ))}
+            </div>
+
           </div>
 
-          {/* Right: contact rows */}
-          <div className="flex flex-col divide-y divide-white/10">
-            {CONTACTS.map(({ Icon, label, value, href }) => (
-              <a
-                key={label}
-                href={href}
-                target={href.startsWith('http') ? '_blank' : undefined}
-                rel={href.startsWith('http') ? 'noopener noreferrer' : undefined}
-                className="group flex items-center gap-5 py-6 hover:pl-2 transition-all duration-300"
+          {/* Horizontal nav — below contacts */}
+          <div className="mt-12 pt-6 flex flex-wrap gap-x-8 gap-y-3">
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="text-[10px] tracking-[0.3em] text-white/50 hover:text-white transition-colors duration-200"
+                style={{ fontFamily: 'var(--font-nunito)' }}
               >
-                <span className="w-9 h-9 border border-white/20 flex items-center justify-center text-white/60 group-hover:border-white/50 group-hover:text-white transition-all duration-300 shrink-0">
-                  <Icon />
-                </span>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[9px] tracking-[0.4em] text-white/45 mb-0.5">{label}</div>
-                  <div
-                    className="text-sm text-white/80 group-hover:text-white transition-colors duration-300"
-                    style={{ fontFamily: 'var(--font-nunito)' }}
-                  >
-                    {value}
-                  </div>
-                </div>
-                <span className="text-white/25 group-hover:text-white/60 transition-colors duration-300 text-lg">→</span>
-              </a>
+                {link.label.toUpperCase()}
+              </Link>
             ))}
           </div>
 
         </div>
       </div>
 
-      {/* ── NEWSLETTER ── */}
-      <div className="bg-[#5b0f0f] px-6 lg:px-16 py-10 border-t border-white/10">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center gap-6">
-          <div className="shrink-0">
-            <div className="text-[9px] tracking-[0.5em] text-white/40 mb-1">STAY UPDATED</div>
-            <p className="text-sm font-light text-white/75" style={{ fontFamily: 'var(--font-syne)' }}>
-              Subscribe to our newsletter
-            </p>
-          </div>
-          <div className="flex-1">
-            {nlState === 'done' ? (
-              <p className="text-sm text-white/70 italic" style={{ fontFamily: 'var(--font-nunito)' }}>
-                You&apos;re in. Welcome to the club.
-              </p>
-            ) : (
-              <form onSubmit={handleNewsletter} className="flex gap-0 max-w-md">
-                <input
-                  type="email"
-                  required
-                  placeholder="your@email.com"
-                  value={nlEmail}
-                  onChange={(e) => setNlEmail(e.target.value)}
-                  disabled={nlState === 'loading'}
-                  className="flex-1 bg-white/10 border border-white/20 text-white text-sm px-4 py-2.5 placeholder:text-white/35 focus:outline-none focus:border-white/50 transition-colors duration-200 disabled:opacity-50"
-                  style={{ fontFamily: 'var(--font-nunito)' }}
-                />
-                <button
-                  type="submit"
-                  disabled={nlState === 'loading'}
-                  className="px-5 py-2.5 bg-white/15 hover:bg-white/25 border border-white/20 text-white text-[10px] tracking-[0.3em] transition-colors duration-200 disabled:opacity-50 whitespace-nowrap"
-                >
-                  {nlState === 'loading' ? '…' : 'SUBSCRIBE'}
-                </button>
-              </form>
-            )}
-            {nlState === 'error' && (
-              <p className="text-xs text-white/50 mt-1.5" style={{ fontFamily: 'var(--font-nunito)' }}>
-                Something went wrong. Try again.
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* ── BOTTOM ── */}
-      <div className="bg-[#5b1a14] px-6 lg:px-16 pt-12 pb-6">
-        <div className="max-w-7xl mx-auto">
-
-          {/* Main row: logo | nav | socials */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 items-start pb-10 border-b border-white/10">
-
-            {/* Logo + name */}
-            <Link href="/" className="flex items-center group">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/logo.svg"
-                alt="Vivo Wine Club"
-                className="h-14 w-auto object-contain"
-                style={{ imageRendering: '-webkit-optimize-contrast' }}
-              />
-              <span
-                className="text-base font-light tracking-[0.06em] text-white/80 group-hover:text-white transition-colors duration-300"
-                style={{ fontFamily: 'var(--font-syne)' }}
-              >
-                Vivo Wine Club
+      {/* ── COPYRIGHT ── */}
+      <div className="bg-[#731515] px-6 lg:px-16 py-4">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-[10px] text-white/30">
+          <span style={{ fontFamily: 'var(--font-nunito)' }}>
+            © {new Date().getFullYear()} Vivo Wine Club · All rights reserved
+          </span>
+          <div className="flex items-center gap-4 flex-wrap justify-center">
+            {LEGAL.map((l, i) => (
+              <span key={l.label} className="flex items-center gap-4">
+                <Link href={l.href} className="hover:text-white/60 transition-colors duration-200">{l.label}</Link>
+                {i < LEGAL.length - 1 && <span className="text-white/15">|</span>}
               </span>
-            </Link>
-
-            {/* Nav links */}
-            <nav className="flex flex-col gap-3">
-              {NAV_LINKS.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="text-[11px] tracking-[0.25em] text-white/55 hover:text-white transition-colors duration-200"
-                  style={{ fontFamily: 'var(--font-nunito)' }}
-                >
-                  {link.label.toUpperCase()}
-                </Link>
-              ))}
-            </nav>
-
-            {/* Socials */}
-            <div className="flex flex-col gap-4 md:items-end">
-              <div className="text-[9px] tracking-[0.4em] text-white/35 mb-1">FOLLOW US</div>
-              <div className="flex items-center gap-3">
-                {SOCIALS.map(({ Icon, label, href }) => (
-                  <a
-                    key={label}
-                    href={href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={label}
-                    className="w-9 h-9 border border-white/20 flex items-center justify-center text-white/55 hover:border-white/50 hover:text-white transition-all duration-300"
-                  >
-                    <Icon />
-                  </a>
-                ))}
-              </div>
-            </div>
-
+            ))}
           </div>
-
-          {/* Bottom bar */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-6 text-[10px] text-white/30">
-            <span style={{ fontFamily: 'var(--font-nunito)' }}>
-              © {new Date().getFullYear()} Vivo Wine Club S.r.l. · All rights reserved · VAT 12345678901
-            </span>
-            <div className="flex items-center gap-4 flex-wrap justify-center">
-              <span className="text-white/25">info@vivowineclub.com</span>
-              <span className="text-white/15">|</span>
-              {LEGAL.map((l, i) => (
-                <span key={l.label} className="flex items-center gap-4">
-                  <Link href={l.href} className="hover:text-white/60 transition-colors duration-200">{l.label}</Link>
-                  {i < LEGAL.length - 1 && <span className="text-white/15">|</span>}
-                </span>
-              ))}
-            </div>
-          </div>
-
         </div>
       </div>
 

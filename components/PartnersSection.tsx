@@ -1,11 +1,12 @@
 import Image from 'next/image';
 
 const PARTNERS = [
-  { name: 'Atelier Vini',    src: '/sponsors/atelier-vini.png',    href: 'https://www.atelierviniecultura.com/'                              },
-  { name: 'Canto del Gallo', src: '/sponsors/canto-del-gallo.jpg', href: 'https://ilcantodelgallowinebar.it/'                                },
-  { name: "Ca' del Bosco",   src: '/sponsors/ca-del-bosco.png',    href: 'https://www.cadelbosco.com/it/'                                    },
-  { name: 'Pavie Macquin',   src: '/sponsors/pavie-macquin.png',   href: 'https://www.pavie-macquin.com/'                                    },
-  { name: 'Sandrone',        src: '/sponsors/sandrone.avif',        href: 'https://sandroneluciano.com/it/web/?lev1=99&age=over18'           },
+  { name: 'Atelier Vini',          src: '/sponsors/atelier-vini.png',            href: 'https://www.atelierviniecultura.com/'                    },
+  { name: 'Canto del Gallo',       src: '/sponsors/canto-del-gallo.jpg',         href: 'https://ilcantodelgallowinebar.it/'                      },
+  { name: 'Pavie Macquin',         src: '/sponsors/pavie maquin.png',            href: 'https://www.pavie-macquin.com/'                         },
+  { name: 'Sandrone',              src: '/sponsors/sandrone.avif',                href: 'https://sandroneluciano.com/it/web/?lev1=99&age=over18' },
+  { name: 'Beneperora',            src: '/sponsors/beneperora.webp',              href: 'https://beneperora.it/'                                 },
+  { name: 'Alata Investment Club', src: '/sponsors/alata.png',                  href: 'https://www.alatainvestmentclub.com/'                   },
 ];
 
 // Logo item width + gap in px — must match the CSS values below
@@ -20,7 +21,7 @@ const REPEATED = Array.from({ length: COPIES }, () => PARTNERS).flat();
 
 export default function PartnersSection() {
   return (
-    <section className="py-20 relative overflow-hidden">
+    <section className="pt-4 pb-0 relative overflow-hidden">
 
       {/* Header */}
       <div className="max-w-5xl mx-auto px-6 lg:px-10">
@@ -91,7 +92,7 @@ export default function PartnersSection() {
       </div>
 
       <div className="max-w-5xl mx-auto px-6 lg:px-10">
-        <div className="w-full h-px bg-gradient-to-r from-transparent via-[#731515]/20 to-transparent mt-14" />
+        <div className="w-full h-px bg-gradient-to-r from-transparent via-[#731515]/20 to-transparent mt-8" />
       </div>
 
       <style>{`

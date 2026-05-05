@@ -311,7 +311,7 @@ export const WINERIES: Winery[] = [
   {
     slug: 'ca-del-bosco',
     name: "Ca' del Bosco",
-    logo: '/wineries/ca-del-bosco.svg',
+    logo: '/sponsors/ca-del-bosco.png',
     region: 'Franciacorta',
     regionSlug: 'franciacorta',
     country: 'Italy',

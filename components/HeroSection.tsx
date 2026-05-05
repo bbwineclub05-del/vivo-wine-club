@@ -180,8 +180,7 @@ export default function HeroSection() {
           className="text-[clamp(1rem,2.2vw,1.25rem)] text-white/70 font-light tracking-wide max-w-2xl mx-auto leading-relaxed"
           style={{ fontFamily: 'var(--font-nunito)' }}
         >
-          Where young people discover wine — from intimate cellar visits and guided
-          tastings to themed wine parties with music, good vibes and great bottles.
+          Where young people discover wine: cellar visits, guided tastings and wine parties with music, good vibes and great bottles.
         </motion.p>
 
         {/* CTA buttons */}
@@ -192,10 +191,10 @@ export default function HeroSection() {
           className="flex items-center justify-center mt-12"
         >
           <Link
-            href="/events"
-            className="px-12 py-4 bg-[#731515] text-white text-[11px] tracking-[0.35em] hover:bg-[#aa4848] hover:shadow-[0_0_40px_rgba(115,21,21,0.3)] transition-all duration-300 border border-[#731515]"
+            href="/membership"
+            className="px-14 py-5 bg-[#731515] text-white text-[13px] tracking-[0.35em] hover:bg-[#aa4848] hover:shadow-[0_0_40px_rgba(115,21,21,0.3)] transition-all duration-300 border border-[#731515]"
           >
-            BUY TICKETS
+            BECOME A MEMBER
           </Link>
         </motion.div>
 
