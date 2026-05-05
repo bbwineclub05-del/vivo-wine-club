@@ -1,8 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="175" height="54.127" viewBox="0 0 175 54.127">
+<svg xmlns="http://www.w3.org/2000/svg" width="175" height="54.127" viewBox="0 0 175 54.127"><rect width="175" height="54.127" fill="#1a0505"/>
   <defs>
     <style>
       .cls-1 {
-        fill: #1a1a1a;
+        fill: #fff;
         fill-rule: evenodd;
       }
     </style>
