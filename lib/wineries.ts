@@ -393,7 +393,7 @@ export const WINERIES: Winery[] = [
   {
     slug: 'aldo-conterno',
     name: 'Aldo Conterno',
-    logo: undefined,
+    logo: '/wineries/aldo-conterno.png',
     region: 'Barolo',
     regionSlug: 'barolo',
     country: 'Italy',
@@ -409,7 +409,7 @@ export const WINERIES: Winery[] = [
   {
     slug: 'clerico',
     name: 'Clerico',
-    logo: undefined,
+    logo: '/wineries/clerico.png',
     region: 'Barolo',
     regionSlug: 'barolo',
     country: 'Italy',
@@ -425,7 +425,7 @@ export const WINERIES: Winery[] = [
   {
     slug: 'giovanni-rosso',
     name: 'Giovanni Rosso',
-    logo: undefined,
+    logo: '/wineries/giovanni-rosso.png',
     region: 'Barolo',
     regionSlug: 'barolo',
     country: 'Italy',

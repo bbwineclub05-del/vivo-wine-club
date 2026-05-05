@@ -28,9 +28,9 @@ export const WINE_REGIONS: WineRegion[] = [
     grapes: ['Nebbiolo'],
     mustTry: ['Barolo DOCG', 'Barolo Riserva', 'Single-vineyard Cru Barolo'],
     wineries: [
-      { name: 'Aldo Conterno',   slug: 'aldo-conterno'   },
-      { name: 'Clerico',         slug: 'clerico'         },
-      { name: 'Giovanni Rosso',  slug: 'giovanni-rosso'  },
+      { name: 'Aldo Conterno',   logo: '/wineries/aldo-conterno.png',   slug: 'aldo-conterno'   },
+      { name: 'Clerico',         logo: '/wineries/clerico.png',         slug: 'clerico'         },
+      { name: 'Giovanni Rosso',  logo: '/wineries/giovanni-rosso.png',  slug: 'giovanni-rosso'  },
       { name: 'Luciano Sandrone', logo: '/wineries/luciano-sandrone.avif', slug: 'luciano-sandrone' },
     ],
   },
@@ -111,8 +111,8 @@ export const WINE_REGIONS: WineRegion[] = [
     grapes: ['Nebbiolo'],
     mustTry: ['Gaja Barbaresco', 'Produttori del Barbaresco', 'Bruno Giacosa Asili'],
     wineries: [
-      { name: 'Gaja',       logo: '/wineries/gaja.webp', slug: 'gaja'       },
-      { name: 'Pellissero',                              slug: 'pellissero' },
+      { name: 'Gaja',       logo: '/wineries/gaja.webp',       slug: 'gaja'       },
+      { name: 'Pellissero', logo: '/wineries/pellissero.png',  slug: 'pellissero' },
     ],
   },
   {
@@ -129,11 +129,11 @@ export const WINE_REGIONS: WineRegion[] = [
     grapes: ['Chardonnay', 'Pinot Nero', 'Pinot Bianco'],
     mustTry: ['Ca\' del Bosco Annamaria Clementi', 'Bellavista Teatro', 'Berlucchi'],
     wineries: [
-      { name: 'Monterossa',    slug: 'monterossa'    },
-      { name: "Ca' del Bosco", slug: 'ca-del-bosco'  },
-      { name: 'Berlucchi',     slug: 'berlucchi'     },
-      { name: 'Barone Pizzini', slug: 'barone-pizzini' },
-      { name: 'Boccadoro',     slug: 'boccadoro'     },
+      { name: 'Monterossa',    logo: '/wineries/monterossa.png',      slug: 'monterossa'    },
+      { name: "Ca' del Bosco", logo: '/wineries/ca-del-bosco.svg',   slug: 'ca-del-bosco'  },
+      { name: 'Berlucchi',     logo: '/wineries/berlucchi.svg',       slug: 'berlucchi'     },
+      { name: 'Barone Pizzini', logo: '/wineries/barone-pizzini.svg', slug: 'barone-pizzini' },
+      { name: 'Boccadoro',     logo: '/wineries/boccadoro.png',       slug: 'boccadoro'     },
     ],
   },
   {
@@ -178,8 +178,8 @@ export const WINE_REGIONS: WineRegion[] = [
     grapes: ['Touriga Nacional', 'Touriga Franca', 'Tinta Roriz', 'Tinto Cão'],
     mustTry: ['Quinta do Noval Nacional', "Graham's Vintage Port", 'Niepoort Charme', 'Ramos Pinto'],
     wineries: [
-      { name: 'Quinta do Noval', slug: 'quinta-do-noval' },
-      { name: "Graham's",        slug: 'grahams'         },
+      { name: 'Quinta do Noval', logo: '/wineries/quinta-do-noval.svg', slug: 'quinta-do-noval' },
+      { name: "Graham's",        logo: '/wineries/grahams.svg',        slug: 'grahams'         },
     ],
   },
   {
