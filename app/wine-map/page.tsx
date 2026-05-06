@@ -168,7 +168,7 @@ export default function WineMapPage() {
               className="text-[clamp(2rem,5vw,4rem)] font-light text-white leading-tight"
               style={{ fontFamily: 'var(--font-syne)' }}
             >
-              Wine Map
+              Wine Visits
             </h1>
             <p
               className="mt-4 text-sm md:text-base text-white/75 font-light italic max-w-lg leading-relaxed"
@@ -301,7 +301,7 @@ export default function WineMapPage() {
                     >
                       {/* Panel header */}
                       <div className="mb-6">
-                        <div className="text-[9px] tracking-[0.5em] text-[#731515] mb-2">WINE REGIONS</div>
+                        <div className="text-[9px] tracking-[0.5em] text-[#731515] mb-2">WINE MAP</div>
                         <p
                           className="text-xs text-[#7a4a4a]/70 leading-relaxed"
                           style={{ fontFamily: 'var(--font-nunito)' }}
