@@ -31,7 +31,7 @@ export default function PartnersSection() {
             className="text-[clamp(1.8rem,4vw,3rem)] font-light text-[#1a0505] leading-none"
             style={{ fontFamily: 'var(--font-syne)' }}
           >
-            Our Partners
+            Our Partners & Sponsors
           </h2>
         </div>
         <div className="w-full h-px bg-gradient-to-r from-transparent via-[#731515]/20 to-transparent mb-14" />

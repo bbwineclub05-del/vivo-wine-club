@@ -16,6 +16,9 @@ const MembershipSection = dynamic(() => import('@/components/MembershipSection')
 const StatsSection = dynamic(() => import('@/components/StatsSection'), {
   loading: () => <SectionSkeleton height="h-[220px]" />,
 });
+const VisionMissionSection = dynamic(() => import('@/components/VisionMissionSection'), {
+  loading: () => <SectionSkeleton height="h-[260px]" />,
+});
 const ExperiencesSection = dynamic(() => import('@/components/ExperiencesSection'), {
   loading: () => <SectionSkeleton height="h-[680px]" />,
 });
@@ -40,6 +43,7 @@ export default function Home() {
         <HeroSection />
         <MembershipSection />
         <StatsSection />
+        <VisionMissionSection />
         <ExperiencesSection />
         <EventsSection />
         <LinkedInSection />

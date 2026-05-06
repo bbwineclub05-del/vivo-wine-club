@@ -122,7 +122,7 @@ export default function EventsSection() {
           transition={{ duration: reducedMotion ? 0 : 0.8 }}
           className="mb-16"
         >
-          <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-4">2026 CALENDAR</div>
+          <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-4">FEATURED EVENTS</div>
           <h2
             className="text-[clamp(2.5rem,6vw,5rem)] font-light text-[#1a0505] leading-none section-title"
             style={{ fontFamily: 'var(--font-syne)' }}

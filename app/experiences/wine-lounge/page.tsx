@@ -30,7 +30,7 @@ export default function WineLoungeePage() {
       {/* ── 1. HERO ── */}
       <section className="relative h-screen flex flex-col justify-end overflow-hidden">
         <Image
-          src="/events/wine-party6.jpg"
+          src="/events/bottiglie.jpg"
           alt="Wine Lounge"
           fill
           className="object-cover"
@@ -142,7 +142,33 @@ export default function WineLoungeePage() {
         </div>
       </section>
 
-      {/* ── 3. UPCOMING EVENTS ── */}
+      {/* ── 3. GALLERY ── */}
+      <section className="py-12 bg-[#4A1525]">
+        <div className="max-w-4xl mx-auto px-8 md:px-16">
+          <div className="grid grid-cols-2 gap-4">
+            {['/events/wine lounge 1.jpg', '/events/wine lounge 2.jpg'].map((src, i) => (
+              <motion.div
+                key={src}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.7, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
+                className="relative aspect-[4/3] overflow-hidden"
+              >
+                <Image
+                  src={src}
+                  alt={`Wine Lounge ${i + 1}`}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 50vw, 400px"
+                />
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── 4. UPCOMING EVENTS ── */}
       <section className="py-24 md:py-32 bg-[#4A1525]">
         <div className="max-w-4xl mx-auto px-8 md:px-16">
           <motion.div
@@ -216,7 +242,7 @@ export default function WineLoungeePage() {
         </div>
       </section>
 
-      {/* ── 4. NOTIFY CTA ── */}
+      {/* ── 5. NOTIFY CTA ── */}
       <section className="py-24 md:py-32 bg-[#3D1020] relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_60%,rgba(115,21,21,0.12),transparent_65%)] pointer-events-none" />
 

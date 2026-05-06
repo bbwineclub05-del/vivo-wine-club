@@ -18,7 +18,7 @@ const EXPERIENCES = [
     id: 2,
     title: 'Wine Lounge',
     description: 'The perfect evening in the most interesting wine bars across Europe',
-    image: '/events/wine-party6.jpg',
+    image: '/events/bottiglie.jpg',
     href: '/experiences/wine-lounge',
   },
   {

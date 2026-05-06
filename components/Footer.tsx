@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 
 /* ── Social icon SVGs ── */
 function InstagramIcon() {
@@ -17,6 +18,14 @@ function LinkedInIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
       <path d="M4.98 3.5A2.49 2.49 0 0 0 2.5 5.99C2.5 7.37 3.6 8.49 4.98 8.49a2.49 2.49 0 0 0 0-4.99ZM2.76 10.2h4.44V21H2.76V10.2ZM9.35 10.2h4.25v1.49h.06c.59-1.12 2.04-2.3 4.2-2.3 4.49 0 5.32 2.96 5.32 6.8V21h-4.43v-4.27c0-1.02-.02-2.33-1.42-2.33-1.43 0-1.64 1.11-1.64 2.26V21H9.35V10.2Z" />
+    </svg>
+  );
+}
+
+function TikTokIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06Z" />
     </svg>
   );
 }
@@ -53,6 +62,12 @@ const CONTACTS = [
     href: 'https://www.linkedin.com/company/vivowineclub/?viewAsMember=true',
   },
   {
+    Icon: TikTokIcon,
+    label: 'TIKTOK',
+    value: '@vivowineclub',
+    href: 'https://www.tiktok.com/@vivowineclub',
+  },
+  {
     Icon: MailIcon,
     label: 'EMAIL',
     value: 'info@vivowineclub.com',
@@ -78,22 +93,35 @@ export default function Footer() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
 
             {/* Left */}
-            <div>
-              <div className="text-[10px] tracking-[0.5em] text-white/50 mb-5">GET IN TOUCH</div>
-              <h2
-                className="text-[clamp(2.4rem,5vw,4rem)] font-light text-white leading-none mb-6"
-                style={{ fontFamily: 'var(--font-syne)' }}
-              >
-                Contact Us
-              </h2>
-              <div className="w-12 h-px bg-white/25 mb-6" />
-              <p
-                className="text-sm text-white/65 font-light leading-relaxed max-w-sm"
-                style={{ fontFamily: 'var(--font-nunito)' }}
-              >
-                Interested in joining, partnering, or simply learning more about what we do?
-                Reach out through any of the channels below.
-              </p>
+            <div className="flex flex-col justify-between h-full">
+              <div>
+                <div className="text-[10px] tracking-[0.5em] text-white/50 mb-5">GET IN TOUCH</div>
+                <h2
+                  className="text-[clamp(2.4rem,5vw,4rem)] font-light text-white leading-none mb-6"
+                  style={{ fontFamily: 'var(--font-syne)' }}
+                >
+                  Contact Us
+                </h2>
+                <div className="w-12 h-px bg-white/25 mb-6" />
+                <p
+                  className="text-sm text-white/65 font-light leading-relaxed max-w-sm"
+                  style={{ fontFamily: 'var(--font-nunito)' }}
+                >
+                  Interested in joining, partnering, or simply learning more about what we do?
+                  Reach out through any of the channels below.
+                </p>
+              </div>
+
+              {/* Logo bottom-left */}
+              <div className="mt-12 hidden lg:block">
+                <Image
+                  src="/logobianco.png"
+                  alt="Vivo Wine Club"
+                  width={160}
+                  height={107}
+                  className="opacity-80"
+                />
+              </div>
             </div>
 
             {/* Right: contact rows */}
