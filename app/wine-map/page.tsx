@@ -192,8 +192,8 @@ export default function WineMapPage() {
         <section className="relative overflow-hidden pb-24">
           <div className="fog-right" style={{ top: '10%' }} />
 
+          {/* Divider — kept in a padded container */}
           <div className="max-w-7xl mx-auto px-6 lg:px-10">
-
             <motion.div
               initial={{ scaleX: reducedMotion ? 1 : 0 }}
               whileInView={{ scaleX: 1 }}
@@ -201,16 +201,18 @@ export default function WineMapPage() {
               transition={{ duration: d(0.9), ease: [0.16, 1, 0.3, 1] }}
               className="origin-left w-full h-px bg-gradient-to-r from-[#731515]/30 via-[#731515]/10 to-transparent mb-14"
             />
+          </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
+          {/* Full-bleed grid: map left-edge, panel right-edge */}
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-0 items-start">
 
-              {/* Map */}
+              {/* Map — touches left edge */}
               <motion.div
                 initial={{ opacity: reducedMotion ? 1 : 0, scale: reducedMotion ? 1 : 0.97 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 transition={{ duration: d(0.9), ease: [0.16, 1, 0.3, 1] }}
-                className="lg:col-span-3 relative"
+                className="lg:col-span-3 relative pl-0"
               >
                 <div className="w-full" style={{ aspectRatio: '800 / 580' }}>
                   <WineriesMap
@@ -219,12 +221,12 @@ export default function WineMapPage() {
                     selected={selected}
                   />
                 </div>
-                <p className="text-center text-[10px] tracking-[0.3em] text-[#7a4a4a]/50 mt-3">
+                <p className="text-center text-[10px] tracking-[0.3em] text-[#7a4a4a]/50 mt-3 px-6">
                   CLICK A MARKER TO EXPLORE THE REGION
                 </p>
               </motion.div>
 
-              {/* Info panel */}
+              {/* Info panel — touches right edge */}
               <div className="lg:col-span-2 lg:sticky lg:top-28">
                 <AnimatePresence mode="wait">
                   {selected ? (
@@ -383,7 +385,6 @@ export default function WineMapPage() {
                 </AnimatePresence>
               </div>
             </div>
-          </div>
         </section>
 
         {/* ── TOP ESTATES RANKING ── */}

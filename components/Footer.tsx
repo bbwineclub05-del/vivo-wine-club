@@ -112,17 +112,7 @@ export default function Footer() {
                 </p>
               </div>
 
-              {/* Logo bottom-left */}
-              <div className="mt-12 hidden lg:block">
-                <Image
-                  src="/logobianco.png"
-                  alt="Vivo Wine Club"
-                  width={160}
-                  height={107}
-                  className="opacity-80"
-                />
               </div>
-            </div>
 
             {/* Right: contact rows */}
             <div className="flex flex-col divide-y divide-white/10">
@@ -153,19 +143,31 @@ export default function Footer() {
 
           </div>
 
-          {/* Horizontal nav — below contacts */}
-          <div className="mt-12 pt-6 flex flex-wrap gap-x-8 gap-y-3">
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-[10px] tracking-[0.3em] text-white/50 hover:text-white transition-colors duration-200"
-                style={{ fontFamily: 'var(--font-nunito)' }}
-              >
-                {link.label.toUpperCase()}
-              </Link>
-            ))}
+          {/* Logo + horizontal nav on same row */}
+          <div className="mt-12 pt-6 flex items-center">
+            <Image
+              src="/logobianco.png"
+              alt="Vivo Wine Club"
+              width={120}
+              height={80}
+              className="opacity-70 shrink-0"
+            />
+            <div className="flex-1 flex flex-wrap justify-center gap-x-8 gap-y-3">
+              {NAV_LINKS.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="text-[10px] tracking-[0.3em] text-white/50 hover:text-white transition-colors duration-200"
+                  style={{ fontFamily: 'var(--font-nunito)' }}
+                >
+                  {link.label.toUpperCase()}
+                </Link>
+              ))}
+            </div>
+            {/* Spacer to balance logo width */}
+            <div style={{ width: 120 }} className="shrink-0" />
           </div>
+
 
         </div>
       </div>
@@ -176,6 +178,13 @@ export default function Footer() {
           <span style={{ fontFamily: 'var(--font-nunito)' }}>
             © {new Date().getFullYear()} Vivo Wine Club · All rights reserved
           </span>
+          <a
+            href="mailto:info@vivowineclub.com"
+            className="hover:text-white/60 transition-colors duration-200"
+            style={{ fontFamily: 'var(--font-nunito)' }}
+          >
+            info@vivowineclub.com
+          </a>
           <div className="flex items-center gap-4 flex-wrap justify-center">
             {LEGAL.map((l, i) => (
               <span key={l.label} className="flex items-center gap-4">

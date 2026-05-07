@@ -25,7 +25,7 @@ const EXPERIENCES = [
     id: 3,
     title: 'Winery Visits',
     description: 'Private cellar tours and guided tastings at iconic estates',
-    image: '/events/Winery visits/wcopertina.jpg',
+    image: '/events/Winery visits/wcopertina.png',
     href: '/experiences/winery-visits',
   },
 ] as const;
@@ -91,7 +91,7 @@ export default function ExperiencesSection() {
           transition={{ duration: reducedMotion ? 0 : 0.9, delay: reducedMotion ? 0 : 0.15, ease: [0.16, 1, 0.3, 1] }}
         >
           {/* Card frame */}
-          <div className="relative overflow-hidden rounded-2xl h-[340px] sm:h-[420px] md:h-[520px] lg:h-[560px]">
+          <div className="relative overflow-hidden h-[340px] sm:h-[420px] md:h-[520px] lg:h-[560px]">
             <AnimatePresence initial={false} custom={dir}>
               <motion.div
                 key={idx}

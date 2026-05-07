@@ -17,7 +17,10 @@ export default function VisionMissionSection() {
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
             className="bg-[#fdf6f6] p-10 md:p-12 flex flex-col gap-5"
           >
-            <div className="text-sm font-bold tracking-[0.4em] text-[#731515]">OUR VISION</div>
+            <h3
+              className="text-[clamp(1.8rem,3vw,2.6rem)] font-light text-[#1a0505] leading-none"
+              style={{ fontFamily: 'var(--font-syne)' }}
+            >Our Vision</h3>
             <div className="w-8 h-px bg-[#731515]/30" />
             <p
               className="text-lg font-normal text-[#7a4a4a] leading-relaxed"
@@ -35,7 +38,10 @@ export default function VisionMissionSection() {
             transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
             className="bg-[#fdf6f6] p-10 md:p-12 flex flex-col gap-5"
           >
-            <div className="text-sm font-bold tracking-[0.4em] text-[#731515]">OUR MISSION</div>
+            <h3
+              className="text-[clamp(1.8rem,3vw,2.6rem)] font-light text-[#1a0505] leading-none"
+              style={{ fontFamily: 'var(--font-syne)' }}
+            >Our Mission</h3>
             <div className="w-8 h-px bg-[#731515]/30" />
             <p
               className="text-lg font-normal text-[#7a4a4a] leading-relaxed"
