@@ -20,11 +20,6 @@ const BENEFITS = [
     title: 'Promotions & Discounts',
     body: 'Member-only promotional offers and discounts with our partner wineries, restaurants and wine producers.',
   },
-  {
-    number: '04',
-    title: 'Publications & Newsletter',
-    body: 'Exclusive access to curated content, market insights and editorial newsletters about the world of wine — from emerging producers to investment-grade bottles.',
-  },
 ];
 
 export default function MembershipSection() {
@@ -64,7 +59,7 @@ export default function MembershipSection() {
         </motion.div>
 
         {/* Benefits grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-[#731515]/10 mb-14">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-[#731515]/10 mb-14">
           {BENEFITS.map((b, i) => (
             <motion.div
               key={b.number}

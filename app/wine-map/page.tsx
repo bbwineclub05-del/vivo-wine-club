@@ -17,7 +17,7 @@ const TOP_ESTATES = [
   { rank: '01', name: 'Château Latour',          location: 'Pauillac, Bordeaux',    logo: '/wineries/chateau-latour.webp',  slug: 'chateau-latour'           },
   { rank: '02', name: 'Château Mouton Rothschild', location: 'Pauillac, Bordeaux',  logo: '/wineries/chateau-mouton.jpg',   slug: 'chateau-mouton-rothschild'},
   { rank: '03', name: 'Château Margaux',          location: 'Margaux, Bordeaux',     logo: '/wineries/chateau-margaux.png',  slug: 'chateau-margaux'          },
-  { rank: '04', name: "Ca' del Bosco",            location: 'Franciacorta, Italy',   logo: null,                             slug: 'ca-del-bosco'             },
+  { rank: '04', name: "Ca' del Bosco",            location: 'Franciacorta, Italy',   logo: '/wineries/Ca-del-Bosco.png',     slug: 'ca-del-bosco'             },
   { rank: '05', name: 'Gaja',                     location: 'Barbaresco, Italy',     logo: '/wineries/gaja.webp',            slug: 'gaja'                     },
 ] as const;
 
@@ -457,38 +457,89 @@ export default function WineMapPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#e8d5d5]">
 
-              {[
-                { value: '10',             label: 'Regions visited',  sub: 'Across France, Italy & Portugal' },
-                { value: '20+',           label: 'Estates visited',  sub: 'And counting'                   },
-                { value: 'FR · IT · PT',  label: 'Countries',        sub: 'France, Italy and Portugal'     },
-              ].map(({ value, label, sub }, i) => (
-                <motion.div
-                  key={label}
-                  initial={{ opacity: reducedMotion ? 1 : 0, y: reducedMotion ? 0 : 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: d(0.7), delay: reducedMotion ? 0 : i * 0.1 }}
-                  className="flex flex-col items-center text-center py-10 sm:py-0 px-6"
+              {/* Regions visited */}
+              <motion.div
+                initial={{ opacity: reducedMotion ? 1 : 0, y: reducedMotion ? 0 : 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: d(0.7) }}
+                className="flex flex-col items-center text-center py-10 sm:py-0 px-6"
+              >
+                <span
+                  className="text-[clamp(2.8rem,7vw,4.5rem)] font-light text-[#731515] leading-none mb-2"
+                  style={{ fontFamily: 'var(--font-syne)' }}
                 >
-                  <span
-                    className="text-[clamp(2.8rem,7vw,4.5rem)] font-light text-[#731515] leading-none mb-2"
-                    style={{ fontFamily: 'var(--font-syne)' }}
-                  >
-                    {value}
-                  </span>
-                  <span
-                    className="text-[10px] tracking-[0.35em] text-[#1a0505] mb-1"
-                  >
-                    {label.toUpperCase()}
-                  </span>
-                  <span
-                    className="text-xs text-[#7a4a4a]/60"
-                    style={{ fontFamily: 'var(--font-nunito)' }}
-                  >
-                    {sub}
-                  </span>
-                </motion.div>
-              ))}
+                  10+
+                </span>
+                <span className="text-[10px] tracking-[0.35em] text-[#1a0505] mb-3">
+                  REGIONS VISITED
+                </span>
+                <div
+                  className="grid grid-cols-2 gap-x-5 gap-y-0.5 text-left mt-1"
+                  style={{ fontFamily: 'var(--font-nunito)' }}
+                >
+                  {[
+                    'Bordeaux', 'Champagne', 'Borgogna', 'Barolo',
+                    'Barbaresco', 'Franciacorta', 'Valpolicella', 'Chianti',
+                    'Bolgheri', 'Brunello', 'Porto',
+                  ].map((r) => (
+                    <span key={r} className="text-[10px] text-[#7a4a4a]/55 leading-5">
+                      {r}
+                    </span>
+                  ))}
+                </div>
+              </motion.div>
+
+              {/* Estates visited */}
+              <motion.div
+                initial={{ opacity: reducedMotion ? 1 : 0, y: reducedMotion ? 0 : 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: d(0.7), delay: reducedMotion ? 0 : 0.1 }}
+                className="flex flex-col items-center text-center py-10 sm:py-0 px-6"
+              >
+                <span
+                  className="text-[clamp(2.8rem,7vw,4.5rem)] font-light text-[#731515] leading-none mb-2"
+                  style={{ fontFamily: 'var(--font-syne)' }}
+                >
+                  80+
+                </span>
+                <span className="text-[10px] tracking-[0.35em] text-[#1a0505] mb-1">
+                  ESTATES VISITED
+                </span>
+                <span
+                  className="text-xs text-[#7a4a4a]/60"
+                  style={{ fontFamily: 'var(--font-nunito)' }}
+                >
+                  And counting
+                </span>
+              </motion.div>
+
+              {/* Countries */}
+              <motion.div
+                initial={{ opacity: reducedMotion ? 1 : 0, y: reducedMotion ? 0 : 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: d(0.7), delay: reducedMotion ? 0 : 0.2 }}
+                className="flex flex-col items-center text-center py-10 sm:py-0 px-6"
+              >
+                <span
+                  className="text-[clamp(2.8rem,7vw,4.5rem)] font-light text-[#731515] leading-none mb-2"
+                  style={{ fontFamily: 'var(--font-syne)' }}
+                >
+                  FR · IT · PT
+                </span>
+                <span className="text-[10px] tracking-[0.35em] text-[#1a0505] mb-1">
+                  COUNTRIES
+                </span>
+                <span
+                  className="text-xs text-[#7a4a4a]/60"
+                  style={{ fontFamily: 'var(--font-nunito)' }}
+                >
+                  France, Italy and Portugal
+                </span>
+              </motion.div>
+
             </div>
 
           </div>

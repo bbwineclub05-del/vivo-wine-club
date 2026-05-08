@@ -34,6 +34,12 @@ const TEAM_MEMBERS = [
     role: 'Team Events',
     linkedin: 'https://www.linkedin.com/in/gabrielelisanti/',
   },
+  {
+    name: 'Marcello Abbadati',
+    initials: 'MA',
+    role: 'Team Food',
+    linkedin: 'https://www.linkedin.com/in/marcelloabbadati/',
+  },
 ];
 
 const FOUNDERS = [
@@ -320,7 +326,7 @@ export default function WhoWeArePage() {
               </h2>
             </motion.div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 lg:gap-8">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {TEAM_MEMBERS.map((member, i) => (
                 <motion.div
                   key={member.name}
@@ -328,11 +334,11 @@ export default function WhoWeArePage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: '-30px' }}
                   transition={{ duration: 0.6, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
-                  className="flex flex-col items-center text-center gap-4 p-8 bg-[#731515] hover:bg-[#aa4848] transition-colors duration-300"
+                  className="flex flex-col items-center text-center gap-3 p-6 bg-[#731515] hover:bg-[#aa4848] transition-colors duration-300"
                 >
                   {/* Avatar */}
-                  <div className="w-16 h-16 rounded-full border-2 border-white/30 flex items-center justify-center shrink-0">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" opacity="0.7">
+                  <div className="w-12 h-12 rounded-full border-2 border-white/30 flex items-center justify-center shrink-0">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" opacity="0.7">
                       <circle cx="12" cy="8" r="4" />
                       <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
                     </svg>
@@ -341,13 +347,13 @@ export default function WhoWeArePage() {
                   {/* Name */}
                   <div className="flex flex-col gap-1">
                     <h3
-                      className="text-base font-medium text-white leading-snug"
+                      className="text-sm font-medium text-white leading-snug"
                       style={{ fontFamily: 'var(--font-syne)' }}
                     >
                       {member.name}
                     </h3>
                     <p
-                      className="text-[10px] tracking-[0.25em] text-white/70"
+                      className="text-[9px] tracking-[0.25em] text-white/70"
                       style={{ fontFamily: 'var(--font-nunito)' }}
                     >
                       {member.role.toUpperCase()}
@@ -360,7 +366,7 @@ export default function WhoWeArePage() {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={`${member.name} on LinkedIn`}
-                    className="w-8 h-8 border border-white/30 flex items-center justify-center text-white/70 hover:border-white hover:text-white transition-all duration-300"
+                    className="w-7 h-7 border border-white/30 flex items-center justify-center text-white/70 hover:border-white hover:text-white transition-all duration-300"
                   >
                     <LinkedInIcon />
                   </a>

@@ -41,12 +41,12 @@ export default function Home() {
       <Navbar />
       <main>
         <HeroSection />
-        <MembershipSection />
         <StatsSection />
         <VisionMissionSection />
         <ExperiencesSection />
         <EventsSection />
         <LinkedInSection />
+        <MembershipSection />
         <PartnersSection />
       </main>
       <Footer />

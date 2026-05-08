@@ -146,7 +146,7 @@ export default function WineLoungeePage() {
       <section className="py-12 bg-[#4A1525]">
         <div className="max-w-4xl mx-auto px-8 md:px-16">
           <div className="grid grid-cols-2 gap-4">
-            {['/events/wine lounge 1.jpg', '/events/wine lounge 2.jpg'].map((src, i) => (
+            {['/events/wine lounge 1.jpg', '/events/wine lounge 2.jpg', '/events/wine lounge 3.jpg', '/events/wine lounge 4.jpg', '/events/wine lounge 5.jpg'].map((src, i) => (
               <motion.div
                 key={src}
                 initial={{ opacity: 0, y: 20 }}
