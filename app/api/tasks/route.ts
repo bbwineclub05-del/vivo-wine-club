@@ -62,60 +62,76 @@ function taskNotificationHtml(data: {
 }
 
 export async function GET() {
-  const db = getSupabaseAdmin();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (db as any)
-    .from('tasks')
-    .select('*')
-    .order('created_at', { ascending: false });
+  try {
+    const db = getSupabaseAdmin();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (db as any)
+      .from('tasks')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ tasks: data });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ tasks: data ?? [] });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Internal server error';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
 
 export async function POST(request: Request) {
-  const body = await request.json();
-  const { title, description, assignee_email, assigner_email, due_date, priority } = body;
+  try {
+    let body: Record<string, unknown>;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
 
-  if (!title || !assignee_email || !assigner_email) {
-    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    const { title, description, assignee_email, assigner_email, due_date, priority } = body as Record<string, string>;
+
+    if (!title || !assignee_email || !assigner_email) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    if (!ADMINS[assigner_email] || !ADMINS[assignee_email]) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+
+    const db = getSupabaseAdmin();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (db as any)
+      .from('tasks')
+      .insert({
+        title,
+        description:   description || null,
+        assignee_email,
+        assigner_email,
+        due_date:      due_date || null,
+        priority:      priority || 'medium',
+        status:        'todo',
+      })
+      .select()
+      .single();
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    // Send notification to assignee (fire and forget)
+    resend.emails.send({
+      from:    'noreply@vivowineclub.com',
+      to:      assignee_email,
+      subject: `New task from ${ADMINS[assigner_email]}: ${title}`,
+      html:    taskNotificationHtml({
+        assignerName: ADMINS[assigner_email],
+        title,
+        description:  description || null,
+        priority:     priority || 'medium',
+        due_date:     due_date || null,
+      }),
+    }).catch(() => {});
+
+    return NextResponse.json({ task: data });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Internal server error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  if (!ADMINS[assigner_email] || !ADMINS[assignee_email]) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-  }
-
-  const db = getSupabaseAdmin();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (db as any)
-    .from('tasks')
-    .insert({
-      title,
-      description:     description || null,
-      assignee_email,
-      assigner_email,
-      due_date:        due_date || null,
-      priority:        priority || 'medium',
-      status:          'todo',
-    })
-    .select()
-    .single();
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  // Send notification to assignee (don't block response)
-  resend.emails.send({
-    from:    'noreply@vivowineclub.com',
-    to:      assignee_email,
-    subject: `New task from ${ADMINS[assigner_email]}: ${title}`,
-    html:    taskNotificationHtml({
-      assignerName: ADMINS[assigner_email],
-      title,
-      description:  description || null,
-      priority:     priority || 'medium',
-      due_date:     due_date || null,
-    }),
-  }).catch(() => {});
-
-  return NextResponse.json({ task: data });
 }
