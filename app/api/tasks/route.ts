@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
+if (!process.env.RESEND_API_KEY) {
+  console.error('[tasks] RESEND_API_KEY is missing — emails will not be sent');
+}
+
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const ADMINS: Record<string, string> = {
@@ -115,19 +119,28 @@ export async function POST(request: Request) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    // Send notification to assignee (fire and forget)
-    resend.emails.send({
-      from:    'noreply@vivowineclub.com',
-      to:      assignee_email,
-      subject: `New task from ${ADMINS[assigner_email]}: ${title}`,
-      html:    taskNotificationHtml({
-        assignerName: ADMINS[assigner_email],
-        title,
-        description:  description || null,
-        priority:     priority || 'medium',
-        due_date:     due_date || null,
-      }),
-    }).catch(() => {});
+    // Send notification to assignee — awaited so Vercel doesn't kill the fn before it completes
+    try {
+      const emailResult = await resend.emails.send({
+        from:    'noreply@vivowineclub.com',
+        to:      assignee_email,
+        subject: `New task from ${ADMINS[assigner_email]}: ${title}`,
+        html:    taskNotificationHtml({
+          assignerName: ADMINS[assigner_email],
+          title,
+          description:  description || null,
+          priority:     priority || 'medium',
+          due_date:     due_date || null,
+        }),
+      });
+      if (emailResult.error) {
+        console.error('[tasks] Resend error:', JSON.stringify(emailResult.error));
+      } else {
+        console.log('[tasks] Notification sent, id:', emailResult.data?.id);
+      }
+    } catch (emailErr) {
+      console.error('[tasks] Resend exception:', emailErr);
+    }
 
     return NextResponse.json({ task: data });
   } catch (err) {

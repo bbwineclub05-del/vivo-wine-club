@@ -81,20 +81,29 @@ export async function PATCH(
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  // Send "task done" notification to assigner when status becomes done
+  // Send "task done" notification to assigner — awaited so Vercel doesn't kill the fn early
   if (status === 'done' && data.assigner_email !== data.assignee_email) {
     const assigneeName = ADMINS[data.assignee_email] ?? data.assignee_email;
-    resend.emails.send({
-      from:    'noreply@vivowineclub.com',
-      to:      data.assigner_email,
-      subject: `✓ Task completed by ${assigneeName}: ${data.title}`,
-      html:    taskDoneHtml({
-        assigneeName,
-        title:       data.title,
-        description: data.description ?? null,
-        due_date:    data.due_date ?? null,
-      }),
-    }).catch(() => {});
+    try {
+      const emailResult = await resend.emails.send({
+        from:    'noreply@vivowineclub.com',
+        to:      data.assigner_email,
+        subject: `✓ Task completed by ${assigneeName}: ${data.title}`,
+        html:    taskDoneHtml({
+          assigneeName,
+          title:       data.title,
+          description: data.description ?? null,
+          due_date:    data.due_date ?? null,
+        }),
+      });
+      if (emailResult.error) {
+        console.error('[tasks/done] Resend error:', JSON.stringify(emailResult.error));
+      } else {
+        console.log('[tasks/done] Done-notification sent, id:', emailResult.data?.id);
+      }
+    } catch (emailErr) {
+      console.error('[tasks/done] Resend exception:', emailErr);
+    }
   }
 
   return NextResponse.json({ task: data });
