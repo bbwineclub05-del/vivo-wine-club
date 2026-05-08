@@ -4,7 +4,16 @@ import { MapPin } from 'lucide-react';
 import BackButton from '@/components/BackButton';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { EVENTS, type EventData, type EventStatus } from '@/lib/events';
+import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import {
+  EVENTS,
+  dbEventToEventData,
+  type EventData,
+  type EventStatus,
+  type DbEvent,
+} from '@/lib/events';
+
+export const dynamic = 'force-dynamic';
 
 /* ── Status badge ── */
 function StatusBadge({ status, slug }: { status: EventStatus; slug: string }) {
@@ -92,7 +101,7 @@ function EventRow({ event, isLast }: { event: EventData; isLast: boolean }) {
             {event.description}
           </p>
 
-          {/* Mobile badge — shown below description */}
+          {/* Mobile badge */}
           <div className="mt-4 sm:hidden">
             <StatusBadge status={event.status} slug={event.slug} />
           </div>
@@ -110,13 +119,33 @@ function EventRow({ event, isLast }: { event: EventData; isLast: boolean }) {
 }
 
 /* ── Page ── */
-export default function EventsPage() {
-  const VISIBLE_SLUGS = [
-    'winery-visit-speri-may-2026',
-    'winery-visit-bertani-may-2026',
-    'wine-party-mare-may-2026',
-  ];
-  const ordered = VISIBLE_SLUGS.map((s) => EVENTS.find((e) => e.slug === s)!).filter(Boolean);
+export default async function EventsPage() {
+  let events: EventData[] = [];
+
+  // Try DB first
+  try {
+    const supabase = getSupabaseAdmin();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any)
+      .from('events')
+      .select('*')
+      .eq('published', true)
+      .order('date', { ascending: true });
+
+    if (!error && data && data.length > 0) {
+      events = (data as DbEvent[]).map(dbEventToEventData);
+    }
+  } catch {/* fall through to static */}
+
+  // Static fallback
+  if (events.length === 0) {
+    const VISIBLE_SLUGS = [
+      'winery-visit-speri-may-2026',
+      'winery-visit-bertani-may-2026',
+      'wine-party-mare-may-2026',
+    ];
+    events = VISIBLE_SLUGS.map((s) => EVENTS.find((e) => e.slug === s)!).filter(Boolean);
+  }
 
   return (
     <>
@@ -158,11 +187,11 @@ export default function EventsPage() {
         <section className="relative overflow-hidden pb-28">
           <div className="fog-right" style={{ top: '10%' }} />
           <div className="max-w-5xl mx-auto px-6 lg:px-10">
-            {ordered.map((event, i) => (
+            {events.map((event, i) => (
               <EventRow
                 key={event.slug}
                 event={event}
-                isLast={i === ordered.length - 1}
+                isLast={i === events.length - 1}
               />
             ))}
           </div>

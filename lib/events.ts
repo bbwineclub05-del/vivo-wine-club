@@ -1,5 +1,48 @@
 export type EventStatus = 'open' | 'soldout' | 'soon' | 'completed';
 
+/* ── DB row type (Supabase `events` table) ── */
+export interface DbEvent {
+  id: string;
+  slug: string;
+  title: string;
+  type: string;
+  date: string;              // ISO: "2026-05-12"
+  time: string | null;       // "19:00"
+  location: string;          // short
+  location_full: string;     // full address
+  description: string;
+  price: number;             // EUR, 0 = free
+  capacity: number | null;
+  status: EventStatus;
+  published: boolean;
+  title_strikethrough: boolean;
+  image_url: string | null;
+  stripe_product_id: string | null;
+  stripe_price_id: string | null;
+  sort_order: number;
+  created_at: string;
+  updated_at?: string;
+}
+
+/** Convert a DB row to the EventData shape used by checkout / PDF / emails */
+export function dbEventToEventData(e: DbEvent): EventData {
+  const d = new Date(e.date + 'T12:00:00Z'); // noon UTC avoids DST edge cases
+  return {
+    slug:              e.slug,
+    title:             e.title,
+    type:              e.type,
+    month:             d.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' }).toUpperCase(),
+    day:               String(d.getUTCDate()).padStart(2, '0'),
+    year:              String(d.getUTCFullYear()),
+    location:          e.location,
+    locationFull:      e.location_full,
+    description:       e.description,
+    price:             e.price,
+    status:            e.status,
+    titleStrikethrough: e.title_strikethrough,
+  };
+}
+
 export interface EventData {
   slug: string;
   title: string;

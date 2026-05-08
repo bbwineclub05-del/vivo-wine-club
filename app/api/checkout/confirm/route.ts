@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { supabase } from '@/lib/supabase';
-import { getEventBySlug } from '@/lib/events';
+import { getEventBySlug, dbEventToEventData, type DbEvent } from '@/lib/events';
+import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { sendEventConfirmationEmails } from '@/app/api/checkout/event/route';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -29,7 +30,17 @@ export async function GET(request: Request) {
 
     // ── Event order ───────────────────────────────────────────────────────────
     if (meta.type === 'event') {
-      const event = getEventBySlug(meta.event_slug);
+      // Resolve event: DB-first, then static fallback
+      let event = getEventBySlug(meta.event_slug);
+      if (!event) {
+        try {
+          const supabaseAdmin = getSupabaseAdmin();
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { data } = await (supabaseAdmin as any)
+            .from('events').select('*').eq('slug', meta.event_slug).single();
+          if (data) event = dbEventToEventData(data as DbEvent);
+        } catch {/* ignore */}
+      }
       if (!event) {
         return NextResponse.json({ error: 'Event not found in metadata' }, { status: 400 });
       }

@@ -1,0 +1,133 @@
+import { NextResponse } from 'next/server';
+import Stripe from 'stripe';
+import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { EVENTS } from '@/lib/events';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2026-04-22.dahlia',
+});
+
+function generateSlug(title: string, date: string): string {
+  const d = new Date(date + 'T12:00:00Z');
+  const month = d.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' }).toLowerCase();
+  const year  = d.getUTCFullYear();
+  const base  = title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .slice(0, 40)
+    .replace(/-$/, '');
+  return `${base}-${month}-${year}`;
+}
+
+/* ── GET: public — published events, DB-first, static fallback ── */
+export async function GET() {
+  try {
+    const supabase = getSupabaseAdmin();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any)
+      .from('events')
+      .select('*')
+      .eq('published', true)
+      .order('date', { ascending: true });
+
+    if (!error && data && data.length > 0) {
+      return NextResponse.json({ events: data, source: 'db' });
+    }
+  } catch {/* fall through */}
+
+  // Static fallback
+  return NextResponse.json({ events: EVENTS, source: 'static' });
+}
+
+/* ── POST: admin — create new event ── */
+export async function POST(request: Request) {
+  try {
+    let body: Record<string, unknown>;
+    try { body = await request.json(); }
+    catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }
+
+    const {
+      title, type, date, time, location, location_full, description,
+      price, capacity, status, published, title_strikethrough, image_url, sort_order,
+    } = body as {
+      title: string; type?: string; date: string; time?: string;
+      location: string; location_full?: string; description: string;
+      price?: number; capacity?: number; status?: string;
+      published?: boolean; title_strikethrough?: boolean;
+      image_url?: string; sort_order?: number;
+    };
+
+    if (!title || !date || !location || !description) {
+      return NextResponse.json({ error: 'title, date, location e description sono obbligatori' }, { status: 400 });
+    }
+
+    const slug = generateSlug(title, date);
+    const priceNum = price ?? 0;
+
+    // Create Stripe product for paid events
+    let stripe_product_id: string | null = null;
+    let stripe_price_id:   string | null = null;
+
+    if (priceNum > 0 && process.env.STRIPE_SECRET_KEY) {
+      try {
+        const product   = await stripe.products.create({
+          name:        title,
+          description: `${date} · ${location_full || location}`,
+        });
+        const priceObj  = await stripe.prices.create({
+          product:     product.id,
+          unit_amount: Math.round(priceNum * 100),
+          currency:    'eur',
+        });
+        stripe_product_id = product.id;
+        stripe_price_id   = priceObj.id;
+        console.log(`[events POST] Stripe product created: ${product.id}`);
+      } catch (stripeErr) {
+        console.error('[events POST] Stripe error:', stripeErr);
+        // Non-fatal — continue without Stripe IDs
+      }
+    }
+
+    const supabase = getSupabaseAdmin();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any)
+      .from('events')
+      .insert({
+        slug,
+        title,
+        type:               type || 'PARTY',
+        date,
+        time:               time || null,
+        location,
+        location_full:      location_full || location,
+        description,
+        price:              priceNum,
+        capacity:           capacity || null,
+        status:             status || 'open',
+        published:          published ?? false,
+        title_strikethrough: title_strikethrough ?? false,
+        image_url:          image_url || null,
+        sort_order:         sort_order ?? 0,
+        stripe_product_id,
+        stripe_price_id,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('[events POST] DB error:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ event: data }, { status: 201 });
+  } catch (err) {
+    console.error('[events POST]', err);
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : 'Internal server error' },
+      { status: 500 },
+    );
+  }
+}

@@ -4,8 +4,23 @@ import QRCode from 'qrcode';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { getEventBySlug, type EventData } from '@/lib/events';
+import { getEventBySlug, dbEventToEventData, type EventData, type DbEvent } from '@/lib/events';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+
+/** Resolve event by slug: DB-first, then static fallback */
+async function resolveEvent(slug: string): Promise<EventData | undefined> {
+  try {
+    const supabase = getSupabaseAdmin();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data } = await (supabase as any)
+      .from('events')
+      .select('*')
+      .eq('slug', slug)
+      .single();
+    if (data) return dbEventToEventData(data as DbEvent);
+  } catch {/* fall through */}
+  return getEventBySlug(slug);
+}
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2026-04-22.dahlia',
@@ -355,7 +370,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
-  const event = getEventBySlug(slug);
+  const event = await resolveEvent(slug);
   if (!event)                  return NextResponse.json({ error: 'Event not found' },       { status: 404 });
   if (event.status !== 'open') return NextResponse.json({ error: 'Event not available' },   { status: 400 });
   if (qty < 1 || qty > 10)     return NextResponse.json({ error: 'Invalid ticket count' },  { status: 400 });
