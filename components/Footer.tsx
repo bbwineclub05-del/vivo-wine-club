@@ -65,7 +65,7 @@ const CONTACTS = [
     Icon: TikTokIcon,
     label: 'TIKTOK',
     value: '@vivowineclub',
-    href: 'https://www.tiktok.com/@vivowineclub',
+    href: 'https://www.tiktok.com/@vivo.wineclub',
   },
   {
     Icon: MailIcon,

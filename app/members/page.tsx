@@ -4,17 +4,13 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Calendar, CreditCard, User, LogOut, ArrowRight, Wine, KeyRound, ScanLine } from 'lucide-react';
+import { CreditCard, User, LogOut, ArrowRight, Wine, KeyRound, ScanLine } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import TaskBoard, { isAdmin } from '@/components/TaskBoard';
 
-const PLACEHOLDER_EVENTS = [
-  { title: 'Wine Lounge — Milan',   date: 'May 10, 2026',  location: 'Milan, Italy'   },
-  { title: 'Wine Party Vol. 3',     date: 'Jun 7, 2026',   location: 'Turin, Italy'   },
-  { title: 'Winery Visit — Barolo', date: 'Jul 19, 2026',  location: 'Barolo, Italy'  },
-];
 
 export default function MembersPage() {
   const { user, logout } = useAuth();
@@ -123,65 +119,6 @@ export default function MembersPage() {
         <section className="py-16 md:py-20">
           <div className="max-w-5xl mx-auto px-6 lg:px-10">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-
-              {/* MY EVENTS */}
-              <motion.div
-                initial={{ opacity: 0, y: 24 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-                className="md:col-span-2 bg-white border border-[#e8d5d5] p-8"
-              >
-                <div className="flex items-center justify-between mb-7">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-[#731515]/8 flex items-center justify-center">
-                      <Calendar size={15} className="text-[#731515]" />
-                    </div>
-                    <h2
-                      className="text-[10px] tracking-[0.4em] text-[#1a0505]"
-                    >
-                      MY EVENTS
-                    </h2>
-                  </div>
-                  <Link
-                    href="/events"
-                    className="text-[9px] tracking-[0.25em] text-[#731515] hover:text-[#aa4848] transition-colors flex items-center gap-1 group"
-                  >
-                    SEE ALL
-                    <ArrowRight size={10} className="group-hover:translate-x-0.5 transition-transform" />
-                  </Link>
-                </div>
-
-                <div className="flex flex-col divide-y divide-[#e8d5d5]">
-                  {PLACEHOLDER_EVENTS.map((ev) => (
-                    <div key={ev.title} className="py-4 flex items-center justify-between gap-4">
-                      <div>
-                        <div
-                          className="text-sm font-medium text-[#1a0505]"
-                          style={{ fontFamily: 'var(--font-syne)' }}
-                        >
-                          {ev.title}
-                        </div>
-                        <div
-                          className="text-xs text-[#7a4a4a]/70 mt-0.5"
-                          style={{ fontFamily: 'var(--font-nunito)' }}
-                        >
-                          {ev.date} · {ev.location}
-                        </div>
-                      </div>
-                      <span className="shrink-0 text-[9px] tracking-[0.2em] px-3 py-1 border border-[#731515]/20 text-[#731515]">
-                        REGISTERED
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                <p
-                  className="mt-5 text-xs text-[#7a4a4a]/50 italic"
-                  style={{ fontFamily: 'var(--font-nunito)' }}
-                >
-                  * Event registration will be available when the platform launches.
-                </p>
-              </motion.div>
 
               {/* MY MEMBERSHIP */}
               <motion.div
@@ -315,6 +252,18 @@ export default function MembersPage() {
                     OPEN SCANNER
                     <ArrowRight size={12} />
                   </Link>
+                </motion.div>
+              )}
+
+              {/* TASK BOARD — admin only */}
+              {isAdmin(user.email ?? '') && (
+                <motion.div
+                  initial={{ opacity: 0, y: 24 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                  className="md:col-span-2 lg:col-span-3 bg-[#fdf6f6] border border-[#e8d5d5] p-8"
+                >
+                  <TaskBoard currentEmail={user.email ?? ''} />
                 </motion.div>
               )}
 

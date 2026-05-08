@@ -17,6 +17,48 @@ export interface EventData {
 
 export const EVENTS: EventData[] = [
   {
+    slug: 'winery-visit-speri-may-2026',
+    title: 'Wine Visit · Speri',
+    type: 'WINERY VISIT',
+    month: 'MAY',
+    day: '12',
+    year: '2026',
+    location: 'Valpolicella, Italy',
+    locationFull: 'Speri, Pedemonte, Valpolicella — ore 11:00',
+    description:
+      'A private morning visit to Speri, one of the historic estates of Valpolicella. Guided cellar tour and tasting of their iconic Amarone and Ripasso, surrounded by the family heritage that has defined this appellation for generations.',
+    price: 0,
+    status: 'open',
+  },
+  {
+    slug: 'winery-visit-bertani-may-2026',
+    title: 'Wine Visit · Bertani',
+    type: 'WINERY VISIT',
+    month: 'MAY',
+    day: '12',
+    year: '2026',
+    location: 'Valpolicella, Italy',
+    locationFull: 'Bertani, Grezzana, Valpolicella — ore 15:00',
+    description:
+      'An afternoon at Bertani, one of the oldest and most storied producers in Valpolicella. A behind-the-scenes look at their legendary Amarone, with a tasting guided by the estate team.',
+    price: 0,
+    status: 'open',
+  },
+  {
+    slug: 'wine-party-mare-may-2026',
+    title: 'Beach Wine Party',
+    type: 'PARTY',
+    month: 'MAY',
+    day: '31',
+    year: '2026',
+    location: 'Forte dei Marmi, Tuscany',
+    locationFull: 'Spiaggia, Forte dei Marmi',
+    description:
+      'Our first beach edition. Sun, sea breeze, curated bottles and a crowd that lives for wine. The perfect Saturday evening on the Versilian coast.',
+    price: 10,
+    status: 'open',
+  },
+  {
     slug: 'winery-visit-ca-del-bosco-apr-2026',
     title: 'Winery Visit · Ca\' del Bosco',
     type: 'WINERY VISIT',
@@ -44,6 +86,7 @@ export const EVENTS: EventData[] = [
       'An exclusive visit to one of Italy\'s most legendary estates. Private cellar access, vertical tasting and a rare glimpse into the Quintarelli method.',
     price: 30,
     status: 'open',
+    titleStrikethrough: true,
   },
   {
     slug: 'winery-visit-berlucchi-may-2026',
@@ -58,6 +101,7 @@ export const EVENTS: EventData[] = [
       'Visit the historic estate of Guido Berlucchi, the pioneer who created Franciacorta as we know it. A rare behind-the-scenes access to the cellars, vineyards and archives.',
     price: 0,
     status: 'soldout',
+    titleStrikethrough: true,
   },
   {
     slug: 'wine-party-franciacorta-may-2026',
@@ -72,6 +116,7 @@ export const EVENTS: EventData[] = [
       'Our signature wine party format comes to Franciacorta. Great local bottles, music and a crowd that lives for wine. One night in the heart of Italy\'s sparkling wine country.',
     price: 0,
     status: 'open',
+    titleStrikethrough: true,
   },
   {
     slug: 'wine-weekend-forte-dei-marmi-may-2026',
@@ -86,6 +131,7 @@ export const EVENTS: EventData[] = [
       'A summer Sunday on the Versilian coast — curated wines, sea breeze and good company.',
     price: 0,
     status: 'open',
+    titleStrikethrough: true,
   },
   {
     slug: 'wine-aperitif-alata-jun-2026',

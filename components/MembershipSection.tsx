@@ -27,7 +27,7 @@ export default function MembershipSection() {
   const d = (n: number) => (reducedMotion ? 0 : n);
 
   return (
-    <section className="py-16 md:py-20 relative overflow-hidden">
+    <section className="pt-6 pb-16 md:pt-8 md:pb-20 relative overflow-hidden">
       <div className="fog-left" style={{ top: '10%' }} />
 
       <div className="max-w-7xl mx-auto px-6 lg:px-10">

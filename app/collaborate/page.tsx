@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Send } from 'lucide-react';
+import { Send } from 'lucide-react';
+import BackButton from '@/components/BackButton';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
@@ -27,19 +28,30 @@ const EMPTY: FormState = { name: '', email: '', type: '', proposal: '' };
 export default function CollaboratePage() {
   const [form, setForm] = useState<FormState>(EMPTY);
   const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const set = (field: keyof FormState) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
       setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const subject = encodeURIComponent(`Collaboration request — ${form.type || 'General'}`);
-    const body = encodeURIComponent(
-      `Name: ${form.name}\nEmail: ${form.email}\nType: ${form.type}\n\nProposal:\n${form.proposal}`
-    );
-    window.location.href = `mailto:vivowineclub@gmail.com?subject=${subject}&body=${body}`;
-    setSent(true);
+    setError('');
+    setLoading(true);
+    try {
+      const res = await fetch('/api/collaborate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) throw new Error('Something went wrong. Please try again.');
+      setSent(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const inputBase =
@@ -52,13 +64,7 @@ export default function CollaboratePage() {
 
         {/* ── Back link ── */}
         <div className="max-w-5xl mx-auto px-6 lg:px-10 pt-6">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] text-[#7a4a4a] hover:text-[#731515] transition-colors duration-300 group"
-          >
-            <ArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform duration-300" />
-            BACK
-          </Link>
+          <BackButton className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] text-[#7a4a4a] hover:text-[#731515] transition-colors duration-300" />
         </div>
 
         <section className="relative overflow-hidden py-16 md:py-24">
@@ -91,7 +97,26 @@ export default function CollaboratePage() {
               </p>
             </motion.div>
 
+            {/* Success state */}
+            {sent && (
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                className="p-8 border border-[#731515]/30 bg-[#731515]/5 text-center"
+              >
+                <div className="text-[10px] tracking-[0.4em] text-[#731515] mb-3">PROPOSAL SENT</div>
+                <p className="text-base text-[#1a0505] font-light" style={{ fontFamily: 'var(--font-nunito)' }}>
+                  Thank you — we will be in touch soon.
+                </p>
+                <p className="text-sm text-[#7a4a4a] mt-2" style={{ fontFamily: 'var(--font-nunito)' }}>
+                  A confirmation email has been sent to <strong>{form.email}</strong>.
+                </p>
+              </motion.div>
+            )}
+
             {/* Form */}
+            {!sent && (
             <motion.form
               onSubmit={handleSubmit}
               initial={{ opacity: 0, y: 30 }}
@@ -155,16 +180,25 @@ export default function CollaboratePage() {
                 style={{ fontFamily: 'var(--font-nunito)' }}
               />
 
+              {/* Error */}
+              {error && (
+                <p className="text-center text-xs text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>
+                  {error}
+                </p>
+              )}
+
               {/* Submit */}
               <motion.button
                 type="submit"
+                disabled={loading}
                 whileTap={{ scale: 0.99 }}
-                className="w-full py-4 bg-[#731515] text-white text-[11px] tracking-[0.4em] flex items-center justify-center gap-3 hover:bg-[#aa4848] transition-colors duration-300 mt-2"
+                className="w-full py-4 bg-[#731515] text-white text-[11px] tracking-[0.4em] flex items-center justify-center gap-3 hover:bg-[#aa4848] disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-300 mt-2"
               >
                 <Send size={13} />
-                SEND PROPOSAL
+                {loading ? 'SENDING…' : 'SEND PROPOSAL'}
               </motion.button>
             </motion.form>
+            )}
 
           </div>
         </section>

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import BackButton from '@/components/BackButton';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, X, MapPin, ChevronDown } from 'lucide-react';
 
@@ -113,13 +114,7 @@ export default function WinePartyPage() {
             transition={{ duration: 0.7, delay: 0.3 }}
             className="absolute top-[130px] left-8 z-10"
           >
-            <Link
-              href="/"
-              className="flex items-center gap-2 text-[#7a4a4a] hover:text-[#731515] transition-colors duration-300 text-[10px] tracking-[0.35em] group"
-            >
-              <ArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform duration-300" />
-              BACK
-            </Link>
+            <BackButton className="flex items-center gap-2 text-[#7a4a4a] hover:text-[#731515] transition-colors duration-300 text-[10px] tracking-[0.35em]" />
           </motion.div>
 
           {/* Hero text */}

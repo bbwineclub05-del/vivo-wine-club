@@ -48,7 +48,7 @@ function TikTokIcon({ size = 16 }: { size?: number }) {
 const SOCIALS = [
   { label: 'Instagram', href: 'https://www.instagram.com/vivo.wineclub/', Icon: InstagramIcon },
   { label: 'LinkedIn',  href: 'https://www.linkedin.com/company/vivowineclub/?viewAsMember=true', Icon: LinkedInIcon },
-  { label: 'TikTok',    href: '#', Icon: TikTokIcon },
+  { label: 'TikTok',    href: 'https://www.tiktok.com/@vivo.wineclub', Icon: TikTokIcon },
 ];
 
 const NAV_LINK_CLASS =

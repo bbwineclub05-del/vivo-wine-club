@@ -3,6 +3,7 @@
 import { useState, useCallback, memo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import BackButton from '@/components/BackButton';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { ArrowLeft, Check, Plus } from 'lucide-react';
 import Navbar from '@/components/Navbar';
@@ -176,13 +177,7 @@ export default function WearTheClubPage() {
             </p>
           </div>
           <div className="absolute top-6 left-6 md:left-10 z-10">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] text-white/70 hover:text-white transition-colors duration-300 group"
-            >
-              <ArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform duration-300" />
-              BACK
-            </Link>
+            <BackButton className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] text-white/70 hover:text-white transition-colors duration-300" />
           </div>
         </div>
 

@@ -1,31 +1,15 @@
 'use client';
 
-import { useState } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, MapPin, ChevronDown } from 'lucide-react';
-
-const UPCOMING = [
-  { month: 'MAY', day: '10', title: 'Wine Lounge — Milan',    location: 'Milan, Italy',    price: 35 },
-  { month: 'JUN', day: '21', title: 'Wine Lounge — Paris',    location: 'Paris, France',   price: 40 },
-  { month: 'SEP', day: '13', title: 'Wine Lounge — Barcelona', location: 'Barcelona, Spain', price: 38 },
-];
+import { motion } from 'framer-motion';
+import { ChevronDown } from 'lucide-react';
+import BackButton from '@/components/BackButton';
 
 const PILLS = ['Selected Wine Bars', 'Intimate Setting', 'Great Company'];
 
 export default function WineLoungeePage() {
-  const [notifyEmail, setNotifyEmail] = useState('');
-  const [notified, setNotified] = useState(false);
-
-  const handleNotify = (e: React.FormEvent) => {
-    e.preventDefault();
-    setNotified(true);
-    setNotifyEmail('');
-  };
-
   return (
-    <div className="bg-[#5C1A2E] min-h-screen text-[#F5EEE6]">
+    <div className="bg-[#3d1010] min-h-screen text-[#F5EEE6]">
 
       {/* ── 1. HERO ── */}
       <section className="relative h-screen flex flex-col justify-end overflow-hidden">
@@ -45,21 +29,15 @@ export default function WineLoungeePage() {
           transition={{ duration: 0.7, delay: 0.3 }}
           className="absolute top-[130px] left-8 z-10"
         >
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-[#C4B5A0] hover:text-[#F5EEE6] transition-colors duration-300 text-[10px] tracking-[0.35em] group"
-          >
-            <ArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform duration-300" />
-            BACK
-          </Link>
+          <BackButton className="flex items-center gap-2 text-[#C4B5A0] hover:text-[#F5EEE6] transition-colors duration-300 text-[10px] tracking-[0.35em]" />
         </motion.div>
 
-        <div className="relative z-10 px-8 md:px-16 pb-20 max-w-5xl">
+        <div className="relative z-10 px-8 md:px-16 pb-14 max-w-5xl">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.4 }}
-            className="text-[10px] tracking-[0.55em] text-[#C9A84C] mb-5"
+            className="text-[10px] tracking-[0.55em] text-[#C9A84C] mb-4"
           >
             VIVO WINE CLUB · EXPERIENCE
           </motion.div>
@@ -76,7 +54,7 @@ export default function WineLoungeePage() {
             </motion.h1>
           </div>
 
-          <div className="overflow-hidden mt-4">
+          <div className="overflow-hidden mt-3">
             <motion.p
               initial={{ y: '110%' }}
               animate={{ y: '0%' }}
@@ -99,13 +77,13 @@ export default function WineLoungeePage() {
             animate={{ y: [0, 7, 0] }}
             transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
           >
-            <ChevronDown size={18} className="text-[#C9A84C]" />
+            <ChevronDown size={18} className="text-white/40" />
           </motion.div>
         </motion.div>
       </section>
 
       {/* ── 2. CONCEPT ── */}
-      <section className="py-24 md:py-32 bg-[#4A1525]">
+      <section className="py-16 md:py-22 bg-[#2e0c0c]">
         <div className="max-w-4xl mx-auto px-8 md:px-16">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -113,7 +91,7 @@ export default function WineLoungeePage() {
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
           >
-            <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-6">THE CONCEPT</div>
+            <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-5">THE CONCEPT</div>
             <p
               className="text-xl md:text-2xl text-[#C4B5A0] font-light leading-relaxed"
               style={{ fontFamily: 'var(--font-nunito)' }}
@@ -125,7 +103,7 @@ export default function WineLoungeePage() {
             </p>
           </motion.div>
 
-          <div className="flex flex-wrap gap-4 mt-14">
+          <div className="flex flex-wrap gap-4 mt-10">
             {PILLS.map((pill, i) => (
               <motion.div
                 key={pill}
@@ -133,7 +111,7 @@ export default function WineLoungeePage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: i * 0.12, ease: [0.16, 1, 0.3, 1] }}
-                className="px-6 py-3 border border-[#C9A84C]/30 text-[#C9A84C] text-[11px] tracking-[0.35em] rounded-full"
+                className="px-6 py-3 border border-white/20 text-white/60 text-[11px] tracking-[0.35em] rounded-full"
               >
                 {pill}
               </motion.div>
@@ -143,7 +121,7 @@ export default function WineLoungeePage() {
       </section>
 
       {/* ── 3. GALLERY ── */}
-      <section className="py-12 bg-[#4A1525]">
+      <section className="py-10 bg-[#2e0c0c]">
         <div className="max-w-4xl mx-auto px-8 md:px-16">
           <div className="grid grid-cols-2 gap-4">
             {['/events/wine lounge 1.jpg', '/events/wine lounge 2.jpg', '/events/wine lounge 3.jpg', '/events/wine lounge 4.jpg', '/events/wine lounge 5.jpg'].map((src, i) => (
@@ -168,143 +146,52 @@ export default function WineLoungeePage() {
         </div>
       </section>
 
-      {/* ── 4. UPCOMING EVENTS ── */}
-      <section className="py-24 md:py-32 bg-[#4A1525]">
+      {/* ── 4. NEXT EVENINGS ── */}
+      <section className="py-16 md:py-22 bg-[#2e0c0c]">
         <div className="max-w-4xl mx-auto px-8 md:px-16">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
-            className="mb-14"
+            className="mb-10"
           >
             <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-3">UPCOMING</div>
             <h2
-              className="text-[clamp(2rem,5vw,4rem)] font-light text-[#F5EEE6] leading-none"
+              className="text-[clamp(2rem,5vw,4rem)] font-light text-[#F5EEE6] leading-none mb-8"
               style={{ fontFamily: 'var(--font-syne)' }}
             >
               NEXT EVENINGS
             </h2>
+            <div className="h-px bg-white/10 mb-8" />
+            <motion.p
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7, delay: 0.15 }}
+              className="text-lg text-[#C4B5A0] font-light italic"
+              style={{ fontFamily: 'var(--font-nunito)' }}
+            >
+              Coming Soon
+            </motion.p>
           </motion.div>
-
-          <div className="flex flex-col">
-            {UPCOMING.map((event, i) => (
-              <motion.div
-                key={event.title}
-                initial={{ opacity: 0, y: 14 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-20px' }}
-                transition={{ duration: 0.55, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
-              >
-                <div className="flex items-center gap-6 md:gap-10 py-7 group">
-                  <div className="flex flex-col items-end w-14 shrink-0">
-                    <span className="text-[8px] tracking-[0.4em] text-[#C9A84C] mb-0.5">{event.month}</span>
-                    <span
-                      className="text-[2.8rem] font-light leading-none text-[#F5EEE6] group-hover:text-[#C9A84C] transition-colors duration-300"
-                      style={{ fontFamily: 'var(--font-syne)' }}
-                    >
-                      {event.day}
-                    </span>
-                  </div>
-
-                  <div className="w-px self-stretch bg-[#C9A84C]/15 shrink-0" />
-
-                  <div className="flex-1 min-w-0">
-                    <h3
-                      className="text-base md:text-lg font-medium text-[#F5EEE6] group-hover:text-[#C9A84C] transition-colors duration-300 mb-1"
-                      style={{ fontFamily: 'var(--font-syne)' }}
-                    >
-                      {event.title}
-                    </h3>
-                    <div className="flex items-center gap-2 text-xs text-[#C4B5A0]">
-                      <MapPin size={10} className="text-[#C9A84C] shrink-0" />
-                      <span>{event.location}</span>
-                      <span className="text-[#C9A84C]/25 mx-0.5">·</span>
-                      <span>€{event.price}</span>
-                    </div>
-                  </div>
-
-                  <button className="shrink-0 hidden sm:block text-[9px] tracking-[0.28em] px-5 py-2.5 bg-[#731515] text-[#F5EEE6] border border-[#731515] hover:bg-[#aa4848] hover:border-[#aa4848] transition-all duration-300">
-                    BUY TICKETS
-                  </button>
-                </div>
-
-                <div className="sm:hidden pb-5 pl-20">
-                  <button className="text-[9px] tracking-[0.28em] px-5 py-2.5 bg-[#731515] text-[#F5EEE6] border border-[#731515] hover:bg-[#aa4848] transition-all duration-300">
-                    BUY TICKETS
-                  </button>
-                </div>
-
-                {i < UPCOMING.length - 1 && <div className="h-px bg-[#C9A84C]/8" />}
-              </motion.div>
-            ))}
-          </div>
         </div>
       </section>
 
-      {/* ── 5. NOTIFY CTA ── */}
-      <section className="py-24 md:py-32 bg-[#3D1020] relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_60%,rgba(115,21,21,0.12),transparent_65%)] pointer-events-none" />
-
+      {/* ── 5. CLOSING ── */}
+      <section className="py-14 md:py-20 bg-[#240909] relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_60%,rgba(201,168,76,0.06),transparent_65%)] pointer-events-none" />
         <div className="max-w-2xl mx-auto px-8 md:px-16 text-center relative z-10">
-          <motion.div
+          <motion.h2
             initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
+            className="text-[clamp(2rem,5vw,4rem)] font-light text-[#F5EEE6] leading-tight"
+            style={{ fontFamily: 'var(--font-syne)' }}
           >
-            <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-5">STAY IN THE LOOP</div>
-            <h2
-              className="text-[clamp(2rem,5vw,4rem)] font-light text-[#F5EEE6] leading-tight mb-5"
-              style={{ fontFamily: 'var(--font-syne)' }}
-            >
-              Don&apos;t miss the next evening.
-            </h2>
-            <p
-              className="text-base text-[#C4B5A0] font-light mb-10"
-              style={{ fontFamily: 'var(--font-nunito)' }}
-            >
-              We&apos;ll send you the venue and details as soon as the next Wine Lounge is confirmed.
-            </p>
-
-            <AnimatePresence mode="wait">
-              {notified ? (
-                <motion.p
-                  key="thanks"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-[#C9A84C] tracking-widest text-sm"
-                  style={{ fontFamily: 'var(--font-nunito)' }}
-                >
-                  You&apos;re on the list. See you there.
-                </motion.p>
-              ) : (
-                <motion.form
-                  key="form"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  onSubmit={handleNotify}
-                  className="flex flex-col sm:flex-row gap-3"
-                >
-                  <input
-                    type="email"
-                    required
-                    placeholder="your@email.com"
-                    value={notifyEmail}
-                    onChange={(e) => setNotifyEmail(e.target.value)}
-                    className="flex-1 bg-transparent border border-[#C9A84C]/25 text-[#F5EEE6] placeholder-[#C4B5A0]/40 px-5 py-4 text-sm focus:outline-none focus:border-[#C9A84C]/60 transition-colors duration-300"
-                    style={{ fontFamily: 'var(--font-nunito)' }}
-                  />
-                  <button
-                    type="submit"
-                    className="px-8 py-4 bg-[#731515] text-[#F5EEE6] text-[11px] tracking-[0.35em] hover:bg-[#aa4848] transition-colors duration-300 whitespace-nowrap"
-                  >
-                    NOTIFY ME
-                  </button>
-                </motion.form>
-              )}
-            </AnimatePresence>
-          </motion.div>
+            Don&apos;t miss the next evening.
+          </motion.h2>
         </div>
       </section>
 

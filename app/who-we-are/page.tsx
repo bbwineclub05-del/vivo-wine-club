@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import BackButton from '@/components/BackButton';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 
@@ -185,13 +186,7 @@ export default function WhoWeArePage() {
             </p>
           </div>
           <div className="absolute top-6 left-6 md:left-10 z-10">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] text-white/70 hover:text-white transition-colors duration-300 group"
-            >
-              <ArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform duration-300" />
-              BACK
-            </Link>
+            <BackButton className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] text-white/70 hover:text-white transition-colors duration-300" />
           </div>
         </div>
 
@@ -259,7 +254,7 @@ export default function WhoWeArePage() {
         </section>
 
         {/* ── FOUNDERS ── */}
-        <section className="relative overflow-hidden pb-28 md:pb-32">
+        <section className="relative overflow-hidden pb-10 md:pb-14">
           <div className="fog-right" style={{ top: '10%' }} />
 
           <div className="max-w-5xl mx-auto px-6 lg:px-10">
@@ -284,7 +279,7 @@ export default function WhoWeArePage() {
                 className="text-[clamp(2rem,5vw,4rem)] font-light text-[#1a0505] leading-none"
                 style={{ fontFamily: 'var(--font-syne)' }}
               >
-                MEET THE TEAM
+                MEET THE FOUNDERS
               </h2>
             </motion.div>
 
@@ -307,7 +302,7 @@ export default function WhoWeArePage() {
               whileInView={{ scaleX: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-              className="origin-left w-full h-px bg-gradient-to-r from-[#731515]/30 via-[#731515]/10 to-transparent mb-16"
+              className="origin-left w-full h-px bg-gradient-to-r from-[#731515]/30 via-[#731515]/10 to-transparent mb-10"
             />
 
             <motion.div

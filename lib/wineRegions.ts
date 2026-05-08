@@ -30,7 +30,7 @@ export const WINE_REGIONS: WineRegion[] = [
     wineries: [
       { name: 'Aldo Conterno',   logo: '/wineries/aldo-conterno.png',   slug: 'aldo-conterno'   },
       { name: 'Clerico',         logo: '/wineries/clerico.png',         slug: 'clerico'         },
-      { name: 'Giovanni Rosso',  logo: '/wineries/giovanni-rosso.png',  slug: 'giovanni-rosso'  },
+      { name: 'Giovanni Rosso',  logo: '/wineries/giovanni rosso logo.jpg',  slug: 'giovanni-rosso'  },
       { name: 'Luciano Sandrone', logo: '/wineries/luciano-sandrone.avif', slug: 'luciano-sandrone' },
     ],
   },
@@ -133,7 +133,7 @@ export const WINE_REGIONS: WineRegion[] = [
       { name: "Ca' del Bosco", logo: '/sponsors/ca-del-bosco.png',   slug: 'ca-del-bosco'  },
       { name: 'Berlucchi',     logo: '/wineries/berlucchi.svg',       slug: 'berlucchi'     },
       { name: 'Barone Pizzini', logo: '/wineries/barone-pizzini.svg', slug: 'barone-pizzini' },
-      { name: 'Boccadoro',     logo: '/wineries/boccadoro.png',       slug: 'boccadoro'     },
+      { name: 'Boccadoro',     logo: '/wineries/boccadoro logo.png',  slug: 'boccadoro'     },
     ],
   },
   {
@@ -149,6 +149,9 @@ export const WINE_REGIONS: WineRegion[] = [
       'Chianti Classico is the historic heartland between Florence and Siena, where Sangiovese reigns supreme. The Gran Selezione category — introduced in 2014 — has elevated the appellation to new heights, with single-vineyard expressions from producers like Fontodi, Castello di Ama, Isole e Olena, and Antinori pushing Sangiovese to world-class status. Galestro and alberese soils give the wines their characteristic cherry-red fruit, firm acidity and herbal complexity. The black cockerel (Gallo Nero) on the label is the sign of a true Classico.',
     grapes: ['Sangiovese', 'Canaiolo', 'Colorino'],
     mustTry: ['Fontodi Vigna del Sorbo', 'Isole e Olena', 'Castello di Ama L\'Apparita'],
+    wineries: [
+      { name: 'Antinori', logo: '/wineries/antinori logo .png', slug: 'antinori' },
+    ],
   },
   {
     id: 8,
@@ -179,7 +182,27 @@ export const WINE_REGIONS: WineRegion[] = [
     mustTry: ['Quinta do Noval Nacional', "Graham's Vintage Port", 'Niepoort Charme', 'Ramos Pinto'],
     wineries: [
       { name: 'Quinta do Noval', logo: '/wineries/quinta-do-noval.svg', slug: 'quinta-do-noval' },
-      { name: "Graham's",        logo: '/wineries/grahams.svg',        slug: 'grahams'         },
+      { name: "Graham's",        logo: "/wineries/graham's logo.png",  slug: 'grahams'         },
+    ],
+  },
+  {
+    id: 11,
+    slug: 'valpolicella',
+    name: 'Valpolicella',
+    country: 'Italy',
+    lat: 45.55,
+    lng: 10.9,
+    shortDesc:
+      'Home of Amarone. Valpolicella produces some of Italy\'s most powerful and complex red wines from indigenous Corvina-based varieties grown on the hills northwest of Verona.',
+    description:
+      'Valpolicella is one of Italy\'s most important red wine appellations, located in the hills northwest of Verona in the Veneto. Its fame rests above all on Amarone della Valpolicella — a dry red wine of extraordinary concentration made from partially dried grapes (appassimento), a process that intensifies sugar, colour and flavour over three to four months. The result is a wine of immense power, with flavours of dried cherry, chocolate, leather and spice that can age for decades. Ripasso — made by re-fermenting Valpolicella on the leftover Amarone skins — offers a more accessible expression of the same terroir. The zone is divided into the historic Classico area (Negrar, Marano, Fumane, Sant\'Ambrogio and San Pietro in Cariano) and the broader DOC. Legendary producers like Quintarelli have defined the style for generations.',
+    grapes: ['Corvina', 'Rondinella', 'Molinara', 'Oseleta', 'Corvinone'],
+    mustTry: ['Amarone della Valpolicella', 'Ripasso', 'Recioto della Valpolicella', 'Quintarelli Amarone'],
+    wineries: [
+      { name: 'Giuseppe Quintarelli', logo: '/wineries/quintarelli logo .png',        slug: 'quintarelli' },
+      { name: 'Bertani',              logo: '/wineries/bertani logo .png',       slug: 'bertani'     },
+      { name: 'Tommasi',              logo: '/wineries/tommasi logo.png',        slug: 'tommasi'     },
+      { name: 'Speri',                logo: '/wineries/Speri logo .webp',        slug: 'speri'       },
     ],
   },
   {

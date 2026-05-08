@@ -1,18 +1,74 @@
 'use client';
 
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
 
+function ImageSlider({ images, imageStyles }: { images: string[]; imageStyles?: string[] }) {
+  const [idx, setIdx] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    timerRef.current = setInterval(() => {
+      setIdx((i) => (i + 1) % images.length);
+    }, 4000);
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [images.length]);
+
+  return (
+    <div className="relative w-full h-full overflow-hidden">
+      {images.map((src, i) => (
+        <div
+          key={src}
+          className="absolute inset-0 transition-opacity duration-700"
+          style={{ opacity: i === idx ? 1 : 0 }}
+        >
+          <Image
+            src={src}
+            alt=""
+            fill
+            loading="lazy"
+            className={imageStyles?.[i] ?? 'object-cover'}
+            sizes="(max-width: 768px) 100vw, 33vw"
+          />
+        </div>
+      ))}
+      {/* Dot indicators */}
+      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+        {images.map((_, i) => (
+          <button
+            key={i}
+            onClick={(e) => { e.preventDefault(); setIdx(i); }}
+            className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${i === idx ? 'bg-white' : 'bg-white/40'}`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 const POSTS = [
+  {
+    tag: 'COMING SOON',
+    title: 'Giuseppe Quintarelli — Upcoming Visit',
+    description:
+      "We'll soon be visiting Giuseppe Quintarelli, one of the most legendary wineries in Valpolicella and a true global icon of Amarone. A rare opportunity to step inside a place where tradition, patience and craftsmanship have shaped some of the most coveted wines in the world.",
+    href: 'https://www.linkedin.com/feed/update/urn:li:activity:7458475994270593024/',
+    region: 'Valpolicella, Italy',
+    image: '/wineries/quintarelli logo .png',
+    images: ['/quintarelli 1.jpeg', '/quintarelli .jpeg'],
+  },
   {
     tag: 'WINERY VISIT',
     title: "Ca' del Bosco Visit",
     description:
       "A private visit to one of Franciacorta's most iconic estates. We explored the cellars, tasted through the range, and discovered why Ca' del Bosco has set the benchmark for Italian méthode classique sparkling wine for over fifty years.",
-    href: 'https://www.linkedin.com/feed/update/urn:li:activity:7454502442269937665/',
+    href: 'https://www.linkedin.com/feed/update/urn:li:activity:7454880388503564288/',
     region: 'Franciacorta, Italy',
     image: '/Ca-del-Bosco.png',
+    images: ['/events/Winery visits/wv3.jpg', '/Ca-del-Bosco.png'],
+    imageStyles: ['object-cover', 'object-contain p-8'],
   },
   {
     tag: 'WINERY VISIT',
@@ -22,6 +78,8 @@ const POSTS = [
     href: 'https://www.linkedin.com/feed/update/urn:li:activity:7452272329461649408/',
     region: 'Franciacorta, Italy',
     image: '/Monterossa.png',
+    images: ['/tavolo.jpg', '/Monterossa.png'],
+    imageStyles: ['object-cover', 'object-contain p-8'],
   },
 ];
 
@@ -30,7 +88,7 @@ export default function LinkedInSection() {
   const d = (n: number) => (reducedMotion ? 0 : n);
 
   return (
-    <section className="pt-4 pb-16 md:pt-6 md:pb-20 relative overflow-hidden">
+    <section className="pt-4 pb-4 md:pt-6 md:pb-6 relative overflow-hidden">
       <div className="fog-right" style={{ top: '10%' }} />
 
       <div className="max-w-7xl mx-auto px-6 lg:px-10">
@@ -41,7 +99,7 @@ export default function LinkedInSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: d(0.8) }}
-          className="mb-14"
+          className="mb-8"
         >
           <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-4">LATEST NEWS</div>
           <h2
@@ -64,11 +122,11 @@ export default function LinkedInSection() {
           whileInView={{ scaleX: 1 }}
           viewport={{ once: true }}
           transition={{ duration: d(0.9), ease: [0.16, 1, 0.3, 1] }}
-          className="origin-left w-full h-px bg-gradient-to-r from-[#731515]/30 via-[#731515]/10 to-transparent mb-12"
+          className="origin-left w-full h-px bg-gradient-to-r from-[#731515]/30 via-[#731515]/10 to-transparent mb-8"
         />
 
         {/* Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {POSTS.map((post, i) => (
             <motion.a
               key={post.href}
@@ -83,20 +141,24 @@ export default function LinkedInSection() {
             >
               {/* Image */}
               <div className="relative w-full shrink-0 bg-[#f5f0f0] border-b border-[#e8d5d5]" style={{ height: 160 }}>
-                <Image
-                  src={post.image}
-                  alt={post.title}
-                  fill
-                  loading="lazy"
-                  className="object-contain p-4"
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                />
+                {'images' in post && post.images ? (
+                  <ImageSlider images={post.images} imageStyles={'imageStyles' in post ? post.imageStyles : undefined} />
+                ) : (
+                  <Image
+                    src={post.image}
+                    alt={post.title}
+                    fill
+                    loading="lazy"
+                    className="object-contain p-4"
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                  />
+                )}
               </div>
 
               {/* Content */}
-              <div className="flex flex-col flex-1 p-8">
+              <div className="flex flex-col flex-1 p-5">
               {/* Top row */}
-              <div className="flex items-center justify-between gap-4 mb-5">
+              <div className="flex items-center justify-between gap-4 mb-4">
                 <span className="text-[9px] tracking-[0.4em] text-[#731515]">{post.tag}</span>
                 <ArrowUpRight
                   size={15}
@@ -114,14 +176,14 @@ export default function LinkedInSection() {
 
               {/* Description */}
               <p
-                className="text-sm text-[#7a4a4a] font-light leading-relaxed flex-1 mb-6"
+                className="text-sm text-[#7a4a4a] font-light leading-relaxed flex-1 mb-4"
                 style={{ fontFamily: 'var(--font-nunito)' }}
               >
                 {post.description}
               </p>
 
               {/* Footer row */}
-              <div className="flex items-center justify-between pt-5 border-t border-[#e8d5d5]">
+              <div className="flex items-center justify-between pt-4 border-t border-[#e8d5d5]">
                 <span
                   className="text-[10px] tracking-[0.2em] text-[#7a4a4a]/50"
                   style={{ fontFamily: 'var(--font-nunito)' }}

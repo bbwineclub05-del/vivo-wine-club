@@ -3,7 +3,8 @@
 import { use, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowLeft, MapPin, Minus, Plus, Calendar, Tag, User } from 'lucide-react';
+import { MapPin, Minus, Plus, Calendar, Tag, User } from 'lucide-react';
+import BackButton from '@/components/BackButton';
 import Navbar from '@/components/Navbar';
 import { getEventBySlug } from '@/lib/events';
 import { notFound } from 'next/navigation';
@@ -108,13 +109,7 @@ function CheckoutContent({ slug }: { slug: string }) {
 
         {/* ── Back link ── */}
         <div className="max-w-5xl mx-auto px-6 lg:px-10 pt-6">
-          <Link
-            href="/events"
-            className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] text-[#7a4a4a] hover:text-[#731515] transition-colors duration-300 group"
-          >
-            <ArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform duration-300" />
-            BACK
-          </Link>
+          <BackButton className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] text-[#7a4a4a] hover:text-[#731515] transition-colors duration-300" />
         </div>
 
         <section className="relative overflow-hidden py-16 md:py-24">
@@ -151,10 +146,12 @@ function CheckoutContent({ slug }: { slug: string }) {
                       <MapPin size={13} className="text-[#731515] shrink-0" />
                       <span style={{ fontFamily: 'var(--font-nunito)' }}>{event.locationFull}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Tag size={13} className="text-[#731515] shrink-0" />
-                      <span style={{ fontFamily: 'var(--font-nunito)' }}>€{event.price} per person</span>
-                    </div>
+                    {event.price > 0 && (
+                      <div className="flex items-center gap-2">
+                        <Tag size={13} className="text-[#731515] shrink-0" />
+                        <span style={{ fontFamily: 'var(--font-nunito)' }}>€{event.price} per person</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="w-10 h-px bg-[#731515]/20 mt-7 mb-6" />
@@ -263,32 +260,41 @@ function CheckoutContent({ slug }: { slug: string }) {
                     ORDER SUMMARY
                   </div>
 
-                  <div className="flex flex-col gap-3 mb-6">
-                    <div className="flex items-center justify-between text-sm text-[#7a4a4a]" style={{ fontFamily: 'var(--font-nunito)' }}>
-                      <span>{event.title}</span>
-                      <span>€{event.price}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm text-[#7a4a4a]" style={{ fontFamily: 'var(--font-nunito)' }}>
-                      <span>Tickets</span>
-                      <span>× {qty}</span>
-                    </div>
-                  </div>
+                  {event.price > 0 ? (
+                    <>
+                      <div className="flex flex-col gap-3 mb-6">
+                        <div className="flex items-center justify-between text-sm text-[#7a4a4a]" style={{ fontFamily: 'var(--font-nunito)' }}>
+                          <span>{event.title}</span>
+                          <span>€{event.price}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm text-[#7a4a4a]" style={{ fontFamily: 'var(--font-nunito)' }}>
+                          <span>Tickets</span>
+                          <span>× {qty}</span>
+                        </div>
+                      </div>
 
-                  <div className="w-full h-px bg-[#e8d5d5] mb-5" />
+                      <div className="w-full h-px bg-[#e8d5d5] mb-5" />
 
-                  <div className="flex items-center justify-between mb-8">
-                    <span className="text-[11px] tracking-[0.3em] text-[#7a4a4a]">TOTAL</span>
-                    <motion.span
-                      key={total}
-                      initial={{ opacity: 0, y: -6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.25 }}
-                      className="text-3xl font-light text-[#731515]"
-                      style={{ fontFamily: 'var(--font-syne)' }}
-                    >
-                      €{total.toFixed(2)}
-                    </motion.span>
-                  </div>
+                      <div className="flex items-center justify-between mb-8">
+                        <span className="text-[11px] tracking-[0.3em] text-[#7a4a4a]">TOTAL</span>
+                        <motion.span
+                          key={total}
+                          initial={{ opacity: 0, y: -6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.25 }}
+                          className="text-3xl font-light text-[#731515]"
+                          style={{ fontFamily: 'var(--font-syne)' }}
+                        >
+                          €{total.toFixed(2)}
+                        </motion.span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex items-center justify-between mb-8">
+                      <span className="text-sm text-[#7a4a4a]" style={{ fontFamily: 'var(--font-nunito)' }}>{event.title} × {qty}</span>
+                      <span className="text-xl font-light text-[#731515]" style={{ fontFamily: 'var(--font-syne)' }}>FREE</span>
+                    </div>
+                  )}
 
                   {error && (
                     <p className="mb-4 text-center text-xs text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>
@@ -302,7 +308,7 @@ function CheckoutContent({ slug }: { slug: string }) {
                     whileTap={{ scale: 0.99 }}
                     className="w-full py-4 bg-[#731515] text-white text-[11px] tracking-[0.4em] hover:bg-[#aa4848] disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-300"
                   >
-                    {loading ? 'PROCESSING…' : 'PROCEED TO PAYMENT'}
+                    {loading ? 'PROCESSING…' : event.price > 0 ? 'PROCEED TO PAYMENT' : 'GET YOUR FREE TICKET'}
                   </motion.button>
 
                   <p className="mt-4 text-center text-[10px] text-[#7a4a4a]/50 leading-relaxed" style={{ fontFamily: 'var(--font-nunito)' }}>

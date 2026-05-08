@@ -425,7 +425,7 @@ export const WINERIES: Winery[] = [
   {
     slug: 'giovanni-rosso',
     name: 'Giovanni Rosso',
-    logo: '/wineries/giovanni-rosso.png',
+    logo: '/wineries/giovanni rosso logo.jpg',
     region: 'Barolo',
     regionSlug: 'barolo',
     country: 'Italy',
@@ -475,7 +475,7 @@ export const WINERIES: Winery[] = [
   {
     slug: 'grahams',
     name: "Graham's",
-    logo: '/wineries/grahams.svg',
+    logo: "/wineries/graham's logo.png",
     region: 'Porto',
     regionSlug: 'porto',
     country: 'Portugal',
@@ -485,6 +485,91 @@ export const WINERIES: Winery[] = [
       "Graham's was founded in 1820 by William Graham, a Scottish merchant who accepted a consignment of Port in payment of a debt — and, so the story goes, was so captivated by the wine that he built one of the great Port houses around it. Today owned by the Symington family, who also own Dow's, Warre's and Cockburn's, Graham's combines centuries of tradition with rigorous modern winemaking.",
       "The estate's most prized holding is Quinta dos Malvedos, a steeply terraced estate in the upper Douro planted with Touriga Nacional, Touriga Franca and Tinta Roriz. Malvedos provides the backbone of Graham's finest Vintage Ports — wines of extraordinary depth, dark fruit concentration and structure that require decades to fully open.",
       "Graham's Vintage Port is declared only in exceptional years and consistently receives some of the highest scores of any Port house. Beyond Vintage, the house produces outstanding 20 Year and 30 Year Tawnies, a celebrated LBV, and — in recent years — impressive dry Douro reds that showcase the valley's potential beyond fortified wine.",
+    ],
+  },
+
+
+  /* ── CHIANTI ── */
+
+  {
+    slug: 'antinori',
+    name: 'Antinori',
+    logo: '/wineries/antinori logo .png',
+    region: 'Chianti',
+    regionSlug: 'chianti',
+    country: 'Italy',
+    classification: 'Chianti Classico DOCG · Bargino, Val di Pesa',
+    shortDesc: 'One of Italy\'s oldest and most influential wine dynasties, Antinori has shaped Tuscan wine for over six centuries — from Chianti Classico to the birth of the Super Tuscans.',
+    description: [
+      "The Antinori family has been producing wine in Tuscany since 1385 — over 26 generations without interruption. Today led by Marchese Piero Antinori and his three daughters, the estate is one of the most influential wine producers in the world, with vineyards across Tuscany, Umbria, Piedmont and beyond.",
+      "In Chianti Classico, Antinori's flagship estate is Tignanello — the property that gave its name to one of Italy's most iconic wines. Released first in 1971, Tignanello broke with tradition by blending Sangiovese with Cabernet Sauvignon and ageing in small French barriques rather than large Slavonian oak. It became the archetype of the Super Tuscan movement and changed Italian winemaking forever.",
+      "Beyond Tignanello, Antinori produces the celebrated Solaia (a Cabernet Sauvignon-dominant blend), the historic Villa Antinori Chianti Classico Riserva, and a vast portfolio that spans from approachable Toscana IGT wines to rare single-vineyard expressions. The family's new Antinori nel Chianti Classico winery — carved directly into the hillside at Bargino — is itself a work of architecture and a testament to their commitment to the land.",
+    ],
+  },
+
+  /* ── VALPOLICELLA ── */
+
+  {
+    slug: 'quintarelli',
+    name: 'Giuseppe Quintarelli',
+    logo: '/wineries/quintarelli logo .png',
+    region: 'Valpolicella',
+    regionSlug: 'valpolicella',
+    country: 'Italy',
+    classification: 'Valpolicella Classico · Negrar',
+    shortDesc: 'The most mythical name in Valpolicella. Giuseppe Quintarelli elevated Amarone to a work of art through decades of uncompromising craftsmanship and natural winemaking.',
+    description: [
+      "Giuseppe Quintarelli is, for many, the soul of Valpolicella. Operating from the hamlet of Cere di Negrar, this small family estate has been producing some of Italy's most sought-after wines for over a century — built on Corvina, Rondinella, Molinara and a handful of other indigenous and non-indigenous varieties grown with extraordinary care.",
+      "The Quintarelli approach is defined by patience. Grapes for Amarone are dried for up to four months before pressing; wines spend years in large Slavonian oak barrels before bottling. The results — Amarone Classico, Alzero (Cabernet Franc), Recioto — are wines of otherworldly complexity: dried cherry, chocolate, liquorice, tobacco, and an almost meditative depth that sets them apart from anything else produced in the Veneto.",
+      "Since the passing of Giuseppe in 2012, his daughter Fiorenza and her family have continued the work with the same rigour and devotion. Quintarelli is not a producer to collect — it is one to experience slowly, patiently, as the wines themselves demand.",
+    ],
+  },
+
+  {
+    slug: 'bertani',
+    name: 'Bertani',
+    logo: '/wineries/bertani logo .png',
+    region: 'Valpolicella',
+    regionSlug: 'valpolicella',
+    country: 'Italy',
+    classification: 'Valpolicella Classico · Grezzana',
+    shortDesc: 'One of the oldest and most historic estates in Valpolicella, Bertani has been defining Amarone since the 1950s with wines built for extraordinary longevity.',
+    description: [
+      "Founded in 1857 by brothers Giovan Battista and Gaetano Bertani, the estate is one of the oldest and most historically significant in the Veneto. The family played a decisive role in the development of Amarone as a category — producing some of the earliest commercial releases of what was then a radical wine style.",
+      "Bertani's Amarone della Valpolicella Classico is one of the longest-lived wines in Italy, regularly requiring 20 to 30 years of cellaring to reveal its full depth. Made from Corvina, Rondinella and Molinara dried for four months, it ages in large Slavonian oak for a minimum of six years before release — a process that builds extraordinary complexity while preserving the wine's fundamental elegance.",
+      "Beyond Amarone, Bertani produces a benchmark Soave Classico, Valpolicella Ripasso and Secco-Bertani — the historic 'vintage edition' red that helped define the region's lighter style. The estate remains one of the reference points for understanding the history and soul of Valpolicella.",
+    ],
+  },
+
+  {
+    slug: 'tommasi',
+    name: 'Tommasi',
+    logo: '/wineries/tommasi logo.png',
+    region: 'Valpolicella',
+    regionSlug: 'valpolicella',
+    country: 'Italy',
+    classification: 'Valpolicella Classico · San Pietro in Cariano',
+    shortDesc: 'A leading family estate in the heart of the Valpolicella Classico zone, Tommasi produces benchmark Amarone and Ripasso wines across several hundred hectares of estate vineyards.',
+    description: [
+      "Tommasi is one of Valpolicella's most important family estates, producing wines from several hundred hectares of vineyards across the Classico zone — an unusually large holding for a region dominated by small growers. Founded in 1902 by Giacomo Tommasi in the village of Pedemonte, the estate has been passed through four generations without losing its identity or independence.",
+      "The Tommasi Amarone della Valpolicella Classico is aged for three years in large oak barrels after a long drying period, producing a wine of classic structure and richness. The Rafael Ripasso — aged in small barrique — offers a more approachable expression of the appassimento style, full of dried cherry, plum and spice.",
+      "In recent decades, Tommasi has expanded its portfolio with estates in Tuscany, Puglia and Oltrepò Pavese, but Valpolicella remains the heart of the operation. The family's commitment to indigenous varieties and traditional methods makes Tommasi a reliable and essential producer in any serious cellar.",
+    ],
+  },
+
+  {
+    slug: 'speri',
+    name: 'Speri',
+    logo: '/wineries/Speri logo .webp',
+    region: 'Valpolicella',
+    regionSlug: 'valpolicella',
+    country: 'Italy',
+    classification: 'Valpolicella Classico · Pedemonte',
+    shortDesc: 'A fifth-generation family estate in the Valpolicella Classico zone, Speri produces refined and elegant Amarone and Ripasso wines that consistently rank among the region\'s finest.',
+    description: [
+      "Speri is one of the Valpolicella Classico zone's most admired estates — a fifth-generation family producer based in Pedemonte, whose wines have been among the region's reference points for elegance and precision for decades. The family has farmed the same hills since 1874, accumulating a deep understanding of the territory that shows clearly in the glass.",
+      "Their Amarone della Valpolicella Classico Monte Sant'Urbano — produced from a single hillside vineyard — is widely considered one of the finest expressions of the appellation: firm, refined and mineral, with the restrained power that distinguishes great Valpolicella from merely very good Valpolicella. It ages for three years in large Slavonian oak after a traditional drying period.",
+      "Speri's approach favours balance over power — their Ripasso and Valpolicella Classico Superiore are benchmarks of the lighter, more aromatic styles, offering genuine pleasure without the weight of Amarone. The estate is a perfect introduction to the diversity and sophistication of the Valpolicella appellation.",
     ],
   },
 
