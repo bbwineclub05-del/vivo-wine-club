@@ -259,51 +259,52 @@ function QrScanner({
   return (
     <div className="flex flex-col items-center gap-5">
 
-      {/* Result overlay — shown instead of camera view when a scan is complete */}
-      <AnimatePresence mode="wait">
-        {result ? (
-          <ScanResultOverlay key="result" result={result} onNext={handleNext} />
-        ) : (
-          <motion.div
-            key="camera"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="w-full flex flex-col items-center gap-4"
-          >
-            {/* html5-qrcode mounts its video into this div */}
-            <div
-              id={`qr-reader-${eventId}`}
-              className={`w-full max-w-sm rounded-xl overflow-hidden bg-black ${cameraActive ? '' : 'hidden'}`}
-            />
+      {/*
+        IMPORTANT: the qr-reader div MUST stay in the DOM the entire time
+        html5-qrcode is running. Unmounting or animating it away while the
+        camera is active causes html5-qrcode to throw and React to re-render,
+        which is the source of the flickering.
 
-            {!cameraActive && (
-              <div className="w-full max-w-sm aspect-square rounded-xl border-2 border-dashed border-[#eddada] bg-[#fdf8f8] flex flex-col items-center justify-center gap-4 text-[#9a6060]/60">
-                <ScanLine size={48} strokeWidth={1} />
-                <p className="text-sm text-center px-6 leading-relaxed" style={{ fontFamily: 'var(--font-nunito)' }}>
-                  Premi il pulsante qui sotto per attivare la fotocamera e scannerizzare il QR del biglietto
-                </p>
-              </div>
-            )}
+        We therefore use CSS display:none to hide it rather than unmounting it,
+        and show the result overlay as a sibling element below.
+      */}
 
-            {cameraError && (
-              <p className="text-sm text-red-600 text-center px-4" style={{ fontFamily: 'var(--font-nunito)' }}>
-                {cameraError}
-              </p>
-            )}
+      {/* html5-qrcode target — always in DOM while camera active, hidden during result */}
+      <div
+        id={`qr-reader-${eventId}`}
+        style={{ display: cameraActive && !result ? 'block' : 'none' }}
+        className="w-full max-w-sm rounded-xl overflow-hidden bg-black"
+      />
 
-            {verifying && (
-              <div className="flex items-center gap-2 text-sm text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>
-                <div className="w-4 h-4 rounded-full border-2 border-[#731515] border-t-transparent animate-spin" />
-                Verifica in corso…
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Placeholder — camera off, no result yet */}
+      {!cameraActive && !result && (
+        <div className="w-full max-w-sm aspect-square rounded-xl border-2 border-dashed border-[#eddada] bg-[#fdf8f8] flex flex-col items-center justify-center gap-4 text-[#9a6060]/60">
+          <ScanLine size={48} strokeWidth={1} />
+          <p className="text-sm text-center px-6 leading-relaxed" style={{ fontFamily: 'var(--font-nunito)' }}>
+            Premi il pulsante qui sotto per attivare la fotocamera e scannerizzare il QR del biglietto
+          </p>
+        </div>
+      )}
 
-      {/* Camera toggle — hidden when result is showing */}
+      {/* Verifying spinner — shown while awaiting API response */}
+      {verifying && !result && (
+        <div className="flex items-center gap-2 text-sm text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>
+          <div className="w-4 h-4 rounded-full border-2 border-[#731515] border-t-transparent animate-spin" />
+          Verifica in corso…
+        </div>
+      )}
+
+      {/* Camera error */}
+      {cameraError && !result && (
+        <p className="text-sm text-red-600 text-center px-4" style={{ fontFamily: 'var(--font-nunito)' }}>
+          {cameraError}
+        </p>
+      )}
+
+      {/* Result — rendered as a plain sibling, no AnimatePresence fighting the camera DOM */}
+      {result && <ScanResultOverlay result={result} onNext={handleNext} />}
+
+      {/* Camera toggle — hidden while result is visible */}
       {!result && (
         <button
           onClick={cameraActive ? stopCamera : startCamera}
