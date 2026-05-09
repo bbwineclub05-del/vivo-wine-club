@@ -19,12 +19,13 @@ import MemberCRM from '@/components/MemberCRM';
 import EventManager from '@/components/EventManager';
 import CrmWine from '@/components/CrmWine';
 import CrmBordeaux from '@/components/CrmBordeaux';
+import CrmClienti from '@/components/CrmClienti';
 import MediaManager from '@/components/MediaManager';
 
 /* ─────────────────────────────────────────────
    Types
 ───────────────────────────────────────────── */
-type Section = 'overview' | 'settings' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm' | 'crm-wine' | 'crm-bordeaux' | 'media';
+type Section = 'overview' | 'settings' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm' | 'crm-wine' | 'crm-bordeaux' | 'crm-clienti' | 'media';
 
 interface NavItem {
   id: Section;
@@ -44,6 +45,7 @@ const NAV_ADMIN: NavItem[] = [
   { id: 'events',       label: 'Gestione Eventi',      icon: CalendarDays },
   { id: 'news',         label: 'Gestione News',        icon: FileText    },
   { id: 'crm',          label: 'CRM Membri',           icon: Mail        },
+  { id: 'crm-clienti',  label: 'CRM Clienti',          icon: Users       },
   { id: 'crm-wine',     label: 'CRM Contatti Vino',    icon: GlassWater  },
   { id: 'crm-bordeaux', label: 'CRM Produttori BDX',   icon: MapPin      },
   { id: 'media',         label: 'Gestione Media',        icon: Images      },
@@ -611,6 +613,13 @@ export default function MembersPage() {
                   <>
                     <SectionHeader title="CRM Produttori Bordeaux" subtitle="Châteaux e produttori di Bordeaux — richieste visita e follow-up." />
                     <CrmBordeaux />
+                  </>
+                )}
+
+                {admin && activeSection === 'crm-clienti' && (
+                  <>
+                    <SectionHeader title="CRM Clienti" subtitle="Banca dati automatica dei clienti che hanno acquistato biglietti — invio email e storico eventi." />
+                    <CrmClienti />
                   </>
                 )}
 

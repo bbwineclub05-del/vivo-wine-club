@@ -271,6 +271,54 @@ function adminEmailHtml(params: {
 </div>`;
 }
 
+// ── Customer CRM upsert ───────────────────────────────────────────────────────
+
+async function upsertCustomer({
+  email,
+  name,
+  eventSlug,
+}: {
+  email:     string;
+  name:      string;
+  eventSlug: string;
+}) {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db  = getSupabaseAdmin() as any;
+    const now = new Date().toISOString();
+
+    const { data: existing } = await db
+      .from('customers')
+      .select('id, events, total_events')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (existing) {
+      const existingEvents: string[] = existing.events ?? [];
+      const hasEvent = existingEvents.includes(eventSlug);
+      await db.from('customers').update({
+        name,
+        last_purchase_at: now,
+        ...(hasEvent ? {} : {
+          total_events: (existing.total_events as number) + 1,
+          events:       [...existingEvents, eventSlug],
+        }),
+      }).eq('id', existing.id);
+    } else {
+      await db.from('customers').insert({
+        email,
+        name,
+        first_purchase_at: now,
+        last_purchase_at:  now,
+        total_events:      1,
+        events:            [eventSlug],
+      });
+    }
+  } catch (err) {
+    console.error('[upsertCustomer] error:', err);
+  }
+}
+
 // ── Main email sender (exported so /confirm can reuse it) ─────────────────────
 
 export async function sendEventConfirmationEmails(params: {
@@ -304,6 +352,9 @@ export async function sendEventConfirmationEmails(params: {
   if (dbErr) {
     console.error('[sendEventConfirmationEmails] Supabase upsert failed:', JSON.stringify(dbErr));
   }
+
+  // Upsert CRM customer record
+  await upsertCustomer({ email, name: `${firstName} ${lastName}`, eventSlug: event.slug });
 
   await Promise.all([
     // ── Buyer email with PDF attachment ──
