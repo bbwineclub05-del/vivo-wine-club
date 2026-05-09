@@ -291,18 +291,18 @@ export async function sendEventConfirmationEmails(params: {
   const pdfName   = `vivo-ticket-${event.slug}.pdf`;
 
   // ── Upsert ticket record in Supabase ──
-  // qr_code matches the value encoded in the ticket PDF QR code (the raw orderId).
+  // Column names match the actual Supabase schema:
+  //   order_id, qr_code, event_id, name, email, checked_in, scanned_at, scanned_by
   const { error: dbErr } = await (getSupabaseAdmin() as any).from('tickets').upsert({
-    order_id:     orderId,
-    qr_code:      orderId,
-    event_id:     event.slug,
-    buyer_email:  email,
-    buyer_name:   `${firstName} ${lastName}`,
-    ticket_count: qty,
-    scanned:      false,
+    order_id:   orderId,
+    qr_code:    orderId,
+    event_id:   event.slug,
+    email:      email,
+    name:       `${firstName} ${lastName}`,
+    checked_in: false,
   }, { onConflict: 'order_id' });
   if (dbErr) {
-    console.error('[sendEventConfirmationEmails] Supabase upsert failed:', dbErr);
+    console.error('[sendEventConfirmationEmails] Supabase upsert failed:', JSON.stringify(dbErr));
   }
 
   await Promise.all([
@@ -359,15 +359,13 @@ export async function POST(request: Request) {
 
   // Paid event — save ticket record immediately so it's in the DB regardless of
   // whether the buyer completes payment and the success page is loaded.
-  // The ticket will be updated (qr_code set, scanned=false confirmed) again in /confirm.
   await (getSupabaseAdmin() as any).from('tickets').upsert({
-    order_id:     orderId,
-    qr_code:      orderId,
-    event_id:     event.slug,
-    buyer_email:  email,
-    buyer_name:   `${firstName} ${lastName}`,
-    ticket_count: qty,
-    scanned:      false,
+    order_id:   orderId,
+    qr_code:    orderId,
+    event_id:   event.slug,
+    email:      email,
+    name:       `${firstName} ${lastName}`,
+    checked_in: false,
   }, { onConflict: 'order_id' });
 
   // Stripe session; confirmation emails sent in /api/checkout/confirm

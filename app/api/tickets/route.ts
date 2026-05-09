@@ -3,8 +3,10 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
 /**
  * GET /api/tickets?event_id=<slug>
- * Returns all tickets for a given event.
- * Requires authenticated staff user.
+ * Returns all tickets for a given event. Staff only.
+ *
+ * Column mapping (actual Supabase schema):
+ *   order_id, qr_code, event_id, name, email, checked_in, scanned_at, scanned_by
  */
 export async function GET(request: Request) {
   const authHeader = request.headers.get('Authorization');
@@ -35,13 +37,13 @@ export async function GET(request: Request) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: tickets, error } = await (getSupabaseAdmin() as any)
     .from('tickets')
-    .select('order_id, buyer_name, buyer_email, ticket_count, scanned, scanned_at, scanned_by')
+    .select('order_id, qr_code, name, email, checked_in, scanned_at, scanned_by')
     .eq('event_id', eventId)
-    .order('scanned', { ascending: true })
-    .order('buyer_name', { ascending: true });
+    .order('checked_in', { ascending: true })
+    .order('name',       { ascending: true });
 
   if (error) {
-    console.error('[tickets] DB error:', error);
+    console.error('[tickets] DB error:', JSON.stringify(error));
     return NextResponse.json({ error: 'DB error' }, { status: 500 });
   }
 

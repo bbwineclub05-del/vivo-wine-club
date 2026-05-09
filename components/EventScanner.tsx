@@ -6,14 +6,14 @@ import { X, ScanLine, CheckCircle2, Circle, Users, RefreshCw, Camera, CameraOff 
 import { supabase } from '@/lib/supabase';
 
 /* ─────────────────────────────────────────────
-   Types
+   Types — match actual Supabase tickets schema
 ───────────────────────────────────────────── */
 interface Ticket {
-  order_id: string;
-  buyer_name: string;
-  buyer_email: string;
-  ticket_count: number;
-  scanned: boolean;
+  order_id:   string;
+  qr_code:    string | null;
+  name:       string;
+  email:      string;
+  checked_in: boolean | null;
   scanned_at: string | null;
   scanned_by: string | null;
 }
@@ -22,7 +22,6 @@ interface ScanResult {
   type: 'success' | 'already' | 'invalid' | 'error';
   name?: string;
   email?: string;
-  ticketCount?: number;
   scannedBy?: string;
   scannedAt?: string;
 }
@@ -76,9 +75,9 @@ function ScanBanner({ result, onDismiss }: { result: ScanResult; onDismiss: () =
         {result.type === 'invalid' && '✗ Biglietto non valido'}
         {result.type === 'error'   && 'Errore di connessione'}
       </div>
-      {result.type === 'success' && (
+      {result.type === 'success' && result.email && (
         <p className={`text-xs ${s.text} opacity-75`} style={{ fontFamily: 'var(--font-nunito)' }}>
-          {result.email} · {result.ticketCount} {result.ticketCount === 1 ? 'biglietto' : 'biglietti'}
+          {result.email}
         </p>
       )}
       {result.type === 'already' && result.scannedBy && (
@@ -140,9 +139,8 @@ function QrScanner({
             if (data.valid) {
               onScan({
                 type: 'success',
-                name: data.buyerName,
+                name:  data.buyerName,
                 email: data.buyerEmail,
-                ticketCount: data.ticketCount,
               });
             } else if (data.reason === 'already_scanned') {
               onScan({
@@ -272,16 +270,12 @@ export default function EventScanner({
         { event: '*', schema: 'public', table: 'tickets', filter: `event_id=eq.${event.slug}` },
         (payload) => {
           if (payload.eventType === 'UPDATE') {
+            const updated = payload.new as Ticket;
             setTickets(prev =>
-              prev.map(t =>
-                t.order_id === (payload.new as Ticket).order_id
-                  ? { ...t, ...(payload.new as Ticket) }
-                  : t
-              )
+              prev.map(t => t.order_id === updated.order_id ? { ...t, ...updated } : t)
             );
           } else {
-            // INSERT or DELETE — just reload
-            load();
+            load(); // INSERT or DELETE — reload full list
           }
         }
       )
@@ -291,8 +285,8 @@ export default function EventScanner({
   }, [event.slug, load]);
 
   /* ── Stats ── */
-  const total    = tickets.reduce((s, t) => s + (t.ticket_count || 1), 0);
-  const present  = tickets.filter(t => t.scanned).reduce((s, t) => s + (t.ticket_count || 1), 0);
+  const total   = tickets.length;
+  const present = tickets.filter(t => t.checked_in).length;
 
   /* ── Scan handler: update locally optimistic + banner ── */
   const handleScanResult = useCallback((result: ScanResult) => {
@@ -395,7 +389,7 @@ export default function EventScanner({
               {/* Refresh button */}
               <div className="flex items-center justify-between mb-4">
                 <p className="text-[10px] tracking-[0.3em] text-[#7a4a4a]/50">
-                  {tickets.length} {tickets.length === 1 ? 'ordine' : 'ordini'} · {total} {total === 1 ? 'biglietto' : 'biglietti'}
+                  {total} {total === 1 ? 'prenotazione' : 'prenotazioni'} · {present} presenti
                 </p>
                 <button
                   onClick={load}
@@ -421,13 +415,13 @@ export default function EventScanner({
                     <div
                       key={ticket.order_id}
                       className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${
-                        ticket.scanned
+                        ticket.checked_in
                           ? 'bg-emerald-50 border-emerald-200'
                           : 'bg-white border-[#eddada]'
                       }`}
                     >
                       {/* Status icon */}
-                      {ticket.scanned ? (
+                      {ticket.checked_in ? (
                         <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
                       ) : (
                         <Circle size={16} className="text-[#e0c5c5] shrink-0" />
@@ -436,24 +430,21 @@ export default function EventScanner({
                       {/* Info */}
                       <div className="flex-1 min-w-0">
                         <div
-                          className={`text-sm font-medium truncate ${ticket.scanned ? 'text-emerald-800' : 'text-[#1a0505]'}`}
+                          className={`text-sm font-medium truncate ${ticket.checked_in ? 'text-emerald-800' : 'text-[#1a0505]'}`}
                           style={{ fontFamily: 'var(--font-syne)' }}
                         >
-                          {ticket.buyer_name}
-                          {ticket.ticket_count > 1 && (
-                            <span className="ml-1.5 text-[10px] font-normal opacity-60">×{ticket.ticket_count}</span>
-                          )}
+                          {ticket.name}
                         </div>
                         <div
-                          className={`text-[11px] truncate ${ticket.scanned ? 'text-emerald-700/60' : 'text-[#7a4a4a]/50'}`}
+                          className={`text-[11px] truncate ${ticket.checked_in ? 'text-emerald-700/60' : 'text-[#7a4a4a]/50'}`}
                           style={{ fontFamily: 'var(--font-nunito)' }}
                         >
-                          {ticket.buyer_email}
+                          {ticket.email}
                         </div>
                       </div>
 
-                      {/* Scanned time */}
-                      {ticket.scanned && ticket.scanned_at && (
+                      {/* Check-in time */}
+                      {ticket.checked_in && ticket.scanned_at && (
                         <div className="text-[10px] text-emerald-600/70 shrink-0 text-right" style={{ fontFamily: 'var(--font-nunito)' }}>
                           {fmtTime(ticket.scanned_at)}
                         </div>
