@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, Pencil, Trash2, Eye, EyeOff, ChevronDown, ChevronUp,
-  CalendarDays, MapPin, Tag, Users, CheckCircle2, Clock, XCircle, Globe,
+  CalendarDays, MapPin, Tag, Users, CheckCircle2, Clock, XCircle, Globe, ScanLine,
 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import EventScanner from '@/components/EventScanner';
 
 /* ─────────────────────────────────────────────
    Types
@@ -306,11 +308,13 @@ function EventRow({
   onEdit,
   onDelete,
   onTogglePublished,
+  onScan,
 }: {
   event: DbEvent;
   onEdit: () => void;
   onDelete: () => void;
   onTogglePublished: () => void;
+  onScan: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [delConfirm, setDelConfirm] = useState(false);
@@ -369,6 +373,15 @@ function EventRow({
 
         {/* Actions */}
         <div className="flex items-center gap-1.5 shrink-0">
+          {/* Scanner */}
+          <button
+            onClick={onScan}
+            title="Event Scanner"
+            className="p-2 rounded-lg text-[#7a4a4a]/60 hover:text-[#731515] hover:bg-[#fdf6f6] transition-colors"
+          >
+            <ScanLine size={14} />
+          </button>
+
           {/* Published toggle */}
           <button
             onClick={onTogglePublished}
@@ -458,11 +471,19 @@ function EventRow({
    Main component
 ───────────────────────────────────────────── */
 export default function EventManager() {
-  const [events,  setEvents]  = useState<DbEvent[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [mode,    setMode]    = useState<'list' | 'create' | { edit: DbEvent }>('list');
-  const [saving,  setSaving]  = useState(false);
-  const [formErr, setFormErr] = useState('');
+  const [events,      setEvents]      = useState<DbEvent[]>([]);
+  const [loading,     setLoading]     = useState(true);
+  const [mode,        setMode]        = useState<'list' | 'create' | { edit: DbEvent }>('list');
+  const [saving,      setSaving]      = useState(false);
+  const [formErr,     setFormErr]     = useState('');
+  const [scannerEvent,  setScannerEvent]  = useState<DbEvent | null>(null);
+  const [accessToken,   setAccessToken]   = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setAccessToken(session?.access_token ?? null);
+    });
+  }, []);
 
   const load = () => {
     setLoading(true);
@@ -535,6 +556,22 @@ export default function EventManager() {
   /* ── Header ── */
   return (
     <div>
+      {/* Scanner modal */}
+      <AnimatePresence>
+        {scannerEvent && accessToken && (
+          <EventScanner
+            event={{
+              id:    scannerEvent.id,
+              slug:  scannerEvent.slug,
+              title: scannerEvent.title,
+              date:  scannerEvent.date,
+            }}
+            accessToken={accessToken}
+            onClose={() => setScannerEvent(null)}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Header row */}
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div>
@@ -626,6 +663,7 @@ export default function EventManager() {
               onEdit={() => { setFormErr(''); setMode({ edit: event }); }}
               onDelete={() => handleDelete(event.slug)}
               onTogglePublished={() => handleToggle(event)}
+              onScan={() => setScannerEvent(event)}
             />
           ))}
         </div>
