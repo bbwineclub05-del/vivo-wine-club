@@ -4,6 +4,7 @@ import QRCode from 'qrcode';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { Resend } from 'resend';
 import { dbEventToEventData, type EventData, type DbEvent } from '@/lib/events';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
@@ -26,7 +27,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2026-04-22.dahlia',
 });
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY!;
+const resend = new Resend(process.env.RESEND_API_KEY!);
 
 interface Body {
   slug: string;
@@ -197,7 +198,8 @@ function buyerEmailHtml(params: {
   orderId: string;
 }): string {
   const { firstName, event, qty, total, orderId } = params;
-  const eventDate = `${event.month} ${event.day}, ${event.year}`;
+  const eventDate  = `${event.month} ${event.day}, ${event.year}`;
+  const totalLabel = total === 0 ? 'Gratuito' : `&#8364;${total.toFixed(2)}`;
   return `
 <div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1a0505;">
   <div style="text-align:center;background-color:#6b1a1a;padding:24px;margin-bottom:32px;border-radius:4px;">
@@ -205,7 +207,7 @@ function buyerEmailHtml(params: {
   </div>
 
   <h2 style="text-align:center;font-weight:300;font-size:26px;margin-bottom:6px;">
-    You&apos;re in, ${firstName}!
+    You&#39;re in, ${firstName}!
   </h2>
   <p style="text-align:center;color:#7a4a4a;font-style:italic;margin-bottom:32px;">
     Your ticket for <strong>${event.title}</strong> is confirmed.
@@ -231,13 +233,13 @@ function buyerEmailHtml(params: {
     </tr>
     <tr>
       <td style="padding:10px 0;color:#7a4a4a;">Total</td>
-      <td style="padding:10px 0;text-align:right;font-weight:700;color:#731515;font-size:16px;">€${total.toFixed(2)}</td>
+      <td style="padding:10px 0;text-align:right;font-weight:700;color:#731515;font-size:16px;">${totalLabel}</td>
     </tr>
   </table>
 
   <p style="margin-top:40px;color:#aaa;font-size:11px;text-align:center;line-height:1.6;">
     Order ID: ${orderId}<br/>
-    Vivo Wine Club · info@vivowineclub.com · vivowineclub.com
+    Vivo Wine Club &#183; info@vivowineclub.com &#183; vivowineclub.com
   </p>
 </div>`;
 }
@@ -320,28 +322,37 @@ async function upsertCustomer({
 }
 
 // ── Main email sender (exported so /confirm can reuse it) ─────────────────────
+//
+// Operation order matters:
+//   1. Upsert ticket to DB   ← must happen first so the record is safe even if
+//   2. Upsert CRM customer      PDF generation or email sending fails later
+//   3. Generate PDF
+//   4. Send buyer email (with PDF attachment)
+//   5. Send admin notification
+//
+// Steps 3-5 are wrapped in a try/catch so that a Resend or pdf-lib error
+// cannot prevent the caller from returning a success response — the ticket
+// record is already persisted at that point.
 
 export async function sendEventConfirmationEmails(params: {
-  orderId: string;
-  event: EventData;
+  orderId:   string;
+  event:     EventData;
   firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  qty: number;
-  total: number;
+  lastName:  string;
+  email:     string;
+  phone:     string;
+  qty:       number;
+  total:     number;
 }) {
   const { orderId, event, firstName, lastName, email, phone, qty, total } = params;
+  const tag = `[ticket-email order=${orderId} event=${event.slug}]`;
 
-  // Generate ticket PDF
-  const pdfBytes  = await generateTicketPdf({ event, firstName, lastName, email, qty, total, orderId });
-  const pdfBase64 = Buffer.from(pdfBytes).toString('base64');
-  const pdfName   = `vivo-ticket-${event.slug}.pdf`;
+  console.log(`${tag} start — buyer=${email} qty=${qty} total=${total}`);
 
-  // ── Upsert ticket record in Supabase ──
-  // Column names match the actual Supabase schema:
-  //   order_id, qr_code, event_id, name, email, checked_in, scanned_at, scanned_by
-  const { error: dbErr } = await (getSupabaseAdmin() as any).from('tickets').upsert({
+  // ── 1. Upsert ticket record ───────────────────────────────────────────────────
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = getSupabaseAdmin() as any;
+  const { error: ticketErr } = await db.from('tickets').upsert({
     order_id:   orderId,
     qr_code:    orderId,
     event_id:   event.slug,
@@ -349,38 +360,64 @@ export async function sendEventConfirmationEmails(params: {
     name:       `${firstName} ${lastName}`,
     checked_in: false,
   }, { onConflict: 'order_id' });
-  if (dbErr) {
-    console.error('[sendEventConfirmationEmails] Supabase upsert failed:', JSON.stringify(dbErr));
+
+  if (ticketErr) {
+    console.error(`${tag} ticket upsert FAILED:`, JSON.stringify(ticketErr));
+  } else {
+    console.log(`${tag} ticket upserted OK`);
   }
 
-  // Upsert CRM customer record
+  // ── 2. Upsert CRM customer ────────────────────────────────────────────────────
   await upsertCustomer({ email, name: `${firstName} ${lastName}`, eventSlug: event.slug });
 
-  await Promise.all([
-    // ── Buyer email with PDF attachment ──
-    fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        from:    'noreply@vivowineclub.com',
-        to:      email,
-        subject: `Your ticket for ${event.title} — Vivo Wine Club`,
-        html:    buyerEmailHtml({ firstName, event, qty, total, orderId }),
-        attachments: [{ filename: pdfName, content: pdfBase64 }],
-      }),
-    }),
-    // ── Admin notification — text only, no attachment ──
-    fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        from:    'noreply@vivowineclub.com',
-        to:      'info@vivowineclub.com',
-        subject: `New ticket order — ${event.title} (${qty} ticket${qty > 1 ? 's' : ''})`,
-        html:    adminEmailHtml({ firstName, lastName, email, phone, event, qty, total, orderId }),
-      }),
-    }),
-  ]);
+  // ── 3-5. Generate PDF + send emails ──────────────────────────────────────────
+  // Non-fatal block: if PDF generation or Resend fails, the ticket record is
+  // already in the DB. Log the error clearly and return — the caller (free
+  // checkout) must still redirect to the success page.
+  try {
+    // 3. Generate PDF
+    console.log(`${tag} generating PDF…`);
+    const pdfBytes  = await generateTicketPdf({ event, firstName, lastName, email, qty, total, orderId });
+    const pdfBase64 = Buffer.from(pdfBytes).toString('base64');
+    const pdfName   = `vivo-ticket-${event.slug}.pdf`;
+    console.log(`${tag} PDF generated — ${pdfBytes.length} bytes`);
+
+    // 4. Buyer email with PDF attachment
+    console.log(`${tag} sending buyer email to ${email}…`);
+    const buyerResult = await resend.emails.send({
+      from:    'Vivo Wine Club <noreply@vivowineclub.com>',
+      to:      email,
+      subject: `Your ticket for ${event.title} — Vivo Wine Club`,
+      html:    buyerEmailHtml({ firstName, event, qty, total, orderId }),
+      attachments: [{ filename: pdfName, content: pdfBase64 }],
+    });
+    if (buyerResult.error) {
+      console.error(`${tag} buyer email FAILED:`, JSON.stringify(buyerResult.error));
+    } else {
+      console.log(`${tag} buyer email sent — id=${buyerResult.data?.id}`);
+    }
+
+    // 5. Admin notification (best-effort, no attachment)
+    console.log(`${tag} sending admin notification…`);
+    const adminResult = await resend.emails.send({
+      from:    'Vivo Wine Club <noreply@vivowineclub.com>',
+      to:      'info@vivowineclub.com',
+      subject: `New ticket — ${event.title} (${qty} ticket${qty > 1 ? 's' : ''})`,
+      html:    adminEmailHtml({ firstName, lastName, email, phone, event, qty, total, orderId }),
+    });
+    if (adminResult.error) {
+      console.error(`${tag} admin email FAILED:`, JSON.stringify(adminResult.error));
+    } else {
+      console.log(`${tag} admin email sent — id=${adminResult.data?.id}`);
+    }
+
+  } catch (emailErr) {
+    // Catch any unexpected error (pdf-lib, network, Resend SDK) so the caller
+    // is NOT blocked from completing the checkout redirect.
+    console.error(`${tag} PDF/email error (ticket is in DB — user can still be checked in):`, emailErr);
+  }
+
+  console.log(`${tag} done`);
 }
 
 // ── Route handler ─────────────────────────────────────────────────────────────
@@ -402,7 +439,10 @@ export async function POST(request: Request) {
   const total   = event.price * qty;
   const orderId = `VWC-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
-  // Free event — skip Stripe, send PDF confirmation immediately
+  // Free event — skip Stripe, save ticket + send PDF confirmation immediately.
+  // sendEventConfirmationEmails upserts the ticket first, then sends the email.
+  // Even if the email step fails internally, the ticket is in the DB and the
+  // user is redirected to the success page. The error is logged server-side.
   if (total === 0) {
     await sendEventConfirmationEmails({ orderId, event, firstName, lastName, email, phone, qty, total });
     return NextResponse.json({ url: `/checkout/success?order_id=${encodeURIComponent(orderId)}` });
