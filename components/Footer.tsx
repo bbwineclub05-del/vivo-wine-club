@@ -50,6 +50,12 @@ const NAV_LINKS = [
 
 const CONTACTS = [
   {
+    Icon: MailIcon,
+    label: 'EMAIL',
+    value: 'info@vivowineclub.com',
+    href: 'mailto:info@vivowineclub.com',
+  },
+  {
     Icon: InstagramIcon,
     label: 'INSTAGRAM',
     value: '@vivo.wineclub',
@@ -67,12 +73,6 @@ const CONTACTS = [
     value: '@vivowineclub',
     href: 'https://www.tiktok.com/@vivo.wineclub',
   },
-  {
-    Icon: MailIcon,
-    label: 'EMAIL',
-    value: 'info@vivowineclub.com',
-    href: 'mailto:info@vivowineclub.com',
-  },
 ];
 
 const LEGAL = [
@@ -86,23 +86,23 @@ export default function Footer() {
     <footer>
 
       {/* ── CONTACT US ── */}
-      <div className="bg-[#731515] px-6 lg:px-16 py-20">
+      <div className="bg-[#731515] px-6 lg:px-16 py-12">
         <div className="max-w-7xl mx-auto">
 
           {/* Two-column: description + contact rows */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
 
             {/* Left */}
             <div className="flex flex-col justify-between h-full">
               <div>
-                <div className="text-[10px] tracking-[0.5em] text-white/50 mb-5">GET IN TOUCH</div>
+                <div className="text-[10px] tracking-[0.5em] text-white/50 mb-4">GET IN TOUCH</div>
                 <h2
-                  className="text-[clamp(2.4rem,5vw,4rem)] font-light text-white leading-none mb-6"
+                  className="text-[clamp(2.4rem,5vw,4rem)] font-light text-white leading-none mb-4"
                   style={{ fontFamily: 'var(--font-syne)' }}
                 >
                   Contact Us
                 </h2>
-                <div className="w-12 h-px bg-white/25 mb-6" />
+                <div className="w-12 h-px bg-white/25 mb-4" />
                 <p
                   className="text-sm text-white/65 font-light leading-relaxed max-w-sm"
                   style={{ fontFamily: 'var(--font-nunito)' }}
@@ -122,7 +122,7 @@ export default function Footer() {
                   href={href}
                   target={href.startsWith('http') ? '_blank' : undefined}
                   rel={href.startsWith('http') ? 'noopener noreferrer' : undefined}
-                  className="group flex items-center gap-5 py-6 hover:pl-2 transition-all duration-300"
+                  className="group flex items-center gap-5 py-4 hover:pl-2 transition-all duration-300"
                 >
                   <span className="w-9 h-9 border border-white/20 flex items-center justify-center text-white/60 group-hover:border-white/50 group-hover:text-white transition-all duration-300 shrink-0">
                     <Icon />
@@ -144,7 +144,7 @@ export default function Footer() {
           </div>
 
           {/* Logo + horizontal nav on same row */}
-          <div className="mt-12 pt-6 flex items-center">
+          <div className="mt-8 pt-5 flex items-center">
             <Image
               src="/logobianco.png"
               alt="Vivo Wine Club"
@@ -178,13 +178,6 @@ export default function Footer() {
           <span style={{ fontFamily: 'var(--font-nunito)' }}>
             © {new Date().getFullYear()} Vivo Wine Club · All rights reserved
           </span>
-          <a
-            href="mailto:info@vivowineclub.com"
-            className="hover:text-white/60 transition-colors duration-200"
-            style={{ fontFamily: 'var(--font-nunito)' }}
-          >
-            info@vivowineclub.com
-          </a>
           <div className="flex items-center gap-4 flex-wrap justify-center">
             {LEGAL.map((l, i) => (
               <span key={l.label} className="flex items-center gap-4">

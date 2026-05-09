@@ -6,7 +6,6 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import {
-  EVENTS,
   dbEventToEventData,
   type EventData,
   type EventStatus,
@@ -120,9 +119,8 @@ function EventRow({ event, isLast }: { event: EventData; isLast: boolean }) {
 
 /* ── Page ── */
 export default async function EventsPage() {
-  let events: EventData[] = [];
+  let dbEvents: EventData[] = [];
 
-  // Try DB first
   try {
     const supabase = getSupabaseAdmin();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -132,20 +130,12 @@ export default async function EventsPage() {
       .eq('published', true)
       .order('date', { ascending: true });
 
-    if (!error && data && data.length > 0) {
-      events = (data as DbEvent[]).map(dbEventToEventData);
+    if (!error && data) {
+      dbEvents = (data as DbEvent[]).map(dbEventToEventData);
     }
-  } catch {/* fall through to static */}
+  } catch {/* fall through */}
 
-  // Static fallback
-  if (events.length === 0) {
-    const VISIBLE_SLUGS = [
-      'winery-visit-speri-may-2026',
-      'winery-visit-bertani-may-2026',
-      'wine-party-mare-may-2026',
-    ];
-    events = VISIBLE_SLUGS.map((s) => EVENTS.find((e) => e.slug === s)!).filter(Boolean);
-  }
+  const events = dbEvents;
 
   return (
     <>

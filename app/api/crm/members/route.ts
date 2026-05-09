@@ -1,18 +1,22 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { EVENTS } from '@/lib/events';
-
-// Price lookup by event slug
-const EVENT_PRICE: Record<string, number> = {};
-const EVENT_TITLE: Record<string, string> = {};
-for (const e of EVENTS) {
-  EVENT_PRICE[e.slug] = e.price;
-  EVENT_TITLE[e.slug] = e.title;
-}
 
 export async function GET() {
   try {
     const supabase = getSupabaseAdmin();
+
+    // Build event price/title lookup from DB
+    const EVENT_PRICE: Record<string, number> = {};
+    const EVENT_TITLE: Record<string, string> = {};
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: eventsData } = await (supabase as any)
+        .from('events').select('slug, title, price');
+      for (const e of (eventsData ?? [])) {
+        EVENT_PRICE[e.slug] = e.price ?? 0;
+        EVENT_TITLE[e.slug] = e.title ?? e.slug;
+      }
+    } catch {/* non-fatal */}
 
     // 1. Fetch all auth users (up to 1000)
     const { data: { users }, error: authErr } = await supabase.auth.admin.listUsers({ perPage: 1000 });

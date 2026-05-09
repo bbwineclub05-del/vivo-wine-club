@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { EVENTS } from '@/lib/events';
 
 /** GET /api/events/all — all events including unpublished, for admin panel */
 export async function GET() {
@@ -16,10 +15,9 @@ export async function GET() {
       return NextResponse.json({ events: data, source: 'db' });
     }
     console.error('[events/all] DB error:', error?.message);
+    return NextResponse.json({ error: error?.message ?? 'DB error' }, { status: 500 });
   } catch (err) {
     console.error('[events/all]', err);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-
-  // Static fallback
-  return NextResponse.json({ events: EVENTS, source: 'static' });
 }

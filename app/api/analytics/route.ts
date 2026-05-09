@@ -1,15 +1,10 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { EVENTS } from '@/lib/events';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2026-04-22.dahlia',
 });
-
-// Build event price lookup from static events data
-const EVENT_PRICE: Record<string, number> = {};
-for (const e of EVENTS) EVENT_PRICE[e.slug] = e.price;
 
 function isoWeek(date: Date): string {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -32,6 +27,17 @@ export async function GET() {
   try {
     const db = getSupabaseAdmin() as any; // eslint-disable-line @typescript-eslint/no-explicit-any
     const sixMonthsAgo = Math.floor(Date.now() / 1000) - 60 * 60 * 24 * 180;
+
+    // Build event price/title lookup from DB
+    const EVENT_PRICE: Record<string, number> = {};
+    const EVENT_TITLE: Record<string, string> = {};
+    try {
+      const { data: eventsData } = await db.from('events').select('slug, title, price');
+      for (const e of (eventsData ?? [])) {
+        EVENT_PRICE[e.slug] = e.price ?? 0;
+        EVENT_TITLE[e.slug] = e.title ?? e.slug;
+      }
+    } catch {/* non-fatal */}
 
     // ── Parallel fetches ──────────────────────────────────────────────────────
     const [
@@ -59,8 +65,7 @@ export async function GET() {
       const price = EVENT_PRICE[slug] ?? 0;
       const qty   = t.ticket_count ?? 1;
       if (!byEvent[slug]) {
-        const ev = EVENTS.find((e) => e.slug === slug);
-        byEvent[slug] = { tickets: 0, revenue: 0, title: ev?.title ?? slug };
+        byEvent[slug] = { tickets: 0, revenue: 0, title: EVENT_TITLE[slug] ?? slug };
       }
       byEvent[slug].tickets  += qty;
       byEvent[slug].revenue  += price * qty;
@@ -73,7 +78,7 @@ export async function GET() {
     // Recent ticket activity (last 5)
     const recentTickets = tickets.slice(0, 5).map((t) => ({
       buyer: t.buyer_name,
-      event: EVENTS.find((e) => e.slug === t.event_id)?.title ?? t.event_id,
+      event: EVENT_TITLE[t.event_id] ?? t.event_id,
       tickets: t.ticket_count ?? 1,
       date: t.created_at,
     }));

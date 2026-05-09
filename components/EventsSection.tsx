@@ -1,10 +1,10 @@
 'use client';
 
-import { memo } from 'react';
+import { memo, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import { MapPin } from 'lucide-react';
-import { EVENTS, type EventData, type EventStatus } from '@/lib/events';
+import { type EventData, type EventStatus } from '@/lib/events';
 
 const StatusBadge = memo(function StatusBadge({ status, slug }: { status: EventStatus; slug: string }) {
   if (status === 'open') {
@@ -107,8 +107,23 @@ function EventRow({
 
 export default function EventsSection() {
   const reducedMotion = useReducedMotion();
+  const [allEvents, setAllEvents] = useState<EventData[]>([]);
 
-  const visibleEvents = EVENTS.filter((e) => !e.titleStrikethrough).slice(0, 3);
+  useEffect(() => {
+    fetch('/api/events')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.events?.length) {
+          const visible = (data.events as EventData[])
+            .filter((e) => !e.titleStrikethrough)
+            .slice(0, 3);
+          setAllEvents(visible);
+        }
+      })
+      .catch(() => {/* keep static */});
+  }, []);
+
+  const visibleEvents = allEvents;
 
   return (
     <section id="eventi" className="pt-4 pb-12 md:pt-6 md:pb-16 relative overflow-hidden">

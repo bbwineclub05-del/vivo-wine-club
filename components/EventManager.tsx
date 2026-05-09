@@ -15,6 +15,7 @@ interface DbEvent {
   slug: string;
   title: string;
   type: string;
+  section: string;
   date: string;
   time: string | null;
   location: string;
@@ -35,12 +36,19 @@ interface DbEvent {
 type FormData = Omit<DbEvent, 'id' | 'slug' | 'stripe_product_id' | 'stripe_price_id' | 'created_at'>;
 
 const BLANK: FormData = {
-  title: '', type: 'WINERY VISIT', date: '', time: '',
+  title: '', type: 'WINERY VISIT', section: 'winery_visit', date: '', time: '',
   location: '', location_full: '', description: '',
   price: 0, capacity: null, status: 'open',
   published: false, title_strikethrough: false,
   image_url: null, sort_order: 0,
 };
+
+const SECTIONS = [
+  { value: 'wine_party',    label: 'Wine Party'     },
+  { value: 'wine_lounge',   label: 'Wine Lounge'    },
+  { value: 'winery_visit',  label: 'Winery Visit'   },
+  { value: 'general',       label: 'Generale (tutti)' },
+];
 
 const EVENT_TYPES = [
   'WINERY VISIT', 'PARTY', 'APERITIF', 'APERITIF · COLLAB',
@@ -159,6 +167,17 @@ function EventForm({
           <select className={inputCls} value={f.type} onChange={e => set('type', e.target.value)}>
             {EVENT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
           </select>
+        </div>
+
+        {/* Section */}
+        <div>
+          <Label>Sezione del sito</Label>
+          <select className={inputCls} value={f.section} onChange={e => set('section', e.target.value)}>
+            {SECTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+          </select>
+          <p className="mt-1 text-[10px] text-[#7a4a4a]/50">
+            Determina in quale pagina experience appare l&apos;evento.
+          </p>
         </div>
 
         {/* Status */}
@@ -576,6 +595,7 @@ export default function EventManager() {
                   title_strikethrough: mode.edit.title_strikethrough,
                   image_url:          mode.edit.image_url,
                   sort_order:         mode.edit.sort_order,
+                  section:            mode.edit.section ?? 'general',
                 }
               : BLANK
             }

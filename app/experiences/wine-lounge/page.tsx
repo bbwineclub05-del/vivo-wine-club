@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import BackButton from '@/components/BackButton';
+import ExperienceUpcoming from '@/components/ExperienceUpcoming';
 
 const PILLS = ['Selected Wine Bars', 'Intimate Setting', 'Great Company'];
 
@@ -164,16 +165,13 @@ export default function WineLoungeePage() {
               NEXT EVENINGS
             </h2>
             <div className="h-px bg-white/10 mb-8" />
-            <motion.p
-              initial={{ opacity: 0, y: 12 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.7, delay: 0.15 }}
-              className="text-lg text-[#C4B5A0] font-light italic"
-              style={{ fontFamily: 'var(--font-nunito)' }}
-            >
-              Coming Soon
-            </motion.p>
+            <ExperienceUpcoming
+              section="wine_lounge"
+              accentColor="#C9A84C"
+              mutedColor="light"
+              btnBg="#731515"
+              btnText="#F5EEE6"
+            />
           </motion.div>
         </div>
       </section>

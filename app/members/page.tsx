@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Home, CheckSquare, BarChart3, Users, FileText,
   Mail, LogOut, KeyRound, ScanLine, Menu, X,
-  Wine, Shield, ArrowUpRight, CreditCard, User, CalendarDays,
+  Wine, Shield, ArrowUpRight, CreditCard, User, CalendarDays, GlassWater, MapPin,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -17,11 +17,13 @@ import MembershipPipeline from '@/components/MembershipPipeline';
 import NewsManager from '@/components/NewsManager';
 import MemberCRM from '@/components/MemberCRM';
 import EventManager from '@/components/EventManager';
+import CrmWine from '@/components/CrmWine';
+import CrmBordeaux from '@/components/CrmBordeaux';
 
 /* ─────────────────────────────────────────────
    Types
 ───────────────────────────────────────────── */
-type Section = 'overview' | 'settings' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm';
+type Section = 'overview' | 'settings' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm' | 'crm-wine' | 'crm-bordeaux';
 
 interface NavItem {
   id: Section;
@@ -38,9 +40,11 @@ const NAV_ADMIN: NavItem[] = [
   { id: 'tasks',     label: 'Task Board',         icon: CheckSquare },
   { id: 'analytics', label: 'Analytics',           icon: BarChart3   },
   { id: 'pipeline',  label: 'Pipeline Membership', icon: Users       },
-  { id: 'events',    label: 'Gestione Eventi',     icon: CalendarDays },
-  { id: 'news',      label: 'Gestione News',       icon: FileText    },
-  { id: 'crm',       label: 'CRM Membri',          icon: Mail        },
+  { id: 'events',       label: 'Gestione Eventi',      icon: CalendarDays },
+  { id: 'news',         label: 'Gestione News',        icon: FileText    },
+  { id: 'crm',          label: 'CRM Membri',           icon: Mail        },
+  { id: 'crm-wine',     label: 'CRM Contatti Vino',    icon: GlassWater  },
+  { id: 'crm-bordeaux', label: 'CRM Produttori BDX',   icon: MapPin      },
 ];
 
 /* ─────────────────────────────────────────────
@@ -591,6 +595,20 @@ export default function MembersPage() {
                   <>
                     <SectionHeader title="CRM Membri" subtitle="Lista membri e invio comunicazioni." />
                     <MemberCRM />
+                  </>
+                )}
+
+                {admin && activeSection === 'crm-wine' && (
+                  <>
+                    <SectionHeader title="CRM Contatti Vino" subtitle="Contatti del settore vitivinicolo — produttori, hospitality, industry." />
+                    <CrmWine />
+                  </>
+                )}
+
+                {admin && activeSection === 'crm-bordeaux' && (
+                  <>
+                    <SectionHeader title="CRM Produttori Bordeaux" subtitle="Châteaux e produttori di Bordeaux — richieste visita e follow-up." />
+                    <CrmBordeaux />
                   </>
                 )}
 

@@ -4,10 +4,10 @@ import QRCode from 'qrcode';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { getEventBySlug, dbEventToEventData, type EventData, type DbEvent } from '@/lib/events';
+import { dbEventToEventData, type EventData, type DbEvent } from '@/lib/events';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
-/** Resolve event by slug: DB-first, then static fallback */
+/** Resolve event by slug from Supabase */
 async function resolveEvent(slug: string): Promise<EventData | undefined> {
   try {
     const supabase = getSupabaseAdmin();
@@ -19,7 +19,7 @@ async function resolveEvent(slug: string): Promise<EventData | undefined> {
       .single();
     if (data) return dbEventToEventData(data as DbEvent);
   } catch {/* fall through */}
-  return getEventBySlug(slug);
+  return undefined;
 }
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {

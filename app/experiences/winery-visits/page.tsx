@@ -4,8 +4,9 @@ import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, ChevronDown, X } from 'lucide-react';
+import { ChevronDown, X } from 'lucide-react';
 import BackButton from '@/components/BackButton';
+import ExperienceUpcoming from '@/components/ExperienceUpcoming';
 
 /* ── Gallery photos ── */
 const GALLERY = [
@@ -19,23 +20,6 @@ const GALLERY = [
   { id: 8,  src: '/events/Winery visits/wv8.jpg',  alt: 'Winery Visit — photo 8' },
   { id: 9,  src: '/events/Winery visits/wv9.jpg',  alt: 'Winery Visit — photo 9' },
   { id: 10, src: '/events/Winery visits/wv10.jpg', alt: 'Winery Visit — photo 10' },
-];
-
-const UPCOMING = [
-  {
-    month: 'MAY', day: '12',
-    title: 'Wine Visit · Speri',
-    location: 'Speri, Pedemonte, Valpolicella — ore 11:00',
-    price: 0,
-    slug: 'winery-visit-speri-may-2026',
-  },
-  {
-    month: 'MAY', day: '12',
-    title: 'Wine Visit · Bertani',
-    location: 'Bertani, Grezzana, Valpolicella — ore 15:00',
-    price: 0,
-    slug: 'winery-visit-bertani-may-2026',
-  },
 ];
 
 const PILLS = ['Private Access', 'Expert Guides', 'Iconic Estates'];
@@ -256,64 +240,13 @@ export default function WineryVisitsPage() {
               </h2>
             </motion.div>
 
-            <div className="flex flex-col">
-              {UPCOMING.map((event, i) => (
-                <motion.div
-                  key={event.slug}
-                  initial={{ opacity: 0, y: 14 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: '-20px' }}
-                  transition={{ duration: 0.55, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
-                >
-                  <div className="flex items-center gap-6 md:gap-10 py-6 group">
-                    <div className="flex flex-col items-end w-14 shrink-0">
-                      <span className="text-[8px] tracking-[0.4em] text-[#C9A84C] mb-0.5">{event.month}</span>
-                      <span
-                        className="text-[2.8rem] font-light leading-none text-[#F5EEE6] group-hover:text-[#731515] transition-colors duration-300"
-                        style={{ fontFamily: 'var(--font-syne)' }}
-                      >
-                        {event.day}
-                      </span>
-                    </div>
-
-                    <div className="w-px self-stretch bg-[#731515]/20 shrink-0" />
-
-                    <div className="flex-1 min-w-0">
-                      <h3
-                        className="text-base md:text-lg font-medium text-[#F5EEE6] group-hover:text-[#731515] transition-colors duration-300 mb-1"
-                        style={{ fontFamily: 'var(--font-syne)' }}
-                      >
-                        {event.title}
-                      </h3>
-                      <div className="flex items-center gap-2 text-xs text-[#C4B5A0]">
-                        <MapPin size={10} className="text-[#731515] shrink-0" />
-                        <span>{event.location}</span>
-                        <span className="text-[#731515]/40 mx-0.5">·</span>
-                        <span>Free</span>
-                      </div>
-                    </div>
-
-                    <Link
-                      href={`/checkout/${event.slug}`}
-                      className="shrink-0 hidden sm:inline-flex text-[9px] tracking-[0.28em] px-5 py-2.5 bg-[#731515] text-[#F5EEE6] border border-[#731515] hover:bg-[#aa4848] hover:border-[#aa4848] transition-all duration-300 whitespace-nowrap"
-                    >
-                      GET YOUR FREE TICKET
-                    </Link>
-                  </div>
-
-                  <div className="sm:hidden pb-4 pl-20">
-                    <Link
-                      href={`/checkout/${event.slug}`}
-                      className="inline-flex text-[9px] tracking-[0.28em] px-5 py-2.5 bg-[#731515] text-[#F5EEE6] border border-[#731515] hover:bg-[#aa4848] transition-all duration-300 whitespace-nowrap"
-                    >
-                      GET YOUR FREE TICKET
-                    </Link>
-                  </div>
-
-                  {i < UPCOMING.length - 1 && <div className="h-px bg-[#731515]/10" />}
-                </motion.div>
-              ))}
-            </div>
+            <ExperienceUpcoming
+              section="winery_visit"
+              accentColor="#C9A84C"
+              mutedColor="light"
+              btnBg="#731515"
+              btnText="#F5EEE6"
+            />
           </div>
         </section>
 

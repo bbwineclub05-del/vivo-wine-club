@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { getEventBySlug, dbEventToEventData, type EventData, type DbEvent } from '@/lib/events';
+import { dbEventToEventData, type EventData, type DbEvent } from '@/lib/events';
 import CheckoutForm from './CheckoutForm';
 
 export const dynamic = 'force-dynamic';
@@ -25,9 +25,6 @@ export default async function CheckoutPage({
       .single();
     if (data) event = dbEventToEventData(data as DbEvent);
   } catch {/* fall through */}
-
-  // Fallback to static
-  if (!event) event = getEventBySlug(slug);
 
   if (!event) notFound();
 

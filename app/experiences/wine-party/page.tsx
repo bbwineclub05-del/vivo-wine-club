@@ -4,8 +4,9 @@ import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { X, MapPin, ChevronDown } from 'lucide-react';
+import { X, ChevronDown } from 'lucide-react';
 import BackButton from '@/components/BackButton';
+import ExperienceUpcoming from '@/components/ExperienceUpcoming';
 
 /* ── Gallery photos ── */
 const GALLERY = [
@@ -24,10 +25,6 @@ const GALLERY = [
   { id: 13, src: '/events/wine-party9.jpg',  alt: 'Wine Party — photo 13' },
   { id: 14, src: '/events/wine-party10.JPG', alt: 'Wine Party — photo 14' },
   { id: 15, src: '/events/wine-party11.JPG', alt: 'Wine Party — photo 15' },
-];
-
-const UPCOMING = [
-  { month: 'MAY', day: '31', title: 'Beach Wine Party', location: 'Forte dei Marmi, Tuscany', price: 10, slug: 'wine-party-mare-may-2026' },
 ];
 
 const PILLS = ['Great Wine', 'Live DJ Set', 'Curated Crowd'];
@@ -250,76 +247,13 @@ export default function WinePartyPage() {
               </h2>
             </motion.div>
 
-            <div className="flex flex-col">
-              {UPCOMING.map((event, i) => (
-                <motion.div
-                  key={event.title}
-                  initial={{ opacity: 0, y: 14 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: '-20px' }}
-                  transition={{ duration: 0.55, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
-                >
-                  <div className="flex items-center gap-6 md:gap-10 py-6 group">
-                    <div className="flex flex-col items-end w-14 shrink-0">
-                      <span className="text-[8px] tracking-[0.4em] text-[#731515] mb-0.5">{event.month}</span>
-                      <span
-                        className="text-[2.8rem] font-light leading-none text-[#F5EEE6] group-hover:text-[#731515] transition-colors duration-300"
-                        style={{ fontFamily: 'var(--font-syne)' }}
-                      >
-                        {event.day}
-                      </span>
-                    </div>
-
-                    <div className="w-px self-stretch bg-[#731515]/20 shrink-0" />
-
-                    <div className="flex-1 min-w-0">
-                      <h3
-                        className="text-base md:text-lg font-medium text-[#F5EEE6] group-hover:text-[#731515] transition-colors duration-300 mb-1"
-                        style={{ fontFamily: 'var(--font-syne)' }}
-                      >
-                        {event.title}
-                      </h3>
-                      <div className="flex items-center gap-2 text-xs text-[#C4B5A0]">
-                        <MapPin size={10} className="text-[#731515] shrink-0" />
-                        <span>{event.location}</span>
-                        <span className="text-[#731515]/40 mx-0.5">·</span>
-                        <span>€{event.price}</span>
-                      </div>
-                    </div>
-
-                    {'slug' in event && event.slug ? (
-                      <Link
-                        href={`/checkout/${event.slug}`}
-                        className="shrink-0 hidden sm:inline-flex text-[9px] tracking-[0.28em] px-5 py-2.5 bg-[#731515] text-[#F5EEE6] border border-[#731515] hover:bg-[#aa4848] hover:border-[#aa4848] transition-all duration-300"
-                      >
-                        BUY TICKETS
-                      </Link>
-                    ) : (
-                      <button className="shrink-0 hidden sm:block text-[9px] tracking-[0.28em] px-5 py-2.5 bg-[#731515] text-[#F5EEE6] border border-[#731515] hover:bg-[#aa4848] hover:border-[#aa4848] transition-all duration-300">
-                        BUY TICKETS
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="sm:hidden pb-4 pl-20">
-                    {'slug' in event && event.slug ? (
-                      <Link
-                        href={`/checkout/${event.slug}`}
-                        className="text-[9px] tracking-[0.28em] px-5 py-2.5 bg-[#731515] text-[#F5EEE6] border border-[#731515] hover:bg-[#aa4848] transition-all duration-300 inline-flex"
-                      >
-                        BUY TICKETS
-                      </Link>
-                    ) : (
-                      <button className="text-[9px] tracking-[0.28em] px-5 py-2.5 bg-[#731515] text-[#F5EEE6] border border-[#731515] hover:bg-[#aa4848] transition-all duration-300">
-                        BUY TICKETS
-                      </button>
-                    )}
-                  </div>
-
-                  {i < UPCOMING.length - 1 && <div className="h-px bg-[#731515]/10" />}
-                </motion.div>
-              ))}
-            </div>
+            <ExperienceUpcoming
+              section="wine_party"
+              accentColor="#731515"
+              mutedColor="light"
+              btnBg="#731515"
+              btnText="#F5EEE6"
+            />
           </div>
         </section>
 

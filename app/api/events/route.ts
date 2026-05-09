@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { EVENTS } from '@/lib/events';
+import { dbEventToEventData, sectionFromType, type DbEvent, type EventSection } from '@/lib/events';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2026-04-22.dahlia',
@@ -22,8 +22,13 @@ function generateSlug(title: string, date: string): string {
   return `${base}-${month}-${year}`;
 }
 
-/* ── GET: public — published events, DB-first, static fallback ── */
-export async function GET() {
+/* ── GET: public — merged DB + static events, optional ?section= filter ── */
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const section = searchParams.get('section') as EventSection | null;
+
+  let dbEvents: ReturnType<typeof dbEventToEventData>[] = [];
+
   try {
     const supabase = getSupabaseAdmin();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -33,13 +38,19 @@ export async function GET() {
       .eq('published', true)
       .order('date', { ascending: true });
 
-    if (!error && data && data.length > 0) {
-      return NextResponse.json({ events: data, source: 'db' });
+    if (!error && data) {
+      dbEvents = (data as DbEvent[]).map(dbEventToEventData);
     }
-  } catch {/* fall through */}
+  } catch {/* fall through with empty dbEvents */}
 
-  // Static fallback
-  return NextResponse.json({ events: EVENTS, source: 'static' });
+  let merged = [...dbEvents];
+
+  // Optional section filter
+  if (section) {
+    merged = merged.filter((e) => (e.section ?? sectionFromType(e.type)) === section);
+  }
+
+  return NextResponse.json({ events: merged });
 }
 
 /* ── POST: admin — create new event ── */
@@ -99,6 +110,7 @@ export async function POST(request: Request) {
         slug,
         title,
         type:               type || 'PARTY',
+        section:            (body.section as string) || sectionFromType(type || 'PARTY'),
         date,
         time:               time || null,
         location,

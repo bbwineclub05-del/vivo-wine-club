@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import BackButton from '@/components/BackButton';
 import dynamic from 'next/dynamic';
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion, useMotionValue, useTransform, animate, useInView } from 'framer-motion';
 import { ArrowLeft, ArrowRight, MapPin, X } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -139,6 +139,77 @@ const COUNTRY_META: Record<string, { label: string; Flag: () => React.ReactEleme
   Portugal: { label: 'Portugal', Flag: FlagPT },
 };
 
+/* ── Animated counter stat ── */
+function CounterStat({ to, suffix = '', label, sub, delay = 0 }: {
+  to: number; suffix?: string; label: string; sub?: string; delay?: number;
+}) {
+  const ref    = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, margin: '-60px' });
+  const val    = useMotionValue(0);
+  const disp   = useTransform(val, (v) => Math.round(v));
+  const rm     = useReducedMotion();
+
+  useEffect(() => {
+    if (!inView) return;
+    if (rm) { val.set(to); return; }
+    const ctrl = animate(val, to, { duration: 1.6, delay, ease: [0.16, 1, 0.3, 1] });
+    return ctrl.stop;
+  }, [inView, val, to, delay, rm]);
+
+  return (
+    <div ref={ref} className="flex flex-col items-center text-center px-4 sm:px-8 py-6 sm:py-8">
+      <div className="h-[clamp(2.4rem,5vw,4rem)] flex items-center justify-center mb-2">
+        <span
+          className="text-[clamp(2.4rem,5vw,4rem)] font-medium text-[#731515] leading-none tabular-nums"
+          style={{ fontFamily: 'var(--font-syne)' }}
+        >
+          <motion.span>{disp}</motion.span>{suffix}
+        </span>
+      </div>
+      <div className="text-[9px] tracking-[0.4em] text-[#1a0505] mb-1">{label}</div>
+      {sub && (
+        <div className="text-[11px] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
+          {sub}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Static text stat (no counter) ── */
+function TextStat({ value, label, sub, delay = 0 }: {
+  value: string; label: string; sub?: string; delay?: number;
+}) {
+  const ref    = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, margin: '-60px' });
+  const rm     = useReducedMotion();
+
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: rm ? 1 : 0, y: rm ? 0 : 12 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: rm ? 0 : 0.7, delay: rm ? 0 : delay, ease: [0.16, 1, 0.3, 1] }}
+      className="flex flex-col items-center text-center px-4 sm:px-8 py-6 sm:py-8"
+    >
+      <div className="h-[clamp(2.4rem,5vw,4rem)] flex items-center justify-center mb-2">
+        <span
+          className="text-[clamp(2.4rem,5vw,4rem)] font-medium text-[#731515] leading-none whitespace-nowrap"
+          style={{ fontFamily: 'var(--font-syne)' }}
+        >
+          {value}
+        </span>
+      </div>
+      <div className="text-[9px] tracking-[0.4em] text-[#1a0505] mb-1">{label}</div>
+      {sub && (
+        <div className="text-[11px] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
+          {sub}
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
 /* ── Page ── */
 export default function WineMapPage() {
   const [selected, setSelected] = useState<WineRegion | null>(null);
@@ -146,6 +217,7 @@ export default function WineMapPage() {
   const handleSelect   = useCallback((r: WineRegion | null) => setSelected(r), []);
   const handleDeselect = useCallback(() => setSelected(null), []);
   const d = (n: number) => (reducedMotion ? 0 : n);
+
 
   return (
     <>
@@ -221,8 +293,8 @@ export default function WineMapPage() {
                 </p>
               </motion.div>
 
-              {/* Info panel — touches right edge */}
-              <div className="lg:col-span-2 lg:sticky lg:top-28">
+              {/* Info panel — same height as map: (3/5 × 100vw × 580/800) = 43.5vw */}
+              <div className="lg:col-span-2 lg:h-[43.5vw] overflow-hidden">
                 <AnimatePresence mode="wait">
                   {selected ? (
                     <motion.div
@@ -231,7 +303,7 @@ export default function WineMapPage() {
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: reducedMotion ? 1 : 0, x: reducedMotion ? 0 : -16 }}
                       transition={{ duration: d(0.3), ease: [0.16, 1, 0.3, 1] }}
-                      className="glass-card p-8 relative"
+                      className="glass-card p-8 relative h-full overflow-y-auto"
                     >
                       <button
                         onClick={handleDeselect}
@@ -294,7 +366,7 @@ export default function WineMapPage() {
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
                       transition={{ duration: d(0.3) }}
-                      className="glass-card p-7"
+                      className="glass-card p-7 h-full overflow-y-auto"
                     >
                       {/* Panel header */}
                       <div className="mb-6">
@@ -437,7 +509,7 @@ export default function WineMapPage() {
         </section>
 
         {/* ── STATS ── */}
-        <section className="relative overflow-hidden pb-28 md:pb-32">
+        <section className="relative overflow-hidden pb-12 md:pb-16">
           <div className="fog-right" style={{ top: '10%' }} />
 
           <div className="max-w-5xl mx-auto px-6 lg:px-10">
@@ -447,94 +519,13 @@ export default function WineMapPage() {
               whileInView={{ scaleX: 1 }}
               viewport={{ once: true }}
               transition={{ duration: d(0.9), ease: [0.16, 1, 0.3, 1] }}
-              className="origin-left w-full h-px bg-gradient-to-r from-[#731515]/30 via-[#731515]/10 to-transparent mb-14"
+              className="origin-left w-full h-px bg-gradient-to-r from-[#731515]/30 via-[#731515]/10 to-transparent mb-10"
             />
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#e8d5d5]">
-
-              {/* Regions visited */}
-              <motion.div
-                initial={{ opacity: reducedMotion ? 1 : 0, y: reducedMotion ? 0 : 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: d(0.7) }}
-                className="flex flex-col items-center text-center py-10 sm:py-0 px-6"
-              >
-                <span
-                  className="text-[clamp(2.8rem,7vw,4.5rem)] font-light text-[#731515] leading-none mb-2"
-                  style={{ fontFamily: 'var(--font-syne)' }}
-                >
-                  10+
-                </span>
-                <span className="text-[10px] tracking-[0.35em] text-[#1a0505] mb-3">
-                  REGIONS VISITED
-                </span>
-                <div
-                  className="grid grid-cols-2 gap-x-5 gap-y-0.5 text-left mt-1"
-                  style={{ fontFamily: 'var(--font-nunito)' }}
-                >
-                  {[
-                    'Bordeaux', 'Champagne', 'Borgogna', 'Barolo',
-                    'Barbaresco', 'Franciacorta', 'Valpolicella', 'Chianti',
-                    'Bolgheri', 'Brunello', 'Porto',
-                  ].map((r) => (
-                    <span key={r} className="text-[10px] text-[#7a4a4a]/55 leading-5">
-                      {r}
-                    </span>
-                  ))}
-                </div>
-              </motion.div>
-
-              {/* Estates visited */}
-              <motion.div
-                initial={{ opacity: reducedMotion ? 1 : 0, y: reducedMotion ? 0 : 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: d(0.7), delay: reducedMotion ? 0 : 0.1 }}
-                className="flex flex-col items-center text-center py-10 sm:py-0 px-6"
-              >
-                <span
-                  className="text-[clamp(2.8rem,7vw,4.5rem)] font-light text-[#731515] leading-none mb-2"
-                  style={{ fontFamily: 'var(--font-syne)' }}
-                >
-                  80+
-                </span>
-                <span className="text-[10px] tracking-[0.35em] text-[#1a0505] mb-1">
-                  ESTATES VISITED
-                </span>
-                <span
-                  className="text-xs text-[#7a4a4a]/60"
-                  style={{ fontFamily: 'var(--font-nunito)' }}
-                >
-                  And counting
-                </span>
-              </motion.div>
-
-              {/* Countries */}
-              <motion.div
-                initial={{ opacity: reducedMotion ? 1 : 0, y: reducedMotion ? 0 : 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: d(0.7), delay: reducedMotion ? 0 : 0.2 }}
-                className="flex flex-col items-center text-center py-10 sm:py-0 px-6"
-              >
-                <span
-                  className="text-[clamp(2.8rem,7vw,4.5rem)] font-light text-[#731515] leading-none mb-2"
-                  style={{ fontFamily: 'var(--font-syne)' }}
-                >
-                  FR · IT · PT
-                </span>
-                <span className="text-[10px] tracking-[0.35em] text-[#1a0505] mb-1">
-                  COUNTRIES
-                </span>
-                <span
-                  className="text-xs text-[#7a4a4a]/60"
-                  style={{ fontFamily: 'var(--font-nunito)' }}
-                >
-                  France, Italy and Portugal
-                </span>
-              </motion.div>
-
+            <div className="grid grid-cols-3 divide-x divide-[#e8d5d5]">
+              <CounterStat to={10} suffix="+" label="REGIONS VISITED" sub="Across Europe" delay={0} />
+              <CounterStat to={80} suffix="+" label="ESTATES VISITED"  sub="And counting"  delay={0.1} />
+              <TextStat    value="FR · IT · PT" label="COUNTRIES"      sub="France, Italy and Portugal" delay={0.2} />
             </div>
 
           </div>

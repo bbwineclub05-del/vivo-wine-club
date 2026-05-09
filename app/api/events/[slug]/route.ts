@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { getEventBySlug } from '@/lib/events';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2026-04-22.dahlia',
@@ -25,9 +24,6 @@ export async function GET(
 
     if (data) return NextResponse.json({ event: data, source: 'db' });
   } catch {/* fall through */}
-
-  const staticEvent = getEventBySlug(slug);
-  if (staticEvent) return NextResponse.json({ event: staticEvent, source: 'static' });
 
   return NextResponse.json({ error: 'Event not found' }, { status: 404 });
 }
