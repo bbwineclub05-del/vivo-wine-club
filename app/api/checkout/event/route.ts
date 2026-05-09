@@ -50,7 +50,6 @@ async function generateTicketPdf(params: {
 }): Promise<Uint8Array> {
   const { event, firstName, lastName, email, qty, total, orderId } = params;
 
-  const isWinery = event.type.includes('WINERY VISIT');
   const eventDate = `${event.month} ${event.day}, ${event.year}`;
 
   const pdfDoc = await PDFDocument.create();
@@ -149,53 +148,25 @@ async function generateTicketPdf(params: {
   page.drawLine({ start: { x: 40, y }, end: { x: W - 40, y }, thickness: 0.5, color: LIGHT });
   y -= 30;
 
-  if (isWinery) {
-    // ── Winery: nominative note (no QR) ──
-    page.drawRectangle({
-      x: 40, y: y - 60,
-      width: W - 80, height: 72,
-      color: rgb(0.98, 0.94, 0.94),
-      borderColor: LIGHT,
-      borderWidth: 1,
-    });
-    page.drawText('ACCESSO TRAMITE LISTA NOMINATIVA', {
-      x: 55, y: y - 24,
-      size: 8.5, font: bold, color: BORDEAUX,
-    });
-    page.drawText('Presenta questo documento all\'ingresso insieme a un documento d\'identità.', {
-      x: 55, y: y - 40,
-      size: 9, font: regular, color: GRAY,
-    });
-    page.drawText('Il tuo nome è già registrato nella lista degli ospiti.', {
-      x: 55, y: y - 54,
-      size: 9, font: regular, color: GRAY,
-    });
-    y -= 90;
-  } else {
-    // ── PARTY / APERITIF: QR code ──
-    // Encode just the orderId (raw). The scanner accepts both this format
-    // and the legacy URL format (https://vivowineclub.com/checkin?token=xxx).
-    const qrBuffer = await QRCode.toBuffer(
-      orderId,
-      { width: 180, margin: 1 },
-    );
-    const qrImage = await pdfDoc.embedPng(qrBuffer);
+  // ── QR code — all event types ──
+  // Encodes the raw orderId. The scanner accepts both this format
+  // and the legacy URL format (https://vivowineclub.com/checkin?token=xxx).
+  const qrBuffer = await QRCode.toBuffer(orderId, { width: 180, margin: 1 });
+  const qrImage  = await pdfDoc.embedPng(qrBuffer);
 
-    // Center the QR
-    const qrSize = 160;
-    const qrX    = (W - qrSize) / 2;
-    page.drawText('SHOW THIS QR CODE AT THE ENTRANCE', {
-      x: W / 2 - 100, y,
-      size: 8, font: bold, color: BORDEAUX,
-    });
-    y -= 16;
-    page.drawImage(qrImage, { x: qrX, y: y - qrSize, width: qrSize, height: qrSize });
-    page.drawText('One scan per ticket · valid for this event only', {
-      x: W / 2 - 82, y: y - qrSize - 16,
-      size: 8, font: regular, color: GRAY,
-    });
-    y -= qrSize + 36;
-  }
+  const qrSize = 160;
+  const qrX    = (W - qrSize) / 2;
+  page.drawText('SHOW THIS QR CODE AT THE ENTRANCE', {
+    x: W / 2 - 100, y,
+    size: 8, font: bold, color: BORDEAUX,
+  });
+  y -= 16;
+  page.drawImage(qrImage, { x: qrX, y: y - qrSize, width: qrSize, height: qrSize });
+  page.drawText('One scan per ticket · valid for this event only', {
+    x: W / 2 - 82, y: y - qrSize - 16,
+    size: 8, font: regular, color: GRAY,
+  });
+  y -= qrSize + 36;
 
   // ── Footer ──
   const footerY = 40;
