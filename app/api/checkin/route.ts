@@ -31,22 +31,37 @@ export async function POST(request: Request) {
   }
 
   // ── Verify token ─────────────────────────────────────────────────────────────
-  const { token } = await request.json();
+  const body = await request.json();
+  const token: string = body?.token;
   if (!token) {
     return NextResponse.json({ error: 'Missing token' }, { status: 400 });
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: ticket, error: fetchError } = await (getSupabaseAdmin() as any)
+  const db = getSupabaseAdmin() as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+
+  // Look up by qr_code first (new tickets), then fall back to order_id (legacy).
+  let ticket: Record<string, unknown> | null = null;
+
+  const { data: byQr, error: qrErr } = await db
     .from('tickets')
     .select('*')
-    .eq('order_id', token)
-    .single();
+    .eq('qr_code', token)
+    .maybeSingle();
 
-  if (fetchError) {
-    console.error('[checkin] DB error looking up ticket:', fetchError);
-    return NextResponse.json({ valid: false, reason: 'invalid' }, { status: 200 });
+  if (!qrErr && byQr) {
+    ticket = byQr;
+  } else {
+    const { data: byOrder, error: orderErr } = await db
+      .from('tickets')
+      .select('*')
+      .eq('order_id', token)
+      .maybeSingle();
+    if (orderErr) {
+      console.error('[checkin] DB error looking up ticket:', orderErr);
+    }
+    ticket = byOrder ?? null;
   }
+
   if (!ticket) {
     return NextResponse.json({ valid: false, reason: 'invalid' }, { status: 200 });
   }
@@ -66,6 +81,7 @@ export async function POST(request: Request) {
 
   // ── Mark as scanned ──────────────────────────────────────────────────────────
   const now = new Date().toISOString();
+  const orderId = ticket.order_id as string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await (getSupabaseAdmin() as any)
     .from('tickets')
@@ -74,7 +90,7 @@ export async function POST(request: Request) {
       scanned_at: now,
       scanned_by: user.email ?? user.id,
     })
-    .eq('order_id', token);
+    .eq('order_id', orderId);
 
   return NextResponse.json({
     valid:       true,
