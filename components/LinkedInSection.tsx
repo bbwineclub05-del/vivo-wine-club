@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
@@ -20,39 +20,6 @@ export interface NewsItem {
   created_at: string;
 }
 
-/* ── Hardcoded fallback (shown while DB loads or if DB is empty) ── */
-const FALLBACK_POSTS: Omit<NewsItem, 'id' | 'published' | 'sort_order' | 'created_at'>[] = [
-  {
-    tag: 'COMING SOON',
-    title: 'Giuseppe Quintarelli — Upcoming Visit',
-    description:
-      "We'll soon be visiting Giuseppe Quintarelli, one of the most legendary wineries in Valpolicella and a true global icon of Amarone. A rare opportunity to step inside a place where tradition, patience and craftsmanship have shaped some of the most coveted wines in the world.",
-    href: 'https://www.linkedin.com/feed/update/urn:li:activity:7458475994270593024/',
-    region: 'Valpolicella, Italy',
-    images: ['/quintarelli 1.jpeg', '/quintarelli .jpeg'],
-    image_fit: 'cover',
-  },
-  {
-    tag: 'WINERY VISIT',
-    title: "Ca' del Bosco Visit",
-    description:
-      "A private visit to one of Franciacorta's most iconic estates. We explored the cellars, tasted through the range, and discovered why Ca' del Bosco has set the benchmark for Italian méthode classique sparkling wine for over fifty years.",
-    href: 'https://www.linkedin.com/feed/update/urn:li:activity:7454880388503564288/',
-    region: 'Franciacorta, Italy',
-    images: ['/events/Winery visits/wv3.jpg', '/Ca-del-Bosco.png'],
-    image_fit: 'cover',
-  },
-  {
-    tag: 'WINERY VISIT',
-    title: 'Monterossa Visit',
-    description:
-      "An intimate morning at Monterossa — one of Franciacorta's most elegant producers. From vineyard to bottle, we got a rare behind-the-scenes look at the craftsmanship behind their Satèn and Rosé, with a tasting that left a lasting impression.",
-    href: 'https://www.linkedin.com/feed/update/urn:li:activity:7452272329461649408/',
-    region: 'Franciacorta, Italy',
-    images: ['/tavolo.jpg', '/Monterossa.png'],
-    image_fit: 'cover',
-  },
-];
 
 /* ── Image slider ── */
 function ImageSlider({ images, imageFit }: { images: string[]; imageFit: 'cover' | 'contain' }) {
@@ -108,7 +75,7 @@ function NewsCard({
   index,
   reducedMotion,
 }: {
-  post: Omit<NewsItem, 'id' | 'published' | 'sort_order' | 'created_at'> & Partial<Pick<NewsItem, 'id'>>;
+  post: NewsItem;
   index: number;
   reducedMotion: boolean;
 }) {
@@ -188,18 +155,37 @@ export default function LinkedInSection() {
   const reducedMotion = useReducedMotion() ?? false;
   const d = (n: number) => (reducedMotion ? 0 : n);
 
-  const [posts, setPosts] = useState<typeof FALLBACK_POSTS>(FALLBACK_POSTS);
+  const [posts,   setPosts]   = useState<NewsItem[]>([]);
+  const [ready,   setReady]   = useState(false);
 
-  useEffect(() => {
+  const fetchNews = useCallback(() => {
     fetch('/api/news')
       .then((r) => r.json())
       .then((json) => {
-        if (Array.isArray(json.news) && json.news.length > 0) {
+        if (Array.isArray(json.news)) {
           setPosts(json.news);
         }
       })
-      .catch(() => {/* silently keep fallback */});
+      .catch(() => {/* keep current posts */})
+      .finally(() => setReady(true));
   }, []);
+
+  useEffect(() => {
+    // Initial fetch
+    fetchNews();
+
+    // Poll every 30 s so published/hidden changes appear without a page reload
+    const interval = setInterval(fetchNews, 30_000);
+
+    // Also refresh when the tab regains focus
+    const onVisible = () => { if (document.visibilityState === 'visible') fetchNews(); };
+    document.addEventListener('visibilitychange', onVisible);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [fetchNews]);
 
   return (
     <section className="pt-4 pb-4 md:pt-6 md:pb-6 relative overflow-hidden">
@@ -239,17 +225,37 @@ export default function LinkedInSection() {
           className="origin-left w-full h-px bg-gradient-to-r from-[#731515]/30 via-[#731515]/10 to-transparent mb-8"
         />
 
-        {/* Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {posts.map((post, i) => (
-            <NewsCard
-              key={'id' in post ? String(post.id) : post.title}
-              post={post}
-              index={i}
-              reducedMotion={reducedMotion}
-            />
-          ))}
-        </div>
+        {/* Cards — skeleton placeholders while first fetch completes */}
+        {!ready ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="bg-white border border-[#e8d5d5] overflow-hidden animate-pulse">
+                <div className="w-full bg-[#f5f0f0]" style={{ height: 160 }} />
+                <div className="p-5 flex flex-col gap-3">
+                  <div className="h-2 w-20 bg-[#e8d5d5] rounded" />
+                  <div className="h-4 w-3/4 bg-[#e8d5d5] rounded" />
+                  <div className="h-3 w-full bg-[#f0e8e8] rounded" />
+                  <div className="h-3 w-5/6 bg-[#f0e8e8] rounded" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : posts.length === 0 ? (
+          <p className="text-sm italic text-[#7a4a4a]/40" style={{ fontFamily: 'var(--font-nunito)' }}>
+            No news published yet.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {posts.map((post, i) => (
+              <NewsCard
+                key={post.id}
+                post={post}
+                index={i}
+                reducedMotion={reducedMotion}
+              />
+            ))}
+          </div>
+        )}
 
       </div>
     </section>

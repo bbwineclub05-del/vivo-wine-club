@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -57,6 +57,23 @@ function Lightbox({ src, alt, onClose }: { src: string; alt: string; onClose: ()
 
 export default function WineryVisitsPage() {
   const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
+  const [gallery,  setGallery]  = useState(GALLERY);
+
+  useEffect(() => {
+    fetch('/api/media?folder=winery-visit')
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data.images) && data.images.length > 0) {
+          const dynamic = data.images.map((img: { url: string }, i: number) => ({
+            id:  -1 - i,
+            src: img.url,
+            alt: `Winery Visit — uploaded photo ${i + 1}`,
+          }));
+          setGallery([...dynamic, ...GALLERY]);
+        }
+      })
+      .catch(() => {/* keep static gallery */});
+  }, []);
 
   return (
     <>
@@ -194,7 +211,7 @@ export default function WineryVisitsPage() {
             </motion.div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {GALLERY.map((photo, i) => (
+              {gallery.map((photo, i) => (
                 <motion.button
                   key={photo.id}
                   initial={{ opacity: 0, scale: 0.97 }}

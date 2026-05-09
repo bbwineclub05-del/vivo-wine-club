@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
@@ -8,7 +9,28 @@ import ExperienceUpcoming from '@/components/ExperienceUpcoming';
 
 const PILLS = ['Selected Wine Bars', 'Intimate Setting', 'Great Company'];
 
+const STATIC_GALLERY = [
+  '/events/wine lounge 1.jpg',
+  '/events/wine lounge 2.jpg',
+  '/events/wine lounge 3.jpg',
+  '/events/wine lounge 4.jpg',
+  '/events/wine lounge 5.jpg',
+];
+
 export default function WineLoungeePage() {
+  const [gallery, setGallery] = useState<string[]>(STATIC_GALLERY);
+
+  useEffect(() => {
+    fetch('/api/media?folder=wine-lounge')
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data.images) && data.images.length > 0) {
+          setGallery([...data.images.map((img: { url: string }) => img.url), ...STATIC_GALLERY]);
+        }
+      })
+      .catch(() => {/* keep static */});
+  }, []);
+
   return (
     <div className="bg-[#3d1010] min-h-screen text-[#F5EEE6]">
 
@@ -125,7 +147,7 @@ export default function WineLoungeePage() {
       <section className="py-10 bg-[#2e0c0c]">
         <div className="max-w-4xl mx-auto px-8 md:px-16">
           <div className="grid grid-cols-2 gap-4">
-            {['/events/wine lounge 1.jpg', '/events/wine lounge 2.jpg', '/events/wine lounge 3.jpg', '/events/wine lounge 4.jpg', '/events/wine lounge 5.jpg'].map((src, i) => (
+            {gallery.map((src, i) => (
               <motion.div
                 key={src}
                 initial={{ opacity: 0, y: 20 }}

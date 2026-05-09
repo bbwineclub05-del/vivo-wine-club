@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Prevent Next.js from bundling these Node.js-only packages —
   // they must run as-is in the Node.js runtime (API routes).
-  serverExternalPackages: ['pdf-lib', 'qrcode'],
+  serverExternalPackages: ['pdf-lib', 'qrcode', 'sharp'],
 
   // Enable gzip + brotli compression for all responses
   compress: true,
@@ -18,6 +18,10 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'vjgwzhinjfvlspdcpukl.supabase.co',
       },
     ],
   },

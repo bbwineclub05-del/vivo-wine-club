@@ -5,6 +5,7 @@ import { ArrowLeft, MapPin } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { getWineryBySlug, WINERIES } from '@/lib/wineries';
+import WineryGallery from '@/components/WineryGallery';
 
 export function generateStaticParams() {
   return WINERIES.map((w) => ({ slug: w.slug }));
@@ -20,19 +21,6 @@ function BottleIcon() {
   );
 }
 
-/* ── Placeholder photo cell ── */
-function PhotoPlaceholder({ index }: { index: number }) {
-  return (
-    <div className="aspect-square border border-dashed border-[#e8d5d5] bg-[#fdf8f8] flex flex-col items-center justify-center gap-3 text-[#9a6060]/50">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="3" width="18" height="18" rx="2" />
-        <circle cx="8.5" cy="8.5" r="1.5" />
-        <polyline points="21 15 16 10 5 21" />
-      </svg>
-      <span className="text-[9px] tracking-[0.3em]">PHOTO {String(index + 1).padStart(2, '0')}</span>
-    </div>
-  );
-}
 
 /* ── Page ── */
 export default async function WineryPage({
@@ -168,29 +156,17 @@ export default async function WineryPage({
 
             <div className="w-full h-px bg-gradient-to-r from-[#731515]/30 via-[#731515]/10 to-transparent mb-14" />
 
-            <div className="mb-10 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-              <div>
-                <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-3">OUR VISIT</div>
-                <h2
-                  className="text-[clamp(2rem,5vw,3.5rem)] font-light text-[#1a0505] leading-none"
-                  style={{ fontFamily: 'var(--font-syne)' }}
-                >
-                  Gallery
-                </h2>
-              </div>
-              <p
-                className="text-sm text-[#7a4a4a]/60 italic pb-1"
-                style={{ fontFamily: 'var(--font-nunito)' }}
+            <div className="mb-10">
+              <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-3">OUR VISIT</div>
+              <h2
+                className="text-[clamp(2rem,5vw,3.5rem)] font-light text-[#1a0505] leading-none"
+                style={{ fontFamily: 'var(--font-syne)' }}
               >
-                Photos and stories coming soon.
-              </p>
+                Gallery
+              </h2>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <PhotoPlaceholder key={i} index={i} />
-              ))}
-            </div>
+            <WineryGallery slug={winery.slug} />
 
           </div>
         </section>

@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Home, CheckSquare, BarChart3, Users, FileText,
   Mail, LogOut, KeyRound, ScanLine, Menu, X,
-  Wine, Shield, ArrowUpRight, CreditCard, User, CalendarDays, GlassWater, MapPin,
+  Wine, Shield, ArrowUpRight, CreditCard, User, CalendarDays, GlassWater, MapPin, Images,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -19,11 +19,12 @@ import MemberCRM from '@/components/MemberCRM';
 import EventManager from '@/components/EventManager';
 import CrmWine from '@/components/CrmWine';
 import CrmBordeaux from '@/components/CrmBordeaux';
+import MediaManager from '@/components/MediaManager';
 
 /* ─────────────────────────────────────────────
    Types
 ───────────────────────────────────────────── */
-type Section = 'overview' | 'settings' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm' | 'crm-wine' | 'crm-bordeaux';
+type Section = 'overview' | 'settings' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm' | 'crm-wine' | 'crm-bordeaux' | 'media';
 
 interface NavItem {
   id: Section;
@@ -45,6 +46,7 @@ const NAV_ADMIN: NavItem[] = [
   { id: 'crm',          label: 'CRM Membri',           icon: Mail        },
   { id: 'crm-wine',     label: 'CRM Contatti Vino',    icon: GlassWater  },
   { id: 'crm-bordeaux', label: 'CRM Produttori BDX',   icon: MapPin      },
+  { id: 'media',         label: 'Gestione Media',        icon: Images      },
 ];
 
 /* ─────────────────────────────────────────────
@@ -609,6 +611,13 @@ export default function MembersPage() {
                   <>
                     <SectionHeader title="CRM Produttori Bordeaux" subtitle="Châteaux e produttori di Bordeaux — richieste visita e follow-up." />
                     <CrmBordeaux />
+                  </>
+                )}
+
+                {admin && activeSection === 'media' && (
+                  <>
+                    <SectionHeader title="Gestione Media" subtitle="Carica immagini per le gallerie del sito — Wine Party, Wine Lounge, Winery Visit e singole cantine." />
+                    <MediaManager />
                   </>
                 )}
 

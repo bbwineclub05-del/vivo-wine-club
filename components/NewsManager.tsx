@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Newspaper, Plus, X, ChevronDown, Trash2, Eye, EyeOff, GripVertical, RefreshCw } from 'lucide-react';
+import { Newspaper, Plus, X, ChevronDown, Trash2, Eye, EyeOff, GripVertical, RefreshCw, ImagePlus } from 'lucide-react';
 import type { NewsItem } from './LinkedInSection';
 
 /* ── Empty form ── */
@@ -12,7 +12,7 @@ const EMPTY_FORM = {
   description: '',
   href:        '',
   region:      '',
-  images:      '',   // newline-separated paths
+  images:      '',   // newline-separated paths / URLs
   image_fit:   'cover' as 'cover' | 'contain',
   published:   true,
   sort_order:  0,
@@ -42,6 +42,72 @@ function Field({
   );
 }
 
+/* ── Image uploader sub-component ── */
+function ImageUploader({ onUploaded }: { onUploaded: (urls: string[]) => void }) {
+  const fileRef    = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [progress,  setProgress]  = useState('');
+
+  async function handleFiles(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    const urls: string[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      setProgress(`Uploading ${i + 1}/${files.length}…`);
+      const fd = new FormData();
+      fd.append('file', file);
+      try {
+        const res  = await fetch('/api/news/upload', { method: 'POST', body: fd });
+        const json = await res.json();
+        if (res.ok && json.url) urls.push(json.url);
+        else alert(`Upload failed for ${file.name}: ${json.error ?? 'Unknown error'}`);
+      } catch {
+        alert(`Upload failed for ${file.name}`);
+      }
+    }
+    setUploading(false);
+    setProgress('');
+    if (urls.length > 0) onUploaded(urls);
+    // Reset file input so the same file can be re-selected
+    if (fileRef.current) fileRef.current.value = '';
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={(e) => handleFiles(e.target.files)}
+      />
+      <button
+        type="button"
+        disabled={uploading}
+        onClick={() => fileRef.current?.click()}
+        className="inline-flex items-center gap-1.5 text-[9px] tracking-[0.28em] px-4 py-2.5 border border-[#731515]/40 text-[#731515] hover:bg-[#731515]/5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+      >
+        {uploading ? (
+          <>
+            <RefreshCw size={11} className="animate-spin" />
+            {progress}
+          </>
+        ) : (
+          <>
+            <ImagePlus size={11} />
+            UPLOAD IMAGE
+          </>
+        )}
+      </button>
+      <span className="text-[9px] text-[#7a4a4a]/40" style={{ fontFamily: 'var(--font-nunito)' }}>
+        or paste path below
+      </span>
+    </div>
+  );
+}
+
 /* ── News form (shared for create & edit) ── */
 function NewsForm({
   initial,
@@ -60,6 +126,13 @@ function NewsForm({
     (k: keyof FormState) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
       setForm((p) => ({ ...p, [k]: e.target.value }));
+
+  function handleUploaded(urls: string[]) {
+    setForm((p) => ({
+      ...p,
+      images: [p.images.trim(), ...urls].filter(Boolean).join('\n'),
+    }));
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -130,15 +203,18 @@ function NewsForm({
 
       <Field
         label="IMAGES"
-        hint="One path per line (e.g. /events/wv3.jpg). First image shown first; multiple = slider."
+        hint="One path/URL per line. First image shown first; multiple = slider."
       >
-        <textarea
-          rows={3}
-          value={form.images}
-          onChange={set('images')}
-          placeholder={`/events/Winery visits/wv3.jpg\n/Ca-del-Bosco.png`}
-          className={`${inputClass} resize-none font-mono text-xs`}
-        />
+        <div className="flex flex-col gap-2">
+          <ImageUploader onUploaded={handleUploaded} />
+          <textarea
+            rows={3}
+            value={form.images}
+            onChange={set('images')}
+            placeholder={`/events/Winery visits/wv3.jpg\nhttps://…supabase.co/storage/v1/…`}
+            className={`${inputClass} resize-none font-mono text-xs`}
+          />
+        </div>
       </Field>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -235,9 +311,10 @@ function NewsRow({
   onUpdate: (id: string, patch: Partial<NewsItem>) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
 }) {
-  const [expanded, setExpanded] = useState(false);
-  const [saving,   setSaving]   = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const [expanded,  setExpanded]  = useState(false);
+  const [saving,    setSaving]    = useState(false);
+  const [deleting,  setDeleting]  = useState(false);
+  const [toggling,  setToggling]  = useState(false);
 
   async function handleSave(form: FormState) {
     setSaving(true);
@@ -264,7 +341,9 @@ function NewsRow({
   }
 
   async function togglePublished() {
+    setToggling(true);
     await onUpdate(item.id, { published: !item.published });
+    setToggling(false);
   }
 
   return (
@@ -307,14 +386,15 @@ function NewsRow({
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={togglePublished}
-            className={`text-[8px] tracking-[0.2em] px-2 py-1 border transition-colors duration-200 ${
+            disabled={toggling}
+            className={`text-[8px] tracking-[0.2em] px-2 py-1 border transition-colors duration-200 disabled:opacity-50 ${
               item.published
                 ? 'border-green-500/40 text-green-700 bg-green-50'
                 : 'border-[#e8d5d5] text-[#7a4a4a]/40'
             }`}
             title={item.published ? 'Click to hide' : 'Click to publish'}
           >
-            {item.published ? 'LIVE' : 'HIDDEN'}
+            {toggling ? '…' : item.published ? 'LIVE' : 'HIDDEN'}
           </button>
           <button
             onClick={handleDelete}
@@ -369,7 +449,6 @@ export default function NewsManager() {
     setLoading(true);
     setError('');
     try {
-      // Fetch all (including hidden) — use admin GET that returns all
       const res  = await fetch('/api/news/all');
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? 'Failed to load');
@@ -408,6 +487,8 @@ export default function NewsManager() {
   }
 
   async function handleUpdate(id: string, patch: Partial<NewsItem>) {
+    // Optimistic update
+    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i)));
     try {
       const res = await fetch(`/api/news/${id}`, {
         method:  'PATCH',
@@ -416,8 +497,11 @@ export default function NewsManager() {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? 'Failed to update');
+      // Apply confirmed server state
       setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...json.item } : i)));
     } catch (err) {
+      // Roll back optimistic update
+      load();
       alert(err instanceof Error ? err.message : 'Error updating news item');
     }
   }
@@ -497,7 +581,7 @@ export default function NewsManager() {
         <p className="text-xs text-[#731515] text-center" style={{ fontFamily: 'var(--font-nunito)' }}>{error}</p>
       )}
 
-      {/* Info banner when empty/loading */}
+      {/* List */}
       {loading && items.length === 0 ? (
         <div className="py-10 text-center text-xs text-[#7a4a4a]/40 italic" style={{ fontFamily: 'var(--font-nunito)' }}>
           Loading news…
