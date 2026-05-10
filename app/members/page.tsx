@@ -8,6 +8,7 @@ import {
   Home, CheckSquare, BarChart3, Users, FileText,
   Mail, LogOut, KeyRound, ScanLine, Menu, X,
   Wine, Shield, ArrowUpRight, CreditCard, User, CalendarDays, GlassWater, MapPin, Images,
+  Database, ChevronDown,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -38,17 +39,23 @@ const NAV_MAIN: NavItem[] = [
   { id: 'settings', label: 'Impostazioni',  icon: KeyRound   },
 ];
 
-const NAV_ADMIN: NavItem[] = [
-  { id: 'tasks',     label: 'Task Board',         icon: CheckSquare },
-  { id: 'analytics', label: 'Analytics',           icon: BarChart3   },
-  { id: 'pipeline',  label: 'Pipeline Membership', icon: Users       },
-  { id: 'events',       label: 'Gestione Eventi',      icon: CalendarDays },
-  { id: 'news',         label: 'Gestione News',        icon: FileText    },
-  { id: 'crm',          label: 'CRM Membri',           icon: Mail        },
-  { id: 'crm-clienti',  label: 'CRM Clienti',          icon: Users       },
-  { id: 'crm-wine',     label: 'CRM Contatti Vino',    icon: GlassWater  },
-  { id: 'crm-bordeaux', label: 'CRM Produttori BDX',   icon: MapPin      },
-  { id: 'media',         label: 'Gestione Media',        icon: Images      },
+const NAV_ADMIN_TOP: NavItem[] = [
+  { id: 'tasks',     label: 'Task Board',         icon: CheckSquare  },
+  { id: 'analytics', label: 'Analytics',           icon: BarChart3    },
+  { id: 'pipeline',  label: 'Pipeline Membership', icon: Users        },
+  { id: 'events',    label: 'Gestione Eventi',     icon: CalendarDays },
+  { id: 'news',      label: 'Gestione News',       icon: FileText     },
+];
+
+const CRM_ITEMS: NavItem[] = [
+  { id: 'crm',          label: 'CRM Membri',        icon: Mail       },
+  { id: 'crm-clienti',  label: 'CRM Clienti',       icon: Users      },
+  { id: 'crm-wine',     label: 'CRM Contatti Vino', icon: GlassWater },
+  { id: 'crm-bordeaux', label: 'CRM Produttori BDX',icon: MapPin     },
+];
+
+const NAV_ADMIN_BOTTOM: NavItem[] = [
+  { id: 'media', label: 'Gestione Media', icon: Images },
 ];
 
 /* ─────────────────────────────────────────────
@@ -95,6 +102,61 @@ function NavBtn({
       <Icon size={14} className={active ? 'text-[#c84040]' : 'text-white/35'} />
       {item.label}
     </button>
+  );
+}
+
+/** Collapsible CRM group in the sidebar */
+function CrmGroupNav({ activeSection, navigate }: { activeSection: Section; navigate: (s: Section) => void }) {
+  const isCrmActive = (CRM_ITEMS as NavItem[]).some((item) => item.id === activeSection);
+  const [open, setOpen] = useState(isCrmActive);
+
+  // Auto-open when a CRM sub-section becomes active (e.g. via external navigation)
+  useEffect(() => {
+    if (isCrmActive) setOpen(true);
+  }, [isCrmActive]);
+
+  return (
+    <div>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className={`w-full flex items-center gap-2.5 px-3 py-[7px] rounded-md text-left transition-all duration-150 text-[12.5px] ${
+          isCrmActive
+            ? 'text-white/75 bg-white/[0.04]'
+            : 'text-white/45 hover:text-white/75 hover:bg-white/[0.06]'
+        }`}
+        style={{ fontFamily: 'var(--font-nunito)' }}
+      >
+        <Database size={14} className={isCrmActive ? 'text-[#c84040]' : 'text-white/35'} />
+        CRM
+        <ChevronDown
+          size={11}
+          className={`ml-auto text-white/25 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+        />
+      </button>
+
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="ml-3 pl-2.5 border-l border-white/[0.07] mt-0.5 mb-0.5 space-y-0.5">
+              {CRM_ITEMS.map((item) => (
+                <NavBtn
+                  key={item.id}
+                  item={item}
+                  active={activeSection === item.id}
+                  onClick={() => navigate(item.id)}
+                />
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -167,7 +229,11 @@ function SidebarContent({
               <Shield size={8} className="text-white/20" />
               <span className="text-[8px] tracking-[0.55em] text-white/20 uppercase">Admin</span>
             </div>
-            {NAV_ADMIN.map(item => (
+            {NAV_ADMIN_TOP.map(item => (
+              <NavBtn key={item.id} item={item} active={activeSection === item.id} onClick={() => navigate(item.id)} />
+            ))}
+            <CrmGroupNav activeSection={activeSection} navigate={navigate} />
+            {NAV_ADMIN_BOTTOM.map(item => (
               <NavBtn key={item.id} item={item} active={activeSection === item.id} onClick={() => navigate(item.id)} />
             ))}
           </>

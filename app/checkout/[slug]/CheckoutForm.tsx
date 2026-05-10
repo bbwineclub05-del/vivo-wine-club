@@ -102,7 +102,7 @@ export default function CheckoutForm({ event }: { event: EventData }) {
               <form onSubmit={handleSubmit} className="flex flex-col gap-8">
 
                 {/* ── Event summary ── */}
-                <div className="glass-card p-8 md:p-10">
+                <div className="glass-card p-5 sm:p-8 md:p-10">
                   <div className="text-[9px] tracking-[0.45em] text-[#731515] mb-4">
                     {event.type}
                   </div>
@@ -140,7 +140,7 @@ export default function CheckoutForm({ event }: { event: EventData }) {
                 </div>
 
                 {/* ── Ticket selector ── */}
-                <div className="glass-card p-8 md:p-10">
+                <div className="glass-card p-5 sm:p-8 md:p-10">
                   <div className="text-[10px] tracking-[0.4em] text-[#731515] mb-6">
                     SELECT TICKETS
                   </div>
@@ -155,7 +155,7 @@ export default function CheckoutForm({ event }: { event: EventData }) {
                         type="button"
                         onClick={dec}
                         disabled={qty <= 1}
-                        className="w-9 h-9 flex items-center justify-center border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515] hover:text-[#731515] disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
+                        className="w-11 h-11 flex items-center justify-center border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515] hover:text-[#731515] disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
                         aria-label="Remove ticket"
                       >
                         <Minus size={13} />
@@ -172,7 +172,7 @@ export default function CheckoutForm({ event }: { event: EventData }) {
                         type="button"
                         onClick={inc}
                         disabled={qty >= MAX_TICKETS}
-                        className="w-9 h-9 flex items-center justify-center border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515] hover:text-[#731515] disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
+                        className="w-11 h-11 flex items-center justify-center border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515] hover:text-[#731515] disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
                         aria-label="Add ticket"
                       >
                         <Plus size={13} />
@@ -188,7 +188,7 @@ export default function CheckoutForm({ event }: { event: EventData }) {
                 </div>
 
                 {/* ── Buyer details ── */}
-                <div className="glass-card p-8 md:p-10">
+                <div className="glass-card p-5 sm:p-8 md:p-10">
                   <div className="flex items-center gap-2 mb-6">
                     <User size={13} className="text-[#731515]" />
                     <div className="text-[10px] tracking-[0.4em] text-[#731515]">YOUR DETAILS</div>
@@ -207,7 +207,7 @@ export default function CheckoutForm({ event }: { event: EventData }) {
                 </div>
 
                 {/* ── Order summary + pay ── */}
-                <div className="glass-card p-8 md:p-10">
+                <div className="glass-card p-5 sm:p-8 md:p-10">
                   <div className="text-[10px] tracking-[0.4em] text-[#731515] mb-6">
                     ORDER SUMMARY
                   </div>

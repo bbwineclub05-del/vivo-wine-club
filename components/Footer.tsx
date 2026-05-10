@@ -41,7 +41,7 @@ function MailIcon() {
 
 const NAV_LINKS = [
   { label: 'Events',        href: '/events'       },
-  { label: 'Wine Map',      href: '/wine-map'      },
+  { label: 'Wine Visits',   href: '/wine-map'      },
   { label: 'Wear the Club', href: '/wear-the-club' },
   { label: 'Who We Are',    href: '/who-we-are'    },
   { label: 'Collaborate',   href: '/collaborate'   },

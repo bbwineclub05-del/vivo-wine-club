@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
@@ -23,20 +23,28 @@ function weekLabel(isoWeekStr: string): string {
   return monday.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const filterSlug = searchParams.get('event_slug') ?? '';
+
     const db = getSupabaseAdmin() as any; // eslint-disable-line @typescript-eslint/no-explicit-any
     const sixMonthsAgo = Math.floor(Date.now() / 1000) - 60 * 60 * 24 * 180;
 
     // Build event price/title lookup from DB
     const EVENT_PRICE: Record<string, number> = {};
     const EVENT_TITLE: Record<string, string> = {};
+    let eventsList: { slug: string; title: string }[] = [];
     try {
-      const { data: eventsData } = await db.from('events').select('slug, title, price');
+      const { data: eventsData } = await db.from('events').select('slug, title, price').order('title', { ascending: true });
       for (const e of (eventsData ?? [])) {
         EVENT_PRICE[e.slug] = e.price ?? 0;
         EVENT_TITLE[e.slug] = e.title ?? e.slug;
       }
+      eventsList = (eventsData ?? []).map((e: { slug: string; title: string }) => ({
+        slug: e.slug,
+        title: e.title ?? e.slug,
+      }));
     } catch {/* non-fatal */}
 
     // ── Parallel fetches ──────────────────────────────────────────────────────
@@ -46,15 +54,20 @@ export async function GET() {
       applicationsRes,
       stripeCharges,
     ] = await Promise.allSettled([
-      db.from('tickets').select('event_id, ticket_count, buyer_name, created_at').order('created_at', { ascending: false }),
+      db.from('tickets').select('event_id, ticket_count, name, created_at').order('created_at', { ascending: false }),
       db.from('subscribers').select('created_at').order('created_at', { ascending: true }),
       db.from('applications').select('id, created_at'),
       stripe.charges.list({ limit: 100, created: { gte: sixMonthsAgo } }),
     ]);
 
     // ── Tickets ───────────────────────────────────────────────────────────────
-    const tickets: { event_id: string; ticket_count: number; buyer_name: string; created_at: string }[] =
+    const allTickets: { event_id: string; ticket_count: number; name: string; created_at: string }[] =
       ticketsRes.status === 'fulfilled' ? (ticketsRes.value.data ?? []) : [];
+
+    // Apply event filter
+    const tickets = filterSlug
+      ? allTickets.filter((t) => t.event_id === filterSlug)
+      : allTickets;
 
     const totalTickets = tickets.reduce((s, t) => s + (t.ticket_count ?? 1), 0);
 
@@ -77,7 +90,7 @@ export async function GET() {
 
     // Recent ticket activity (last 5)
     const recentTickets = tickets.slice(0, 5).map((t) => ({
-      buyer: t.buyer_name,
+      buyer: t.name,
       event: EVENT_TITLE[t.event_id] ?? t.event_id,
       tickets: t.ticket_count ?? 1,
       date: t.created_at,
@@ -97,8 +110,8 @@ export async function GET() {
     }
 
     // Last 12 weeks
-    const weeks: string[] = [];
     const now = new Date();
+    const weeks: string[] = [];
     for (let i = 11; i >= 0; i--) {
       const d = new Date(now.getTime() - i * 7 * 86400000);
       weeks.push(isoWeek(d));
@@ -119,35 +132,55 @@ export async function GET() {
       ? Math.round((totalSubscribers / Math.max(totalApplications, totalSubscribers)) * 100)
       : 0;
 
-    // ── Stripe Revenue ────────────────────────────────────────────────────────
-    const charges =
-      stripeCharges.status === 'fulfilled'
-        ? stripeCharges.value.data.filter((c) => c.paid && !c.refunded)
-        : [];
-
-    const totalRevenue = charges.reduce((s, c) => s + c.amount, 0) / 100;
-
-    // Group by month (last 6)
-    const monthRevenue: Record<string, number> = {};
-    for (const c of charges) {
-      const m = new Date(c.created * 1000).toISOString().slice(0, 7); // "2026-03"
-      monthRevenue[m] = (monthRevenue[m] || 0) + c.amount / 100;
-    }
-
-    // Build last 6 months array
+    // ── Revenue ───────────────────────────────────────────────────────────────
+    // Last 6 months array (used by both paths)
     const months: string[] = [];
     for (let i = 5; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       months.push(d.toISOString().slice(0, 7));
     }
 
-    const revenueByMonth = months.map((m) => ({
-      month: m,
-      label: new Date(m + '-01').toLocaleDateString('en-GB', { month: 'short', year: '2-digit' }),
-      revenue: Math.round((monthRevenue[m] || 0) * 100) / 100,
-    }));
+    let totalRevenue: number;
+    let revenueByMonth: { month: string; label: string; revenue: number }[];
+
+    if (filterSlug) {
+      // When filtering by event, compute revenue from DB tickets × event price
+      const price = EVENT_PRICE[filterSlug] ?? 0;
+      totalRevenue = tickets.reduce((s, t) => s + (t.ticket_count ?? 1) * price, 0);
+
+      const monthRevenue: Record<string, number> = {};
+      for (const t of tickets) {
+        const m = new Date(t.created_at).toISOString().slice(0, 7);
+        monthRevenue[m] = (monthRevenue[m] || 0) + (t.ticket_count ?? 1) * price;
+      }
+      revenueByMonth = months.map((m) => ({
+        month: m,
+        label: new Date(m + '-01').toLocaleDateString('en-GB', { month: 'short', year: '2-digit' }),
+        revenue: Math.round((monthRevenue[m] || 0) * 100) / 100,
+      }));
+    } else {
+      // All events: use Stripe as source of truth for revenue
+      const charges =
+        stripeCharges.status === 'fulfilled'
+          ? stripeCharges.value.data.filter((c) => c.paid && !c.refunded)
+          : [];
+
+      totalRevenue = charges.reduce((s, c) => s + c.amount, 0) / 100;
+
+      const monthRevenue: Record<string, number> = {};
+      for (const c of charges) {
+        const m = new Date(c.created * 1000).toISOString().slice(0, 7);
+        monthRevenue[m] = (monthRevenue[m] || 0) + c.amount / 100;
+      }
+      revenueByMonth = months.map((m) => ({
+        month: m,
+        label: new Date(m + '-01').toLocaleDateString('en-GB', { month: 'short', year: '2-digit' }),
+        revenue: Math.round((monthRevenue[m] || 0) * 100) / 100,
+      }));
+    }
 
     return NextResponse.json({
+      events: eventsList,
       kpis: {
         totalTickets,
         totalRevenue: Math.round(totalRevenue * 100) / 100,

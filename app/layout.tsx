@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Syne, Nunito } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/contexts/CartContext";
@@ -17,6 +17,12 @@ const nunito = Nunito({
   display: "swap",
   weight: ["300", "400", "500", "600", "700"],
 });
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+};
 
 export const metadata: Metadata = {
   title: "Vivo Wine Club — The Art of Fine Wine, Shared",

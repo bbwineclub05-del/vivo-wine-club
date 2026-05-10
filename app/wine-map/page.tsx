@@ -225,7 +225,7 @@ export default function WineMapPage() {
       <main className="min-h-screen pt-16">
 
         {/* ── HERO IMAGE ── */}
-        <div className="relative w-full" style={{ height: 350 }}>
+        <div className="relative w-full h-[220px] sm:h-[280px] md:h-[350px]">
           <Image
             src="/castello.jpg"
             alt="Wine Map — Vivo Wine Club"
@@ -293,7 +293,7 @@ export default function WineMapPage() {
                 </p>
               </motion.div>
 
-              {/* Info panel — same height as map: (3/5 × 100vw × 580/800) = 43.5vw */}
+              {/* Info panel — same height as map on desktop; auto height on mobile */}
               <div className="lg:col-span-2 lg:h-[43.5vw] overflow-hidden">
                 <AnimatePresence mode="wait">
                   {selected ? (
@@ -303,7 +303,7 @@ export default function WineMapPage() {
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: reducedMotion ? 1 : 0, x: reducedMotion ? 0 : -16 }}
                       transition={{ duration: d(0.3), ease: [0.16, 1, 0.3, 1] }}
-                      className="glass-card p-8 relative h-full overflow-y-auto"
+                      className="glass-card p-6 lg:p-8 relative max-h-[70vh] lg:max-h-none lg:h-full overflow-y-auto"
                     >
                       <button
                         onClick={handleDeselect}
@@ -366,7 +366,7 @@ export default function WineMapPage() {
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
                       transition={{ duration: d(0.3) }}
-                      className="glass-card p-7 h-full overflow-y-auto"
+                      className="glass-card p-5 lg:p-7 max-h-[70vh] lg:max-h-none lg:h-full overflow-y-auto"
                     >
                       {/* Panel header */}
                       <div className="mb-6">
@@ -522,7 +522,7 @@ export default function WineMapPage() {
               className="origin-left w-full h-px bg-gradient-to-r from-[#731515]/30 via-[#731515]/10 to-transparent mb-10"
             />
 
-            <div className="grid grid-cols-3 divide-x divide-[#e8d5d5]">
+            <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#e8d5d5]">
               <CounterStat to={10} suffix="+" label="REGIONS VISITED" sub="Across Europe" delay={0} />
               <CounterStat to={80} suffix="+" label="ESTATES VISITED"  sub="And counting"  delay={0.1} />
               <TextStat    value="FR · IT · PT" label="COUNTRIES"      sub="France, Italy and Portugal" delay={0.2} />

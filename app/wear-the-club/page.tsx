@@ -81,7 +81,7 @@ const ProductCard = memo(function ProductCard({ product, index, reducedMotion }:
           <motion.button
             onClick={handleAdd}
             whileTap={reducedMotion ? undefined : { scale: 0.9 }}
-            className={`w-8 h-8 rounded-full flex items-center justify-center text-white shadow-lg transition-colors duration-300 ${
+            className={`w-10 h-10 rounded-full flex items-center justify-center text-white shadow-lg transition-colors duration-300 ${
               added ? 'bg-[#2d6e2d]' : 'bg-[#731515] hover:bg-[#aa4848]'
             }`}
             aria-label={`Add ${product.name} to cart`}
@@ -126,7 +126,7 @@ const ProductCard = memo(function ProductCard({ product, index, reducedMotion }:
                 key={s}
                 type="button"
                 onClick={() => { setSize(s); setSizeError(false); }}
-                className={`w-8 h-8 text-[10px] tracking-widest border transition-colors duration-150 ${
+                className={`w-10 h-10 text-[10px] tracking-widest border transition-colors duration-150 ${
                   size === s
                     ? 'border-[#731515] bg-[#731515] text-white'
                     : 'border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515] hover:text-[#731515]'
@@ -151,7 +151,7 @@ export default function WearTheClubPage() {
       <main className="min-h-screen pt-16">
 
         {/* ── HERO IMAGE ── */}
-        <div className="relative w-full" style={{ height: 350 }}>
+        <div className="relative w-full h-[220px] sm:h-[280px] md:h-[350px]">
           <Image
             src="/events/wine lounge 1.jpg"
             alt="Wear The Club"

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, Ticket, Users, FileText, RefreshCw, BarChart2 } from 'lucide-react';
+import { TrendingUp, Ticket, Users, FileText, RefreshCw, BarChart2, ChevronDown } from 'lucide-react';
 
 /* ── Types ── */
 interface KPIs {
@@ -40,7 +40,13 @@ interface RecentTicket {
   date: string;
 }
 
+interface EventOption {
+  slug: string;
+  title: string;
+}
+
 interface AnalyticsData {
+  events: EventOption[];
   kpis: KPIs;
   ticketsByEvent: TicketByEvent[];
   revenueByMonth: MonthRevenue[];
@@ -226,16 +232,18 @@ function Card({ title, children, className = '' }: { title: string; children: Re
 
 /* ── Main component ── */
 export default function AnalyticsDashboard() {
-  const [data, setData]       = useState<AnalyticsData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState('');
+  const [data, setData]             = useState<AnalyticsData | null>(null);
+  const [loading, setLoading]       = useState(true);
+  const [error, setError]           = useState('');
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState('');
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (slug = '') => {
     setLoading(true);
     setError('');
     try {
-      const res  = await fetch('/api/analytics');
+      const url  = slug ? `/api/analytics?event_slug=${encodeURIComponent(slug)}` : '/api/analytics';
+      const res  = await fetch(url);
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? 'Failed to load analytics');
       setData(json);
@@ -247,25 +255,49 @@ export default function AnalyticsDashboard() {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(''); }, [load]);
+
+  function handleEventChange(slug: string) {
+    setSelectedEvent(slug);
+    load(slug);
+  }
+
+  const eventOptions = data?.events ?? [];
 
   /* Header */
   const header = (
-    <div className="flex items-center justify-between">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-3">
         <div className="w-8 h-8 bg-[#731515]/8 flex items-center justify-center shrink-0">
           <BarChart2 size={15} className="text-[#731515]" />
         </div>
         <h2 className="text-[10px] tracking-[0.4em] text-[#1a0505]">ANALYTICS</h2>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
+        {/* Event filter dropdown */}
+        {eventOptions.length > 0 && (
+          <div className="relative">
+            <select
+              value={selectedEvent}
+              onChange={(e) => handleEventChange(e.target.value)}
+              className="appearance-none text-[9px] tracking-[0.2em] border border-[#e8d5d5] bg-white text-[#6b3333] pl-3 pr-7 py-1.5 focus:outline-none focus:border-[#731515]/40 cursor-pointer transition-colors"
+              style={{ fontFamily: 'var(--font-nunito)' }}
+            >
+              <option value="">ALL EVENTS</option>
+              {eventOptions.map((e) => (
+                <option key={e.slug} value={e.slug}>{e.title}</option>
+              ))}
+            </select>
+            <ChevronDown size={10} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9a6060] pointer-events-none" />
+          </div>
+        )}
         {lastRefresh && (
           <span className="text-[9px] text-[#7a4a4a]/40" style={{ fontFamily: 'var(--font-nunito)' }}>
             Updated {lastRefresh.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
           </span>
         )}
         <button
-          onClick={load}
+          onClick={() => load(selectedEvent)}
           disabled={loading}
           className="w-7 h-7 flex items-center justify-center border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515]/40 hover:text-[#731515] disabled:opacity-40 transition-all duration-200"
           aria-label="Refresh"
@@ -301,6 +333,10 @@ export default function AnalyticsDashboard() {
   if (!data) return null;
 
   const { kpis, ticketsByEvent, revenueByMonth, subscriberGrowth, recentTickets } = data;
+  const isFiltered = !!selectedEvent;
+  const selectedTitle = isFiltered
+    ? (data.events.find((e) => e.slug === selectedEvent)?.title ?? selectedEvent)
+    : '';
 
   const maxTickets = Math.max(...ticketsByEvent.map((e) => e.tickets), 1);
 
@@ -310,19 +346,33 @@ export default function AnalyticsDashboard() {
     <div className="flex flex-col gap-6">
       {header}
 
+      {/* Event filter active banner */}
+      {isFiltered && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-[#731515]/5 border border-[#731515]/15 text-[9px] tracking-[0.25em] text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>
+          <span>FILTERING:</span>
+          <span className="font-medium">{selectedTitle}</span>
+          <button
+            onClick={() => handleEventChange('')}
+            className="ml-auto underline underline-offset-2 hover:no-underline transition-all"
+          >
+            CLEAR
+          </button>
+        </div>
+      )}
+
       {/* KPI row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <KpiCard
           label="TOTAL REVENUE"
           value={`€${kpis.totalRevenue.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`}
-          sub="from Stripe"
+          sub={isFiltered ? selectedTitle : 'from Stripe'}
           icon={TrendingUp}
           delay={0}
         />
         <KpiCard
           label="TICKETS SOLD"
           value={kpis.totalTickets}
-          sub="all events"
+          sub={isFiltered ? selectedTitle : 'all events'}
           icon={Ticket}
           delay={0.06}
         />
@@ -346,7 +396,7 @@ export default function AnalyticsDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
         {/* Tickets per event */}
-        <Card title="TICKETS SOLD PER EVENT">
+        <Card title={isFiltered ? `TICKETS — ${selectedTitle.toUpperCase()}` : 'TICKETS SOLD PER EVENT'}>
           <HBarChart
             items={ticketsByEvent.map((e) => ({
               label: e.title,

@@ -39,6 +39,11 @@ body {
   background: #F5E6E6;
   color: #1a0505;
   overflow-x: hidden;
+  /* Prevent iOS Safari from inflating font sizes on rotation */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* Smooth momentum scrolling on iOS */
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Fixed gradient background — uses ::before so it works on Android/Windows Chrome.
@@ -68,6 +73,7 @@ body::before {
 .glass-card {
   background: rgba(255, 255, 255, 0.92);
   border: 1px solid #e8d5d5;
+  -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
 }
 
@@ -131,6 +137,19 @@ body::before {
   border-radius: 50%;
   filter: blur(96px);
   pointer-events: none;
+}
+
+/* ── Mobile: remove tap highlight flash on iOS/Android ─────────── */
+a, button, [role="button"] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Fog: lighter on mobile for performance ─────────────────────── */
+@media (max-width: 640px) {
+  .fog-left, .fog-right, .fog-center {
+    filter: blur(40px);
+    opacity: 0.7;
+  }
 }
 
 /* ── Subtle noise texture ────────────────────────────────────────── */

@@ -143,7 +143,7 @@ export default async function EventsPage() {
       <main className="min-h-screen pt-16">
 
         {/* ── HERO IMAGE ── */}
-        <div className="relative w-full" style={{ height: 350 }}>
+        <div className="relative w-full h-[220px] sm:h-[280px] md:h-[350px]">
           <Image
             src="/events/wine-party8.jpg"
             alt="Events — Vivo Wine Club"

@@ -353,7 +353,8 @@ export default function EventScanner({
             </div>
             <button
               onClick={onClose}
-              className="p-2 rounded-lg text-[#7a4a4a] hover:text-[#1a0505] hover:bg-[#fdf6f6] transition-colors"
+              className="p-2.5 rounded-lg text-[#7a4a4a] hover:text-[#1a0505] hover:bg-[#fdf6f6] transition-colors"
+              aria-label="Chiudi scanner"
             >
               <X size={18} />
             </button>

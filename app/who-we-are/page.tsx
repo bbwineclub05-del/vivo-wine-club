@@ -143,7 +143,7 @@ function FounderCard({
           </p>
           {/* LinkedIn icon — always pinned to the bottom */}
           <div className="mt-4 pt-4 border-t border-[#e8d5d5]">
-            <span className="w-7 h-7 border border-[#e8d5d5] flex items-center justify-center text-[#7a4a4a] group-hover:border-[#731515]/50 group-hover:text-[#731515] transition-all duration-300">
+            <span className="w-10 h-10 border border-[#e8d5d5] flex items-center justify-center text-[#7a4a4a] group-hover:border-[#731515]/50 group-hover:text-[#731515] transition-all duration-300">
               <LinkedInIcon />
             </span>
           </div>
@@ -160,7 +160,7 @@ export default function WhoWeArePage() {
       <main className="min-h-screen pt-16">
 
         {/* ── HERO IMAGE ── */}
-        <div className="relative w-full" style={{ height: 350 }}>
+        <div className="relative w-full h-[220px] sm:h-[280px] md:h-[350px]">
           <Image
             src="/events/wine-party6.jpg"
             alt="Who We Are — Vivo Wine Club"
