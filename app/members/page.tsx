@@ -39,12 +39,17 @@ const NAV_MAIN: NavItem[] = [
   { id: 'settings', label: 'Impostazioni',  icon: KeyRound   },
 ];
 
-const NAV_ADMIN_TOP: NavItem[] = [
-  { id: 'tasks',     label: 'Task Board',         icon: CheckSquare  },
-  { id: 'analytics', label: 'Analytics',           icon: BarChart3    },
-  { id: 'pipeline',  label: 'Pipeline Membership', icon: Users        },
-  { id: 'events',    label: 'Gestione Eventi',     icon: CalendarDays },
-  { id: 'news',      label: 'Gestione News',       icon: FileText     },
+// Visible to both admin and staff
+const NAV_SHARED: NavItem[] = [
+  { id: 'tasks',  label: 'Task Board',     icon: CheckSquare  },
+  { id: 'events', label: 'Gestione Eventi', icon: CalendarDays },
+  { id: 'news',   label: 'Gestione News',   icon: FileText     },
+];
+
+// Admin only
+const NAV_ADMIN_ONLY: NavItem[] = [
+  { id: 'analytics', label: 'Analytics',           icon: BarChart3 },
+  { id: 'pipeline',  label: 'Pipeline Membership', icon: Users     },
 ];
 
 const CRM_ITEMS: NavItem[] = [
@@ -54,7 +59,8 @@ const CRM_ITEMS: NavItem[] = [
   { id: 'crm-bordeaux', label: 'CRM Produttori BDX',icon: MapPin     },
 ];
 
-const NAV_ADMIN_BOTTOM: NavItem[] = [
+// Visible to both admin and staff
+const NAV_SHARED_BOTTOM: NavItem[] = [
   { id: 'media', label: 'Gestione Media', icon: Images },
 ];
 
@@ -223,36 +229,41 @@ function SidebarContent({
           <NavBtn key={item.id} item={item} active={activeSection === item.id} onClick={() => navigate(item.id)} />
         ))}
 
-        {admin && (
+        {/* Event Scanner — visible to all authenticated users */}
+        <div className="pt-5 pb-1.5 px-3 flex items-center gap-1.5">
+          <ScanLine size={8} className="text-white/20" />
+          <span className="text-[8px] tracking-[0.55em] text-white/20 uppercase">Scanner</span>
+        </div>
+        <Link
+          href="/checkin"
+          className="flex items-center gap-2.5 px-3 py-[7px] rounded-md text-white/45 hover:text-white/75 hover:bg-white/[0.06] transition-all duration-150 text-[12.5px]"
+          style={{ fontFamily: 'var(--font-nunito)' }}
+        >
+          <ScanLine size={14} className="text-white/35" />
+          Event Scanner
+        </Link>
+
+        {(admin || isStaff) && (
           <>
             <div className="pt-5 pb-1.5 px-3 flex items-center gap-1.5">
-              <Shield size={8} className="text-white/20" />
-              <span className="text-[8px] tracking-[0.55em] text-white/20 uppercase">Admin</span>
+              {admin
+                ? <Shield size={8} className="text-white/20" />
+                : <ScanLine size={8} className="text-white/20" />
+              }
+              <span className="text-[8px] tracking-[0.55em] text-white/20 uppercase">
+                {admin ? 'Admin' : 'Gestione'}
+              </span>
             </div>
-            {NAV_ADMIN_TOP.map(item => (
+            {NAV_SHARED.map(item => (
+              <NavBtn key={item.id} item={item} active={activeSection === item.id} onClick={() => navigate(item.id)} />
+            ))}
+            {admin && NAV_ADMIN_ONLY.map(item => (
               <NavBtn key={item.id} item={item} active={activeSection === item.id} onClick={() => navigate(item.id)} />
             ))}
             <CrmGroupNav activeSection={activeSection} navigate={navigate} />
-            {NAV_ADMIN_BOTTOM.map(item => (
+            {NAV_SHARED_BOTTOM.map(item => (
               <NavBtn key={item.id} item={item} active={activeSection === item.id} onClick={() => navigate(item.id)} />
             ))}
-          </>
-        )}
-
-        {isStaff && (
-          <>
-            <div className="pt-5 pb-1.5 px-3 flex items-center gap-1.5">
-              <ScanLine size={8} className="text-white/20" />
-              <span className="text-[8px] tracking-[0.55em] text-white/20 uppercase">Staff</span>
-            </div>
-            <Link
-              href="/checkin"
-              className="flex items-center gap-2.5 px-3 py-[7px] rounded-md text-white/45 hover:text-white/75 hover:bg-white/[0.06] transition-all duration-150 text-[12.5px]"
-              style={{ fontFamily: 'var(--font-nunito)' }}
-            >
-              <ScanLine size={14} className="text-white/35" />
-              Event Scanner
-            </Link>
           </>
         )}
       </nav>
@@ -403,8 +414,8 @@ function OverviewSection({
           </p>
         </Card>
 
-        {/* Staff scanner */}
-        {isStaff && (
+        {/* Event Scanner — visible to all authenticated users */}
+        {true && (
           <div className="lg:col-span-3 rounded-xl bg-[#0d0202] border border-white/5 p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5 shadow-[0_4px_24px_rgba(0,0,0,0.25)]">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-lg bg-white/8 flex items-center justify-center shrink-0">
@@ -629,7 +640,7 @@ export default function MembersPage() {
 
                 {activeSection === 'settings' && <SettingsSection />}
 
-                {admin && activeSection === 'tasks' && (
+                {(admin || isStaff) && activeSection === 'tasks' && (
                   <>
                     <SectionHeader title="Task Board" subtitle="Assegna e gestisci task tra i founder." />
                     <TaskBoard currentEmail={user.email ?? ''} />
@@ -650,46 +661,46 @@ export default function MembersPage() {
                   </>
                 )}
 
-                {admin && activeSection === 'events' && (
+                {(admin || isStaff) && activeSection === 'events' && (
                   <EventManager />
                 )}
 
-                {admin && activeSection === 'news' && (
+                {(admin || isStaff) && activeSection === 'news' && (
                   <>
                     <SectionHeader title="Gestione News" subtitle="Crea e modifica le card della homepage." />
                     <NewsManager />
                   </>
                 )}
 
-                {admin && activeSection === 'crm' && (
+                {(admin || isStaff) && activeSection === 'crm' && (
                   <>
                     <SectionHeader title="CRM Membri" subtitle="Lista membri e invio comunicazioni." />
                     <MemberCRM />
                   </>
                 )}
 
-                {admin && activeSection === 'crm-wine' && (
+                {(admin || isStaff) && activeSection === 'crm-wine' && (
                   <>
                     <SectionHeader title="CRM Contatti Vino" subtitle="Contatti del settore vitivinicolo — produttori, hospitality, industry." />
                     <CrmWine />
                   </>
                 )}
 
-                {admin && activeSection === 'crm-bordeaux' && (
+                {(admin || isStaff) && activeSection === 'crm-bordeaux' && (
                   <>
                     <SectionHeader title="CRM Produttori Bordeaux" subtitle="Châteaux e produttori di Bordeaux — richieste visita e follow-up." />
                     <CrmBordeaux />
                   </>
                 )}
 
-                {admin && activeSection === 'crm-clienti' && (
+                {(admin || isStaff) && activeSection === 'crm-clienti' && (
                   <>
                     <SectionHeader title="CRM Clienti" subtitle="Banca dati automatica dei clienti che hanno acquistato biglietti — invio email e storico eventi." />
                     <CrmClienti />
                   </>
                 )}
 
-                {admin && activeSection === 'media' && (
+                {(admin || isStaff) && activeSection === 'media' && (
                   <>
                     <SectionHeader title="Gestione Media" subtitle="Carica immagini per le gallerie del sito — Wine Party, Wine Lounge, Winery Visit e singole cantine." />
                     <MediaManager />

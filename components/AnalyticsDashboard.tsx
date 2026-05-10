@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { TrendingUp, Ticket, Users, FileText, RefreshCw, BarChart2, ChevronDown } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 /* ── Types ── */
 interface KPIs {
@@ -237,13 +238,20 @@ export default function AnalyticsDashboard() {
   const [error, setError]           = useState('');
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   const [selectedEvent, setSelectedEvent] = useState('');
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setAccessToken(session?.access_token ?? null);
+    });
+  }, []);
 
   const load = useCallback(async (slug = '') => {
     setLoading(true);
     setError('');
     try {
       const url  = slug ? `/api/analytics?event_slug=${encodeURIComponent(slug)}` : '/api/analytics';
-      const res  = await fetch(url);
+      const res  = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? 'Failed to load analytics');
       setData(json);
@@ -253,7 +261,7 @@ export default function AnalyticsDashboard() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [accessToken]);
 
   useEffect(() => { load(''); }, [load]);
 

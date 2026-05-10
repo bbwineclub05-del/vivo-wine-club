@@ -7,7 +7,7 @@ import { Plus, X, ChevronDown, Trash2, ClipboardList } from 'lucide-react';
 /* ── Constants ── */
 export const ADMINS = [
   { name: 'Cris',  email: 'cristianomichelotti@gmail.com' },
-  { name: 'Pippo', email: 'filippo.lombardi513@gmail.com' },
+  { name: 'Pippo', email: 'filippo.lombardi890@gmail.com' },
   { name: 'Jack',  email: 'giacomogallo1310@gmail.com'    },
   { name: 'Ricky', email: 'riccardo.consalvo@icloud.com'  },
 ];

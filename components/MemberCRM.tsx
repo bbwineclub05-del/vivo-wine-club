@@ -6,6 +6,7 @@ import {
   Users, Mail, CalendarPlus, X, Search, RefreshCw,
   ChevronDown, ChevronUp, Send, Check, AlertCircle,
 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 /* ── Types ── */
 interface Member {
@@ -357,12 +358,21 @@ export default function MemberCRM() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [modal,   setModal]     = useState<'comm' | 'event' | null>(null);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setAccessToken(session?.access_token ?? null);
+    });
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const res  = await fetch('/api/crm/members');
+      const res  = await fetch('/api/crm/members', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? 'Failed to load');
       setMembers(json.members ?? []);
@@ -372,7 +382,7 @@ export default function MemberCRM() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [accessToken]);
 
   useEffect(() => { load(); }, [load]);
 

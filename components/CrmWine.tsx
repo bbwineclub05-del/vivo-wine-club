@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { Search, Mail, Plus, Trash2, Edit2, Check, X, Paperclip } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 /* ── Types ── */
 interface WineContact {
@@ -239,11 +240,20 @@ export default function CrmWine() {
   const [emailTarget, setEmailTarget] = useState<WineContact | null>(null);
   const [editingId, setEditingId]   = useState<string | null>(null);  // null = none, 'new' = new row
   const [deleting, setDeleting]     = useState<string | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setAccessToken(session?.access_token ?? null);
+    });
+  }, []);
+
+  const authHeader = () => ({ Authorization: `Bearer ${accessToken}` });
 
   const load = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/crm/wine');
+      const res = await fetch('/api/crm/wine', { headers: authHeader() });
       const data = await res.json();
       setContacts(data.contacts ?? []);
     } finally {
@@ -251,7 +261,7 @@ export default function CrmWine() {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [accessToken]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase();
@@ -276,14 +286,14 @@ export default function CrmWine() {
     if (editingId === 'new') {
       const res = await fetch('/api/crm/wine', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeader() },
         body: JSON.stringify(form),
       });
       if (res.ok) { await load(); setEditingId(null); }
     } else if (editingId) {
       const res = await fetch(`/api/crm/wine/${editingId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeader() },
         body: JSON.stringify(form),
       });
       if (res.ok) { await load(); setEditingId(null); }
@@ -292,7 +302,7 @@ export default function CrmWine() {
 
   const handleDelete = async (id: string) => {
     setDeleting(id);
-    await fetch(`/api/crm/wine/${id}`, { method: 'DELETE' });
+    await fetch(`/api/crm/wine/${id}`, { method: 'DELETE', headers: authHeader() });
     setDeleting(null);
     await load();
   };

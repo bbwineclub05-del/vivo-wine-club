@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { requireAdmin } from '@/lib/auth-guard';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -96,6 +97,9 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const auth = await requireAdmin(request);
+  if (!auth.ok) return auth.response;
+
   try {
     const { id } = await params;
 

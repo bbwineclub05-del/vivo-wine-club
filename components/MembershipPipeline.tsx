@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, RefreshCw, ChevronDown, Check, X, Clock } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 /* ── Types ── */
 type AppStatus = 'pending' | 'approved' | 'rejected';
@@ -221,12 +222,21 @@ export default function MembershipPipeline() {
   const [error, setError]       = useState('');
   const [filter, setFilter]     = useState<Filter>('all');
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setAccessToken(session?.access_token ?? null);
+    });
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const res  = await fetch('/api/applications');
+      const res  = await fetch('/api/applications', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? 'Failed to load applications');
       setApps(json.applications ?? []);
@@ -236,7 +246,7 @@ export default function MembershipPipeline() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [accessToken]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -244,7 +254,7 @@ export default function MembershipPipeline() {
     try {
       const res = await fetch(`/api/applications/${id}`, {
         method:  'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
         body:    JSON.stringify({ status }),
       });
       const json = await res.json();

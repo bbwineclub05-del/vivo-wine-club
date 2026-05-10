@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Newspaper, Plus, X, ChevronDown, Trash2, Eye, EyeOff, GripVertical, RefreshCw, ImagePlus } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 import type { NewsItem } from './LinkedInSection';
 
 /* ── Empty form ── */
@@ -43,7 +44,7 @@ function Field({
 }
 
 /* ── Image uploader sub-component ── */
-function ImageUploader({ onUploaded }: { onUploaded: (urls: string[]) => void }) {
+function ImageUploader({ onUploaded, accessToken }: { onUploaded: (urls: string[]) => void; accessToken: string | null }) {
   const fileRef    = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [progress,  setProgress]  = useState('');
@@ -58,7 +59,7 @@ function ImageUploader({ onUploaded }: { onUploaded: (urls: string[]) => void })
       const fd = new FormData();
       fd.append('file', file);
       try {
-        const res  = await fetch('/api/news/upload', { method: 'POST', body: fd });
+        const res  = await fetch('/api/news/upload', { method: 'POST', body: fd, headers: { Authorization: `Bearer ${accessToken}` } });
         const json = await res.json();
         if (res.ok && json.url) urls.push(json.url);
         else alert(`Upload failed for ${file.name}: ${json.error ?? 'Unknown error'}`);
@@ -114,11 +115,13 @@ function NewsForm({
   onSave,
   onCancel,
   saving,
+  accessToken,
 }: {
   initial: FormState;
   onSave: (f: FormState) => Promise<void>;
   onCancel: () => void;
   saving: boolean;
+  accessToken: string | null;
 }) {
   const [form, setForm] = useState<FormState>(initial);
 
@@ -206,7 +209,7 @@ function NewsForm({
         hint="One path/URL per line. First image shown first; multiple = slider."
       >
         <div className="flex flex-col gap-2">
-          <ImageUploader onUploaded={handleUploaded} />
+          <ImageUploader onUploaded={handleUploaded} accessToken={accessToken} />
           <textarea
             rows={3}
             value={form.images}
@@ -306,10 +309,12 @@ function NewsRow({
   item,
   onUpdate,
   onDelete,
+  accessToken,
 }: {
   item: NewsItem;
   onUpdate: (id: string, patch: Partial<NewsItem>) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  accessToken: string | null;
 }) {
   const [expanded,  setExpanded]  = useState(false);
   const [saving,    setSaving]    = useState(false);
@@ -428,6 +433,7 @@ function NewsRow({
               onSave={handleSave}
               onCancel={() => setExpanded(false)}
               saving={saving}
+              accessToken={accessToken}
             />
           </motion.div>
         )}
@@ -438,12 +444,19 @@ function NewsRow({
 
 /* ── Main component ── */
 export default function NewsManager() {
-  const [items,     setItems]     = useState<NewsItem[]>([]);
-  const [loading,   setLoading]   = useState(true);
-  const [showForm,  setShowForm]  = useState(false);
-  const [creating,  setCreating]  = useState(false);
-  const [error,     setError]     = useState('');
+  const [items,       setItems]       = useState<NewsItem[]>([]);
+  const [loading,     setLoading]     = useState(true);
+  const [showForm,    setShowForm]    = useState(false);
+  const [creating,    setCreating]    = useState(false);
+  const [error,       setError]       = useState('');
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setAccessToken(session?.access_token ?? null);
+    });
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -468,7 +481,7 @@ export default function NewsManager() {
     try {
       const res = await fetch('/api/news', {
         method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
         body:    JSON.stringify({
           ...form,
           region: form.region || null,
@@ -492,7 +505,7 @@ export default function NewsManager() {
     try {
       const res = await fetch(`/api/news/${id}`, {
         method:  'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
         body:    JSON.stringify(patch),
       });
       const json = await res.json();
@@ -508,7 +521,7 @@ export default function NewsManager() {
 
   async function handleDelete(id: string) {
     try {
-      const res = await fetch(`/api/news/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/news/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${accessToken}` } });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? 'Failed to delete');
       setItems((prev) => prev.filter((i) => i.id !== id));
@@ -571,6 +584,7 @@ export default function NewsManager() {
               onSave={handleCreate}
               onCancel={() => setShowForm(false)}
               saving={creating}
+              accessToken={accessToken}
             />
           </motion.div>
         )}
@@ -608,6 +622,7 @@ export default function NewsManager() {
                   item={item}
                   onUpdate={handleUpdate}
                   onDelete={handleDelete}
+                  accessToken={accessToken}
                 />
               ))}
             </AnimatePresence>

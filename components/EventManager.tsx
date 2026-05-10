@@ -799,7 +799,7 @@ export default function EventManager() {
 
       const res  = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
         body: JSON.stringify(data),
       });
       const json = await res.json();
@@ -818,7 +818,7 @@ export default function EventManager() {
   /* ── Delete handler ── */
   async function handleDelete(slug: string) {
     try {
-      await fetch(`/api/events/${slug}`, { method: 'DELETE' });
+      await fetch(`/api/events/${slug}`, { method: 'DELETE', headers: { Authorization: `Bearer ${accessToken}` } });
       load();
     } catch (err) {
       console.error('[EventManager delete]', err);
@@ -830,7 +830,7 @@ export default function EventManager() {
     try {
       await fetch(`/api/events/${event.slug}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
         body: JSON.stringify({ published: !event.published }),
       });
       load();

@@ -1,24 +1,14 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { isAdminEmail } from '@/lib/admins';
+import { requireAdminOrStaff } from '@/lib/auth-guard';
 
 /**
  * GET /api/crm/customers
- * Returns all customers ordered by last_purchase_at desc. Admin only.
+ * Returns all customers ordered by last_purchase_at desc. Admin or staff only.
  */
 export async function GET(request: Request) {
-  const authHeader  = request.headers.get('Authorization');
-  const accessToken = authHeader?.replace('Bearer ', '').trim();
-  if (!accessToken) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const { data: { user }, error: authError } =
-    await getSupabaseAdmin().auth.getUser(accessToken);
-
-  if (authError || !user || !isAdminEmail(user.email ?? '')) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
+  const auth = await requireAdminOrStaff(request);
+  if (!auth.ok) return auth.response;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: customers, error } = await (getSupabaseAdmin() as any)

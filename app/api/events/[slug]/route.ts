@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { requireAdminOrStaff } from '@/lib/auth-guard';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2026-04-22.dahlia',
@@ -28,11 +29,14 @@ export async function GET(
   return NextResponse.json({ error: 'Event not found' }, { status: 404 });
 }
 
-/* ── PATCH: admin — update event ── */
+/* ── PATCH: admin or staff — update event ── */
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ slug: string }> },
 ) {
+  const auth = await requireAdminOrStaff(request);
+  if (!auth.ok) return auth.response;
+
   const { slug } = await params;
 
   try {
@@ -92,11 +96,14 @@ export async function PATCH(
   }
 }
 
-/* ── DELETE: admin — remove event ── */
+/* ── DELETE: admin or staff — remove event ── */
 export async function DELETE(
-  _req: Request,
+  request: Request,
   { params }: { params: Promise<{ slug: string }> },
 ) {
+  const auth = await requireAdminOrStaff(request);
+  if (!auth.ok) return auth.response;
+
   const { slug } = await params;
 
   try {

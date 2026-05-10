@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Images, Upload, Trash2, ChevronDown, X, RefreshCw, Plus } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 import { WINERIES } from '@/lib/wineries';
 
 /* ── Types ── */
@@ -96,6 +97,14 @@ export default function MediaManager() {
   const [progress,  setProgress]  = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setAccessToken(session?.access_token ?? null);
+    });
+  }, []);
+
   const folder = folderFromDest(destType, winerySlug);
 
   /* ── Load gallery ── */
@@ -150,7 +159,7 @@ export default function MediaManager() {
       fd.append('file',   previews[i].file);
       fd.append('folder', folder);
       try {
-        const res  = await fetch('/api/media/upload', { method: 'POST', body: fd });
+        const res  = await fetch('/api/media/upload', { method: 'POST', body: fd, headers: { Authorization: `Bearer ${accessToken}` } });
         const json = await res.json();
         if (res.ok && json.url) {
           uploaded.push({ path: json.path, url: json.url, name: json.path.split('/').pop() ?? '' });
@@ -177,7 +186,7 @@ export default function MediaManager() {
   /* ── Delete from gallery ── */
   async function handleDelete(path: string) {
     try {
-      const res = await fetch(`/api/media?path=${encodeURIComponent(path)}`, { method: 'DELETE' });
+      const res = await fetch(`/api/media?path=${encodeURIComponent(path)}`, { method: 'DELETE', headers: { Authorization: `Bearer ${accessToken}` } });
       if (!res.ok) throw new Error((await res.json()).error ?? 'Delete failed');
       setGallery((g) => g.filter((img) => img.path !== path));
     } catch (err) {

@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server';
 import sharp from 'sharp';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { requireAdminOrStaff } from '@/lib/auth-guard';
 
 const BUCKET = 'media';
 const MAX_PX  = 1600; // max on either dimension, maintain aspect ratio
 
 export async function POST(request: Request) {
+  const auth = await requireAdminOrStaff(request);
+  if (!auth.ok) return auth.response;
+
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const supabase = getSupabaseAdmin() as any;

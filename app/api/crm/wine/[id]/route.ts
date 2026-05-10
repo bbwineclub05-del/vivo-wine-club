@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { requireAdminOrStaff } from '@/lib/auth-guard';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = () => getSupabaseAdmin() as any;
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await requireAdminOrStaff(request);
+  if (!auth.ok) return auth.response;
   try {
     const { id } = await params;
     let body: Record<string, unknown>;
@@ -29,7 +32,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 }
 
-export async function DELETE(_: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await requireAdminOrStaff(request);
+  if (!auth.ok) return auth.response;
   try {
     const { id } = await params;
     const { error } = await db().from('contacts_wine').delete().eq('id', id);

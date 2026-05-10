@@ -8,7 +8,7 @@ const VALID_STATUSES = ['todo', 'in_progress', 'done'];
 
 const ADMINS: Record<string, string> = {
   'cristianomichelotti@gmail.com': 'Cris',
-  'filippo.lombardi513@gmail.com': 'Pippo',
+  'filippo.lombardi890@gmail.com': 'Pippo',
   'giacomogallo1310@gmail.com':    'Jack',
   'riccardo.consalvo@icloud.com':  'Ricky',
 };

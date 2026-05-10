@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { requireAdminOrStaff } from '@/lib/auth-guard';
 
 const BUCKET = 'media';
 
@@ -37,6 +38,9 @@ export async function GET(request: Request) {
 
 /* ── DELETE /api/media?path=wine-party/abc.webp ── */
 export async function DELETE(request: Request) {
+  const auth = await requireAdminOrStaff(request);
+  if (!auth.ok) return auth.response;
+
   const { searchParams } = new URL(request.url);
   const path = searchParams.get('path');
   if (!path) return NextResponse.json({ error: 'path required' }, { status: 400 });

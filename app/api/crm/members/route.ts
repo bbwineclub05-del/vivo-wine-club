@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { requireAdminOrStaff } from '@/lib/auth-guard';
 
-export async function GET() {
+export async function GET(request: Request) {
+  const auth = await requireAdminOrStaff(request);
+  if (!auth.ok) return auth.response;
   try {
     const supabase = getSupabaseAdmin();
 

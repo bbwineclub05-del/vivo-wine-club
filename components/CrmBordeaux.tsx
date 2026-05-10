@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { Search, Mail, Plus, Trash2, Edit2, Check, X, Paperclip, Calendar } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 /* ── Types ── */
 interface BordeauxContact {
@@ -276,11 +277,20 @@ export default function CrmBordeaux() {
   const [emailTarget, setEmailTarget] = useState<{ contact: BordeauxContact; mode: EmailMode } | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleting, setDeleting]   = useState<string | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setAccessToken(session?.access_token ?? null);
+    });
+  }, []);
+
+  const authHeader = () => ({ Authorization: `Bearer ${accessToken}` });
 
   const load = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/crm/bordeaux');
+      const res = await fetch('/api/crm/bordeaux', { headers: authHeader() });
       const data = await res.json();
       setContacts(data.contacts ?? []);
     } finally {
@@ -288,7 +298,7 @@ export default function CrmBordeaux() {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [accessToken]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase();
@@ -312,14 +322,14 @@ export default function CrmBordeaux() {
     if (editingId === 'new') {
       const res = await fetch('/api/crm/bordeaux', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeader() },
         body: JSON.stringify(form),
       });
       if (res.ok) { await load(); setEditingId(null); }
     } else if (editingId) {
       const res = await fetch(`/api/crm/bordeaux/${editingId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeader() },
         body: JSON.stringify(form),
       });
       if (res.ok) { await load(); setEditingId(null); }
@@ -328,7 +338,7 @@ export default function CrmBordeaux() {
 
   const handleDelete = async (id: string) => {
     setDeleting(id);
-    await fetch(`/api/crm/bordeaux/${id}`, { method: 'DELETE' });
+    await fetch(`/api/crm/bordeaux/${id}`, { method: 'DELETE', headers: authHeader() });
     setDeleting(null);
     await load();
   };

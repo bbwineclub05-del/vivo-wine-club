@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { dbEventToEventData, sectionFromType, type DbEvent, type EventSection } from '@/lib/events';
+import { requireAdminOrStaff } from '@/lib/auth-guard';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2026-04-22.dahlia',
@@ -53,8 +54,11 @@ export async function GET(request: Request) {
   return NextResponse.json({ events: merged });
 }
 
-/* ── POST: admin — create new event ── */
+/* ── POST: admin or staff — create new event ── */
 export async function POST(request: Request) {
+  const auth = await requireAdminOrStaff(request);
+  if (!auth.ok) return auth.response;
+
   try {
     let body: Record<string, unknown>;
     try { body = await request.json(); }

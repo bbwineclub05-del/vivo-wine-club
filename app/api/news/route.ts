@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { requireAdminOrStaff } from '@/lib/auth-guard';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = () => getSupabaseAdmin() as any;
@@ -24,6 +25,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const auth = await requireAdminOrStaff(request);
+  if (!auth.ok) return auth.response;
+
   try {
     let body: Record<string, unknown>;
     try { body = await request.json(); } catch {

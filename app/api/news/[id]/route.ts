@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { requireAdminOrStaff } from '@/lib/auth-guard';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = () => getSupabaseAdmin() as any;
@@ -8,6 +9,8 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const auth = await requireAdminOrStaff(request);
+  if (!auth.ok) return auth.response;
   try {
     const { id } = await params;
     let body: Record<string, unknown>;
@@ -33,9 +36,11 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const auth = await requireAdminOrStaff(request);
+  if (!auth.ok) return auth.response;
   try {
     const { id } = await params;
     const { error } = await db().from('news').delete().eq('id', id);
