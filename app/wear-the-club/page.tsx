@@ -20,6 +20,12 @@ interface ProductVariant {
   sort_order: number;
 }
 
+interface StockEntry {
+  variant_id: string | null;
+  size:       string | null;
+  quantity:   number;
+}
+
 interface Product {
   id:               string;
   title:            string;
@@ -28,6 +34,7 @@ interface Product {
   sizes:            string[];
   images:           string[];
   product_variants: ProductVariant[];
+  product_stock:    StockEntry[];
 }
 
 // ── Product card ──────────────────────────────────────────────────────────────
@@ -73,21 +80,40 @@ const ProductCard = memo(function ProductCard({ product, index, reducedMotion }:
     if (hasVariants && !selectedVariant) { setColorErr(true); return; }
     setSizeErr(false); setColorErr(false);
 
+    const vid = selectedVariant?.id ?? null;
+    const sz  = hasSizes ? size : null;
+    if (isSoldOut(vid, sz)) return; // guard against race condition
+
     const parts = [product.title];
     if (hasSizes    && size)            parts.push(size);
     if (hasVariants && selectedVariant) parts.push(selectedVariant.color_name);
     const cartName = parts.join(' — ');
 
     addItem({
-      id:    product.id,
-      name:  cartName,
-      price: product.price,
-      icon:  '',
-      image: currentImage,
+      id:        product.id,
+      name:      cartName,
+      price:     product.price,
+      icon:      '',
+      image:     currentImage,
+      variantId: vid,
+      size:      sz,
     });
     setAdded(true);
     setTimeout(() => setAdded(false), 1800);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [addItem, product, size, selectedVariant, hasSizes, hasVariants, currentImage]);
+
+  // Stock helpers
+  function getStock(variantId: string | null, sz: string | null): number {
+    const entry = product.product_stock?.find(
+      s => s.variant_id === variantId && s.size === sz,
+    );
+    // If no entry exists, treat as unlimited (undefined stock = in stock)
+    return entry === undefined ? Infinity : entry.quantity;
+  }
+  function isSoldOut(variantId: string | null, sz: string | null) {
+    return getStock(variantId, sz) === 0;
+  }
 
   // Light colors need a dark border to be visible
   const isLight = (hex: string) => {
@@ -171,6 +197,7 @@ const ProductCard = memo(function ProductCard({ product, index, reducedMotion }:
               added ? 'bg-[#2d6e2d]' : 'bg-[#731515] hover:bg-[#aa4848]'
             }`}
             aria-label={`Add ${product.title} to cart`}
+            title={(!hasVariants && !hasSizes && isSoldOut(null, null)) ? 'Esaurito' : undefined}
           >
             <AnimatePresence mode="wait" initial={false}>
               {added ? (
@@ -229,22 +256,29 @@ const ProductCard = memo(function ProductCard({ product, index, reducedMotion }:
         {/* Size selector */}
         {hasSizes && (
           <div className="flex items-center gap-1.5 flex-wrap mb-3">
-            {product.sizes.map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => { setSize(s); setSizeErr(false); }}
-                className={`w-10 h-10 text-[10px] tracking-widest border transition-colors duration-150 ${
-                  size === s
-                    ? 'border-[#731515] bg-[#731515] text-white'
-                    : sizeErr
-                    ? 'border-red-300 text-[#7a4a4a] hover:border-[#731515]'
-                    : 'border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515] hover:text-[#731515]'
-                }`}
-              >
-                {s}
-              </button>
-            ))}
+            {product.sizes.map((s) => {
+              const soldOut = isSoldOut(selectedVariant?.id ?? null, s);
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  disabled={soldOut}
+                  onClick={() => { if (!soldOut) { setSize(s); setSizeErr(false); } }}
+                  title={soldOut ? 'Esaurito' : undefined}
+                  className={`relative w-10 h-10 text-[10px] tracking-widest border transition-colors duration-150 ${
+                    soldOut
+                      ? 'border-[#e8d5d5] text-[#c0a0a0]/50 cursor-not-allowed line-through'
+                      : size === s
+                      ? 'border-[#731515] bg-[#731515] text-white'
+                      : sizeErr
+                      ? 'border-red-300 text-[#7a4a4a] hover:border-[#731515]'
+                      : 'border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515] hover:text-[#731515]'
+                  }`}
+                >
+                  {s}
+                </button>
+              );
+            })}
           </div>
         )}
 
@@ -252,16 +286,23 @@ const ProductCard = memo(function ProductCard({ product, index, reducedMotion }:
         {hasVariants && (
           <div className="flex flex-wrap items-center gap-2">
             {product.product_variants.map((v) => {
-              const active = selectedVariant?.id === v.id;
-              const light  = isLight(v.color_hex);
+              const active   = selectedVariant?.id === v.id;
+              const light    = isLight(v.color_hex);
+              // A variant is sold out only when ALL sizes (or the variant itself) are sold out
+              const soldOut  = hasSizes
+                ? product.sizes.every(s => isSoldOut(v.id, s))
+                : isSoldOut(v.id, null);
               return (
                 <button
                   key={v.id}
                   type="button"
-                  title={v.color_name}
-                  onClick={() => selectVariant(v)}
-                  className={`w-7 h-7 rounded-full border-2 transition-all duration-150 ${
-                    active
+                  title={soldOut ? `${v.color_name} — Esaurito` : v.color_name}
+                  disabled={soldOut}
+                  onClick={() => { if (!soldOut) selectVariant(v); }}
+                  className={`relative w-7 h-7 rounded-full border-2 transition-all duration-150 ${
+                    soldOut
+                      ? 'opacity-40 cursor-not-allowed'
+                      : active
                       ? 'border-[#731515] scale-110 shadow-md'
                       : colorErr
                       ? 'border-red-300 hover:border-[#731515]'
@@ -271,7 +312,13 @@ const ProductCard = memo(function ProductCard({ product, index, reducedMotion }:
                   }`}
                   style={{ background: v.color_hex }}
                   aria-label={v.color_name}
-                />
+                >
+                  {soldOut && (
+                    <span className="absolute inset-0 flex items-center justify-center">
+                      <span className="block w-full h-px bg-[#731515]/60 rotate-45" />
+                    </span>
+                  )}
+                </button>
               );
             })}
             {selectedVariant && (

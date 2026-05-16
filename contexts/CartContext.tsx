@@ -4,11 +4,13 @@ import { createContext, useContext, useState, ReactNode } from 'react';
 
 export interface CartItem {
   id: string;
-  name: string;   // includes size when applicable, e.g. "Classic Tee — M"
+  name: string;      // includes size/color when applicable, e.g. "Classic Tee — M — Nero"
   price: number;
   quantity: number;
   icon: string;
-  image: string;  // path under /public, e.g. "/merch/maglietta.png"
+  image: string;     // path under /public, e.g. "/merch/maglietta.png"
+  variantId?: string | null;  // product_variants.id if a color variant was selected
+  size?: string | null;       // selected size if applicable
 }
 
 interface CartContextType {

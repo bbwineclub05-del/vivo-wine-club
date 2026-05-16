@@ -12,6 +12,8 @@ interface CartItem {
   price: number;   // euros, integer (e.g. 35)
   quantity: number;
   icon: string;
+  variantId?: string | null;
+  size?: string | null;
 }
 
 export async function POST(request: Request) {
@@ -87,7 +89,13 @@ export async function POST(request: Request) {
         },
       ],
       metadata: {
-        discount_code: validatedCode ?? '',
+        discount_code:     validatedCode ?? '',
+        stock_adjustments: JSON.stringify(items.map((item) => ({
+          product_id: item.id,
+          variant_id: item.variantId ?? null,
+          size:       item.size       ?? null,
+          qty:        item.quantity,
+        }))),
       },
       locale: 'auto',
     });

@@ -98,8 +98,8 @@ export async function GET(request: Request) {
       const customerName  = sessionWithItems.customer_details?.name  ?? null;
       const customerEmail = sessionWithItems.customer_details?.email ?? null;
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (getSupabaseAdmin() as any).from('merch_orders').upsert({
+      const db = getSupabaseAdmin() as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+      await db.from('merch_orders').upsert({
         stripe_session_id: sessionId,
         customer_name:     customerName,
         customer_email:    customerEmail,
@@ -108,6 +108,22 @@ export async function GET(request: Request) {
         status:            'da_evadere',
         created_at:        new Date(sessionWithItems.created * 1000).toISOString(),
       }, { onConflict: 'stripe_session_id', ignoreDuplicates: true });
+
+      // Decrement stock for each purchased item (idempotent via GREATEST(0,…))
+      try {
+        const stockAdjs: { product_id: string; variant_id: string | null; size: string | null; qty: number }[] =
+          JSON.parse(meta.stock_adjustments || '[]');
+        for (const adj of stockAdjs) {
+          await db.rpc('decrement_product_stock', {
+            p_product_id: adj.product_id,
+            p_variant_id: adj.variant_id,
+            p_size:       adj.size,
+            p_qty:        adj.qty,
+          });
+        }
+      } catch (stockErr) {
+        console.error('[confirm] stock decrement error (non-fatal):', stockErr);
+      }
     } catch (orderErr) {
       console.error('[confirm] merch_orders upsert error (non-fatal):', orderErr);
     }

@@ -346,6 +346,14 @@ function ProductModal({
           {/* Images */}
           <ImageUploader images={images} onChange={setImages} token={token} />
 
+          {/* Stock (only when editing a product that has no color variants) */}
+          {editing && product!.colors.length === 0 && (
+            <div>
+              <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-2">DISPONIBILITÀ</label>
+              <StockSection productId={product!.id} sizes={sizes} token={token} />
+            </div>
+          )}
+
           {/* Visible */}
           <div className="flex items-center justify-between py-2">
             <div>
@@ -381,6 +389,97 @@ function ProductModal({
           </div>
         </form>
       </motion.div>
+    </div>
+  );
+}
+
+// ── Stock section (reusable: for variant rows and no-variant products) ─────────
+
+function StockSection({
+  productId,
+  sizes,
+  token,
+  variantId = null,
+}: {
+  productId: string;
+  sizes:     string[];
+  token:     string;
+  variantId?: string | null;
+}) {
+  const [stock,   setStock]   = useState<Record<string, number | ''>>({});
+  const [saving,  setSaving]  = useState<Record<string, boolean>>({});
+  const [loaded,  setLoaded]  = useState(false);
+
+  useEffect(() => {
+    fetch(`/api/merch/stock?product_id=${productId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.json())
+      .then(d => {
+        const map: Record<string, number | ''> = {};
+        for (const row of (d.stock ?? [])) {
+          const key = `${row.variant_id ?? ''}|${row.size ?? ''}`;
+          map[key] = row.quantity;
+        }
+        setStock(map);
+      })
+      .finally(() => setLoaded(true));
+  }, [productId, token]);
+
+  async function saveStock(variantId: string | null, size: string | null, qty: number | '') {
+    if (qty === '') return;
+    const key = `${variantId ?? ''}|${size ?? ''}`;
+    setSaving(prev => ({ ...prev, [key]: true }));
+    try {
+      await fetch('/api/merch/stock', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body:    JSON.stringify({ product_id: productId, variant_id: variantId, size, quantity: qty as number }),
+      });
+      setStock(prev => ({ ...prev, [key]: qty }));
+    } finally {
+      setSaving(prev => ({ ...prev, [key]: false }));
+    }
+  }
+
+  if (!loaded) return <div className="flex justify-center py-4"><Loader2 size={16} className="animate-spin text-[#731515]/40" /></div>;
+
+  const keys = sizes.length > 0 ? sizes.map(s => ({ label: s, vId: variantId, size: s })) : [{ label: 'Qtà', vId: variantId, size: null as null }];
+
+  return (
+    <div className="space-y-2">
+      {keys.map(({ label, vId, size }) => {
+        const key = `${vId ?? ''}|${size ?? ''}`;
+        const qty = stock[key] ?? '';
+        const busy = saving[key] ?? false;
+        return (
+          <div key={key} className="flex items-center gap-3">
+            {sizes.length > 0 && (
+              <span className="text-[11px] text-[#7a4a4a] w-8 shrink-0 text-center"
+                style={{ fontFamily: 'var(--font-nunito)' }}>{label}</span>
+            )}
+            <input
+              type="number" min="0" step="1"
+              value={qty}
+              placeholder="—"
+              onChange={e => {
+                const v = parseInt(e.target.value, 10);
+                if (!isNaN(v) && v >= 0) setStock(prev => ({ ...prev, [key]: v }));
+              }}
+              className={`${inp} w-24 text-center`}
+              style={{ fontFamily: 'var(--font-nunito)' }}
+            />
+            <button
+              type="button"
+              disabled={busy || qty === ''}
+              onClick={() => saveStock(vId, size, qty)}
+              className="text-[10px] tracking-[0.2em] px-3 py-2 bg-[#731515] text-white rounded-lg hover:bg-[#9b2323] disabled:opacity-40 transition-colors flex items-center gap-1"
+            >
+              {busy ? <Loader2 size={11} className="animate-spin" /> : 'SALVA'}
+            </button>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -464,6 +563,7 @@ function VariantManagerModal({
               key={v.id}
               variant={v}
               productId={product.id}
+              sizes={product.sizes}
               token={token}
               expanded={expandedId === v.id}
               onExpand={() => setExpandedId(id => id === v.id ? null : v.id)}
@@ -477,6 +577,7 @@ function VariantManagerModal({
             <VariantRow
               variant={null}
               productId={product.id}
+              sizes={product.sizes}
               token={token}
               expanded
               onExpand={() => setExpandedId(null)}
@@ -506,6 +607,7 @@ function VariantManagerModal({
 function VariantRow({
   variant,
   productId,
+  sizes,
   token,
   expanded,
   onExpand,
@@ -514,6 +616,7 @@ function VariantRow({
 }: {
   variant:   ProductVariant | null;
   productId: string;
+  sizes:     string[];
   token:     string;
   expanded:  boolean;
   onExpand:  () => void;
@@ -641,6 +744,14 @@ function VariantRow({
 
               {/* Images for this variant */}
               <ImageUploader images={images} onChange={setImages} token={token} />
+
+              {/* Stock per size (or single qty if no sizes) — only for saved variants */}
+              {!isNew && (
+                <div>
+                  <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-2">DISPONIBILITÀ</label>
+                  <StockSection productId={productId} sizes={sizes} token={token} variantId={variant!.id} />
+                </div>
+              )}
 
               {error && (
                 <p className="text-[12px] text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>{error}</p>

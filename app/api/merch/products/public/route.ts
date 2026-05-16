@@ -11,7 +11,8 @@ export async function GET() {
     .from('products')
     .select(`
       id, title, description, price, sizes, images, sort_order,
-      product_variants ( id, color_name, color_hex, images, sort_order )
+      product_variants ( id, color_name, color_hex, images, sort_order ),
+      product_stock    ( variant_id, size, quantity )
     `)
     .eq('visible', true)
     .order('sort_order', { ascending: true })
