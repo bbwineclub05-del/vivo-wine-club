@@ -652,10 +652,10 @@ export default function MembersPage() {
   };
 
   return (
-    <div className="flex h-screen bg-[#f6f0f0] overflow-hidden">
+    <div className="flex bg-[#f6f0f0] overflow-hidden" style={{ height: '100dvh' }}>
 
       {/* ── Desktop sidebar ── */}
-      <aside className="hidden lg:flex w-[230px] shrink-0 bg-[#0e0202] flex-col h-screen border-r border-white/[0.04]">
+      <aside className="hidden lg:flex w-[230px] shrink-0 bg-[#0e0202] flex-col border-r border-white/[0.04]" style={{ height: '100dvh' }}>
         <SidebarContent {...sidebarProps} />
       </aside>
 
@@ -693,7 +693,7 @@ export default function MembersPage() {
       </AnimatePresence>
 
       {/* ── Main content ── */}
-      <div className="flex-1 flex flex-col min-w-0 h-screen">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
 
         {/* Mobile top bar */}
         <div className="lg:hidden flex items-center justify-between px-4 py-3 bg-[#0e0202] border-b border-white/[0.06] shrink-0">

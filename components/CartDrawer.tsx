@@ -83,7 +83,7 @@ export default function CartDrawer() {
             animate={{ x: '0%' }}
             exit={{ x: reducedMotion ? '0%' : '100%' }}
             transition={reducedMotion ? { duration: 0 } : { type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed right-0 z-[70] bg-white border-l border-[#e8d5d5] flex flex-col" style={{ top: 64, height: 'calc(100vh - 64px)', width: 'min(100vw, 448px)' }}
+            className="fixed right-0 z-[70] bg-white border-l border-[#e8d5d5] flex flex-col" style={{ top: 64, height: 'calc(100dvh - 64px)', width: 'min(100vw, 448px)' }}
           >
             {/* Header */}
             <div className="flex items-center justify-between px-8 py-6 border-b border-[#e8d5d5]">

@@ -595,12 +595,62 @@ function EventRow({
   const [expanded, setExpanded] = useState(false);
   const [delConfirm, setDelConfirm] = useState(false);
 
+  // Shared action buttons — rendered once on desktop (inline), once on mobile (bottom bar)
+  const actionButtons = (compact = false) => {
+    const sz  = compact ? 15 : 14;
+    const cls = compact ? 'p-2.5' : 'p-2';
+    return (
+      <>
+        <button onClick={onScan} title="Event Scanner"
+          className={`${cls} rounded-lg text-[#7a4a4a]/60 hover:text-[#731515] hover:bg-[#fdf6f6] transition-colors`}>
+          <ScanLine size={sz} />
+        </button>
+        <button onClick={onInvite} title="Invita clienti CRM"
+          className={`${cls} rounded-lg text-[#7a4a4a]/60 hover:text-[#731515] hover:bg-[#fdf6f6] transition-colors`}>
+          <Send size={sz} />
+        </button>
+        <button onClick={onTogglePublished} title={event.published ? 'Nascondi' : 'Pubblica'}
+          className={`${cls} rounded-lg transition-colors ${
+            event.published ? 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100'
+                            : 'text-slate-400 bg-slate-50 hover:bg-slate-100'}`}>
+          {event.published ? <Eye size={sz} /> : <EyeOff size={sz} />}
+        </button>
+        <button onClick={onEdit}
+          className={`${cls} rounded-lg text-[#7a4a4a] hover:text-[#731515] hover:bg-[#fdf6f6] transition-colors`}>
+          <Pencil size={sz} />
+        </button>
+        {delConfirm ? (
+          <div className="flex items-center gap-1">
+            <button onClick={onDelete}
+              className="px-2.5 py-1.5 rounded bg-red-600 text-white text-[9px] tracking-wide hover:bg-red-700 transition-colors">
+              ELIMINA
+            </button>
+            <button onClick={() => setDelConfirm(false)}
+              className="px-2.5 py-1.5 rounded border border-[#eddada] text-[9px] text-[#7a4a4a] hover:bg-[#fdf6f6] transition-colors">
+              NO
+            </button>
+          </div>
+        ) : (
+          <button onClick={() => setDelConfirm(true)}
+            className={`${cls} rounded-lg text-[#7a4a4a]/50 hover:text-red-600 hover:bg-red-50 transition-colors`}>
+            <Trash2 size={sz} />
+          </button>
+        )}
+        <button onClick={() => setExpanded(x => !x)}
+          className={`${cls} rounded-lg text-[#7a4a4a]/50 hover:text-[#1a0505] hover:bg-[#fdf6f6] transition-colors`}>
+          {expanded ? <ChevronUp size={sz} /> : <ChevronDown size={sz} />}
+        </button>
+      </>
+    );
+  };
+
   return (
     <div className="bg-white border border-[#eddada] rounded-xl shadow-[0_1px_4px_rgba(107,26,26,0.05)] overflow-hidden">
-      <div className="flex items-center gap-4 p-4">
+      {/* Main row — date + info + desktop actions */}
+      <div className="flex items-center gap-3 p-4">
 
         {/* Date badge */}
-        <div className="w-12 shrink-0 text-center">
+        <div className="w-11 shrink-0 text-center">
           <div className="text-[8px] tracking-[0.3em] text-[#731515]">
             {event.date ? event.date.split('-')[1]
               ? ['','JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'][
@@ -647,80 +697,15 @@ function EventRow({
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-1.5 shrink-0">
-          {/* Scanner */}
-          <button
-            onClick={onScan}
-            title="Event Scanner"
-            className="p-2 rounded-lg text-[#7a4a4a]/60 hover:text-[#731515] hover:bg-[#fdf6f6] transition-colors"
-          >
-            <ScanLine size={14} />
-          </button>
-
-          {/* Invite CRM customers */}
-          <button
-            onClick={onInvite}
-            title="Invita clienti CRM"
-            className="p-2 rounded-lg text-[#7a4a4a]/60 hover:text-[#731515] hover:bg-[#fdf6f6] transition-colors"
-          >
-            <Send size={14} />
-          </button>
-
-          {/* Published toggle */}
-          <button
-            onClick={onTogglePublished}
-            title={event.published ? 'Nascondi' : 'Pubblica'}
-            className={`p-2 rounded-lg transition-colors ${
-              event.published
-                ? 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100'
-                : 'text-slate-400 bg-slate-50 hover:bg-slate-100'
-            }`}
-          >
-            {event.published ? <Eye size={14} /> : <EyeOff size={14} />}
-          </button>
-
-          {/* Edit */}
-          <button
-            onClick={onEdit}
-            className="p-2 rounded-lg text-[#7a4a4a] hover:text-[#731515] hover:bg-[#fdf6f6] transition-colors"
-          >
-            <Pencil size={14} />
-          </button>
-
-          {/* Delete */}
-          {delConfirm ? (
-            <div className="flex items-center gap-1">
-              <button
-                onClick={onDelete}
-                className="px-2 py-1 rounded bg-red-600 text-white text-[9px] tracking-wide hover:bg-red-700 transition-colors"
-              >
-                ELIMINA
-              </button>
-              <button
-                onClick={() => setDelConfirm(false)}
-                className="px-2 py-1 rounded border border-[#eddada] text-[9px] text-[#7a4a4a] hover:bg-[#fdf6f6] transition-colors"
-              >
-                NO
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => setDelConfirm(true)}
-              className="p-2 rounded-lg text-[#7a4a4a]/50 hover:text-red-600 hover:bg-red-50 transition-colors"
-            >
-              <Trash2 size={14} />
-            </button>
-          )}
-
-          {/* Expand */}
-          <button
-            onClick={() => setExpanded(x => !x)}
-            className="p-2 rounded-lg text-[#7a4a4a]/50 hover:text-[#1a0505] hover:bg-[#fdf6f6] transition-colors"
-          >
-            {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-          </button>
+        {/* Desktop actions — hidden on small screens */}
+        <div className="hidden sm:flex items-center gap-1.5 shrink-0">
+          {actionButtons(false)}
         </div>
+      </div>
+
+      {/* Mobile action bar — visible only on small screens */}
+      <div className="flex sm:hidden items-center justify-around border-t border-[#f0e4e4] px-2 py-1">
+        {actionButtons(true)}
       </div>
 
       {/* Expanded details */}

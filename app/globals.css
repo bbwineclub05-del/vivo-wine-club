@@ -143,6 +143,19 @@ body::before {
   pointer-events: none;
 }
 
+/* ── Dynamic viewport height — Safari iOS address bar fix ──────── */
+/* Use .h-dvh-safe on any fixed-height full-screen container.       */
+/* 100dvh adjusts as the Safari address bar appears/disappears.     */
+/* Falls back to 100vh on browsers that don't support dvh (<= Safari 15.3). */
+.h-dvh-safe {
+  height: 100vh;       /* fallback */
+  height: 100dvh;      /* modern — dynamic, adjusts with iOS chrome */
+}
+.min-h-dvh-safe {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
 /* ── Mobile: remove tap highlight flash on iOS/Android ─────────── */
 a, button, [role="button"] {
   -webkit-tap-highlight-color: transparent;
