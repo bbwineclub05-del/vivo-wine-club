@@ -15,7 +15,7 @@ export async function PATCH(
 
   const { id } = await params;
   const body = await request.json();
-  const { title, description, price, sizes, colors, images, visible, sort_order } = body;
+  const { title, description, price, sizes, colors, images, visible, sort_order, shipping_cost } = body;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db = getSupabaseAdmin() as any;
@@ -32,7 +32,8 @@ export async function PATCH(
   if (colors      !== undefined) updates.colors      = colors;
   if (images      !== undefined) updates.images      = images;
   if (visible     !== undefined) updates.visible     = visible;
-  if (sort_order  !== undefined) updates.sort_order  = sort_order;
+  if (sort_order    !== undefined) updates.sort_order    = sort_order;
+  if (shipping_cost !== undefined) updates.shipping_cost = shipping_cost === null ? null : Number(shipping_cost);
 
   // Sync Stripe product/price if relevant fields changed
   try {

@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, Pencil, Trash2, Eye, EyeOff, ChevronDown, ChevronUp,
   CalendarDays, MapPin, Tag, Users, CheckCircle2, Clock, XCircle, Globe, ScanLine,
-  Send, X, Check, Languages,
+  Send, X, Check, Languages, ImagePlus, Loader2,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import EventScanner from '@/components/EventScanner';
@@ -130,15 +131,37 @@ function EventForm({
   onCancel,
   saving,
   error,
+  token,
 }: {
   initial: FormData;
   onSave: (data: FormData) => void;
   onCancel: () => void;
   saving: boolean;
   error: string;
+  token: string | null;
 }) {
-  const [f, setF] = useState<FormData>(initial);
+  const [f, setF]               = useState<FormData>(initial);
+  const [imgUploading, setImgUploading] = useState(false);
+  const fileRef                 = useRef<HTMLInputElement>(null);
   const set = <K extends keyof FormData>(k: K, v: FormData[K]) => setF(p => ({ ...p, [k]: v }));
+
+  async function handleImageFile(file: File) {
+    if (!token) return;
+    setImgUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file',   file);
+      fd.append('folder', 'events');
+      const res  = await fetch('/api/media/upload', {
+        method:  'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body:    fd,
+      });
+      const data = await res.json();
+      if (data.url) set('image_url', data.url);
+    } catch { /* non-fatal */ }
+    finally  { setImgUploading(false); }
+  }
 
   return (
     <motion.div
@@ -253,12 +276,38 @@ function EventForm({
             placeholder="50" />
         </div>
 
-        {/* Image URL */}
+        {/* Image upload */}
         <div className="md:col-span-2">
-          <Label>URL Immagine (opzionale)</Label>
-          <input className={inputCls} type="text" value={f.image_url ?? ''}
-            onChange={e => set('image_url', e.target.value || null)}
-            placeholder="/events/wine-party8.jpg oppure URL esterno" />
+          <Label>Immagine evento (opzionale)</Label>
+          <div className="flex items-start gap-4">
+            {/* Preview */}
+            {f.image_url && (
+              <div className="relative w-20 h-20 rounded-lg overflow-hidden shrink-0 border border-[#eddada] bg-[#fdf6f6]">
+                <Image src={f.image_url} alt="Anteprima" fill className="object-cover" sizes="80px" />
+                <button type="button" onClick={() => set('image_url', null)}
+                  className="absolute top-0.5 right-0.5 bg-black/50 text-white rounded-full p-0.5 hover:bg-black/70 transition-colors">
+                  <X size={10} />
+                </button>
+              </div>
+            )}
+            <div className="flex flex-col gap-2 flex-1">
+              <button type="button" disabled={imgUploading}
+                onClick={() => fileRef.current?.click()}
+                className="flex items-center gap-2 px-3 py-2 border border-[#eddada] rounded-lg text-[11px] tracking-[0.2em] text-[#7a4a4a] hover:border-[#731515] hover:text-[#731515] disabled:opacity-50 transition-colors bg-[#fdf6f6] w-fit">
+                {imgUploading
+                  ? <Loader2 size={13} className="animate-spin" />
+                  : <ImagePlus size={13} />}
+                {imgUploading ? 'CARICAMENTO…' : 'CARICA IMMAGINE'}
+              </button>
+              {f.image_url && (
+                <p className="text-[9px] text-[#7a4a4a]/50 truncate max-w-xs" style={{ fontFamily: 'var(--font-nunito)' }}>
+                  {f.image_url}
+                </p>
+              )}
+            </div>
+            <input ref={fileRef} type="file" accept="image/*" className="hidden"
+              onChange={e => { const file = e.target.files?.[0]; if (file) handleImageFile(file); e.target.value = ''; }} />
+          </div>
         </div>
 
         {/* Sort order */}
@@ -722,7 +771,15 @@ function EventRow({
               <p><span className="text-[#731515] font-medium">Location completa:</span> {event.location_full}</p>
               {event.time && <p><span className="text-[#731515] font-medium">Ora:</span> {event.time}</p>}
               {event.capacity && <p><span className="text-[#731515] font-medium">Capacità:</span> {event.capacity} posti</p>}
-              {event.image_url && <p><span className="text-[#731515] font-medium">Immagine:</span> {event.image_url}</p>}
+              {event.image_url && (
+                <div className="flex items-center gap-3">
+                  <span className="text-[#731515] font-medium shrink-0">Immagine:</span>
+                  <div className="relative w-14 h-14 rounded-lg overflow-hidden border border-[#eddada] shrink-0">
+                    <Image src={event.image_url} alt={event.title} fill className="object-cover" sizes="56px" />
+                  </div>
+                  <span className="text-[10px] text-[#7a4a4a]/50 truncate max-w-[180px]">{event.image_url}</span>
+                </div>
+              )}
               {event.stripe_product_id && (
                 <p><span className="text-[#731515] font-medium">Stripe Product:</span>
                   <code className="ml-1 text-[10px] bg-slate-100 px-1 rounded">{event.stripe_product_id}</code>
@@ -923,6 +980,7 @@ export default function EventManager() {
             onCancel={() => { setMode('list'); setFormErr(''); }}
             saving={saving}
             error={formErr}
+            token={accessToken}
           />
         )}
       </AnimatePresence>

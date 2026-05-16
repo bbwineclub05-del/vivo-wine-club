@@ -9,16 +9,19 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 interface CartItem {
   id: string;
   name: string;
-  price: number;   // euros, integer (e.g. 35)
+  price: number;   // euros (e.g. 35)
   quantity: number;
   icon: string;
   variantId?: string | null;
   size?: string | null;
+  shippingCost?: number | null;
 }
 
 export async function POST(request: Request) {
   try {
-    const { items, discountCode, validateOnly }: { items: CartItem[]; discountCode?: string; validateOnly?: boolean } = await request.json();
+    const { items, discountCode, validateOnly, shippingCost }: {
+      items: CartItem[]; discountCode?: string; validateOnly?: boolean; shippingCost?: number;
+    } = await request.json();
 
     if (!items || items.length === 0) {
       return NextResponse.json({ error: 'Cart is empty' }, { status: 400 });
@@ -56,15 +59,15 @@ export async function POST(request: Request) {
     }
 
     // ── Build line items (apply discount if any) ─────────────────────────────
-    const multiplier = discountPercent > 0 ? (100 - discountPercent) / 100 : 1;
+    const multiplier   = discountPercent > 0 ? (100 - discountPercent) / 100 : 1;
+    const shippingEur  = typeof shippingCost === 'number' && shippingCost > 0 ? shippingCost : 0;
 
-    const session = await stripe.checkout.sessions.create({
-      mode: 'payment',
-      line_items: items.map((item) => ({
+    const lineItems = [
+      ...items.map((item) => ({
         quantity: item.quantity,
         price_data: {
-          currency: 'eur',
-          unit_amount: Math.round(item.price * 100 * multiplier),
+          currency:     'eur',
+          unit_amount:  Math.round(item.price * 100 * multiplier),
           product_data: {
             name: discountPercent > 0
               ? `${item.name} (−${discountPercent}%)`
@@ -73,6 +76,23 @@ export async function POST(request: Request) {
           },
         },
       })),
+      // Shipping as a separate line item (only if > 0)
+      ...(shippingEur > 0 ? [{
+        quantity: 1,
+        price_data: {
+          currency:     'eur',
+          unit_amount:  Math.round(shippingEur * 100),
+          product_data: {
+            name:        'Spedizione',
+            description: 'Costo di spedizione — Vivo Wine Club',
+          },
+        },
+      }] : []),
+    ];
+
+    const session = await stripe.checkout.sessions.create({
+      mode: 'payment',
+      line_items: lineItems,
       success_url: 'https://vivowineclub.com/checkout/success?session_id={CHECKOUT_SESSION_ID}',
       cancel_url:  'https://vivowineclub.com/wear-the-club',
       shipping_address_collection: {
@@ -90,6 +110,7 @@ export async function POST(request: Request) {
       ],
       metadata: {
         discount_code:     validatedCode ?? '',
+        shipping_cost:     shippingEur.toString(),
         stock_adjustments: JSON.stringify(items.map((item) => ({
           product_id: item.id,
           variant_id: item.variantId ?? null,

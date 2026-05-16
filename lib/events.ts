@@ -53,6 +53,7 @@ export function dbEventToEventData(e: DbEvent): EventData {
     price:             e.price,
     status:            e.status,
     titleStrikethrough: e.title_strikethrough,
+    image_url:         e.image_url,
   };
 }
 
@@ -71,6 +72,7 @@ export interface EventData {
   price: number;
   status: EventStatus;
   titleStrikethrough?: boolean;
+  image_url?: string | null;
 }
 
 /**

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { X, Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react';
@@ -16,6 +16,20 @@ export default function CartDrawer() {
   const [discountApplied, setDiscountApplied] = useState(false);
   const [discountError, setDiscountError]     = useState('');
   const [discountLoading, setDiscountLoading] = useState(false);
+  const [globalShipping, setGlobalShipping]   = useState(0);
+
+  useEffect(() => {
+    fetch('/api/merch/settings')
+      .then(r => r.json())
+      .then(d => { if (typeof d?.shipping_cost === 'number') setGlobalShipping(d.shipping_cost); })
+      .catch(() => {});
+  }, []);
+
+  // Effective shipping = max per-product override across items, falling back to global
+  const effectiveShipping = items.length === 0 ? 0 : Math.max(
+    0,
+    ...items.map(item => item.shippingCost != null ? item.shippingCost : globalShipping),
+  );
 
   const handleClose    = useCallback(() => setIsOpen(false), [setIsOpen]);
   const handleBoutique = useCallback(() => {
@@ -52,7 +66,11 @@ export default function CartDrawer() {
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items, discountCode: discountApplied ? discountCode.trim().toUpperCase() : undefined }),
+        body: JSON.stringify({
+          items,
+          discountCode: discountApplied ? discountCode.trim().toUpperCase() : undefined,
+          shippingCost: effectiveShipping > 0 ? effectiveShipping : undefined,
+        }),
       });
       const data = await res.json();
       if (!res.ok || !data.url) throw new Error(data.error ?? 'Checkout failed');
@@ -61,7 +79,7 @@ export default function CartDrawer() {
       setCheckoutError(err instanceof Error ? err.message : 'Checkout failed');
       setCheckoutLoading(false);
     }
-  }, [items, discountCode, discountApplied]);
+  }, [items, discountCode, discountApplied, effectiveShipping]);
 
   return (
     <AnimatePresence>
@@ -193,11 +211,25 @@ export default function CartDrawer() {
             {/* Footer */}
             {items.length > 0 && (
               <div className="px-8 py-6 border-t border-[#e8d5d5] space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs tracking-[0.3em] text-[#7a4a4a]">TOTAL</span>
-                  <span className="text-2xl font-light text-[#731515]" style={{ fontFamily: 'var(--font-syne)' }}>
-                    €{total.toFixed(2)}
-                  </span>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs tracking-[0.25em] text-[#7a4a4a]/70">SUBTOTALE</span>
+                    <span className="text-sm text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>
+                      €{total.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs tracking-[0.25em] text-[#7a4a4a]/70">SPEDIZIONE</span>
+                    <span className="text-sm text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>
+                      {effectiveShipping > 0 ? `€${effectiveShipping.toFixed(2)}` : 'Gratis'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between pt-1.5 border-t border-[#e8d5d5]">
+                    <span className="text-xs tracking-[0.3em] text-[#7a4a4a]">TOTALE</span>
+                    <span className="text-2xl font-light text-[#731515]" style={{ fontFamily: 'var(--font-syne)' }}>
+                      €{(total + effectiveShipping).toFixed(2)}
+                    </span>
+                  </div>
                 </div>
                 {/* Discount code */}
                 <div className="flex flex-col gap-1.5">

@@ -28,5 +28,6 @@ export default async function CheckoutPage({
 
   if (!event) notFound();
 
+  // Pass raw image_url from DB (dbEventToEventData already includes it)
   return <CheckoutForm event={event} />;
 }

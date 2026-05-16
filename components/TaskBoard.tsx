@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, X, ChevronDown, Trash2, ClipboardList } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 /* ── Constants ── */
 export const ADMINS = [
@@ -337,8 +338,51 @@ export default function TaskBoard({ currentEmail }: { currentEmail: string }) {
   const [loading, setLoading]   = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [filter, setFilter]     = useState<Filter>('all');
+  const [token, setToken]       = useState('');
+  const [liveConnected, setLiveConnected] = useState(false);
+  // Track IDs we inserted locally to skip duplicate INSERT events from realtime
+  const localInsertIds = useRef<Set<string>>(new Set());
 
-  useEffect(() => { loadTasks(); }, []);
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.access_token) setToken(session.access_token);
+    });
+  }, []);
+
+  useEffect(() => { loadTasks(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* ── Supabase Realtime ── */
+  useEffect(() => {
+    if (!token) return;
+    supabase.realtime.setAuth(token);
+    const channel = supabase
+      .channel('tasks_realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'tasks' },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const t = payload.new as Task;
+            // Skip if we just inserted this locally (already in optimistic state)
+            if (localInsertIds.current.has(t.id)) {
+              localInsertIds.current.delete(t.id);
+              return;
+            }
+            setTasks(prev => prev.some(x => x.id === t.id) ? prev : [t, ...prev]);
+          } else if (payload.eventType === 'UPDATE') {
+            const t = payload.new as Task;
+            setTasks(prev => prev.map(x => x.id === t.id ? t : x));
+          } else if (payload.eventType === 'DELETE') {
+            const id = (payload.old as { id: string }).id;
+            setTasks(prev => prev.filter(x => x.id !== id));
+          }
+        },
+      )
+      .subscribe((status) => {
+        setLiveConnected(status === 'SUBSCRIBED');
+      });
+    return () => { supabase.removeChannel(channel); };
+  }, [token]);
 
   async function loadTasks() {
     setLoading(true);
@@ -369,6 +413,8 @@ export default function TaskBoard({ currentEmail }: { currentEmail: string }) {
   }
 
   function handleCreated(task: Task) {
+    // Track locally so the incoming realtime INSERT doesn't duplicate it
+    localInsertIds.current.add(task.id);
     setTasks((prev) => [task, ...prev]);
   }
 
@@ -397,6 +443,12 @@ export default function TaskBoard({ currentEmail }: { currentEmail: string }) {
             <ClipboardList size={15} className="text-[#731515]" />
           </div>
           <h2 className="text-[10px] tracking-[0.4em] text-[#1a0505]">TASK BOARD</h2>
+          {liveConnected && (
+            <span className="flex items-center gap-1 text-[8px] tracking-[0.2em] text-green-600">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+              LIVE
+            </span>
+          )}
         </div>
         <button
           onClick={() => setShowForm((v) => !v)}

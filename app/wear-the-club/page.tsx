@@ -33,6 +33,7 @@ interface Product {
   price:            number;
   sizes:            string[];
   images:           string[];
+  shipping_cost:    number | null;
   product_variants: ProductVariant[];
   product_stock:    StockEntry[];
 }
@@ -90,13 +91,14 @@ const ProductCard = memo(function ProductCard({ product, index, reducedMotion }:
     const cartName = parts.join(' — ');
 
     addItem({
-      id:        product.id,
-      name:      cartName,
-      price:     product.price,
-      icon:      '',
-      image:     currentImage,
-      variantId: vid,
-      size:      sz,
+      id:           product.id,
+      name:         cartName,
+      price:        product.price,
+      icon:         '',
+      image:        currentImage,
+      variantId:    vid,
+      size:         sz,
+      shippingCost: product.shipping_cost,
     });
     setAdded(true);
     setTimeout(() => setAdded(false), 1800);

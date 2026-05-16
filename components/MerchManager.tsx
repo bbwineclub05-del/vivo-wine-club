@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, Pencil, Trash2, X, Loader2, Eye, EyeOff,
-  Package, ShoppingBag, CheckCircle, Clock, ImagePlus, GripVertical, Palette,
+  Package, ShoppingBag, CheckCircle, Clock, ImagePlus, GripVertical, Palette, Truck,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
@@ -24,6 +24,7 @@ interface Product {
   colors:            string[];
   images:            string[];
   visible:           boolean;
+  shipping_cost:     number | null;
   stripe_product_id: string | null;
   stripe_price_id:   string | null;
   sort_order:        number;
@@ -175,6 +176,10 @@ function ProductModal({
   const [colorInput,   setColorInput]   = useState('');
   const [images,       setImages]       = useState<string[]>(product?.images ?? []);
   const [visible,      setVisible]      = useState(product?.visible     ?? true);
+  // shipping_cost: '' = inherit global, number string = override
+  const [shippingCost, setShippingCost] = useState<string>(
+    product?.shipping_cost != null ? String(product.shipping_cost) : ''
+  );
   const [saving,       setSaving]       = useState(false);
   const [error,        setError]        = useState('');
 
@@ -201,7 +206,11 @@ function ProductModal({
 
     const effectiveColors = colorEnabled ? colors : [];
     try {
-      const body = { title, description, price: Number(price), sizes, colors: effectiveColors, images, visible };
+      const body = {
+        title, description, price: Number(price), sizes,
+        colors: effectiveColors, images, visible,
+        shipping_cost: shippingCost !== '' ? Number(shippingCost) : null,
+      };
       const url    = editing ? `/api/merch/products/${product!.id}` : '/api/merch/products';
       const method = editing ? 'PATCH' : 'POST';
 
@@ -248,12 +257,24 @@ function ProductModal({
               className={`${inp} resize-none`} style={{ fontFamily: 'var(--font-nunito)' }} />
           </div>
 
-          {/* Price */}
-          <div>
-            <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">PREZZO (€) *</label>
-            <input type="number" required min="0" step="0.01" value={price}
-              onChange={e => setPrice(e.target.value)} placeholder="35.00"
-              className={inp} style={{ fontFamily: 'var(--font-nunito)' }} />
+          {/* Price + Shipping */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">PREZZO (€) *</label>
+              <input type="number" required min="0" step="0.01" value={price}
+                onChange={e => setPrice(e.target.value)} placeholder="35.00"
+                className={inp} style={{ fontFamily: 'var(--font-nunito)' }} />
+            </div>
+            <div>
+              <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">SPEDIZIONE (€)</label>
+              <input type="number" min="0" step="0.01" value={shippingCost}
+                onChange={e => setShippingCost(e.target.value)}
+                placeholder="— globale"
+                className={inp} style={{ fontFamily: 'var(--font-nunito)' }} />
+              <p className="mt-1 text-[9px] text-[#7a4a4a]/45" style={{ fontFamily: 'var(--font-nunito)' }}>
+                Lascia vuoto per usare il costo globale
+              </p>
+            </div>
           </div>
 
           {/* Sizes */}
@@ -913,7 +934,10 @@ function OrderRow({ order, token, onUpdated }: {
   token:     string;
   onUpdated: (o: MerchOrder) => void;
 }) {
-  const [saving, setSaving] = useState(false);
+  const [saving,           setSaving]           = useState(false);
+  const [mailSending,      setMailSending]      = useState(false);
+  const [mailSent,         setMailSent]         = useState(false);
+  const [mailError,        setMailError]        = useState('');
 
   async function toggleStatus() {
     setSaving(true);
@@ -927,6 +951,27 @@ function OrderRow({ order, token, onUpdated }: {
       const data = await res.json();
       if (data.order) onUpdated(data.order);
     } finally { setSaving(false); }
+  }
+
+  async function sendShippingEmail() {
+    setMailSending(true);
+    setMailError('');
+    try {
+      const res = await fetch(`/api/merch/orders/${order.id}`, {
+        method:  'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        setMailError(d.error ?? 'Errore invio mail');
+      } else {
+        setMailSent(true);
+      }
+    } catch {
+      setMailError('Errore di rete');
+    } finally {
+      setMailSending(false);
+    }
   }
 
   const date = new Date(order.created_at).toLocaleDateString('it-IT', {
@@ -983,6 +1028,32 @@ function OrderRow({ order, token, onUpdated }: {
           </p>
         </div>
       </div>
+
+      {/* Shipping email button — only when order is evased and customer has an email */}
+      {isEvaso && order.customer_email && (
+        <div className="mt-3 pt-3 border-t border-green-100 flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            {mailError && (
+              <p className="text-[10px] text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>{mailError}</p>
+            )}
+            {mailSent && (
+              <p className="text-[10px] text-green-700 flex items-center gap-1" style={{ fontFamily: 'var(--font-nunito)' }}>
+                <CheckCircle size={10} /> Mail di spedizione inviata
+              </p>
+            )}
+          </div>
+          <button
+            onClick={sendShippingEmail}
+            disabled={mailSending || mailSent}
+            className="flex items-center gap-1.5 text-[9px] tracking-[0.25em] px-3 py-1.5 rounded-full border transition-colors disabled:opacity-50 disabled:cursor-not-allowed border-green-300 text-green-700 hover:bg-green-50"
+          >
+            {mailSending
+              ? <Loader2 size={10} className="animate-spin" />
+              : <CheckCircle size={10} />}
+            {mailSent ? 'INVIATA' : 'INVIA MAIL SPEDIZIONE'}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -998,6 +1069,12 @@ export default function MerchManager() {
   const [showModal,    setShowModal]    = useState(false);
   const [editing,      setEditing]      = useState<Product | null>(null);
   const [variantModal, setVariantModal] = useState<Product | null>(null);
+
+  // ── Global shipping setting ──
+  const [globalShipping,      setGlobalShipping]      = useState<string>('');
+  const [shippingEditVal,     setShippingEditVal]      = useState<string>('');
+  const [shippingEditing,     setShippingEditing]      = useState(false);
+  const [shippingSaving,      setShippingSaving]       = useState(false);
 
   const loadProducts = useCallback(async (tk: string) => {
     const res  = await fetch('/api/merch/products', { headers: { Authorization: `Bearer ${tk}` } });
@@ -1015,13 +1092,38 @@ export default function MerchManager() {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { setLoading(false); return; }
       setToken(session.access_token);
-      await Promise.all([loadProducts(session.access_token), loadOrders(session.access_token)]);
+      const [,, settingsRes] = await Promise.all([
+        loadProducts(session.access_token),
+        loadOrders(session.access_token),
+        fetch('/api/merch/settings').then(r => r.json()),
+      ]);
+      if (settingsRes?.shipping_cost != null) {
+        const val = String(settingsRes.shipping_cost);
+        setGlobalShipping(val);
+        setShippingEditVal(val);
+      }
       setLoading(false);
     });
   }, [loadProducts, loadOrders]);
 
-  // ── Realtime subscription on merch_orders ──
+  async function saveGlobalShipping() {
+    setShippingSaving(true);
+    try {
+      await fetch('/api/merch/settings', {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body:    JSON.stringify({ shipping_cost: Number(shippingEditVal) }),
+      });
+      setGlobalShipping(shippingEditVal);
+      setShippingEditing(false);
+    } finally { setShippingSaving(false); }
+  }
+
+  // ── Realtime subscription on merch_orders (authenticated) ──
   useEffect(() => {
+    if (!token) return;
+    // Authenticate the realtime connection so RLS policies allow access
+    supabase.realtime.setAuth(token);
     const channel = supabase
       .channel('merch_orders_realtime')
       .on(
@@ -1039,7 +1141,7 @@ export default function MerchManager() {
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, []);
+  }, [token]);
 
   function handleSaved(p: Product) {
     setProducts(prev => {
@@ -1095,6 +1197,39 @@ export default function MerchManager() {
       {/* ── Products tab ── */}
       {!loading && tab === 'products' && (
         <>
+          {/* Global shipping settings */}
+          <div className="flex flex-wrap items-center justify-between gap-3 border border-[#eddada] rounded-xl px-4 py-3 mb-5 bg-white">
+            <div className="flex items-center gap-3">
+              <Truck size={14} className="text-[#731515]" />
+              <span className="text-[11px] tracking-[0.2em] text-[#7a4a4a]">SPEDIZIONE GLOBALE</span>
+              {!shippingEditing && (
+                <span className="text-[13px] font-medium text-[#1a0505]">
+                  {globalShipping !== '' ? `€${Number(globalShipping).toFixed(2)}` : '—'}
+                </span>
+              )}
+            </div>
+            {shippingEditing ? (
+              <div className="flex items-center gap-2">
+                <input type="number" min="0" step="0.01" value={shippingEditVal}
+                  onChange={e => setShippingEditVal(e.target.value)}
+                  className={`${inp} w-24 text-center`} />
+                <button onClick={saveGlobalShipping} disabled={shippingSaving}
+                  className="px-3 py-1.5 bg-[#731515] text-white text-[10px] tracking-[0.2em] rounded-lg hover:bg-[#9b2323] disabled:opacity-50 flex items-center gap-1">
+                  {shippingSaving ? <Loader2 size={11} className="animate-spin" /> : 'SALVA'}
+                </button>
+                <button onClick={() => { setShippingEditing(false); setShippingEditVal(globalShipping); }}
+                  className="px-3 py-1.5 border border-[#eddada] text-[#7a4a4a] text-[10px] rounded-lg hover:bg-[#fdf6f6]">
+                  ANNULLA
+                </button>
+              </div>
+            ) : (
+              <button onClick={() => setShippingEditing(true)}
+                className="p-2 rounded-lg text-[#7a4a4a]/50 hover:text-[#731515] hover:bg-[#fdf6f6] transition-colors">
+                <Pencil size={13} />
+              </button>
+            )}
+          </div>
+
           {products.length === 0 ? (
             <div className="border border-dashed border-[#eddada] rounded-xl p-16 text-center">
               <Package size={32} className="text-[#7a4a4a]/20 mx-auto mb-3" />

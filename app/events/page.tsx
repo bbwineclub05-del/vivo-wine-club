@@ -53,10 +53,23 @@ function EventRow({ event, isLast }: { event: EventData; isLast: boolean }) {
 
   return (
     <div>
-      <div className="flex items-start gap-4 sm:gap-5 md:gap-8 py-6 sm:py-8 md:py-10 group">
+      <div className="flex items-center gap-4 sm:gap-5 md:gap-8 py-6 sm:py-8 md:py-10 group">
+
+        {/* Thumbnail (only when image_url exists) — sharp edges, centred vertically */}
+        {event.image_url && (
+          <div className={`relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 shrink-0 overflow-hidden border ${faded ? 'border-[#e8d5d5]' : 'border-[#d4b0b0]/40'}`}>
+            <Image
+              src={event.image_url}
+              alt={event.title}
+              fill
+              className={`object-cover transition-transform duration-500 group-hover:scale-105 ${faded ? 'opacity-40' : ''}`}
+              sizes="(max-width:640px) 64px, (max-width:768px) 80px, 96px"
+            />
+          </div>
+        )}
 
         {/* Date column */}
-        <div className="flex flex-col items-end w-10 sm:w-12 md:w-[72px] shrink-0 pt-1">
+        <div className="flex flex-col items-end w-10 sm:w-12 md:w-[72px] shrink-0">
           <span className={`text-[8px] tracking-[0.4em] mb-0.5 ${faded ? 'text-[#ccc]' : 'text-[#731515]'}`}>
             {event.month}
           </span>
@@ -74,7 +87,7 @@ function EventRow({ event, isLast }: { event: EventData; isLast: boolean }) {
         </div>
 
         {/* Vertical line */}
-        <div className={`w-px self-stretch shrink-0 mt-1 ${faded ? 'bg-[#e8d5d5]' : 'bg-[#731515]/15'}`} />
+        <div className={`w-px self-stretch shrink-0 ${faded ? 'bg-[#e8d5d5]' : 'bg-[#731515]/15'}`} />
 
         {/* Details */}
         <div className="flex-1 min-w-0">

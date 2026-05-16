@@ -113,6 +113,8 @@ export default function EventScanner({
 
   /* ── Supabase Realtime: live participant list updates across all devices ── */
   useEffect(() => {
+    // Authenticate so RLS policies allow the subscription
+    supabase.realtime.setAuth(accessToken);
     const channel = supabase
       .channel(`tickets:event_id:${event.slug}`)
       .on(
@@ -131,7 +133,7 @@ export default function EventScanner({
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [event.slug, load]);
+  }, [event.slug, accessToken, load]);
 
   /* ── Start camera ── */
   const startCamera = useCallback(async () => {
@@ -374,7 +376,10 @@ export default function EventScanner({
               }`}
             >
               {t === 'list' ? (
-                <span className="inline-flex items-center gap-1.5"><Users size={11} />PARTECIPANTI</span>
+                <span className="inline-flex items-center gap-1.5">
+                  <Users size={11} />PARTECIPANTI
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" title="Live updates active" />
+                </span>
               ) : (
                 <span className="inline-flex items-center gap-1.5"><ScanLine size={11} />SCANNER QR</span>
               )}

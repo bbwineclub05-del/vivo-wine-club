@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { dbEventToEventData, type DbEvent } from '@/lib/events';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { sendEventConfirmationEmails } from '@/app/api/checkout/event/route';
+import { sendMerchOrderConfirmation } from '@/lib/merch-email';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2026-04-22.dahlia',
@@ -123,6 +124,20 @@ export async function GET(request: Request) {
         }
       } catch (stockErr) {
         console.error('[confirm] stock decrement error (non-fatal):', stockErr);
+      }
+
+      // Send order confirmation email
+      if (customerEmail) {
+        try {
+          await sendMerchOrderConfirmation({
+            to:    customerEmail,
+            name:  customerName,
+            items,
+            total,
+          });
+        } catch (emailErr) {
+          console.error('[confirm] merch confirmation email error (non-fatal):', emailErr);
+        }
       }
     } catch (orderErr) {
       console.error('[confirm] merch_orders upsert error (non-fatal):', orderErr);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { TrendingUp, Ticket, Users, FileText, RefreshCw, BarChart2, ChevronDown } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
@@ -239,6 +239,11 @@ export default function AnalyticsDashboard() {
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   const [selectedEvent, setSelectedEvent] = useState('');
   const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [liveConnected, setLiveConnected] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Keep selected event accessible inside the realtime callback without stale closure
+  const selectedEventRef = useRef(selectedEvent);
+  useEffect(() => { selectedEventRef.current = selectedEvent; }, [selectedEvent]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -265,6 +270,32 @@ export default function AnalyticsDashboard() {
 
   useEffect(() => { load(''); }, [load]);
 
+  /* ── Supabase Realtime — debounced refresh when underlying data changes ── */
+  useEffect(() => {
+    if (!accessToken) return;
+    supabase.realtime.setAuth(accessToken);
+
+    function scheduleRefresh() {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => load(selectedEventRef.current), 2500);
+    }
+
+    const channel = supabase
+      .channel('analytics_realtime')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tickets'      }, scheduleRefresh)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'tickets'      }, scheduleRefresh)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'merch_orders' }, scheduleRefresh)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'newsletter_subscribers' }, scheduleRefresh)
+      .subscribe((status) => {
+        setLiveConnected(status === 'SUBSCRIBED');
+      });
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      supabase.removeChannel(channel);
+    };
+  }, [accessToken, load]);
+
   function handleEventChange(slug: string) {
     setSelectedEvent(slug);
     load(slug);
@@ -280,6 +311,12 @@ export default function AnalyticsDashboard() {
           <BarChart2 size={15} className="text-[#731515]" />
         </div>
         <h2 className="text-[10px] tracking-[0.4em] text-[#1a0505]">ANALYTICS</h2>
+        {liveConnected && (
+          <span className="flex items-center gap-1 text-[8px] tracking-[0.2em] text-green-600">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+            LIVE
+          </span>
+        )}
       </div>
       <div className="flex items-center gap-3 flex-wrap">
         {/* Event filter dropdown */}

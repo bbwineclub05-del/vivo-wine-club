@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { MapPin, Minus, Plus, Calendar, Tag, User } from 'lucide-react';
 import BackButton from '@/components/BackButton';
@@ -86,11 +87,11 @@ export default function CheckoutForm({ event }: { event: EventData }) {
       <main className="min-h-screen pt-16">
 
         {/* ── Back link ── */}
-        <div className="max-w-5xl mx-auto px-6 lg:px-10 pt-6">
+        <div className="max-w-3xl mx-auto px-6 lg:px-10 pt-6">
           <BackButton className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] text-[#7a4a4a] hover:text-[#731515] transition-colors duration-300" />
         </div>
 
-        <section className="relative overflow-hidden py-16 md:py-24">
+        <section className="relative overflow-hidden py-10 md:py-16">
           <div className="fog-center" />
 
           <div className="max-w-3xl mx-auto px-6 lg:px-10">
@@ -99,7 +100,22 @@ export default function CheckoutForm({ event }: { event: EventData }) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
             >
-              <form onSubmit={handleSubmit} className="flex flex-col gap-8">
+              {/* ── Event image — same width as cards below, sharp edges ── */}
+            {event.image_url && (
+              <div className="relative w-full aspect-[16/7] overflow-hidden mb-8">
+                <Image
+                  src={event.image_url}
+                  alt={event.title}
+                  fill
+                  className="object-cover"
+                  priority
+                  sizes="(max-width:768px) 100vw, 768px"
+                />
+                <div className="absolute inset-0 bg-[#731515]/50" />
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="flex flex-col gap-8">
 
                 {/* ── Event summary ── */}
                 <div className="glass-card p-5 sm:p-8 md:p-10">

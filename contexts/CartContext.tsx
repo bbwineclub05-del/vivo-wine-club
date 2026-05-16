@@ -4,13 +4,14 @@ import { createContext, useContext, useState, ReactNode } from 'react';
 
 export interface CartItem {
   id: string;
-  name: string;      // includes size/color when applicable, e.g. "Classic Tee — M — Nero"
+  name: string;         // includes size/color when applicable, e.g. "Classic Tee — M — Nero"
   price: number;
   quantity: number;
   icon: string;
-  image: string;     // path under /public, e.g. "/merch/maglietta.png"
-  variantId?: string | null;  // product_variants.id if a color variant was selected
-  size?: string | null;       // selected size if applicable
+  image: string;        // path under /public, e.g. "/merch/maglietta.png"
+  variantId?: string | null;    // product_variants.id if a color variant was selected
+  size?: string | null;         // selected size if applicable
+  shippingCost?: number | null; // per-product shipping override; null = use global default
 }
 
 interface CartContextType {
