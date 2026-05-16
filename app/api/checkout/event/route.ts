@@ -40,18 +40,36 @@ interface Body {
 
 // ── PDF generation ────────────────────────────────────────────────────────────
 
+/** Word-wrap `text` into lines of at most `maxChars` characters. */
+function wrapText(text: string, maxChars: number): string[] {
+  const words = text.split(' ');
+  const lines: string[] = [];
+  let current = '';
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word;
+    if (candidate.length <= maxChars) {
+      current = candidate;
+    } else {
+      if (current) lines.push(current);
+      // If a single word is longer than maxChars, hard-break it
+      current = word.length > maxChars ? word.slice(0, maxChars) : word;
+    }
+  }
+  if (current) lines.push(current);
+  return lines;
+}
+
 async function generateTicketPdf(params: {
   event: EventData;
   firstName: string;
   lastName: string;
   email: string;
-  qty: number;
   total: number;
-  orderId: string;
+  ticketId: string;
+  ticketNum: number;
+  totalTickets: number;
 }): Promise<Uint8Array> {
-  const { event, firstName, lastName, email, qty, total, orderId } = params;
-
-  const eventDate = `${event.month} ${event.day}, ${event.year}`;
+  const { event, firstName, lastName, email, total, ticketId, ticketNum, totalTickets } = params;
 
   const pdfDoc = await PDFDocument.create();
   const page   = pdfDoc.addPage([595, 842]); // A4
@@ -70,8 +88,6 @@ async function generateTicketPdf(params: {
   // ── Header bar ──
   page.drawRectangle({ x: 0, y: H - 90, width: W, height: 90, color: BORDEAUX });
 
-  // Logo (logo-extracted.png is dark/grayscale — we invert by drawing white rect first, but
-  // instead just render the brand name as text since the PNG is dark on transparent)
   try {
     const logoBytes = readFileSync(join(process.cwd(), 'public', 'logobianco.png'));
     const logoImg   = await pdfDoc.embedPng(logoBytes);
@@ -83,107 +99,117 @@ async function generateTicketPdf(params: {
       height: logoDims.height,
     });
   } catch {
-    page.drawText('VIVO WINE CLUB', {
-      x: 40, y: H - 56,
-      size: 18, font: bold, color: WHITE,
-    });
+    page.drawText('VIVO WINE CLUB', { x: 40, y: H - 56, size: 18, font: bold, color: WHITE });
   }
 
-  // Header right label
-  page.drawText('EVENT TICKET', {
-    x: W - 120, y: H - 53,
-    size: 9, font: bold, color: WHITE,
-    opacity: 0.7,
+  const headerLabel  = totalTickets > 1 ? `TICKET ${ticketNum} OF ${totalTickets}` : 'EVENT TICKET';
+  const headerLabelW = bold.widthOfTextAtSize(headerLabel, 9);
+  page.drawText(headerLabel, {
+    x: W - 40 - headerLabelW, y: H - 53,
+    size: 9, font: bold, color: WHITE, opacity: 0.7,
   });
 
-  // ── Event type label ──
-  let y = H - 130;
-  page.drawText(event.type, {
-    x: 40, y,
-    size: 8, font: bold, color: BORDEAUX,
-  });
+  // ── Event type + title ──
+  let y = H - 122;
+  page.drawText(event.type.toUpperCase(), { x: 40, y, size: 7.5, font: bold, color: BORDEAUX });
 
-  // ── Event title ──
-  y -= 28;
-  // Simple line-break for long titles (split at " · " or at ~45 chars)
-  const titleLines = event.title.length > 44
-    ? [event.title.slice(0, event.title.lastIndexOf(' ', 44)), event.title.slice(event.title.lastIndexOf(' ', 44) + 1)]
-    : [event.title];
-  for (const line of titleLines) {
-    page.drawText(line, { x: 40, y, size: 22, font: bold, color: DARK });
-    y -= 28;
-  }
-
-  // ── Divider ──
-  y -= 8;
-  page.drawLine({ start: { x: 40, y }, end: { x: W - 40, y }, thickness: 0.5, color: LIGHT });
-  y -= 20;
-
-  // ── Detail rows ──
-  const rows: [string, string][] = [
-    ['Date',     eventDate],
-    ['Location', event.locationFull],
-    ['Attendee', `${firstName} ${lastName}`],
-    ['Email',    email],
-    ['Tickets',  String(qty)],
-    ['Total',    `€${total.toFixed(2)}`],
-  ];
-
-  for (const [label, value] of rows) {
-    page.drawText(label.toUpperCase(), { x: 40, y, size: 7.5, font: bold, color: GRAY });
-    // Wrap value if needed
-    const maxChars = 52;
-    const valLines = value.length > maxChars
-      ? [value.slice(0, value.lastIndexOf(' ', maxChars)), value.slice(value.lastIndexOf(' ', maxChars) + 1)]
-      : [value];
-    page.drawText(valLines[0], { x: 160, y, size: 10, font: regular, color: DARK });
-    if (valLines[1]) {
-      page.drawText(valLines[1], { x: 160, y: y - 14, size: 10, font: regular, color: DARK });
-      y -= 14;
-    }
+  y -= 26;
+  const titleWords  = wrapText(event.title, 34); // ~34 chars at size 20 fits within margins
+  for (const line of titleWords) {
+    page.drawText(line, { x: 40, y, size: 20, font: bold, color: DARK });
     y -= 26;
   }
 
-  // ── Divider ──
+  // ── Description ──
+  y -= 6;
+  const descLines = wrapText(event.description, 72);
+  for (const line of descLines) {
+    page.drawText(line, { x: 40, y, size: 9, font: regular, color: GRAY });
+    y -= 14;
+  }
+
+  // ── EVENT DETAILS section ──
+  y -= 14;
+  page.drawLine({ start: { x: 40, y }, end: { x: W - 40, y }, thickness: 0.5, color: LIGHT });
+  y -= 14;
+  page.drawText('EVENT DETAILS', { x: 40, y, size: 7, font: bold, color: GRAY, opacity: 0.6 });
+  y -= 14;
+
+  const dateStr  = `${event.month} ${event.day}, ${event.year}`;
+  const dateTime = event.time ? `${dateStr}  ·  ${event.time}` : dateStr;
+  const priceStr = total === 0 ? 'Free' : `€${event.price.toFixed(2)} per ticket`;
+
+  const eventRows: [string, string][] = [
+    ['Date & Time', dateTime],
+    ['Location',    event.locationFull],
+    ['Type',        event.type],
+    ['Price',       priceStr],
+  ];
+
+  for (const [label, value] of eventRows) {
+    page.drawText(label.toUpperCase(), { x: 40, y, size: 7, font: bold, color: GRAY });
+    const valLines = wrapText(value, 55);
+    page.drawText(valLines[0], { x: 160, y, size: 9.5, font: regular, color: DARK });
+    if (valLines[1]) {
+      page.drawText(valLines[1], { x: 160, y: y - 13, size: 9.5, font: regular, color: DARK });
+      y -= 13;
+    }
+    y -= 23;
+  }
+
+  // ── YOUR TICKET section ──
   y -= 4;
   page.drawLine({ start: { x: 40, y }, end: { x: W - 40, y }, thickness: 0.5, color: LIGHT });
-  y -= 30;
+  y -= 14;
+  page.drawText('YOUR TICKET', { x: 40, y, size: 7, font: bold, color: GRAY, opacity: 0.6 });
+  y -= 14;
 
-  // ── QR code — all event types ──
-  // Encodes the raw orderId. The scanner accepts both this format
-  // and the legacy URL format (https://vivowineclub.com/checkin?token=xxx).
-  const qrBuffer = await QRCode.toBuffer(orderId, { width: 180, margin: 1 });
+  const ticketRows: [string, string][] = [
+    ['Attendee', `${firstName} ${lastName}`],
+    ['Email',    email],
+    ['Ticket',   totalTickets > 1 ? `${ticketNum} of ${totalTickets}` : '1 of 1'],
+  ];
+
+  for (const [label, value] of ticketRows) {
+    page.drawText(label.toUpperCase(), { x: 40, y, size: 7, font: bold, color: GRAY });
+    const valLines = wrapText(value, 55);
+    page.drawText(valLines[0], { x: 160, y, size: 9.5, font: regular, color: DARK });
+    if (valLines[1]) {
+      page.drawText(valLines[1], { x: 160, y: y - 13, size: 9.5, font: regular, color: DARK });
+      y -= 13;
+    }
+    y -= 23;
+  }
+
+  // ── QR code ──
+  y -= 10;
+  page.drawLine({ start: { x: 40, y }, end: { x: W - 40, y }, thickness: 0.5, color: LIGHT });
+  y -= 18;
+
+  const qrBuffer = await QRCode.toBuffer(ticketId, { width: 180, margin: 1 });
   const qrImage  = await pdfDoc.embedPng(qrBuffer);
+  const qrSize   = 150;
+  const qrX      = (W - qrSize) / 2;
 
-  const qrSize = 160;
-  const qrX    = (W - qrSize) / 2;
-  page.drawText('SHOW THIS QR CODE AT THE ENTRANCE', {
-    x: W / 2 - 100, y,
-    size: 8, font: bold, color: BORDEAUX,
-  });
-  y -= 16;
+  const qrLabel    = 'SHOW THIS QR CODE AT THE ENTRANCE';
+  const qrLabelW   = bold.widthOfTextAtSize(qrLabel, 8);
+  page.drawText(qrLabel, { x: (W - qrLabelW) / 2, y, size: 8, font: bold, color: BORDEAUX });
+  y -= 14;
   page.drawImage(qrImage, { x: qrX, y: y - qrSize, width: qrSize, height: qrSize });
-  page.drawText('One scan per ticket · valid for this event only', {
-    x: W / 2 - 82, y: y - qrSize - 16,
-    size: 8, font: regular, color: GRAY,
-  });
-  y -= qrSize + 36;
+  const qrSub    = 'One scan per ticket · valid for this event only';
+  const qrSubW   = regular.widthOfTextAtSize(qrSub, 7.5);
+  page.drawText(qrSub, { x: (W - qrSubW) / 2, y: y - qrSize - 12, size: 7.5, font: regular, color: GRAY });
 
   // ── Footer ──
-  const footerY = 40;
+  const footerY = 36;
   page.drawLine({
-    start: { x: 40, y: footerY + 20 },
-    end:   { x: W - 40, y: footerY + 20 },
+    start: { x: 40, y: footerY + 18 }, end: { x: W - 40, y: footerY + 18 },
     thickness: 0.5, color: LIGHT,
   });
-  page.drawText(`Order ID: ${orderId}`, {
-    x: 40, y: footerY + 6,
-    size: 7.5, font: regular, color: GRAY,
-  });
-  page.drawText('vivowineclub.com · info@vivowineclub.com', {
-    x: W - 210, y: footerY + 6,
-    size: 7.5, font: regular, color: GRAY,
-  });
+  page.drawText(`Ticket ID: ${ticketId}`, { x: 40, y: footerY + 4, size: 7, font: regular, color: GRAY });
+  const contact    = 'vivowineclub.com · info@vivowineclub.com';
+  const contactW   = regular.widthOfTextAtSize(contact, 7);
+  page.drawText(contact, { x: W - 40 - contactW, y: footerY + 4, size: 7, font: regular, color: GRAY });
 
   return pdfDoc.save();
 }
@@ -210,8 +236,8 @@ function buyerEmailHtml(params: {
     You&#39;re in, ${firstName}!
   </h2>
   <p style="text-align:center;color:#7a4a4a;font-style:italic;margin-bottom:32px;">
-    Your ticket for <strong>${event.title}</strong> is confirmed.
-    Find your ticket PDF attached to this email.
+    Your ticket${qty > 1 ? 's' : ''} for <strong>${event.title}</strong> ${qty > 1 ? 'are' : 'is'} confirmed.
+    Find your ${qty > 1 ? `${qty} ticket PDFs` : 'ticket PDF'} attached to this email.
   </p>
 
   <table style="width:100%;border-collapse:collapse;margin-bottom:28px;font-size:14px;">
@@ -349,47 +375,61 @@ export async function sendEventConfirmationEmails(params: {
 
   console.log(`${tag} start — buyer=${email} qty=${qty} total=${total}`);
 
-  // ── 1. Upsert ticket record ───────────────────────────────────────────────────
+  // ── 1. Upsert one ticket row per ticket ──────────────────────────────────────
+  // Each ticket gets a unique ID: `${orderId}-${n}` (e.g. VWC-...-ABC12-1, -2, …)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db = getSupabaseAdmin() as any;
-  const { error: ticketErr } = await db.from('tickets').upsert({
-    order_id:   orderId,
-    qr_code:    orderId,
+  const ticketIds = Array.from({ length: qty }, (_, i) => `${orderId}-${i + 1}`);
+  const ticketRows = ticketIds.map((tid) => ({
+    order_id:   tid,
+    qr_code:    tid,
     event_id:   event.slug,
     email:      email,
     name:       `${firstName} ${lastName}`,
     checked_in: false,
-  }, { onConflict: 'order_id' });
+  }));
 
+  const { error: ticketErr } = await db.from('tickets').upsert(ticketRows, { onConflict: 'order_id' });
   if (ticketErr) {
     console.error(`${tag} ticket upsert FAILED:`, JSON.stringify(ticketErr));
   } else {
-    console.log(`${tag} ticket upserted OK`);
+    console.log(`${tag} ${qty} ticket row(s) upserted OK`);
   }
 
   // ── 2. Upsert CRM customer ────────────────────────────────────────────────────
   await upsertCustomer({ email, name: `${firstName} ${lastName}`, eventSlug: event.slug });
 
-  // ── 3-5. Generate PDF + send emails ──────────────────────────────────────────
-  // Non-fatal block: if PDF generation or Resend fails, the ticket record is
+  // ── 3-5. Generate PDFs + send emails ─────────────────────────────────────────
+  // Non-fatal block: if PDF generation or Resend fails, the ticket records are
   // already in the DB. Log the error clearly and return — the caller (free
   // checkout) must still redirect to the success page.
   try {
-    // 3. Generate PDF
-    console.log(`${tag} generating PDF…`);
-    const pdfBytes  = await generateTicketPdf({ event, firstName, lastName, email, qty, total, orderId });
-    const pdfBase64 = Buffer.from(pdfBytes).toString('base64');
-    const pdfName   = `vivo-ticket-${event.slug}.pdf`;
-    console.log(`${tag} PDF generated — ${pdfBytes.length} bytes`);
+    // 3. Generate one PDF per ticket
+    console.log(`${tag} generating ${qty} PDF(s)…`);
+    const attachments = await Promise.all(
+      ticketIds.map(async (tid, i) => {
+        const pdfBytes = await generateTicketPdf({
+          event, firstName, lastName, email, total,
+          ticketId:     tid,
+          ticketNum:    i + 1,
+          totalTickets: qty,
+        });
+        const filename = qty > 1
+          ? `vivo-ticket-${event.slug}-${i + 1}.pdf`
+          : `vivo-ticket-${event.slug}.pdf`;
+        return { filename, content: Buffer.from(pdfBytes).toString('base64') };
+      }),
+    );
+    console.log(`${tag} ${qty} PDF(s) generated`);
 
-    // 4. Buyer email with PDF attachment
+    // 4. Buyer email with all PDF attachments
     console.log(`${tag} sending buyer email to ${email}…`);
     const buyerResult = await resend.emails.send({
       from:    'Vivo Wine Club <noreply@vivowineclub.com>',
       to:      email,
-      subject: `Your ticket for ${event.title} — Vivo Wine Club`,
+      subject: `Your ticket${qty > 1 ? 's' : ''} for ${event.title} — Vivo Wine Club`,
       html:    buyerEmailHtml({ firstName, event, qty, total, orderId }),
-      attachments: [{ filename: pdfName, content: pdfBase64 }],
+      attachments,
     });
     if (buyerResult.error) {
       console.error(`${tag} buyer email FAILED:`, JSON.stringify(buyerResult.error));
@@ -448,16 +488,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ url: `/checkout/success?order_id=${encodeURIComponent(orderId)}` });
   }
 
-  // Paid event — save ticket record immediately so it's in the DB regardless of
-  // whether the buyer completes payment and the success page is loaded.
-  await (getSupabaseAdmin() as any).from('tickets').upsert({
-    order_id:   orderId,
-    qr_code:    orderId,
+  // Paid event — save one ticket row per ticket immediately so records are in the
+  // DB regardless of whether the buyer completes payment and the success page loads.
+  const paidTicketRows = Array.from({ length: qty }, (_, i) => ({
+    order_id:   `${orderId}-${i + 1}`,
+    qr_code:    `${orderId}-${i + 1}`,
     event_id:   event.slug,
     email:      email,
     name:       `${firstName} ${lastName}`,
     checked_in: false,
-  }, { onConflict: 'order_id' });
+  }));
+  await (getSupabaseAdmin() as any).from('tickets').upsert(paidTicketRows, { onConflict: 'order_id' });
 
   // Stripe session; confirmation emails sent in /api/checkout/confirm
   const session = await stripe.checkout.sessions.create({

@@ -8,7 +8,7 @@ import {
   Home, CheckSquare, BarChart3, Users, FileText,
   Mail, LogOut, KeyRound, ScanLine, Menu, X,
   Wine, Shield, ArrowUpRight, CreditCard, User, CalendarDays, GlassWater, MapPin, Images,
-  Database, ChevronDown,
+  Database, ChevronDown, UsersRound, Lock, ShoppingBag,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -22,11 +22,29 @@ import CrmWine from '@/components/CrmWine';
 import CrmBordeaux from '@/components/CrmBordeaux';
 import CrmClienti from '@/components/CrmClienti';
 import MediaManager from '@/components/MediaManager';
+import TeamManagement from '@/components/TeamManagement';
+import MerchManager from '@/components/MerchManager';
+import { isSuperAdmin } from '@/lib/admins';
 
 /* ─────────────────────────────────────────────
    Types
 ───────────────────────────────────────────── */
-type Section = 'overview' | 'settings' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm' | 'crm-wine' | 'crm-bordeaux' | 'crm-clienti' | 'media';
+type Section = 'overview' | 'settings' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm' | 'crm-wine' | 'crm-bordeaux' | 'crm-clienti' | 'media' | 'team' | 'merch';
+
+// Maps section IDs to the permission key in team_members.permissions
+const SECTION_PERM: Partial<Record<Section, string>> = {
+  tasks:         'tasks',
+  events:        'events',
+  news:          'news',
+  crm:           'crm',
+  'crm-wine':    'crm',
+  'crm-bordeaux':'crm',
+  'crm-clienti': 'crm',
+  media:         'media',
+  analytics:     'analytics',
+  pipeline:      'pipeline',
+  merch:         'merch',
+};
 
 interface NavItem {
   id: Section;
@@ -41,9 +59,10 @@ const NAV_MAIN: NavItem[] = [
 
 // Visible to both admin and staff
 const NAV_SHARED: NavItem[] = [
-  { id: 'tasks',  label: 'Task Board',     icon: CheckSquare  },
+  { id: 'tasks',  label: 'Task Board',      icon: CheckSquare  },
   { id: 'events', label: 'Gestione Eventi', icon: CalendarDays },
   { id: 'news',   label: 'Gestione News',   icon: FileText     },
+  { id: 'merch',  label: 'Gestione Merch',  icon: ShoppingBag  },
 ];
 
 // Admin only
@@ -175,6 +194,8 @@ function SidebarContent({
   onLogout,
   admin,
   isStaff,
+  canAccess,
+  superAdmin,
 }: {
   displayName: string;
   email: string;
@@ -183,6 +204,8 @@ function SidebarContent({
   onLogout: () => void;
   admin: boolean;
   isStaff: boolean;
+  canAccess: (section: Section) => boolean;
+  superAdmin: boolean;
 }) {
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -257,13 +280,27 @@ function SidebarContent({
             {NAV_SHARED.map(item => (
               <NavBtn key={item.id} item={item} active={activeSection === item.id} onClick={() => navigate(item.id)} />
             ))}
-            {admin && NAV_ADMIN_ONLY.map(item => (
+            {NAV_ADMIN_ONLY.map(item => (
               <NavBtn key={item.id} item={item} active={activeSection === item.id} onClick={() => navigate(item.id)} />
             ))}
             <CrmGroupNav activeSection={activeSection} navigate={navigate} />
             {NAV_SHARED_BOTTOM.map(item => (
               <NavBtn key={item.id} item={item} active={activeSection === item.id} onClick={() => navigate(item.id)} />
             ))}
+          </>
+        )}
+
+        {superAdmin && (
+          <>
+            <div className="pt-5 pb-1.5 px-3 flex items-center gap-1.5">
+              <UsersRound size={8} className="text-white/20" />
+              <span className="text-[8px] tracking-[0.55em] text-white/20 uppercase">Super Admin</span>
+            </div>
+            <NavBtn
+              item={{ id: 'team', label: 'Team Management', icon: UsersRound }}
+              active={activeSection === 'team'}
+              onClick={() => navigate('team')}
+            />
           </>
         )}
       </nav>
@@ -334,6 +371,30 @@ function CardLabel({ icon: Icon, label }: { icon: React.ElementType; label: stri
       <Icon size={13} className="text-[#731515]" />
       <span className="text-[9px] tracking-[0.42em] text-[#731515] uppercase">{label}</span>
     </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   Section: Unauthorised
+───────────────────────────────────────────── */
+function UnauthorisedSection({ title }: { title: string }) {
+  return (
+    <>
+      <SectionHeader title={title} />
+      <div className="flex flex-col items-center justify-center py-24 text-center">
+        <div className="w-16 h-16 rounded-full bg-[#7a4a4a]/6 flex items-center justify-center mb-5">
+          <Lock size={26} className="text-[#7a4a4a]/30" strokeWidth={1.5} />
+        </div>
+        <p className="text-[9px] tracking-[0.5em] text-[#7a4a4a]/40 uppercase mb-3">
+          Accesso non autorizzato
+        </p>
+        <p className="text-sm text-[#7a4a4a]/50 font-light max-w-xs leading-relaxed"
+          style={{ fontFamily: 'var(--font-nunito)' }}>
+          Non hai i permessi per accedere a questa sezione.<br />
+          Contatta l&apos;amministratore.
+        </p>
+      </div>
+    </>
   );
 }
 
@@ -522,14 +583,27 @@ export default function MembersPage() {
   const { user, logout } = useAuth();
   const router           = useRouter();
 
-  const [activeSection, setActiveSection] = useState<Section>('overview');
-  const [sidebarOpen, setSidebarOpen]     = useState(false);
-  const [isStaff, setIsStaff]             = useState(false);
+  const [activeSection,     setActiveSection]     = useState<Section>('overview');
+  const [sidebarOpen,       setSidebarOpen]        = useState(false);
+  const [isStaff,           setIsStaff]            = useState(false);
+  const [staffPermissions,  setStaffPermissions]   = useState<Record<string, boolean> | null>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      const role = session?.user?.app_metadata?.role ?? session?.user?.user_metadata?.role;
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session) return;
+      const role = session.user.app_metadata?.role ?? session.user.user_metadata?.role;
       setIsStaff(role === 'staff');
+
+      // Fetch granular permissions for all authenticated users (admins get full set)
+      try {
+        const res  = await fetch('/api/team/me', {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setStaffPermissions(data.permissions ?? {});
+        }
+      } catch {/* non-fatal */}
     });
   }, []);
 
@@ -542,8 +616,18 @@ export default function MembersPage() {
 
   if (!user) return null;
 
-  const admin       = isAdmin(user.email ?? '');
+  const admin      = isAdmin(user.email ?? '');
+  const superAdmin = isSuperAdmin(user.email ?? '');
   const displayName = user.name || user.email?.split('@')[0] || 'Member';
+
+  /** Returns true if the current user can access this section. */
+  function canAccess(section: Section): boolean {
+    if (admin) return true; // admins always have full access
+    if (!isStaff) return false;
+    const permKey = SECTION_PERM[section];
+    if (!permKey) return true; // overview, settings, etc. — always accessible
+    return staffPermissions?.[permKey] ?? false;
+  }
 
   function navigate(s: Section) {
     setActiveSection(s);
@@ -557,12 +641,14 @@ export default function MembersPage() {
 
   const sidebarProps = {
     displayName,
-    email: user.email ?? '',
+    email:     user.email ?? '',
     activeSection,
     navigate,
-    onLogout: handleLogout,
+    onLogout:  handleLogout,
     admin,
     isStaff,
+    canAccess,
+    superAdmin,
   };
 
   return (
@@ -641,71 +727,95 @@ export default function MembersPage() {
                 {activeSection === 'settings' && <SettingsSection />}
 
                 {(admin || isStaff) && activeSection === 'tasks' && (
-                  <>
-                    <SectionHeader title="Task Board" subtitle="Assegna e gestisci task tra i founder." />
-                    <TaskBoard currentEmail={user.email ?? ''} />
-                  </>
+                  canAccess('tasks') ? (
+                    <>
+                      <SectionHeader title="Task Board" subtitle="Assegna e gestisci task tra i founder." />
+                      <TaskBoard currentEmail={user.email ?? ''} />
+                    </>
+                  ) : <UnauthorisedSection title="Task Board" />
                 )}
 
-                {admin && activeSection === 'analytics' && (
-                  <>
-                    <SectionHeader title="Analytics" subtitle="KPI e metriche del club in tempo reale." />
-                    <AnalyticsDashboard />
-                  </>
+                {(admin || isStaff) && activeSection === 'analytics' && (
+                  canAccess('analytics') ? (
+                    <>
+                      <SectionHeader title="Analytics" subtitle="KPI e metriche del club in tempo reale." />
+                      <AnalyticsDashboard />
+                    </>
+                  ) : <UnauthorisedSection title="Analytics" />
                 )}
 
-                {admin && activeSection === 'pipeline' && (
-                  <>
-                    <SectionHeader title="Pipeline Membership" subtitle="Gestisci le richieste di adesione." />
-                    <MembershipPipeline />
-                  </>
+                {(admin || isStaff) && activeSection === 'pipeline' && (
+                  canAccess('pipeline') ? (
+                    <>
+                      <SectionHeader title="Pipeline Membership" subtitle="Gestisci le richieste di adesione." />
+                      <MembershipPipeline />
+                    </>
+                  ) : <UnauthorisedSection title="Pipeline Membership" />
                 )}
 
                 {(admin || isStaff) && activeSection === 'events' && (
-                  <EventManager />
+                  canAccess('events') ? <EventManager /> : <UnauthorisedSection title="Gestione Eventi" />
                 )}
 
                 {(admin || isStaff) && activeSection === 'news' && (
-                  <>
-                    <SectionHeader title="Gestione News" subtitle="Crea e modifica le card della homepage." />
-                    <NewsManager />
-                  </>
+                  canAccess('news') ? (
+                    <>
+                      <SectionHeader title="Gestione News" subtitle="Crea e modifica le card della homepage." />
+                      <NewsManager />
+                    </>
+                  ) : <UnauthorisedSection title="Gestione News" />
                 )}
 
                 {(admin || isStaff) && activeSection === 'crm' && (
-                  <>
-                    <SectionHeader title="CRM Membri" subtitle="Lista membri e invio comunicazioni." />
-                    <MemberCRM />
-                  </>
+                  canAccess('crm') ? (
+                    <>
+                      <SectionHeader title="CRM Membri" subtitle="Lista membri e invio comunicazioni." />
+                      <MemberCRM />
+                    </>
+                  ) : <UnauthorisedSection title="CRM Membri" />
                 )}
 
                 {(admin || isStaff) && activeSection === 'crm-wine' && (
-                  <>
-                    <SectionHeader title="CRM Contatti Vino" subtitle="Contatti del settore vitivinicolo — produttori, hospitality, industry." />
-                    <CrmWine />
-                  </>
+                  canAccess('crm-wine') ? (
+                    <>
+                      <SectionHeader title="CRM Contatti Vino" subtitle="Contatti del settore vitivinicolo — produttori, hospitality, industry." />
+                      <CrmWine />
+                    </>
+                  ) : <UnauthorisedSection title="CRM Contatti Vino" />
                 )}
 
                 {(admin || isStaff) && activeSection === 'crm-bordeaux' && (
-                  <>
-                    <SectionHeader title="CRM Produttori Bordeaux" subtitle="Châteaux e produttori di Bordeaux — richieste visita e follow-up." />
-                    <CrmBordeaux />
-                  </>
+                  canAccess('crm-bordeaux') ? (
+                    <>
+                      <SectionHeader title="CRM Produttori Bordeaux" subtitle="Châteaux e produttori di Bordeaux — richieste visita e follow-up." />
+                      <CrmBordeaux />
+                    </>
+                  ) : <UnauthorisedSection title="CRM Produttori Bordeaux" />
                 )}
 
                 {(admin || isStaff) && activeSection === 'crm-clienti' && (
-                  <>
-                    <SectionHeader title="CRM Clienti" subtitle="Banca dati automatica dei clienti che hanno acquistato biglietti — invio email e storico eventi." />
-                    <CrmClienti />
-                  </>
+                  canAccess('crm-clienti') ? (
+                    <>
+                      <SectionHeader title="CRM Clienti" subtitle="Banca dati automatica dei clienti che hanno acquistato biglietti — invio email e storico eventi." />
+                      <CrmClienti />
+                    </>
+                  ) : <UnauthorisedSection title="CRM Clienti" />
                 )}
 
                 {(admin || isStaff) && activeSection === 'media' && (
-                  <>
-                    <SectionHeader title="Gestione Media" subtitle="Carica immagini per le gallerie del sito — Wine Party, Wine Lounge, Winery Visit e singole cantine." />
-                    <MediaManager />
-                  </>
+                  canAccess('media') ? (
+                    <>
+                      <SectionHeader title="Gestione Media" subtitle="Carica immagini per le gallerie del sito — Wine Party, Wine Lounge, Winery Visit e singole cantine." />
+                      <MediaManager />
+                    </>
+                  ) : <UnauthorisedSection title="Gestione Media" />
                 )}
+
+                {(admin || isStaff) && activeSection === 'merch' && (
+                  canAccess('merch') ? <MerchManager /> : <UnauthorisedSection title="Gestione Merch" />
+                )}
+
+                {superAdmin && activeSection === 'team' && <TeamManagement />}
 
               </motion.div>
             </AnimatePresence>

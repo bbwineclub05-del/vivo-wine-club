@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { isAdminEmail } from '@/lib/admins';
 
 /**
  * POST /api/checkin
@@ -26,9 +27,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const role = user.app_metadata?.role ?? user.user_metadata?.role;
-  if (role !== 'staff') {
-    return NextResponse.json({ error: 'Forbidden — staff only' }, { status: 403 });
+  const role      = user.app_metadata?.role ?? user.user_metadata?.role;
+  const userEmail = user.email ?? '';
+  if (role !== 'staff' && !isAdminEmail(userEmail)) {
+    return NextResponse.json({ error: 'Forbidden — staff or admin only' }, { status: 403 });
   }
 
   // ── Token ─────────────────────────────────────────────────────────────────────

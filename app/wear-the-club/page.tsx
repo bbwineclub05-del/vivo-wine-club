@@ -1,31 +1,39 @@
 'use client';
 
-import { useState, useCallback, memo } from 'react';
+import { useState, useCallback, useEffect, memo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import BackButton from '@/components/BackButton';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { ArrowLeft, Check, Plus } from 'lucide-react';
+import { Check, Plus } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import CartDrawer from '@/components/CartDrawer';
 import { useCart } from '@/contexts/CartContext';
 
-const SIZES = ['S', 'M', 'L', 'XL'] as const;
-type Size = (typeof SIZES)[number];
+interface Product {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  sizes: string[];
+  colors: string[];
+  images: string[];
+}
 
-const PRODUCTS = [
-  { id: 201, name: 'Classic Tee',    price: 35, icon: '👕', image: '/merch/maglietta.png',      description: 'Soft 100% cotton tee with embroidered club crest.',   hasSize: true  },
-  { id: 202, name: 'Club Cap',       price: 30, icon: '🧢', image: '/merch/cappellino.png',     description: 'Structured 6-panel cap with tonal logo.',             hasSize: false },
-  { id: 203, name: 'Tote Bag',       price: 25, icon: '👜', image: '/merch/totebag.png',        description: 'Heavy canvas tote — fits two bottles.',               hasSize: false },
-  { id: 204, name: 'Corkscrew',      price: 20, icon: '🔩', image: '/merch/cavatappi.png',      description: 'Professional-grade waiter\'s corkscrew.',             hasSize: false },
-  { id: 205, name: 'Wine Carrier',   price: 45, icon: '🍶', image: '/merch/portabicchiere.png', description: 'Insulated carrier for up to 4 bottles.',              hasSize: false },
-  { id: 206, name: 'Club Hoodie',    price: 65, icon: '🧥', image: '/merch/felpa.png',          description: 'Heavyweight fleece with chest logo.',                 hasSize: true  },
-  { id: 207, name: 'Wine Glass',     price: 18, icon: '🍷', image: '/merch/bicchiere.png',      description: 'Crystal-clear glass with engraved club logo.',        hasSize: false },
-  { id: 208, name: 'IQOS Case',      price: 22, icon: '📦', image: '/merch/iqos.png',           description: 'Slim protective case with Vivo Wine Club branding.',  hasSize: false },
-] as const;
-
-type Product = (typeof PRODUCTS)[number];
+// Italian color name → hex for display swatches
+const COLOR_HEX: Record<string, string> = {
+  nero: '#1a1a1a', bianco: '#f0ede8', bordeaux: '#6b1a2a', verde: '#2d5a27',
+  rosso: '#cc2200', blu: '#1a3a6b', grigio: '#7a7a7a', beige: '#d4b896',
+  marrone: '#6b3a2a', rosa: '#e8a0b0', arancio: '#e07820', arancione: '#e07820',
+  giallo: '#d4b800', viola: '#6b2d6b', azzurro: '#4a9fd4', navy: '#1a2a4a',
+  crema: '#f0e8d4', ecru: '#d4c9a8', lilla: '#c8a0d0', turchese: '#20b0c0',
+  camel: '#c09060', khaki: '#c0b060', militare: '#4a5a2a', senape: '#d0a030',
+  panna: '#f5ede0', silver: '#b0b0b0', oro: '#c9a84c',
+};
+function colorHex(name: string): string {
+  return COLOR_HEX[name.toLowerCase().replace(/\s+/g, '_')] ?? '#aaaaaa';
+}
 
 interface ProductCardProps {
   product: Product;
@@ -35,24 +43,31 @@ interface ProductCardProps {
 
 const ProductCard = memo(function ProductCard({ product, index, reducedMotion }: ProductCardProps) {
   const { addItem } = useCart();
-  const [added, setAdded]   = useState(false);
-  const [size, setSize]     = useState<Size>('M');
-  const [sizeError, setSizeError] = useState(false);
+  const [added,      setAdded]      = useState(false);
+  const [size,       setSize]       = useState<string>(product.sizes[0]   ?? '');
+  const [color,      setColor]      = useState<string>(product.colors[0]  ?? '');
+  const [sizeErr,    setSizeErr]    = useState(false);
+  const [colorErr,   setColorErr]   = useState(false);
+  const hasSizes  = product.sizes.length  > 0;
+  const hasColors = product.colors.length > 0;
+  const image     = product.images[0] ?? '';
 
   const handleAdd = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    const cartName = product.hasSize ? `${product.name} — ${size}` : product.name;
-    addItem({
-      id:    product.id,
-      name:  cartName,
-      price: product.price,
-      icon:  product.icon,
-      image: product.image,
-    });
+    // Validate required selections
+    if (hasSizes  && !size)  { setSizeErr(true);  return; }
+    if (hasColors && !color) { setColorErr(true);  return; }
+    setSizeErr(false); setColorErr(false);
+
+    const parts = [product.title];
+    if (hasSizes  && size)  parts.push(size);
+    if (hasColors && color) parts.push(color);
+    const cartName = parts.join(' — ');
+
+    addItem({ id: product.id, name: cartName, price: product.price, icon: '', image });
     setAdded(true);
-    setSizeError(false);
     setTimeout(() => setAdded(false), 1800);
-  }, [addItem, product, size]);
+  }, [addItem, product, size, color, hasSizes, hasColors, image]);
 
   return (
     <motion.div
@@ -65,15 +80,19 @@ const ProductCard = memo(function ProductCard({ product, index, reducedMotion }:
       className="group flex flex-col cursor-default"
     >
       {/* Image */}
-      <div className="relative rounded-xl overflow-hidden aspect-square">
-        <Image
-          src={product.image}
-          alt={product.name}
-          fill
-          loading="lazy"
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
-          sizes="(max-width: 768px) 50vw, 33vw"
-        />
+      <div className="relative rounded-xl overflow-hidden aspect-square bg-[#f5eded]">
+        {image ? (
+          <Image
+            src={image}
+            alt={product.title}
+            fill
+            loading="lazy"
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            sizes="(max-width: 768px) 50vw, 33vw"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-5xl opacity-20">🍷</div>
+        )}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
 
         {/* ADD button */}
@@ -84,7 +103,7 @@ const ProductCard = memo(function ProductCard({ product, index, reducedMotion }:
             className={`w-10 h-10 rounded-full flex items-center justify-center text-white shadow-lg transition-colors duration-300 ${
               added ? 'bg-[#2d6e2d]' : 'bg-[#731515] hover:bg-[#aa4848]'
             }`}
-            aria-label={`Add ${product.name} to cart`}
+            aria-label={`Add ${product.title} to cart`}
           >
             <AnimatePresence mode="wait" initial={false}>
               {added ? (
@@ -108,7 +127,7 @@ const ProductCard = memo(function ProductCard({ product, index, reducedMotion }:
             className="text-sm font-medium text-[#1a0505] group-hover:text-[#731515] transition-colors duration-300"
             style={{ fontFamily: 'var(--font-syne)' }}
           >
-            {product.name}
+            {product.title}
           </h3>
           <span className="text-sm text-[#731515]" style={{ fontFamily: 'var(--font-syne)' }}>
             €{product.price}
@@ -118,32 +137,93 @@ const ProductCard = memo(function ProductCard({ product, index, reducedMotion }:
           {product.description}
         </p>
 
-        {/* Size selector — only for clothing */}
-        {product.hasSize && (
-          <div className="flex items-center gap-1.5">
-            {SIZES.map((s) => (
+        {/* Size selector */}
+        {hasSizes && (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {product.sizes.map((s) => (
               <button
                 key={s}
                 type="button"
-                onClick={() => { setSize(s); setSizeError(false); }}
+                onClick={() => { setSize(s); setSizeErr(false); }}
                 className={`w-10 h-10 text-[10px] tracking-widest border transition-colors duration-150 ${
                   size === s
                     ? 'border-[#731515] bg-[#731515] text-white'
+                    : sizeErr
+                    ? 'border-red-300 text-[#7a4a4a] hover:border-[#731515]'
                     : 'border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515] hover:text-[#731515]'
-                } ${sizeError ? 'border-red-400' : ''}`}
+                }`}
               >
                 {s}
               </button>
             ))}
           </div>
         )}
+
+        {/* Color selector */}
+        {hasColors && (
+          <div className={`mt-2 flex flex-wrap gap-2 ${hasSizes ? '' : ''}`}>
+            {product.colors.map((c) => {
+              const hex     = colorHex(c);
+              const active  = color === c;
+              const isLight = ['bianco', 'panna', 'crema', 'ecru'].includes(c.toLowerCase());
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  title={c}
+                  onClick={() => { setColor(c); setColorErr(false); }}
+                  className={`w-7 h-7 rounded-full border-2 transition-all duration-150 ${
+                    active
+                      ? 'border-[#731515] scale-110 shadow-md'
+                      : colorErr
+                      ? 'border-red-300 hover:border-[#731515]'
+                      : isLight
+                      ? 'border-[#e8d5d5] hover:border-[#731515]'
+                      : 'border-transparent hover:border-[#731515]'
+                  }`}
+                  style={{ background: hex }}
+                  aria-label={c}
+                />
+              );
+            })}
+          </div>
+        )}
+        {(sizeErr || colorErr) && (
+          <p className="text-[10px] text-[#731515] mt-1" style={{ fontFamily: 'var(--font-nunito)' }}>
+            {sizeErr ? 'Seleziona una taglia' : 'Seleziona un colore'}
+          </p>
+        )}
       </div>
     </motion.div>
   );
 });
 
+// Skeleton card shown during loading
+function SkeletonCard() {
+  return (
+    <div className="flex flex-col animate-pulse">
+      <div className="rounded-xl aspect-square bg-[#e8d5d5]/50" />
+      <div className="mt-4 space-y-2 px-0.5">
+        <div className="h-3.5 bg-[#e8d5d5]/60 rounded w-3/4" />
+        <div className="h-3 bg-[#e8d5d5]/40 rounded w-full" />
+        <div className="h-3 bg-[#e8d5d5]/40 rounded w-2/3" />
+      </div>
+    </div>
+  );
+}
+
 export default function WearTheClubPage() {
-  const reducedMotion = useReducedMotion();
+  const reducedMotion            = useReducedMotion();
+  const [products, setProducts]  = useState<Product[]>([]);
+  const [loading, setLoading]    = useState(true);
+
+  useEffect(() => {
+    fetch('/api/merch/products/public')
+      .then((r) => r.json())
+      .then((d) => setProducts(d.products ?? []))
+      .catch(() => {/* silently fail — empty list */})
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <>
@@ -197,27 +277,32 @@ export default function WearTheClubPage() {
             />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 sm:gap-6 md:gap-8">
-              {PRODUCTS.map((product, i) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  index={i}
-                  reducedMotion={reducedMotion}
-                />
-              ))}
+              {loading
+                ? Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
+                : products.map((product, i) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      index={i}
+                      reducedMotion={reducedMotion}
+                    />
+                  ))
+              }
             </div>
 
             {/* Bottom note */}
-            <motion.p
-              initial={{ opacity: reducedMotion ? 1 : 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: reducedMotion ? 0 : 0.7, delay: reducedMotion ? 0 : 0.4 }}
-              className="mt-14 text-center text-xs text-[#7a4a4a]/60 tracking-widest"
-              style={{ fontFamily: 'var(--font-nunito)' }}
-            >
-              ALL ITEMS SHIP WITHIN 5–7 BUSINESS DAYS · FREE RETURNS
-            </motion.p>
+            {!loading && (
+              <motion.p
+                initial={{ opacity: reducedMotion ? 1 : 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: reducedMotion ? 0 : 0.7, delay: reducedMotion ? 0 : 0.4 }}
+                className="mt-14 text-center text-xs text-[#7a4a4a]/60 tracking-widest"
+                style={{ fontFamily: 'var(--font-nunito)' }}
+              >
+                ALL ITEMS SHIP WITHIN 5–7 BUSINESS DAYS · FREE RETURNS
+              </motion.p>
+            )}
           </div>
         </section>
 

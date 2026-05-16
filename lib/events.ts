@@ -46,6 +46,7 @@ export function dbEventToEventData(e: DbEvent): EventData {
     month:             d.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' }).toUpperCase(),
     day:               String(d.getUTCDate()).padStart(2, '0'),
     year:              String(d.getUTCFullYear()),
+    time:              e.time ?? null,
     location:          e.location,
     locationFull:      e.location_full,
     description:       e.description,
@@ -63,6 +64,7 @@ export interface EventData {
   month: string;
   day: string;
   year: string;
+  time: string | null;
   location: string;
   locationFull: string;
   description: string;

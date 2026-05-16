@@ -1,0 +1,739 @@
+'use client';
+
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Plus, Pencil, Trash2, X, Loader2, Eye, EyeOff,
+  Package, ShoppingBag, CheckCircle, Clock, ImagePlus, GripVertical, Palette,
+} from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+);
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+interface Product {
+  id:                string;
+  title:             string;
+  description:       string;
+  price:             number;
+  sizes:             string[];
+  colors:            string[];
+  images:            string[];
+  visible:           boolean;
+  stripe_product_id: string | null;
+  stripe_price_id:   string | null;
+  sort_order:        number;
+  created_at:        string;
+}
+
+interface OrderItem { name: string; qty: number; price: number }
+
+interface MerchOrder {
+  id:               string;
+  stripe_session_id: string | null;
+  customer_name:    string | null;
+  customer_email:   string | null;
+  items:            OrderItem[];
+  total:            number;
+  status:           'da_evadere' | 'evaso';
+  created_at:       string;
+}
+
+const ALL_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+
+// Maps Italian color names (lowercase) to hex for preview swatches
+const COLOR_HEX: Record<string, string> = {
+  nero: '#1a1a1a', bianco: '#f0ede8', bordeaux: '#6b1a2a', verde: '#2d5a27',
+  rosso: '#cc2200', blu: '#1a3a6b', grigio: '#7a7a7a', beige: '#d4b896',
+  marrone: '#6b3a2a', rosa: '#e8a0b0', arancio: '#e07820', arancione: '#e07820',
+  giallo: '#d4b800', viola: '#6b2d6b', azzurro: '#4a9fd4', navy: '#1a2a4a',
+  crema: '#f0e8d4', ecru: '#d4c9a8', lilla: '#c8a0d0', turchese: '#20b0c0',
+  camel: '#c09060', khaki: '#c0b060', militare: '#4a5a2a', senape: '#d0a030',
+  panna: '#f5ede0', silver: '#b0b0b0', oro: '#c9a84c', arancio_bruciato: '#c04820',
+};
+
+function colorHex(name: string): string {
+  return COLOR_HEX[name.toLowerCase().replace(/\s+/g, '_')] ?? '#aaaaaa';
+}
+
+// ── Shared input styles ────────────────────────────────────────────────────────
+const inp = 'w-full bg-[#fdf6f6] border border-[#eddada] text-[#1a0505] px-3.5 py-2.5 text-sm placeholder:text-[#7a4a4a]/35 focus:outline-none focus:border-[#731515]/50 transition-colors rounded-lg';
+
+// ── Image uploader ─────────────────────────────────────────────────────────────
+
+function ImageUploader({
+  images,
+  onChange,
+  token,
+}: {
+  images:   string[];
+  onChange: (imgs: string[]) => void;
+  token:    string;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function handleFiles(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    try {
+      const uploaded: string[] = [];
+      for (const file of Array.from(files)) {
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('folder', 'products');
+        const res  = await fetch('/api/media/upload', {
+          method:  'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body:    fd,
+        });
+        const data = await res.json();
+        if (data.url) uploaded.push(data.url);
+      }
+      onChange([...images, ...uploaded]);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div>
+      <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-2">IMMAGINI</label>
+
+      {/* Existing images */}
+      {images.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-3">
+          {images.map((url, i) => (
+            <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden border border-[#eddada] group">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={url} alt="" className="w-full h-full object-cover" />
+              <button
+                type="button"
+                onClick={() => onChange(images.filter((_, j) => j !== i))}
+                className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+              >
+                <X size={16} className="text-white" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Upload button */}
+      <button
+        type="button"
+        onClick={() => fileRef.current?.click()}
+        disabled={uploading}
+        className="flex items-center gap-2 text-[10px] tracking-[0.25em] border border-dashed border-[#eddada] text-[#7a4a4a]/60 hover:border-[#731515]/40 hover:text-[#731515]/60 px-4 py-2.5 rounded-lg transition-colors disabled:opacity-50 w-full justify-center"
+      >
+        {uploading ? <Loader2 size={13} className="animate-spin" /> : <ImagePlus size={13} />}
+        {uploading ? 'UPLOAD IN CORSO…' : 'AGGIUNGI IMMAGINI'}
+      </button>
+      <input
+        ref={fileRef} type="file" accept="image/*" multiple className="hidden"
+        onChange={e => handleFiles(e.target.files)}
+      />
+    </div>
+  );
+}
+
+// ── Product modal (create / edit) ─────────────────────────────────────────────
+
+function ProductModal({
+  product,
+  token,
+  onClose,
+  onSaved,
+}: {
+  product: Product | null;
+  token:   string;
+  onClose: () => void;
+  onSaved: (p: Product) => void;
+}) {
+  const editing = !!product;
+
+  const [title,        setTitle]        = useState(product?.title       ?? '');
+  const [description,  setDescription]  = useState(product?.description ?? '');
+  const [price,        setPrice]        = useState(product?.price       ?? '');
+  const [sizes,        setSizes]        = useState<string[]>(product?.sizes  ?? []);
+  const [colors,       setColors]       = useState<string[]>(product?.colors ?? []);
+  const [colorEnabled, setColorEnabled] = useState((product?.colors ?? []).length > 0);
+  const [colorInput,   setColorInput]   = useState('');
+  const [images,       setImages]       = useState<string[]>(product?.images ?? []);
+  const [visible,      setVisible]      = useState(product?.visible     ?? true);
+  const [saving,       setSaving]       = useState(false);
+  const [error,        setError]        = useState('');
+
+  function toggleSize(s: string) {
+    setSizes(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
+  }
+
+  function addColor() {
+    const c = colorInput.trim();
+    if (!c || colors.map(x => x.toLowerCase()).includes(c.toLowerCase())) return;
+    setColors(prev => [...prev, c]);
+    setColorInput('');
+  }
+
+  function removeColor(c: string) {
+    setColors(prev => prev.filter(x => x !== c));
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!title || !price) { setError('Titolo e prezzo sono obbligatori'); return; }
+    setError('');
+    setSaving(true);
+
+    const effectiveColors = colorEnabled ? colors : [];
+    try {
+      const body = { title, description, price: Number(price), sizes, colors: effectiveColors, images, visible };
+      const url    = editing ? `/api/merch/products/${product!.id}` : '/api/merch/products';
+      const method = editing ? 'PATCH' : 'POST';
+
+      const res  = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body:    JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? 'Errore'); return; }
+      onSaved(data.product);
+      onClose();
+    } catch { setError('Errore di rete.'); }
+    finally  { setSaving(false); }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6 overflow-y-auto">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.96 }} transition={{ duration: 0.18 }}
+        className="bg-white rounded-xl border border-[#eddada] shadow-xl w-full max-w-lg my-auto"
+      >
+        <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-[#eddada]">
+          <h2 className="text-[15px] font-light text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>
+            {editing ? 'Modifica prodotto' : 'Nuovo prodotto'}
+          </h2>
+          <button onClick={onClose} className="text-[#7a4a4a]/40 hover:text-[#7a4a4a]"><X size={18} /></button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+          {/* Title */}
+          <div>
+            <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">TITOLO *</label>
+            <input required value={title} onChange={e => setTitle(e.target.value)}
+              placeholder="es. Classic Tee" className={inp} style={{ fontFamily: 'var(--font-nunito)' }} />
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">DESCRIZIONE</label>
+            <textarea value={description} onChange={e => setDescription(e.target.value)}
+              placeholder="Descrizione del prodotto…" rows={3}
+              className={`${inp} resize-none`} style={{ fontFamily: 'var(--font-nunito)' }} />
+          </div>
+
+          {/* Price */}
+          <div>
+            <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">PREZZO (€) *</label>
+            <input type="number" required min="0" step="0.01" value={price}
+              onChange={e => setPrice(e.target.value)} placeholder="35.00"
+              className={inp} style={{ fontFamily: 'var(--font-nunito)' }} />
+          </div>
+
+          {/* Sizes */}
+          <div>
+            <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-2">TAGLIE DISPONIBILI</label>
+            <div className="flex flex-wrap gap-2">
+              {ALL_SIZES.map(s => (
+                <button key={s} type="button" onClick={() => toggleSize(s)}
+                  className={`px-3 py-1.5 text-[11px] rounded-lg border transition-colors ${
+                    sizes.includes(s)
+                      ? 'bg-[#731515] text-white border-[#731515]'
+                      : 'border-[#eddada] text-[#7a4a4a]/60 hover:border-[#731515]/40'
+                  }`}>
+                  {s}
+                </button>
+              ))}
+            </div>
+            {sizes.length === 0 && (
+              <p className="text-[10px] text-[#7a4a4a]/40 mt-1" style={{ fontFamily: 'var(--font-nunito)' }}>
+                Nessuna taglia = prodotto senza taglia
+              </p>
+            )}
+          </div>
+
+          {/* Colors */}
+          <div className="space-y-3">
+            {/* Toggle row */}
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[12px] text-[#1a0505] font-medium" style={{ fontFamily: 'var(--font-nunito)' }}>
+                  Colori disponibili
+                </p>
+                <p className="text-[10px] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
+                  Il cliente dovrà scegliere un colore prima di aggiungere al carrello
+                </p>
+              </div>
+              <button type="button" onClick={() => {
+                setColorEnabled(v => !v);
+                if (colorEnabled) setColors([]);
+              }}>
+                <Palette size={20} className={colorEnabled ? 'text-[#731515]' : 'text-[#7a4a4a]/30'} />
+              </button>
+            </div>
+
+            {/* Color tag input (only when enabled) */}
+            {colorEnabled && (
+              <div className="space-y-2 pl-1">
+                {/* Existing color tags */}
+                {colors.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {colors.map(c => (
+                      <span key={c} className="inline-flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-full border border-[#eddada] bg-[#fdf6f6] text-[#3a1a1a]"
+                        style={{ fontFamily: 'var(--font-nunito)' }}>
+                        <span className="w-3 h-3 rounded-full shrink-0 border border-black/10"
+                          style={{ background: colorHex(c) }} />
+                        {c}
+                        <button type="button" onClick={() => removeColor(c)}
+                          className="text-[#7a4a4a]/40 hover:text-[#731515] ml-0.5">
+                          <X size={10} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {/* Input */}
+                <div className="flex gap-2">
+                  <input
+                    value={colorInput}
+                    onChange={e => setColorInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addColor(); } }}
+                    placeholder="es. Nero, Bianco, Bordeaux…"
+                    className={`${inp} flex-1`}
+                    style={{ fontFamily: 'var(--font-nunito)' }}
+                  />
+                  <button type="button" onClick={addColor}
+                    disabled={!colorInput.trim()}
+                    className="px-3 py-2 bg-[#731515] text-white text-[10px] tracking-[0.2em] rounded-lg hover:bg-[#9b2323] disabled:opacity-40 transition-colors shrink-0">
+                    +
+                  </button>
+                </div>
+                {colors.length === 0 && (
+                  <p className="text-[10px] text-[#7a4a4a]/40 italic" style={{ fontFamily: 'var(--font-nunito)' }}>
+                    Premi Invio o + per aggiungere ogni colore
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Images */}
+          <ImageUploader images={images} onChange={setImages} token={token} />
+
+          {/* Visible */}
+          <div className="flex items-center justify-between py-2">
+            <div>
+              <p className="text-[12px] text-[#1a0505] font-medium" style={{ fontFamily: 'var(--font-nunito)' }}>
+                Visibile nello shop
+              </p>
+              <p className="text-[10px] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
+                Se disattivato il prodotto è nascosto ai clienti
+              </p>
+            </div>
+            <button type="button" onClick={() => setVisible(v => !v)}>
+              {visible
+                ? <Eye size={20} className="text-[#731515]" />
+                : <EyeOff size={20} className="text-[#7a4a4a]/30" />}
+            </button>
+          </div>
+
+          {error && (
+            <p className="text-[12px] text-[#731515] bg-[#731515]/6 border border-[#731515]/15 px-3 py-2 rounded-lg"
+              style={{ fontFamily: 'var(--font-nunito)' }}>{error}</p>
+          )}
+
+          <div className="flex gap-3 pt-1">
+            <button type="button" onClick={onClose}
+              className="flex-1 py-2.5 border border-[#eddada] text-[#7a4a4a] text-[10px] tracking-[0.25em] hover:bg-[#fdf6f6] transition-colors rounded-lg">
+              ANNULLA
+            </button>
+            <button type="submit" disabled={saving}
+              className="flex-1 py-2.5 bg-[#731515] text-white text-[10px] tracking-[0.25em] hover:bg-[#9b2323] disabled:opacity-55 transition-colors rounded-lg flex items-center justify-center gap-2">
+              {saving && <Loader2 size={13} className="animate-spin" />}
+              {saving ? 'SALVATAGGIO…' : editing ? 'SALVA' : 'CREA'}
+            </button>
+          </div>
+        </form>
+      </motion.div>
+    </div>
+  );
+}
+
+// ── Product card ───────────────────────────────────────────────────────────────
+
+function ProductCard({
+  product, token, onEdit, onDelete,
+}: {
+  product:  Product;
+  token:    string;
+  onEdit:   (p: Product) => void;
+  onDelete: (id: string) => void;
+}) {
+  const [deleting, setDeleting]   = useState(false);
+  const [confirm,  setConfirm]    = useState(false);
+  const [toggling, setToggling]   = useState(false);
+  const [visible,  setVisible]    = useState(product.visible);
+
+  async function handleDelete() {
+    if (!confirm) { setConfirm(true); return; }
+    setDeleting(true);
+    await fetch(`/api/merch/products/${product.id}`, {
+      method: 'DELETE', headers: { Authorization: `Bearer ${token}` },
+    });
+    onDelete(product.id);
+  }
+
+  async function toggleVisible() {
+    setToggling(true);
+    const res  = await fetch(`/api/merch/products/${product.id}`, {
+      method:  'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body:    JSON.stringify({ visible: !visible }),
+    });
+    const data = await res.json();
+    if (data.product) setVisible(data.product.visible);
+    setToggling(false);
+  }
+
+  const thumb = product.images[0];
+
+  return (
+    <div className="border border-[#eddada] rounded-xl overflow-hidden bg-white group">
+      {/* Thumb */}
+      <div className="relative w-full aspect-square bg-[#fdf6f6] overflow-hidden">
+        {thumb
+          ? <img src={thumb} alt={product.title} className="w-full h-full object-cover" /> // eslint-disable-line @next/next/no-img-element
+          : <div className="w-full h-full flex items-center justify-center">
+              <Package size={32} className="text-[#7a4a4a]/20" />
+            </div>
+        }
+        {!visible && (
+          <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+            <span className="text-white text-[9px] tracking-[0.35em] font-medium">NASCOSTO</span>
+          </div>
+        )}
+      </div>
+
+      {/* Info */}
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-2 mb-1">
+          <p className="text-[13px] font-medium text-[#1a0505] leading-snug" style={{ fontFamily: 'var(--font-nunito)' }}>
+            {product.title}
+          </p>
+          <p className="text-[13px] font-semibold text-[#731515] shrink-0">€{Number(product.price).toFixed(2)}</p>
+        </div>
+
+        {product.sizes.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-2">
+            {product.sizes.map(s => (
+              <span key={s} className="text-[9px] tracking-[0.2em] px-1.5 py-0.5 bg-[#7a4a4a]/8 text-[#7a4a4a] rounded">{s}</span>
+            ))}
+          </div>
+        )}
+        {product.colors.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-2 items-center">
+            {product.colors.map(c => (
+              <span key={c} title={c}
+                className="w-4 h-4 rounded-full border border-black/10 shrink-0"
+                style={{ background: colorHex(c) }} />
+            ))}
+            <span className="text-[9px] text-[#7a4a4a]/50 ml-0.5" style={{ fontFamily: 'var(--font-nunito)' }}>
+              {product.colors.length} colori
+            </span>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex items-center gap-2 mt-3">
+          <button onClick={() => onEdit(product)}
+            className="flex-1 flex items-center justify-center gap-1.5 text-[10px] tracking-[0.2em] border border-[#eddada] text-[#7a4a4a] py-2 rounded-lg hover:bg-[#fdf6f6] transition-colors">
+            <Pencil size={11} /> MODIFICA
+          </button>
+          <button onClick={toggleVisible} disabled={toggling}
+            className="p-2 rounded-lg border border-[#eddada] text-[#7a4a4a]/50 hover:text-[#731515] hover:border-[#731515]/30 transition-colors"
+            title={visible ? 'Nascondi' : 'Mostra'}>
+            {toggling ? <Loader2 size={13} className="animate-spin" /> : visible ? <Eye size={13} /> : <EyeOff size={13} />}
+          </button>
+          <button onClick={handleDelete} disabled={deleting} onBlur={() => setConfirm(false)}
+            className={`p-2 rounded-lg border transition-colors ${confirm ? 'bg-red-50 border-red-200 text-red-600' : 'border-[#eddada] text-[#7a4a4a]/50 hover:text-red-500 hover:border-red-200'}`}
+            title={confirm ? 'Conferma eliminazione' : 'Elimina'}>
+            {deleting ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Order row ──────────────────────────────────────────────────────────────────
+
+function OrderRow({ order, token, onUpdated }: {
+  order:     MerchOrder;
+  token:     string;
+  onUpdated: (o: MerchOrder) => void;
+}) {
+  const [saving, setSaving] = useState(false);
+
+  async function toggleStatus() {
+    setSaving(true);
+    const next = order.status === 'evaso' ? 'da_evadere' : 'evaso';
+    try {
+      const res  = await fetch(`/api/merch/orders/${order.id}`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body:    JSON.stringify({ status: next }),
+      });
+      const data = await res.json();
+      if (data.order) onUpdated(data.order);
+    } finally { setSaving(false); }
+  }
+
+  const date = new Date(order.created_at).toLocaleDateString('it-IT', {
+    day: '2-digit', month: 'short', year: 'numeric',
+  });
+  const time = new Date(order.created_at).toLocaleTimeString('it-IT', {
+    hour: '2-digit', minute: '2-digit',
+  });
+
+  const isEvaso = order.status === 'evaso';
+
+  return (
+    <div className={`border rounded-xl p-4 transition-colors ${isEvaso ? 'border-green-200 bg-green-50/30' : 'border-[#eddada] bg-white'}`}>
+      <div className="flex items-start gap-4 flex-wrap">
+
+        {/* Status button */}
+        <button onClick={toggleStatus} disabled={saving}
+          className={`shrink-0 flex items-center gap-1.5 text-[9px] tracking-[0.3em] font-medium px-3 py-1.5 rounded-full transition-colors ${
+            isEvaso
+              ? 'bg-green-100 text-green-700 hover:bg-green-200'
+              : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+          }`}>
+          {saving
+            ? <Loader2 size={10} className="animate-spin" />
+            : isEvaso ? <CheckCircle size={10} /> : <Clock size={10} />}
+          {isEvaso ? 'EVASO' : 'DA EVADERE'}
+        </button>
+
+        {/* Customer */}
+        <div className="flex-1 min-w-[150px]">
+          <p className="text-[13px] font-medium text-[#1a0505]" style={{ fontFamily: 'var(--font-nunito)' }}>
+            {order.customer_name ?? '—'}
+          </p>
+          <p className="text-[11px] text-[#7a4a4a]/60" style={{ fontFamily: 'var(--font-nunito)' }}>
+            {order.customer_email ?? '—'}
+          </p>
+        </div>
+
+        {/* Items */}
+        <div className="flex-1 min-w-[160px]">
+          {order.items.map((item, i) => (
+            <p key={i} className="text-[11.5px] text-[#3a1a1a]" style={{ fontFamily: 'var(--font-nunito)' }}>
+              <span className="font-medium">{item.qty}×</span> {item.name}
+              <span className="text-[#7a4a4a]/50 ml-1">€{Number(item.price).toFixed(2)}</span>
+            </p>
+          ))}
+        </div>
+
+        {/* Total + date */}
+        <div className="text-right shrink-0">
+          <p className="text-[14px] font-semibold text-[#731515]">€{Number(order.total).toFixed(2)}</p>
+          <p className="text-[10px] text-[#7a4a4a]/50 mt-0.5" style={{ fontFamily: 'var(--font-nunito)' }}>
+            {date} {time}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main component ─────────────────────────────────────────────────────────────
+
+export default function MerchManager() {
+  const [tab,      setTab]      = useState<'products' | 'orders'>('products');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [orders,   setOrders]   = useState<MerchOrder[]>([]);
+  const [loading,  setLoading]  = useState(true);
+  const [token,    setToken]    = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [editing,  setEditing]  = useState<Product | null>(null);
+
+  const loadProducts = useCallback(async (tk: string) => {
+    const res  = await fetch('/api/merch/products', { headers: { Authorization: `Bearer ${tk}` } });
+    const data = await res.json();
+    if (data.products) setProducts(data.products);
+  }, []);
+
+  const loadOrders = useCallback(async (tk: string) => {
+    const res  = await fetch('/api/merch/orders', { headers: { Authorization: `Bearer ${tk}` } });
+    const data = await res.json();
+    if (data.orders) setOrders(data.orders);
+  }, []);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session) { setLoading(false); return; }
+      setToken(session.access_token);
+      await Promise.all([loadProducts(session.access_token), loadOrders(session.access_token)]);
+      setLoading(false);
+    });
+  }, [loadProducts, loadOrders]);
+
+  // ── Realtime subscription on merch_orders ──
+  useEffect(() => {
+    const channel = supabase
+      .channel('merch_orders_realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'merch_orders' },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setOrders(prev => [payload.new as MerchOrder, ...prev]);
+          } else if (payload.eventType === 'UPDATE') {
+            setOrders(prev => prev.map(o => o.id === (payload.new as MerchOrder).id ? payload.new as MerchOrder : o));
+          } else if (payload.eventType === 'DELETE') {
+            setOrders(prev => prev.filter(o => o.id !== (payload.old as MerchOrder).id));
+          }
+        },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
+  function handleSaved(p: Product) {
+    setProducts(prev => {
+      const exists = prev.find(x => x.id === p.id);
+      return exists ? prev.map(x => x.id === p.id ? p : x) : [p, ...prev];
+    });
+  }
+
+  const daEvadere = orders.filter(o => o.status === 'da_evadere').length;
+  const evaso     = orders.filter(o => o.status === 'evaso').length;
+
+  return (
+    <>
+      {/* Header */}
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <h1 className="text-[clamp(1.6rem,2.5vw,2.2rem)] font-light text-[#1a0505] leading-none tracking-tight"
+            style={{ fontFamily: 'var(--font-syne)' }}>Gestione Merch</h1>
+          <p className="mt-2 text-sm text-[#7a4a4a]/70 font-light" style={{ fontFamily: 'var(--font-nunito)' }}>
+            Prodotti dello shop e ordini ricevuti.
+          </p>
+          <div className="mt-5 h-px w-16 bg-[#731515]/30" />
+        </div>
+        {tab === 'products' && (
+          <button onClick={() => { setEditing(null); setShowModal(true); }}
+            className="flex items-center gap-2 text-[10px] tracking-[0.3em] text-white bg-[#731515] px-5 py-3 hover:bg-[#9b2323] transition-colors rounded-lg shrink-0 mt-1">
+            <Plus size={13} /> NUOVO PRODOTTO
+          </button>
+        )}
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 mb-6 border-b border-[#eddada]">
+        {(['products', 'orders'] as const).map(t => (
+          <button key={t} onClick={() => setTab(t)}
+            className={`flex items-center gap-2 px-4 py-2.5 text-[11px] tracking-[0.3em] transition-colors border-b-2 -mb-px ${
+              tab === t
+                ? 'border-[#731515] text-[#731515]'
+                : 'border-transparent text-[#7a4a4a]/50 hover:text-[#7a4a4a]'
+            }`}>
+            {t === 'products' ? <Package size={13} /> : <ShoppingBag size={13} />}
+            {t === 'products' ? 'PRODOTTI' : `ORDINI${orders.length ? ` (${orders.length})` : ''}`}
+          </button>
+        ))}
+      </div>
+
+      {loading && (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 size={28} className="animate-spin text-[#731515]/40" />
+        </div>
+      )}
+
+      {/* ── Products tab ── */}
+      {!loading && tab === 'products' && (
+        <>
+          {products.length === 0 ? (
+            <div className="border border-dashed border-[#eddada] rounded-xl p-16 text-center">
+              <Package size={32} className="text-[#7a4a4a]/20 mx-auto mb-3" />
+              <p className="text-sm text-[#7a4a4a]/50 italic" style={{ fontFamily: 'var(--font-nunito)' }}>
+                Nessun prodotto. Clicca &ldquo;Nuovo prodotto&rdquo; per iniziare.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {products.map(p => (
+                <ProductCard key={p.id} product={p} token={token}
+                  onEdit={p => { setEditing(p); setShowModal(true); }}
+                  onDelete={id => setProducts(prev => prev.filter(x => x.id !== id))}
+                />
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ── Orders tab ── */}
+      {!loading && tab === 'orders' && (
+        <>
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            {[
+              { label: 'Totale',      value: orders.length, color: 'text-[#1a0505]' },
+              { label: 'Da evadere',  value: daEvadere,     color: 'text-orange-600' },
+              { label: 'Evasi',       value: evaso,         color: 'text-green-600'  },
+            ].map(s => (
+              <div key={s.label} className="border border-[#eddada] rounded-xl p-4 text-center bg-white">
+                <p className={`text-2xl font-light ${s.color}`} style={{ fontFamily: 'var(--font-syne)' }}>{s.value}</p>
+                <p className="text-[9px] tracking-[0.35em] text-[#7a4a4a]/50 mt-1 uppercase">{s.label}</p>
+              </div>
+            ))}
+          </div>
+
+          {orders.length === 0 ? (
+            <div className="border border-dashed border-[#eddada] rounded-xl p-16 text-center">
+              <ShoppingBag size={32} className="text-[#7a4a4a]/20 mx-auto mb-3" />
+              <p className="text-sm text-[#7a4a4a]/50 italic" style={{ fontFamily: 'var(--font-nunito)' }}>
+                Nessun ordine ancora. Quando arrivano appaiono qui automaticamente.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {orders.map(o => (
+                <OrderRow key={o.id} order={o} token={token}
+                  onUpdated={u => setOrders(prev => prev.map(x => x.id === u.id ? u : x))} />
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Product modal */}
+      <AnimatePresence>
+        {showModal && (
+          <ProductModal
+            product={editing} token={token}
+            onClose={() => { setShowModal(false); setEditing(null); }}
+            onSaved={handleSaved}
+          />
+        )}
+      </AnimatePresence>
+    </>
+  );
+}

@@ -10,6 +10,13 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
 );
 
+const ADMIN_EMAILS = [
+  'giacomogallo1310@gmail.com',
+  'cristianomichelotti@gmail.com',
+  'filippo.lombardi890@gmail.com',
+  'riccardo.consalvo@icloud.com',
+];
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type AuthState = 'loading' | 'unauthorized' | 'not_staff' | 'ready';
@@ -160,8 +167,11 @@ function CheckinContent() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) { setAuthState('unauthorized'); return; }
-      const role = session.user.app_metadata?.role ?? session.user.user_metadata?.role;
-      if (role !== 'staff') { setAuthState('not_staff'); return; }
+      const role  = session.user.app_metadata?.role ?? session.user.user_metadata?.role;
+      const email = session.user.email ?? '';
+      if (role !== 'staff' && !ADMIN_EMAILS.includes(email)) {
+        setAuthState('not_staff'); return;
+      }
       setAccessToken(session.access_token);
       setAuthState('ready');
     });

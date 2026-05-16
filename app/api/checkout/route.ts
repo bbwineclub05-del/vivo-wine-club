@@ -7,7 +7,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 interface CartItem {
-  id: number;
+  id: string;
   name: string;
   price: number;   // euros, integer (e.g. 35)
   quantity: number;
