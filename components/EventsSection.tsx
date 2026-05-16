@@ -145,7 +145,7 @@ export default function EventsSection() {
             EVENTS
           </h2>
           <p
-            className="mt-6 text-lg text-[#7a4a4a] font-light italic max-w-xl whitespace-nowrap"
+            className="mt-6 text-lg text-[#7a4a4a] font-light italic max-w-xl"
             style={{ fontFamily: 'var(--font-nunito)' }}
           >
             Exclusive experiences reserved for our members, tastings, tours and unforgettable evenings

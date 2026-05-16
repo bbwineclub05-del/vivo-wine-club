@@ -1054,7 +1054,7 @@ export default function MerchManager() {
   return (
     <>
       {/* Header */}
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
         <div>
           <h1 className="text-[clamp(1.6rem,2.5vw,2.2rem)] font-light text-[#1a0505] leading-none tracking-tight"
             style={{ fontFamily: 'var(--font-syne)' }}>Gestione Merch</h1>
@@ -1103,7 +1103,7 @@ export default function MerchManager() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {products.map(p => (
                 <ProductCard key={p.id} product={p} token={token}
                   onEdit={p => { setEditing(p); setShowModal(true); }}

@@ -87,11 +87,10 @@ export default function Navbar() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/main-logo.png"
-              alt=""
-              width={200}
-              height={80}
-              className="w-auto object-contain group-hover:opacity-70 transition-[opacity] duration-300"
-              style={{ height: 80 }}
+              alt="Vivo Wine Club"
+              width={160}
+              height={52}
+              className="w-auto object-contain group-hover:opacity-70 transition-[opacity] duration-300 h-9 sm:h-11"
             />
             <span
               className="text-[17px] font-light tracking-[0.08em] text-[#1a0505] group-hover:text-[#731515] transition-colors duration-300 leading-tight hidden sm:block"
