@@ -6,25 +6,22 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Check, Plus } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 
-interface Product {
-  id: string;
-  title: string;
-  description: string;
-  price: number;
-  sizes: string[];
-  colors: string[];
-  images: string[];
+interface ProductVariant {
+  id:         string;
+  color_name: string;
+  color_hex:  string;
+  images:     string[];
+  sort_order: number;
 }
 
-const COLOR_HEX: Record<string, string> = {
-  nero: '#1a1a1a', bianco: '#f0ede8', bordeaux: '#6b1a2a', verde: '#2d5a27',
-  rosso: '#cc2200', blu: '#1a3a6b', grigio: '#7a7a7a', beige: '#d4b896',
-  marrone: '#6b3a2a', rosa: '#e8a0b0', arancio: '#e07820', giallo: '#d4b800',
-  viola: '#6b2d6b', azzurro: '#4a9fd4', navy: '#1a2a4a', crema: '#f0e8d4',
-  camel: '#c09060', lilla: '#c8a0d0', turchese: '#20b0c0', senape: '#d0a030',
-};
-function colorHex(name: string): string {
-  return COLOR_HEX[name.toLowerCase()] ?? '#aaaaaa';
+interface Product {
+  id:               string;
+  title:            string;
+  description:      string;
+  price:            number;
+  sizes:            string[];
+  images:           string[];
+  product_variants: ProductVariant[];
 }
 
 // Memoised — only re-renders when its own props change
@@ -117,16 +114,16 @@ const ProductCard = memo(function ProductCard({
           €{product.price}
         </span>
       </div>
-      {/* Color dots preview */}
-      {product.colors.length > 0 && (
-        <div className="flex gap-1 mt-1.5 px-0.5">
-          {product.colors.slice(0, 6).map(c => (
-            <span key={c} title={c}
+      {/* Variant color dots — only when product has variants */}
+      {product.product_variants.length > 0 && (
+        <div className="flex gap-1 mt-1.5 px-0.5 items-center">
+          {product.product_variants.slice(0, 6).map(v => (
+            <span key={v.id} title={v.color_name}
               className="w-3 h-3 rounded-full border border-black/10 shrink-0"
-              style={{ background: colorHex(c) }} />
+              style={{ background: v.color_hex }} />
           ))}
-          {product.colors.length > 6 && (
-            <span className="text-[9px] text-[#7a4a4a]/40 leading-3">+{product.colors.length - 6}</span>
+          {product.product_variants.length > 6 && (
+            <span className="text-[9px] text-[#7a4a4a]/40 leading-3">+{product.product_variants.length - 6}</span>
           )}
         </div>
       )}

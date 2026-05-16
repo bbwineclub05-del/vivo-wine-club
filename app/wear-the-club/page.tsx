@@ -2,72 +2,98 @@
 
 import { useState, useCallback, useEffect, memo } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
-import BackButton from '@/components/BackButton';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { Check, Plus } from 'lucide-react';
+import { Check, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import CartDrawer from '@/components/CartDrawer';
+import BackButton from '@/components/BackButton';
 import { useCart } from '@/contexts/CartContext';
 
-interface Product {
-  id: string;
-  title: string;
-  description: string;
-  price: number;
-  sizes: string[];
-  colors: string[];
-  images: string[];
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+interface ProductVariant {
+  id:         string;
+  color_name: string;
+  color_hex:  string;
+  images:     string[];
+  sort_order: number;
 }
 
-// Italian color name → hex for display swatches
-const COLOR_HEX: Record<string, string> = {
-  nero: '#1a1a1a', bianco: '#f0ede8', bordeaux: '#6b1a2a', verde: '#2d5a27',
-  rosso: '#cc2200', blu: '#1a3a6b', grigio: '#7a7a7a', beige: '#d4b896',
-  marrone: '#6b3a2a', rosa: '#e8a0b0', arancio: '#e07820', arancione: '#e07820',
-  giallo: '#d4b800', viola: '#6b2d6b', azzurro: '#4a9fd4', navy: '#1a2a4a',
-  crema: '#f0e8d4', ecru: '#d4c9a8', lilla: '#c8a0d0', turchese: '#20b0c0',
-  camel: '#c09060', khaki: '#c0b060', militare: '#4a5a2a', senape: '#d0a030',
-  panna: '#f5ede0', silver: '#b0b0b0', oro: '#c9a84c',
-};
-function colorHex(name: string): string {
-  return COLOR_HEX[name.toLowerCase().replace(/\s+/g, '_')] ?? '#aaaaaa';
+interface Product {
+  id:               string;
+  title:            string;
+  description:      string;
+  price:            number;
+  sizes:            string[];
+  images:           string[];
+  product_variants: ProductVariant[];
 }
+
+// ── Product card ──────────────────────────────────────────────────────────────
 
 interface ProductCardProps {
-  product: Product;
-  index: number;
+  product:       Product;
+  index:         number;
   reducedMotion: boolean | null;
 }
 
 const ProductCard = memo(function ProductCard({ product, index, reducedMotion }: ProductCardProps) {
   const { addItem } = useCart();
-  const [added,      setAdded]      = useState(false);
-  const [size,       setSize]       = useState<string>(product.sizes[0]   ?? '');
-  const [color,      setColor]      = useState<string>(product.colors[0]  ?? '');
-  const [sizeErr,    setSizeErr]    = useState(false);
-  const [colorErr,   setColorErr]   = useState(false);
-  const hasSizes  = product.sizes.length  > 0;
-  const hasColors = product.colors.length > 0;
-  const image     = product.images[0] ?? '';
+
+  const hasVariants = product.product_variants.length > 0;
+  const hasSizes    = product.sizes.length > 0;
+
+  // Selected state
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
+  const [size,            setSize]            = useState<string>(product.sizes[0] ?? '');
+  const [activeImg,       setActiveImg]       = useState(0);
+  const [added,           setAdded]           = useState(false);
+  const [sizeErr,         setSizeErr]         = useState(false);
+  const [colorErr,        setColorErr]        = useState(false);
+
+  // Images shown depend on which variant (if any) is selected
+  const displayImages: string[] = (
+    selectedVariant && selectedVariant.images.length > 0
+      ? selectedVariant.images
+      : product.images
+  );
+  const currentImage = displayImages[activeImg] ?? '';
+
+  // When variant changes, reset image index
+  function selectVariant(v: ProductVariant) {
+    setSelectedVariant(v);
+    setActiveImg(0);
+    setColorErr(false);
+  }
 
   const handleAdd = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    // Validate required selections
-    if (hasSizes  && !size)  { setSizeErr(true);  return; }
-    if (hasColors && !color) { setColorErr(true);  return; }
+    if (hasSizes    && !size)            { setSizeErr(true);  return; }
+    if (hasVariants && !selectedVariant) { setColorErr(true); return; }
     setSizeErr(false); setColorErr(false);
 
     const parts = [product.title];
-    if (hasSizes  && size)  parts.push(size);
-    if (hasColors && color) parts.push(color);
+    if (hasSizes    && size)            parts.push(size);
+    if (hasVariants && selectedVariant) parts.push(selectedVariant.color_name);
     const cartName = parts.join(' — ');
 
-    addItem({ id: product.id, name: cartName, price: product.price, icon: '', image });
+    addItem({
+      id:    product.id,
+      name:  cartName,
+      price: product.price,
+      icon:  '',
+      image: currentImage,
+    });
     setAdded(true);
     setTimeout(() => setAdded(false), 1800);
-  }, [addItem, product, size, color, hasSizes, hasColors, image]);
+  }, [addItem, product, size, selectedVariant, hasSizes, hasVariants, currentImage]);
+
+  // Light colors need a dark border to be visible
+  const isLight = (hex: string) => {
+    const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    return (r*299 + g*587 + b*114) / 1000 > 180;
+  };
 
   return (
     <motion.div
@@ -75,25 +101,66 @@ const ProductCard = memo(function ProductCard({ product, index, reducedMotion }:
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-40px' }}
       transition={{ duration: reducedMotion ? 0 : 0.6, delay: reducedMotion ? 0 : index * 0.07, ease: [0.16, 1, 0.3, 1] }}
-      whileHover={reducedMotion ? undefined : { y: -4 }}
       style={{ willChange: 'transform' }}
       className="group flex flex-col cursor-default"
     >
-      {/* Image */}
+      {/* ── Main image + gallery ── */}
       <div className="relative rounded-xl overflow-hidden aspect-square bg-[#f5eded]">
-        {image ? (
-          <Image
-            src={image}
-            alt={product.title}
-            fill
-            loading="lazy"
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
-            sizes="(max-width: 768px) 50vw, 33vw"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-5xl opacity-20">🍷</div>
+
+        {/* Main image with crossfade on change */}
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={currentImage || 'empty'}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="absolute inset-0"
+          >
+            {currentImage ? (
+              <Image
+                src={currentImage}
+                alt={product.title}
+                fill
+                loading="lazy"
+                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                sizes="(max-width: 768px) 50vw, 33vw"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-5xl opacity-20">🍷</div>
+            )}
+          </motion.div>
+        </AnimatePresence>
+
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/8 transition-colors duration-300 pointer-events-none" />
+
+        {/* Gallery nav arrows — only if > 1 image */}
+        {displayImages.length > 1 && (
+          <>
+            <button
+              onClick={() => setActiveImg(i => (i - 1 + displayImages.length) % displayImages.length)}
+              className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/80 hover:bg-white flex items-center justify-center shadow transition-opacity opacity-0 group-hover:opacity-100"
+            >
+              <ChevronLeft size={14} className="text-[#731515]" />
+            </button>
+            <button
+              onClick={() => setActiveImg(i => (i + 1) % displayImages.length)}
+              className="absolute right-12 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/80 hover:bg-white flex items-center justify-center shadow transition-opacity opacity-0 group-hover:opacity-100"
+            >
+              <ChevronRight size={14} className="text-[#731515]" />
+            </button>
+            {/* Dot indicators */}
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+              {displayImages.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setActiveImg(i)}
+                  className={`w-1.5 h-1.5 rounded-full transition-colors ${i === activeImg ? 'bg-white' : 'bg-white/40'}`}
+                />
+              ))}
+            </div>
+          </>
         )}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
 
         {/* ADD button */}
         <div className="absolute top-3 right-3">
@@ -120,8 +187,30 @@ const ProductCard = memo(function ProductCard({ product, index, reducedMotion }:
         </div>
       </div>
 
-      {/* Info */}
-      <div className="mt-4 px-0.5">
+      {/* Thumbnail strip — only when > 1 image */}
+      {displayImages.length > 1 && (
+        <div className="flex gap-1.5 mt-2">
+          {displayImages.slice(0, 5).map((src, i) => (
+            <button
+              key={i}
+              onClick={() => setActiveImg(i)}
+              className={`relative w-10 h-10 rounded-md overflow-hidden border-2 shrink-0 transition-colors ${
+                i === activeImg ? 'border-[#731515]' : 'border-transparent hover:border-[#731515]/40'
+              }`}
+            >
+              <Image src={src} alt="" fill className="object-cover" sizes="40px" />
+            </button>
+          ))}
+          {displayImages.length > 5 && (
+            <div className="w-10 h-10 rounded-md bg-[#f5eded] flex items-center justify-center text-[10px] text-[#7a4a4a]/50">
+              +{displayImages.length - 5}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Info ── */}
+      <div className={`${displayImages.length > 1 ? 'mt-2' : 'mt-4'} px-0.5`}>
         <div className="flex items-baseline justify-between mb-1.5">
           <h3
             className="text-sm font-medium text-[#1a0505] group-hover:text-[#731515] transition-colors duration-300"
@@ -139,7 +228,7 @@ const ProductCard = memo(function ProductCard({ product, index, reducedMotion }:
 
         {/* Size selector */}
         {hasSizes && (
-          <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="flex items-center gap-1.5 flex-wrap mb-3">
             {product.sizes.map((s) => (
               <button
                 key={s}
@@ -159,37 +248,43 @@ const ProductCard = memo(function ProductCard({ product, index, reducedMotion }:
           </div>
         )}
 
-        {/* Color selector */}
-        {hasColors && (
-          <div className={`mt-2 flex flex-wrap gap-2 ${hasSizes ? '' : ''}`}>
-            {product.colors.map((c) => {
-              const hex     = colorHex(c);
-              const active  = color === c;
-              const isLight = ['bianco', 'panna', 'crema', 'ecru'].includes(c.toLowerCase());
+        {/* Variant color selector — only shown when product has variants */}
+        {hasVariants && (
+          <div className="flex flex-wrap items-center gap-2">
+            {product.product_variants.map((v) => {
+              const active = selectedVariant?.id === v.id;
+              const light  = isLight(v.color_hex);
               return (
                 <button
-                  key={c}
+                  key={v.id}
                   type="button"
-                  title={c}
-                  onClick={() => { setColor(c); setColorErr(false); }}
+                  title={v.color_name}
+                  onClick={() => selectVariant(v)}
                   className={`w-7 h-7 rounded-full border-2 transition-all duration-150 ${
                     active
                       ? 'border-[#731515] scale-110 shadow-md'
                       : colorErr
                       ? 'border-red-300 hover:border-[#731515]'
-                      : isLight
+                      : light
                       ? 'border-[#e8d5d5] hover:border-[#731515]'
                       : 'border-transparent hover:border-[#731515]'
                   }`}
-                  style={{ background: hex }}
-                  aria-label={c}
+                  style={{ background: v.color_hex }}
+                  aria-label={v.color_name}
                 />
               );
             })}
+            {selectedVariant && (
+              <span className="text-[10px] text-[#7a4a4a]/60 ml-0.5" style={{ fontFamily: 'var(--font-nunito)' }}>
+                {selectedVariant.color_name}
+              </span>
+            )}
           </div>
         )}
+
+        {/* Validation errors */}
         {(sizeErr || colorErr) && (
-          <p className="text-[10px] text-[#731515] mt-1" style={{ fontFamily: 'var(--font-nunito)' }}>
+          <p className="text-[10px] text-[#731515] mt-1.5" style={{ fontFamily: 'var(--font-nunito)' }}>
             {sizeErr ? 'Seleziona una taglia' : 'Seleziona un colore'}
           </p>
         )}
@@ -198,7 +293,8 @@ const ProductCard = memo(function ProductCard({ product, index, reducedMotion }:
   );
 });
 
-// Skeleton card shown during loading
+// ── Skeleton ──────────────────────────────────────────────────────────────────
+
 function SkeletonCard() {
   return (
     <div className="flex flex-col animate-pulse">
@@ -212,16 +308,18 @@ function SkeletonCard() {
   );
 }
 
+// ── Page ──────────────────────────────────────────────────────────────────────
+
 export default function WearTheClubPage() {
-  const reducedMotion            = useReducedMotion();
-  const [products, setProducts]  = useState<Product[]>([]);
-  const [loading, setLoading]    = useState(true);
+  const reducedMotion           = useReducedMotion();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading,  setLoading]  = useState(true);
 
   useEffect(() => {
     fetch('/api/merch/products/public')
       .then((r) => r.json())
       .then((d) => setProducts(d.products ?? []))
-      .catch(() => {/* silently fail — empty list */})
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
@@ -230,7 +328,7 @@ export default function WearTheClubPage() {
       <Navbar />
       <main className="min-h-screen pt-16">
 
-        {/* ── HERO IMAGE ── */}
+        {/* Hero */}
         <div className="relative w-full h-[220px] sm:h-[280px] md:h-[350px]">
           <Image
             src="/events/wine lounge 1.jpg"
@@ -249,10 +347,7 @@ export default function WearTheClubPage() {
             >
               WEAR THE CLUB
             </h1>
-            <p
-              className="text-sm md:text-base text-white/75 font-light italic"
-              style={{ fontFamily: 'var(--font-nunito)' }}
-            >
+            <p className="text-sm md:text-base text-white/75 font-light italic" style={{ fontFamily: 'var(--font-nunito)' }}>
               Each piece carries the identity of the club. Wear it, share it, live it.
             </p>
           </div>
@@ -261,13 +356,10 @@ export default function WearTheClubPage() {
           </div>
         </div>
 
-        {/* ── PRODUCTS GRID ── */}
+        {/* Products grid */}
         <section className="relative overflow-hidden pb-28 md:pb-32">
           <div className="fog-right" style={{ top: '10%' }} />
-
           <div className="max-w-5xl mx-auto px-6 lg:px-10">
-
-            {/* Divider */}
             <motion.div
               initial={{ scaleX: reducedMotion ? 1 : 0 }}
               whileInView={{ scaleX: 1 }}
@@ -275,22 +367,14 @@ export default function WearTheClubPage() {
               transition={{ duration: reducedMotion ? 0 : 0.9, ease: [0.16, 1, 0.3, 1] }}
               className="origin-left w-full h-px bg-gradient-to-r from-[#731515]/30 via-[#731515]/10 to-transparent mb-14"
             />
-
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 sm:gap-6 md:gap-8">
               {loading
                 ? Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
-                : products.map((product, i) => (
-                    <ProductCard
-                      key={product.id}
-                      product={product}
-                      index={i}
-                      reducedMotion={reducedMotion}
-                    />
+                : products.map((p, i) => (
+                    <ProductCard key={p.id} product={p} index={i} reducedMotion={reducedMotion} />
                   ))
               }
             </div>
-
-            {/* Bottom note */}
             {!loading && (
               <motion.p
                 initial={{ opacity: reducedMotion ? 1 : 0 }}
@@ -305,7 +389,6 @@ export default function WearTheClubPage() {
             )}
           </div>
         </section>
-
       </main>
       <Footer />
       <CartDrawer />

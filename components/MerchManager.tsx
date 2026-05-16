@@ -30,6 +30,16 @@ interface Product {
   created_at:        string;
 }
 
+interface ProductVariant {
+  id:         string;
+  product_id: string;
+  color_name: string;
+  color_hex:  string;
+  images:     string[];
+  sort_order: number;
+  created_at: string;
+}
+
 interface OrderItem { name: string; qty: number; price: number }
 
 interface MerchOrder {
@@ -375,15 +385,314 @@ function ProductModal({
   );
 }
 
+// ── Variant Manager Modal ─────────────────────────────────────────────────────
+
+function VariantManagerModal({
+  product,
+  token,
+  onClose,
+}: {
+  product: Product;
+  token:   string;
+  onClose: () => void;
+}) {
+  const [variants,  setVariants]  = useState<ProductVariant[]>([]);
+  const [loading,   setLoading]   = useState(true);
+  const [expandedId, setExpandedId] = useState<string | 'new' | null>(null);
+
+  // Load variants
+  useEffect(() => {
+    fetch(`/api/merch/products/${product.id}/variants`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.json())
+      .then(d => setVariants(d.variants ?? []))
+      .finally(() => setLoading(false));
+  }, [product.id, token]);
+
+  function handleSaved(v: ProductVariant) {
+    setVariants(prev => {
+      const exists = prev.find(x => x.id === v.id);
+      return exists ? prev.map(x => x.id === v.id ? v : x) : [...prev, v];
+    });
+    setExpandedId(null);
+  }
+
+  function handleDeleted(id: string) {
+    setVariants(prev => prev.filter(x => x.id !== id));
+  }
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-4 py-6 overflow-y-auto">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.96 }} transition={{ duration: 0.18 }}
+        className="bg-white rounded-xl border border-[#eddada] shadow-xl w-full max-w-lg my-auto"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-[#eddada]">
+          <div>
+            <h2 className="text-[15px] font-light text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>
+              Varianti Colore
+            </h2>
+            <p className="text-[11px] text-[#7a4a4a]/60 mt-0.5" style={{ fontFamily: 'var(--font-nunito)' }}>
+              {product.title}
+            </p>
+          </div>
+          <button onClick={onClose} className="text-[#7a4a4a]/40 hover:text-[#7a4a4a]"><X size={18} /></button>
+        </div>
+
+        <div className="px-6 py-5 space-y-3 max-h-[70vh] overflow-y-auto">
+          {loading && (
+            <div className="flex items-center justify-center py-10">
+              <Loader2 size={22} className="animate-spin text-[#731515]/40" />
+            </div>
+          )}
+
+          {!loading && variants.length === 0 && expandedId !== 'new' && (
+            <div className="border border-dashed border-[#eddada] rounded-xl py-10 text-center">
+              <Palette size={26} className="text-[#7a4a4a]/20 mx-auto mb-2" />
+              <p className="text-[12px] text-[#7a4a4a]/50 italic" style={{ fontFamily: 'var(--font-nunito)' }}>
+                Nessuna variante. Aggiungine una.
+              </p>
+            </div>
+          )}
+
+          {/* Variant rows */}
+          {!loading && variants.map(v => (
+            <VariantRow
+              key={v.id}
+              variant={v}
+              productId={product.id}
+              token={token}
+              expanded={expandedId === v.id}
+              onExpand={() => setExpandedId(id => id === v.id ? null : v.id)}
+              onSaved={handleSaved}
+              onDeleted={handleDeleted}
+            />
+          ))}
+
+          {/* New variant form */}
+          {expandedId === 'new' && (
+            <VariantRow
+              variant={null}
+              productId={product.id}
+              token={token}
+              expanded
+              onExpand={() => setExpandedId(null)}
+              onSaved={handleSaved}
+              onDeleted={() => {}}
+            />
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 pb-5 pt-2 border-t border-[#eddada]">
+          <button
+            onClick={() => setExpandedId('new')}
+            disabled={expandedId === 'new'}
+            className="w-full flex items-center justify-center gap-2 text-[10px] tracking-[0.25em] border border-dashed border-[#731515]/30 text-[#731515]/70 hover:border-[#731515] hover:text-[#731515] py-2.5 rounded-lg transition-colors disabled:opacity-40"
+          >
+            <Plus size={12} /> NUOVA VARIANTE
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+// ── Single variant row (collapsed + expandable editor) ─────────────────────────
+
+function VariantRow({
+  variant,
+  productId,
+  token,
+  expanded,
+  onExpand,
+  onSaved,
+  onDeleted,
+}: {
+  variant:   ProductVariant | null;
+  productId: string;
+  token:     string;
+  expanded:  boolean;
+  onExpand:  () => void;
+  onSaved:   (v: ProductVariant) => void;
+  onDeleted: (id: string)        => void;
+}) {
+  const isNew = !variant;
+
+  const [name,     setName]     = useState(variant?.color_name ?? '');
+  const [hex,      setHex]      = useState(variant?.color_hex  ?? '#731515');
+  const [images,   setImages]   = useState<string[]>(variant?.images ?? []);
+  const [saving,   setSaving]   = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirm,  setConfirm]  = useState(false);
+  const [error,    setError]    = useState('');
+
+  async function handleSave() {
+    if (!name.trim()) { setError('Il nome del colore è obbligatorio'); return; }
+    setError('');
+    setSaving(true);
+    try {
+      const body = { color_name: name.trim(), color_hex: hex, images };
+      const url    = isNew
+        ? `/api/merch/products/${productId}/variants`
+        : `/api/merch/products/${productId}/variants/${variant!.id}`;
+      const method = isNew ? 'POST' : 'PATCH';
+      const res    = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body:    JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? 'Errore'); return; }
+      onSaved(data.variant);
+    } catch { setError('Errore di rete.'); }
+    finally  { setSaving(false); }
+  }
+
+  async function handleDelete() {
+    if (!confirm) { setConfirm(true); return; }
+    setDeleting(true);
+    try {
+      await fetch(`/api/merch/products/${productId}/variants/${variant!.id}`, {
+        method: 'DELETE', headers: { Authorization: `Bearer ${token}` },
+      });
+      onDeleted(variant!.id);
+    } finally { setDeleting(false); setConfirm(false); }
+  }
+
+  return (
+    <div className="border border-[#eddada] rounded-xl overflow-hidden">
+      {/* Collapsed header (not shown for new variants) */}
+      {!isNew && (
+        <div
+          className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-[#fdf8f8] transition-colors"
+          onClick={onExpand}
+        >
+          {/* Swatch */}
+          <span
+            className="w-6 h-6 rounded-full border border-black/10 shrink-0"
+            style={{ background: variant!.color_hex }}
+          />
+          <span className="flex-1 text-[13px] text-[#1a0505]" style={{ fontFamily: 'var(--font-nunito)' }}>
+            {variant!.color_name}
+          </span>
+          {variant!.images.length > 0 && (
+            <span className="text-[10px] text-[#7a4a4a]/40">
+              {variant!.images.length} img
+            </span>
+          )}
+          {/* Tiny image previews */}
+          <div className="flex gap-1">
+            {variant!.images.slice(0, 3).map((url, i) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img key={i} src={url} alt="" className="w-8 h-8 rounded object-cover border border-[#eddada]" />
+            ))}
+          </div>
+          <button
+            onClick={e => { e.stopPropagation(); onExpand(); }}
+            className="text-[#7a4a4a]/30 hover:text-[#731515] transition-colors"
+          >
+            <Pencil size={13} />
+          </button>
+        </div>
+      )}
+
+      {/* Editor (expanded) */}
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="overflow-hidden"
+          >
+            <div className={`px-4 py-4 space-y-3 ${!isNew ? 'border-t border-[#eddada] bg-[#fdf8f8]' : ''}`}>
+              <p className="text-[9px] tracking-[0.4em] text-[#731515]">
+                {isNew ? 'NUOVA VARIANTE' : 'MODIFICA VARIANTE'}
+              </p>
+
+              {/* Name + hex */}
+              <div className="flex gap-3 items-end">
+                <div className="flex-1">
+                  <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">NOME COLORE</label>
+                  <input
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    placeholder="es. Nero, Bordeaux…"
+                    className={inp}
+                    style={{ fontFamily: 'var(--font-nunito)' }}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">COLORE</label>
+                  <div className="relative">
+                    <input
+                      type="color"
+                      value={hex}
+                      onChange={e => setHex(e.target.value)}
+                      className="w-12 h-10 rounded-lg border border-[#eddada] cursor-pointer p-0.5 bg-white"
+                      title="Scegli colore"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Images for this variant */}
+              <ImageUploader images={images} onChange={setImages} token={token} />
+
+              {error && (
+                <p className="text-[12px] text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>{error}</p>
+              )}
+
+              {/* Actions */}
+              <div className="flex gap-2 pt-1">
+                {!isNew && (
+                  <button
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    onBlur={() => setConfirm(false)}
+                    className={`px-3 py-2 text-[10px] tracking-[0.2em] rounded-lg border transition-colors ${
+                      confirm ? 'bg-red-50 border-red-200 text-red-600' : 'border-[#eddada] text-[#7a4a4a]/50 hover:text-red-500 hover:border-red-200'
+                    }`}
+                  >
+                    {deleting ? <Loader2 size={12} className="animate-spin" /> : confirm ? 'CONFERMA' : <Trash2 size={12} />}
+                  </button>
+                )}
+                <button
+                  onClick={onExpand}
+                  className="flex-1 py-2 border border-[#eddada] text-[#7a4a4a] text-[10px] tracking-[0.2em] hover:bg-white transition-colors rounded-lg"
+                >
+                  ANNULLA
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="flex-1 py-2 bg-[#731515] text-white text-[10px] tracking-[0.2em] hover:bg-[#9b2323] disabled:opacity-55 transition-colors rounded-lg flex items-center justify-center gap-1.5"
+                >
+                  {saving && <Loader2 size={11} className="animate-spin" />}
+                  {isNew ? 'CREA' : 'SALVA'}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 // ── Product card ───────────────────────────────────────────────────────────────
 
 function ProductCard({
-  product, token, onEdit, onDelete,
+  product, token, onEdit, onDelete, onVariants,
 }: {
-  product:  Product;
-  token:    string;
-  onEdit:   (p: Product) => void;
-  onDelete: (id: string) => void;
+  product:    Product;
+  token:      string;
+  onEdit:     (p: Product) => void;
+  onDelete:   (id: string) => void;
+  onVariants: (p: Product) => void;
 }) {
   const [deleting, setDeleting]   = useState(false);
   const [confirm,  setConfirm]    = useState(false);
@@ -464,6 +773,11 @@ function ProductCard({
           <button onClick={() => onEdit(product)}
             className="flex-1 flex items-center justify-center gap-1.5 text-[10px] tracking-[0.2em] border border-[#eddada] text-[#7a4a4a] py-2 rounded-lg hover:bg-[#fdf6f6] transition-colors">
             <Pencil size={11} /> MODIFICA
+          </button>
+          <button onClick={() => onVariants(product)}
+            className="p-2 rounded-lg border border-[#eddada] text-[#7a4a4a]/50 hover:text-[#731515] hover:border-[#731515]/30 transition-colors"
+            title="Varianti colore">
+            <Palette size={13} />
           </button>
           <button onClick={toggleVisible} disabled={toggling}
             className="p-2 rounded-lg border border-[#eddada] text-[#7a4a4a]/50 hover:text-[#731515] hover:border-[#731515]/30 transition-colors"
@@ -570,8 +884,9 @@ export default function MerchManager() {
   const [orders,   setOrders]   = useState<MerchOrder[]>([]);
   const [loading,  setLoading]  = useState(true);
   const [token,    setToken]    = useState('');
-  const [showModal, setShowModal] = useState(false);
-  const [editing,  setEditing]  = useState<Product | null>(null);
+  const [showModal,    setShowModal]    = useState(false);
+  const [editing,      setEditing]      = useState<Product | null>(null);
+  const [variantModal, setVariantModal] = useState<Product | null>(null);
 
   const loadProducts = useCallback(async (tk: string) => {
     const res  = await fetch('/api/merch/products', { headers: { Authorization: `Bearer ${tk}` } });
@@ -682,6 +997,7 @@ export default function MerchManager() {
                 <ProductCard key={p.id} product={p} token={token}
                   onEdit={p => { setEditing(p); setShowModal(true); }}
                   onDelete={id => setProducts(prev => prev.filter(x => x.id !== id))}
+                  onVariants={p => setVariantModal(p)}
                 />
               ))}
             </div>
@@ -731,6 +1047,17 @@ export default function MerchManager() {
             product={editing} token={token}
             onClose={() => { setShowModal(false); setEditing(null); }}
             onSaved={handleSaved}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Variant manager modal */}
+      <AnimatePresence>
+        {variantModal && (
+          <VariantManagerModal
+            product={variantModal}
+            token={token}
+            onClose={() => setVariantModal(null)}
           />
         )}
       </AnimatePresence>
