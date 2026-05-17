@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -579,7 +579,7 @@ function SettingsSection() {
 /* ─────────────────────────────────────────────
    Page root
 ───────────────────────────────────────────── */
-export default function MembersPage() {
+function MembersPageInner() {
   const { user, logout } = useAuth();
   const router           = useRouter();
   const searchParams     = useSearchParams();
@@ -826,5 +826,13 @@ export default function MembersPage() {
         </main>
       </div>
     </div>
+  );
+}
+
+export default function MembersPage() {
+  return (
+    <Suspense>
+      <MembersPageInner />
+    </Suspense>
   );
 }
