@@ -17,6 +17,10 @@ export default function CartDrawer() {
   const [discountError, setDiscountError]     = useState('');
   const [discountLoading, setDiscountLoading] = useState(false);
   const [globalShipping, setGlobalShipping]   = useState(0);
+  const [email, setEmail]                     = useState('');
+  const [confirmEmail, setConfirmEmail]       = useState('');
+
+  const emailsMatch = email.length > 0 && email === confirmEmail;
 
   useEffect(() => {
     fetch('/api/merch/settings')
@@ -60,6 +64,7 @@ export default function CartDrawer() {
   }, [discountCode, items]);
 
   const handleCheckout = useCallback(async () => {
+    if (!emailsMatch) return;
     setCheckoutError('');
     setCheckoutLoading(true);
     try {
@@ -68,8 +73,9 @@ export default function CartDrawer() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           items,
-          discountCode: discountApplied ? discountCode.trim().toUpperCase() : undefined,
-          shippingCost: effectiveShipping > 0 ? effectiveShipping : undefined,
+          discountCode:  discountApplied ? discountCode.trim().toUpperCase() : undefined,
+          shippingCost:  effectiveShipping > 0 ? effectiveShipping : undefined,
+          customerEmail: email.trim().toLowerCase(),
         }),
       });
       const data = await res.json();
@@ -79,7 +85,7 @@ export default function CartDrawer() {
       setCheckoutError(err instanceof Error ? err.message : 'Checkout failed');
       setCheckoutLoading(false);
     }
-  }, [items, discountCode, discountApplied, effectiveShipping]);
+  }, [items, discountCode, discountApplied, effectiveShipping, email, emailsMatch]);
 
   return (
     <AnimatePresence>
@@ -231,6 +237,39 @@ export default function CartDrawer() {
                     </span>
                   </div>
                 </div>
+                {/* Email + Confirm email */}
+                <div className="flex flex-col gap-2">
+                  <div>
+                    <label className="block text-[9px] tracking-[0.3em] text-[#7a4a4a] mb-1.5">EMAIL</label>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      placeholder="your@email.com"
+                      autoComplete="email"
+                      className="w-full bg-white border border-[#e8d5d5] px-3 py-2 text-xs text-[#1a0505] placeholder-[#b09090] focus:outline-none focus:border-[#731515] transition-colors"
+                      style={{ fontFamily: 'var(--font-nunito)' }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] tracking-[0.3em] text-[#7a4a4a] mb-1.5">CONFIRM EMAIL</label>
+                    <input
+                      type="email"
+                      value={confirmEmail}
+                      onChange={e => setConfirmEmail(e.target.value)}
+                      placeholder="your@email.com"
+                      autoComplete="off"
+                      className={`w-full bg-white border px-3 py-2 text-xs text-[#1a0505] placeholder-[#b09090] focus:outline-none transition-colors ${confirmEmail.length > 0 && email !== confirmEmail ? 'border-[#731515]' : 'border-[#e8d5d5] focus:border-[#731515]'}`}
+                      style={{ fontFamily: 'var(--font-nunito)' }}
+                    />
+                    {confirmEmail.length > 0 && email !== confirmEmail && (
+                      <p className="mt-1 text-[10px] text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>
+                        Email addresses do not match.
+                      </p>
+                    )}
+                  </div>
+                </div>
+
                 {/* Discount code */}
                 <div className="flex flex-col gap-1.5">
                   <div className="flex gap-2">
@@ -274,7 +313,7 @@ export default function CartDrawer() {
                 )}
                 <button
                   onClick={handleCheckout}
-                  disabled={checkoutLoading}
+                  disabled={checkoutLoading || !emailsMatch}
                   className="w-full py-4 bg-[#731515] text-white text-[11px] tracking-[0.35em] hover:bg-[#aa4848] disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-300"
                 >
                   {checkoutLoading ? 'REDIRECTING…' : 'CHECKOUT'}

@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
-import { ChevronDown } from 'lucide-react';
 
 /* ─── Line-art landmark SVGs ─── */
 
@@ -200,25 +199,6 @@ export default function HeroSection() {
 
       </div>
 
-      {/* Scroll indicator — skip infinite bounce for reduced motion */}
-      <motion.div
-        initial={{ opacity: reducedMotion ? 1 : 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: d(1), delay: d(2.2) }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
-      >
-        <span className="text-[9px] tracking-[0.4em] text-white/60">SCROLL</span>
-        {reducedMotion ? (
-          <ChevronDown size={18} className="text-white/60" />
-        ) : (
-          <motion.div
-            animate={{ y: [0, 7, 0] }}
-            transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
-          >
-            <ChevronDown size={18} className="text-white/60" />
-          </motion.div>
-        )}
-      </motion.div>
     </section>
   );
 }

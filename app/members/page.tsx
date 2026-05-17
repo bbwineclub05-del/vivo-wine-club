@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Home, CheckSquare, BarChart3, Users, FileText,
@@ -424,11 +424,11 @@ function OverviewSection({
             />
             <div className="text-[9px] tracking-[0.35em] text-white/50 mb-1">TIER</div>
             <div className="text-[22px] font-light leading-tight" style={{ fontFamily: 'var(--font-syne)' }}>
-              Founder
+              {isStaff ? 'Staff' : 'Founder'}
             </div>
             <div className="mt-3 flex items-center gap-1.5 text-white/45">
               <Wine size={10} />
-              <span className="text-[9px] tracking-[0.3em]">CO-FOUNDER</span>
+              <span className="text-[9px] tracking-[0.3em]">{isStaff ? 'STAFF MEMBER' : 'CO-FOUNDER'}</span>
             </div>
           </div>
           <ul className="space-y-2">
@@ -582,8 +582,11 @@ function SettingsSection() {
 export default function MembersPage() {
   const { user, logout } = useAuth();
   const router           = useRouter();
+  const searchParams     = useSearchParams();
 
-  const [activeSection,     setActiveSection]     = useState<Section>('overview');
+  // If the invite link contains ?section=settings, open that tab immediately
+  const initialSection = (searchParams.get('section') as Section | null) ?? 'overview';
+  const [activeSection,     setActiveSection]     = useState<Section>(initialSection);
   const [sidebarOpen,       setSidebarOpen]        = useState(false);
   const [isStaff,           setIsStaff]            = useState(false);
   const [staffPermissions,  setStaffPermissions]   = useState<Record<string, boolean> | null>(null);

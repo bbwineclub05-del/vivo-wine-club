@@ -2,19 +2,23 @@ import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
-if (!process.env.RESEND_API_KEY) {
-  console.error('[tasks] RESEND_API_KEY is missing — emails will not be sent');
-}
-
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const ADMINS: Record<string, string> = {
-  'cristianomichelotti@gmail.com': 'Cris',
-  'filippo.lombardi890@gmail.com': 'Pippo',
-  'giacomogallo1310@gmail.com':    'Jack',
-  'riccardo.consalvo@icloud.com':  'Ricky',
-};
+// ── Fetch team members from DB ────────────────────────────────────────────────
+async function getTeamMembers(): Promise<{ name: string; email: string }[]> {
+  const db = getSupabaseAdmin() as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+  const { data } = await db
+    .from('team_members')
+    .select('name, email')
+    .order('name', { ascending: true });
+  return data ?? [];
+}
 
+function memberName(email: string, members: { name: string; email: string }[]) {
+  return members.find((m) => m.email === email)?.name ?? email.split('@')[0];
+}
+
+// ── Email template ────────────────────────────────────────────────────────────
 function taskNotificationHtml(data: {
   assignerName: string;
   title: string;
@@ -22,7 +26,8 @@ function taskNotificationHtml(data: {
   priority: string;
   due_date: string | null;
 }) {
-  const priorityLabel = data.priority === 'high' ? '🔴 High' : data.priority === 'medium' ? '🟡 Medium' : '🟢 Low';
+  const priorityLabel =
+    data.priority === 'high' ? '🔴 High' : data.priority === 'medium' ? '🟡 Medium' : '🟢 Low';
   const dueLabel = data.due_date
     ? new Date(data.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
     : 'No deadline';
@@ -65,11 +70,11 @@ function taskNotificationHtml(data: {
 `;
 }
 
+// ── GET /api/tasks ────────────────────────────────────────────────────────────
 export async function GET() {
   try {
-    const db = getSupabaseAdmin();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (db as any)
+    const db = getSupabaseAdmin() as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+    const { data, error } = await db
       .from('tasks')
       .select('*')
       .order('created_at', { ascending: false });
@@ -77,74 +82,83 @@ export async function GET() {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ tasks: data ?? [] });
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Internal server error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: err instanceof Error ? err.message : 'Internal server error' }, { status: 500 });
   }
 }
 
+// ── POST /api/tasks ───────────────────────────────────────────────────────────
 export async function POST(request: Request) {
   try {
-    let body: Record<string, unknown>;
-    try {
-      body = await request.json();
-    } catch {
-      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
-    }
+    const body = await request.json();
+    const { title, description, assignee_emails, assigner_email, due_date, priority } =
+      body as {
+        title: string;
+        description?: string;
+        assignee_emails: string[];
+        assigner_email: string;
+        due_date?: string;
+        priority?: string;
+      };
 
-    const { title, description, assignee_email, assigner_email, due_date, priority } = body as Record<string, string>;
-
-    if (!title || !assignee_email || !assigner_email) {
+    if (!title || !assigner_email || !assignee_emails?.length) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    if (!ADMINS[assigner_email] || !ADMINS[assignee_email]) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    const members = await getTeamMembers();
+    const memberEmails = new Set(members.map((m) => m.email));
+
+    // Validate assigner and all assignees are known team members
+    if (!memberEmails.has(assigner_email)) {
+      return NextResponse.json({ error: 'Assigner not in team' }, { status: 403 });
+    }
+    const unknownAssignees = assignee_emails.filter((e) => !memberEmails.has(e));
+    if (unknownAssignees.length > 0) {
+      return NextResponse.json({ error: `Unknown assignee(s): ${unknownAssignees.join(', ')}` }, { status: 403 });
     }
 
-    const db = getSupabaseAdmin();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (db as any)
+    const db = getSupabaseAdmin() as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+    const { data, error } = await db
       .from('tasks')
       .insert({
         title,
-        description:   description || null,
-        assignee_email,
+        description:    description || null,
+        assignee_email: assignee_emails[0],   // first for backward compat
+        assignee_emails,                       // full array
         assigner_email,
-        due_date:      due_date || null,
-        priority:      priority || 'medium',
-        status:        'todo',
+        due_date:       due_date || null,
+        priority:       priority || 'medium',
+        status:         'todo',
       })
       .select()
       .single();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    // Send notification to assignee — awaited so Vercel doesn't kill the fn before it completes
-    try {
-      const emailResult = await resend.emails.send({
-        from:    'noreply@vivowineclub.com',
-        to:      assignee_email,
-        subject: `New task from ${ADMINS[assigner_email]}: ${title}`,
-        html:    taskNotificationHtml({
-          assignerName: ADMINS[assigner_email],
-          title,
-          description:  description || null,
-          priority:     priority || 'medium',
-          due_date:     due_date || null,
-        }),
-      });
-      if (emailResult.error) {
-        console.error('[tasks] Resend error:', JSON.stringify(emailResult.error));
-      } else {
-        console.log('[tasks] Notification sent, id:', emailResult.data?.id);
+    // Send notification to every assignee (fire-and-forget individually)
+    const assignerName = memberName(assigner_email, members);
+    for (const email of assignee_emails) {
+      try {
+        const result = await resend.emails.send({
+          from:    'noreply@vivowineclub.com',
+          to:      email,
+          subject: `New task from ${assignerName}: ${title}`,
+          html:    taskNotificationHtml({
+            assignerName,
+            title,
+            description:  description || null,
+            priority:     priority || 'medium',
+            due_date:     due_date || null,
+          }),
+        });
+        if (result.error) console.error('[tasks] Resend error for', email, result.error);
+        else              console.log('[tasks] Notification sent to', email, result.data?.id);
+      } catch (emailErr) {
+        console.error('[tasks] Resend exception for', email, emailErr);
       }
-    } catch (emailErr) {
-      console.error('[tasks] Resend exception:', emailErr);
     }
 
     return NextResponse.json({ task: data });
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Internal server error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: err instanceof Error ? err.message : 'Internal server error' }, { status: 500 });
   }
 }

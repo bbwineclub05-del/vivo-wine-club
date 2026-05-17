@@ -25,7 +25,7 @@ const EXPERIENCES = [
     id: 3,
     title: 'Winery Visits',
     description: 'Private cellar tours and guided tastings at iconic estates',
-    image: '/events/Winery visits/wcopertina.png',
+    image: '/Winery visits/pichon baron copertina.jpeg',
     href: '/experiences/winery-visits',
   },
 ] as const;
@@ -72,7 +72,7 @@ export default function ExperiencesSection() {
             EXPERIENCES
           </h2>
           <p
-            className="mt-6 text-base md:text-lg text-[#7a4a4a] font-light italic max-w-xl"
+            className="mt-6 text-base md:text-lg text-[#7a4a4a] font-light italic whitespace-nowrap"
             style={{ fontFamily: 'var(--font-nunito)' }}
           >
             Experiences for every taste, from lively wine parties to intimate cellar visits

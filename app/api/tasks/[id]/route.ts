@@ -6,12 +6,18 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 const VALID_STATUSES = ['todo', 'in_progress', 'done'];
 
-const ADMINS: Record<string, string> = {
-  'cristianomichelotti@gmail.com': 'Cris',
-  'filippo.lombardi890@gmail.com': 'Pippo',
-  'giacomogallo1310@gmail.com':    'Jack',
-  'riccardo.consalvo@icloud.com':  'Ricky',
-};
+async function getTeamMembers(): Promise<{ name: string; email: string }[]> {
+  const db = getSupabaseAdmin() as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+  const { data } = await db
+    .from('team_members')
+    .select('name, email')
+    .order('name', { ascending: true });
+  return data ?? [];
+}
+
+function memberName(email: string, members: { name: string; email: string }[]) {
+  return members.find((m) => m.email === email)?.name ?? email.split('@')[0];
+}
 
 function taskDoneHtml(data: {
   assigneeName: string;
@@ -83,7 +89,8 @@ export async function PATCH(
 
   // Send "task done" notification to assigner — awaited so Vercel doesn't kill the fn early
   if (status === 'done' && data.assigner_email !== data.assignee_email) {
-    const assigneeName = ADMINS[data.assignee_email] ?? data.assignee_email;
+    const members = await getTeamMembers();
+    const assigneeName = memberName(data.assignee_email, members);
     try {
       const emailResult = await resend.emails.send({
         from:    'noreply@vivowineclub.com',

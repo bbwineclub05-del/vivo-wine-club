@@ -47,10 +47,15 @@ function minDobDate() {
   return d.toISOString().split('T')[0];
 }
 
+const EMAIL_MISMATCH = 'Email addresses do not match.';
+
 export default function MembershipPage() {
   const [form, setForm] = useState<FormState>(INITIAL);
+  const [confirmEmail, setConfirmEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const emailsMatch = form.email.length > 0 && form.email === confirmEmail;
 
   function set(field: keyof FormState) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
@@ -59,6 +64,7 @@ export default function MembershipPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!emailsMatch) return;
     setLoading(true);
     await fetch('/api/apply', {
       method: 'POST',
@@ -157,19 +163,21 @@ export default function MembershipPage() {
               /* ── Form ── */
               <form onSubmit={handleSubmit} className="glass-card p-8 md:p-12 flex flex-col gap-7">
 
-                {/* Row: Full Name + Email */}
+                {/* Full Name */}
+                <div>
+                  <label className={LABEL_CLASS}>FULL NAME *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Your full name"
+                    value={form.fullName}
+                    onChange={set('fullName')}
+                    className={INPUT_CLASS}
+                  />
+                </div>
+
+                {/* Email + Confirm Email */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div>
-                    <label className={LABEL_CLASS}>FULL NAME *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Your full name"
-                      value={form.fullName}
-                      onChange={set('fullName')}
-                      className={INPUT_CLASS}
-                    />
-                  </div>
                   <div>
                     <label className={LABEL_CLASS}>EMAIL *</label>
                     <input
@@ -180,6 +188,23 @@ export default function MembershipPage() {
                       onChange={set('email')}
                       className={INPUT_CLASS}
                     />
+                  </div>
+                  <div>
+                    <label className={LABEL_CLASS}>CONFIRM EMAIL *</label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="your@email.com"
+                      autoComplete="off"
+                      value={confirmEmail}
+                      onChange={e => setConfirmEmail(e.target.value)}
+                      className={`${INPUT_CLASS} ${confirmEmail.length > 0 && form.email !== confirmEmail ? 'border-[#731515]' : ''}`}
+                    />
+                    {confirmEmail.length > 0 && form.email !== confirmEmail && (
+                      <p className="mt-1.5 text-[10px] text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>
+                        {EMAIL_MISMATCH}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -274,7 +299,7 @@ export default function MembershipPage() {
                 {/* Submit */}
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || !emailsMatch}
                   className="w-full py-4 bg-[#731515] text-white text-[11px] tracking-[0.35em] hover:bg-[#aa4848] disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-300"
                   style={{ fontFamily: 'var(--font-nunito)' }}
                 >

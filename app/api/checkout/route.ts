@@ -19,8 +19,8 @@ interface CartItem {
 
 export async function POST(request: Request) {
   try {
-    const { items, discountCode, validateOnly, shippingCost }: {
-      items: CartItem[]; discountCode?: string; validateOnly?: boolean; shippingCost?: number;
+    const { items, discountCode, validateOnly, shippingCost, customerEmail }: {
+      items: CartItem[]; discountCode?: string; validateOnly?: boolean; shippingCost?: number; customerEmail?: string;
     } = await request.json();
 
     if (!items || items.length === 0) {
@@ -93,6 +93,7 @@ export async function POST(request: Request) {
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       line_items: lineItems,
+      ...(customerEmail ? { customer_email: customerEmail } : {}),
       success_url: 'https://vivowineclub.com/checkout/success?session_id={CHECKOUT_SESSION_ID}',
       cancel_url:  'https://vivowineclub.com/wear-the-club',
       shipping_address_collection: {

@@ -118,7 +118,8 @@ export async function POST(request: Request) {
   // Invite user — Supabase sends the set-password email automatically
   let authUserId: string | null = null;
   const { data: inviteData, error: inviteErr } = await supabase.auth.admin.inviteUserByEmail(email, {
-    data: { name },
+    data:       { name },
+    redirectTo: 'https://vivowineclub.com/members?section=settings',
   });
 
   if (inviteErr) {

@@ -1,24 +1,33 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, X, ChevronDown, Trash2, ClipboardList } from 'lucide-react';
+import { Plus, X, ChevronDown, Trash2, ClipboardList, Check } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
-/* ── Constants ── */
-export const ADMINS = [
+/* ── Team member type (from Supabase) ── */
+interface TeamMember { name: string; email: string; }
+
+/* ── Static fallback list for isAdmin / adminName before team loads ── */
+const STATIC_ADMINS = [
   { name: 'Cris',  email: 'cristianomichelotti@gmail.com' },
   { name: 'Pippo', email: 'filippo.lombardi890@gmail.com' },
   { name: 'Jack',  email: 'giacomogallo1310@gmail.com'    },
   { name: 'Ricky', email: 'riccardo.consalvo@icloud.com'  },
 ];
 
+export const ADMINS = STATIC_ADMINS; // keep export for callers that import it
+
 export function isAdmin(email: string) {
-  return ADMINS.some((a) => a.email === email);
+  return STATIC_ADMINS.some((a) => a.email === email);
 }
 
-function adminName(email: string) {
-  return ADMINS.find((a) => a.email === email)?.name ?? email.split('@')[0];
+function memberName(email: string, members: TeamMember[]) {
+  return (
+    members.find((m) => m.email === email)?.name ??
+    STATIC_ADMINS.find((a) => a.email === email)?.name ??
+    email.split('@')[0]
+  );
 }
 
 /* ── Types ── */
@@ -29,7 +38,8 @@ interface Task {
   id: string;
   title: string;
   description: string | null;
-  assignee_email: string;
+  assignee_email: string;        // first assignee (backward compat)
+  assignee_emails?: string[];    // full array (new)
   assigner_email: string;
   due_date: string | null;
   priority: Priority;
@@ -73,17 +83,19 @@ function isOverdue(due: string | null, status: Status) {
 }
 
 /* ── Empty form ── */
-const EMPTY_FORM = { title: '', description: '', assignee_email: '', due_date: '', priority: 'medium' as Priority };
+const EMPTY_FORM = { title: '', description: '', assignee_emails: [] as string[], due_date: '', priority: 'medium' as Priority };
 
 /* ── Task card ── */
 function TaskCard({
   task,
   currentEmail,
+  members,
   onStatusChange,
   onDelete,
 }: {
   task: Task;
   currentEmail: string;
+  members: TeamMember[];
   onStatusChange: (id: string, status: Status) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
 }) {
@@ -96,7 +108,8 @@ function TaskCard({
   }
 
   const overdue = isOverdue(task.due_date, task.status);
-  const isAssignedToMe = task.assignee_email === currentEmail;
+  const assigneeEmails = task.assignee_emails?.length ? task.assignee_emails : (task.assignee_email ? [task.assignee_email] : []);
+  const isAssignedToMe = assigneeEmails.includes(currentEmail);
   const isAssignedByMe = task.assigner_email === currentEmail;
 
   return (
@@ -145,11 +158,13 @@ function TaskCard({
       {/* Meta row */}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-[#7a4a4a]/60" style={{ fontFamily: 'var(--font-nunito)' }}>
         <span>
-          <span className="text-[#731515]">{adminName(task.assigner_email)}</span>
+          <span className="text-[#731515]">{memberName(task.assigner_email, members)}</span>
           {' → '}
-          <span className={isAssignedToMe ? 'font-semibold text-[#1a0505]' : ''}>
-            {adminName(task.assignee_email)}
-          </span>
+          {assigneeEmails.map((e, i) => (
+            <span key={e} className={e === currentEmail ? 'font-semibold text-[#1a0505]' : ''}>
+              {memberName(e, members)}{i < assigneeEmails.length - 1 ? ', ' : ''}
+            </span>
+          ))}
         </span>
         {task.due_date && (
           <span className={overdue ? 'text-[#731515] font-semibold' : ''}>
@@ -184,30 +199,62 @@ function TaskCard({
 /* ── New task form ── */
 function NewTaskForm({
   currentEmail,
+  members,
   onClose,
   onCreated,
 }: {
   currentEmail: string;
+  members: TeamMember[];
   onClose: () => void;
   onCreated: (task: Task) => void;
 }) {
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const set = (k: keyof typeof form) => (
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  const toggleAssignee = useCallback((email: string) => {
+    setForm((p) => {
+      const emails = p.assignee_emails.includes(email)
+        ? p.assignee_emails.filter((e) => e !== email)
+        : [...p.assignee_emails, email];
+      return { ...p, assignee_emails: emails };
+    });
+  }, []);
+
+  const set = (k: 'title' | 'description' | 'due_date' | 'priority') => (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => setForm((p) => ({ ...p, [k]: e.target.value }));
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (form.assignee_emails.length === 0) { setError('Please select at least one assignee.'); return; }
     setError('');
     setLoading(true);
     try {
       const res = await fetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, assigner_email: currentEmail }),
+        body: JSON.stringify({
+          title:           form.title,
+          description:     form.description,
+          assignee_emails: form.assignee_emails,
+          assigner_email:  currentEmail,
+          due_date:        form.due_date,
+          priority:        form.priority,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Something went wrong.');
@@ -222,6 +269,14 @@ function NewTaskForm({
 
   const inputClass =
     'w-full bg-[#fdf6f6] border border-[#e8d5d5] text-[#1a0505] px-4 py-3 text-sm placeholder-[#7a4a4a]/40 focus:outline-none focus:border-[#731515]/50 transition-colors duration-200';
+
+  const assigneeLabel =
+    form.assignee_emails.length === 0
+      ? 'Assign to *'
+      : members
+          .filter((m) => form.assignee_emails.includes(m.email))
+          .map((m) => m.name)
+          .join(', ');
 
   return (
     <motion.div
@@ -261,23 +316,37 @@ function NewTaskForm({
         />
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {/* Assignee */}
-          <div className="relative">
-            <select
-              required
-              value={form.assignee_email}
-              onChange={set('assignee_email')}
-              className={`${inputClass} appearance-none cursor-pointer ${form.assignee_email === '' ? 'text-[#7a4a4a]/40' : ''}`}
+          {/* Assignee multi-select */}
+          <div className="relative" ref={dropdownRef}>
+            <button
+              type="button"
+              onClick={() => setDropdownOpen((v) => !v)}
+              className={`${inputClass} text-left flex items-center justify-between gap-2 ${form.assignee_emails.length === 0 ? 'text-[#7a4a4a]/40' : 'text-[#1a0505]'}`}
               style={{ fontFamily: 'var(--font-nunito)' }}
             >
-              <option value="" disabled>Assign to *</option>
-              {ADMINS.map((a) => (
-                <option key={a.email} value={a.email} className="bg-white text-[#1a0505]">
-                  {a.name}
-                </option>
-              ))}
-            </select>
-            <ChevronDown size={12} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#731515]" />
+              <span className="truncate">{assigneeLabel}</span>
+              <ChevronDown size={12} className="shrink-0 text-[#731515]" />
+            </button>
+
+            {dropdownOpen && (
+              <div className="absolute z-50 top-full left-0 right-0 mt-0.5 bg-white border border-[#e8d5d5] shadow-md max-h-48 overflow-y-auto">
+                {members.map((m) => {
+                  const checked = form.assignee_emails.includes(m.email);
+                  return (
+                    <button
+                      key={m.email}
+                      type="button"
+                      onClick={() => toggleAssignee(m.email)}
+                      className="w-full flex items-center justify-between px-4 py-2.5 text-sm hover:bg-[#fdf6f6] transition-colors text-left"
+                      style={{ fontFamily: 'var(--font-nunito)' }}
+                    >
+                      <span className={checked ? 'text-[#1a0505] font-medium' : 'text-[#7a4a4a]'}>{m.name}</span>
+                      {checked && <Check size={12} className="text-[#731515] shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Priority */}
@@ -340,6 +409,7 @@ export default function TaskBoard({ currentEmail }: { currentEmail: string }) {
   const [filter, setFilter]     = useState<Filter>('all');
   const [token, setToken]       = useState('');
   const [liveConnected, setLiveConnected] = useState(false);
+  const [members, setMembers]   = useState<TeamMember[]>(STATIC_ADMINS);
   // Track IDs we inserted locally to skip duplicate INSERT events from realtime
   const localInsertIds = useRef<Set<string>>(new Set());
 
@@ -349,6 +419,22 @@ export default function TaskBoard({ currentEmail }: { currentEmail: string }) {
     });
   }, []);
 
+  /* ── Load team members via API (bypasses RLS, returns all members) ── */
+  async function loadMembers() {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) return;
+      const res = await fetch('/api/team/members', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (!res.ok) return;
+      const json = await res.json();
+      if (json.members?.length > 0) setMembers(json.members as TeamMember[]);
+    } catch {/* fall back to static list */}
+  }
+
+  useEffect(() => { loadMembers(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => { loadTasks(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ── Supabase Realtime ── */
@@ -357,6 +443,9 @@ export default function TaskBoard({ currentEmail }: { currentEmail: string }) {
     supabase.realtime.setAuth(token);
     const channel = supabase
       .channel('tasks_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'team_members' }, () => {
+        loadMembers();
+      })
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'tasks' },
@@ -418,8 +507,12 @@ export default function TaskBoard({ currentEmail }: { currentEmail: string }) {
     setTasks((prev) => [task, ...prev]);
   }
 
+  function taskAssignedToMe(t: Task) {
+    return (t.assignee_emails?.includes(currentEmail)) || t.assignee_email === currentEmail;
+  }
+
   const filtered = tasks.filter((t) => {
-    if (filter === 'mine')   return t.assignee_email === currentEmail;
+    if (filter === 'mine')   return taskAssignedToMe(t);
     if (filter === 'by_me')  return t.assigner_email === currentEmail;
     return true;
   });
@@ -476,7 +569,7 @@ export default function TaskBoard({ currentEmail }: { currentEmail: string }) {
             {tab.id !== 'all' && (
               <span className="ml-1.5 text-[8px] opacity-60">
                 ({tab.id === 'mine'
-                  ? tasks.filter((t) => t.assignee_email === currentEmail).length
+                  ? tasks.filter(taskAssignedToMe).length
                   : tasks.filter((t) => t.assigner_email === currentEmail).length})
               </span>
             )}
@@ -489,6 +582,7 @@ export default function TaskBoard({ currentEmail }: { currentEmail: string }) {
         {showForm && (
           <NewTaskForm
             currentEmail={currentEmail}
+            members={members}
             onClose={() => setShowForm(false)}
             onCreated={handleCreated}
           />
@@ -533,6 +627,7 @@ export default function TaskBoard({ currentEmail }: { currentEmail: string }) {
                       key={task.id}
                       task={task}
                       currentEmail={currentEmail}
+                      members={members}
                       onStatusChange={handleStatusChange}
                       onDelete={handleDelete}
                     />

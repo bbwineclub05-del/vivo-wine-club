@@ -143,8 +143,8 @@ export default function Footer() {
 
           </div>
 
-          {/* Logo + horizontal nav on same row */}
-          <div className="mt-8 pt-5 flex items-center">
+          {/* Logo + nav — mobile: logo left / nav right on same row; desktop: nav centred */}
+          <div className="mt-8 pt-5 flex items-center gap-6">
             <Image
               src="/logobianco.png"
               alt="Vivo Wine Club"
@@ -152,7 +152,23 @@ export default function Footer() {
               height={80}
               className="opacity-70 shrink-0"
             />
-            <div className="flex-1 flex flex-wrap justify-center gap-x-8 gap-y-3">
+
+            {/* Mobile: vertical nav stacked to the right of the logo */}
+            <div className="flex sm:hidden flex-col items-end gap-2 ml-auto">
+              {NAV_LINKS.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="text-[10px] tracking-[0.25em] text-white/50 hover:text-white transition-colors duration-200"
+                  style={{ fontFamily: 'var(--font-nunito)' }}
+                >
+                  {link.label.toUpperCase()}
+                </Link>
+              ))}
+            </div>
+
+            {/* Desktop: nav centred between logo and matching spacer */}
+            <div className="hidden sm:flex flex-1 flex-wrap justify-center gap-x-8 gap-y-3">
               {NAV_LINKS.map((link) => (
                 <Link
                   key={link.href}
@@ -164,8 +180,8 @@ export default function Footer() {
                 </Link>
               ))}
             </div>
-            {/* Spacer to balance logo width */}
-            <div style={{ width: 120 }} className="shrink-0" />
+            {/* Spacer balances logo width on desktop */}
+            <div style={{ width: 120 }} className="hidden sm:block shrink-0" />
           </div>
 
 

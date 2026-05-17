@@ -175,7 +175,7 @@ export default async function EventsPage() {
               Events
             </h1>
             <p
-              className="mt-4 text-sm md:text-base text-white/75 font-light italic max-w-lg leading-relaxed"
+              className="mt-4 text-sm md:text-base text-white/75 font-light italic whitespace-nowrap leading-relaxed"
               style={{ fontFamily: 'var(--font-nunito)' }}
             >
               All our upcoming and past experiences — tastings, winery tours, and wine parties across Europe.

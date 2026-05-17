@@ -8,6 +8,8 @@ import BackButton from '@/components/BackButton';
 import Navbar from '@/components/Navbar';
 import { type EventData } from '@/lib/events';
 
+const EMAIL_MISMATCH = 'Email addresses do not match.';
+
 const MAX_TICKETS = 10;
 
 /* ── Input field ── */
@@ -18,6 +20,7 @@ function Field({
   onChange,
   placeholder,
   autoComplete,
+  error,
 }: {
   label: string;
   type?: string;
@@ -25,6 +28,7 @@ function Field({
   onChange: (v: string) => void;
   placeholder?: string;
   autoComplete?: string;
+  error?: string;
 }) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -36,22 +40,28 @@ function Field({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         autoComplete={autoComplete}
-        className="w-full border border-[#e8d5d5] bg-white px-4 py-3 text-sm text-[#1a0505] placeholder-[#c0a0a0] focus:outline-none focus:border-[#731515] transition-colors duration-200"
+        className={`w-full border bg-white px-4 py-3 text-sm text-[#1a0505] placeholder-[#c0a0a0] focus:outline-none transition-colors duration-200 ${error ? 'border-[#731515]' : 'border-[#e8d5d5] focus:border-[#731515]'}`}
         style={{ fontFamily: 'var(--font-nunito)' }}
       />
+      {error && (
+        <span className="text-[10px] text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>{error}</span>
+      )}
     </div>
   );
 }
 
 /* ── Checkout form ── */
 export default function CheckoutForm({ event }: { event: EventData }) {
-  const [qty,       setQty]       = useState(1);
-  const [firstName, setFirstName] = useState('');
-  const [lastName,  setLastName]  = useState('');
-  const [email,     setEmail]     = useState('');
-  const [phone,     setPhone]     = useState('');
-  const [loading,   setLoading]   = useState(false);
-  const [error,     setError]     = useState('');
+  const [qty,          setQty]          = useState(1);
+  const [firstName,    setFirstName]    = useState('');
+  const [lastName,     setLastName]     = useState('');
+  const [email,        setEmail]        = useState('');
+  const [confirmEmail, setConfirmEmail] = useState('');
+  const [phone,        setPhone]        = useState('');
+  const [loading,      setLoading]      = useState(false);
+  const [error,        setError]        = useState('');
+
+  const emailsMatch = email.length > 0 && email === confirmEmail;
 
   const total = event.price * qty;
   const dec   = () => setQty((q) => Math.max(1, q - 1));
@@ -59,6 +69,7 @@ export default function CheckoutForm({ event }: { event: EventData }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!emailsMatch) { setError(EMAIL_MISMATCH); return; }
     setError('');
     setLoading(true);
 
@@ -214,6 +225,15 @@ export default function CheckoutForm({ event }: { event: EventData }) {
                     <Field label="FIRST NAME" value={firstName} onChange={setFirstName} placeholder="Marco" autoComplete="given-name" />
                     <Field label="LAST NAME"  value={lastName}  onChange={setLastName}  placeholder="Rossi"  autoComplete="family-name" />
                     <Field label="EMAIL" type="email" value={email} onChange={setEmail} placeholder="marco@example.com" autoComplete="email" />
+                    <Field
+                      label="CONFIRM EMAIL"
+                      type="email"
+                      value={confirmEmail}
+                      onChange={setConfirmEmail}
+                      placeholder="marco@example.com"
+                      autoComplete="off"
+                      error={confirmEmail.length > 0 && email !== confirmEmail ? EMAIL_MISMATCH : undefined}
+                    />
                     <Field label="PHONE NUMBER" type="tel" value={phone} onChange={setPhone} placeholder="+39 333 000 0000" autoComplete="tel" />
                   </div>
 
@@ -276,7 +296,7 @@ export default function CheckoutForm({ event }: { event: EventData }) {
 
                   <motion.button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || !emailsMatch}
                     whileTap={{ scale: 0.99 }}
                     className="w-full py-4 bg-[#731515] text-white text-[11px] tracking-[0.4em] hover:bg-[#aa4848] disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-300"
                   >
