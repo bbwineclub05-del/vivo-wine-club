@@ -21,7 +21,7 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
   const image             = product.images[0] ?? '';
 
   const handleAdd = () => {
-    addItem({ id: product.id, name: product.title, price: product.price, icon: '', image });
+    addItem({ id: product.id, cartKey: `${product.id}::`, name: product.title, price: product.price, icon: '', image });
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   };

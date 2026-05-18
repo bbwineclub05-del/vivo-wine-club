@@ -403,9 +403,11 @@ function UnauthorisedSection({ title }: { title: string }) {
 ───────────────────────────────────────────── */
 function OverviewSection({
   user,
+  isAdmin,
   isStaff,
 }: {
   user: { name?: string | null; email?: string | null };
+  isAdmin: boolean;
   isStaff: boolean;
 }) {
   return (
@@ -424,11 +426,11 @@ function OverviewSection({
             />
             <div className="text-[9px] tracking-[0.35em] text-white/50 mb-1">TIER</div>
             <div className="text-[22px] font-light leading-tight" style={{ fontFamily: 'var(--font-syne)' }}>
-              {isStaff ? 'Staff' : 'Founder'}
+              {isAdmin ? 'Founder' : 'Staff'}
             </div>
             <div className="mt-3 flex items-center gap-1.5 text-white/45">
               <Wine size={10} />
-              <span className="text-[9px] tracking-[0.3em]">{isStaff ? 'STAFF MEMBER' : 'CO-FOUNDER'}</span>
+              <span className="text-[9px] tracking-[0.3em]">{isAdmin ? 'CO-FOUNDER' : 'STAFF MEMBER'}</span>
             </div>
           </div>
           <ul className="space-y-2">
@@ -724,7 +726,7 @@ function MembersPageInner() {
               >
 
                 {activeSection === 'overview' && (
-                  <OverviewSection user={{ name: user.name, email: user.email }} isStaff={isStaff} />
+                  <OverviewSection user={{ name: user.name, email: user.email }} isAdmin={admin} isStaff={isStaff} />
                 )}
 
                 {activeSection === 'settings' && <SettingsSection />}

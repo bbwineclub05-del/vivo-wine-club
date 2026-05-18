@@ -148,7 +148,7 @@ export default function CartDrawer() {
                   <div className="flex flex-col gap-4">
                     {items.map((item) => (
                       <motion.div
-                        key={item.name}
+                        key={item.cartKey}
                         layout={!reducedMotion}
                         initial={{ opacity: 0, x: reducedMotion ? 0 : 20 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -181,14 +181,14 @@ export default function CartDrawer() {
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                               <button
-                                onClick={() => updateQuantity(item.name, item.quantity - 1)}
+                                onClick={() => updateQuantity(item.cartKey, item.quantity - 1)}
                                 className="w-6 h-6 flex items-center justify-center border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515] hover:text-[#731515] transition-colors"
                               >
                                 <Minus size={10} />
                               </button>
                               <span className="text-sm text-[#1a0505] w-5 text-center">{item.quantity}</span>
                               <button
-                                onClick={() => updateQuantity(item.name, item.quantity + 1)}
+                                onClick={() => updateQuantity(item.cartKey, item.quantity + 1)}
                                 className="w-6 h-6 flex items-center justify-center border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515] hover:text-[#731515] transition-colors"
                               >
                                 <Plus size={10} />
@@ -199,7 +199,7 @@ export default function CartDrawer() {
                                 €{(item.price * item.quantity).toFixed(2)}
                               </span>
                               <button
-                                onClick={() => removeItem(item.name)}
+                                onClick={() => removeItem(item.cartKey)}
                                 className="text-[#7a4a4a]/50 hover:text-[#aa4848] transition-colors"
                               >
                                 <Trash2 size={14} />

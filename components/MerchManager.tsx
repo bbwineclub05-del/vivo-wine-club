@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, Pencil, Trash2, X, Loader2, Eye, EyeOff,
-  Package, ShoppingBag, CheckCircle, Clock, ImagePlus, GripVertical, Palette, Truck,
+  Package, ShoppingBag, CheckCircle, Clock, ImagePlus, Palette, Truck,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
@@ -29,16 +29,19 @@ interface Product {
   stripe_price_id:   string | null;
   sort_order:        number;
   created_at:        string;
+  // Joined by admin GET — first image of first variant used as card thumbnail
+  product_variants?: { id: string; images: string[]; sort_order: number }[];
 }
 
 interface ProductVariant {
-  id:         string;
-  product_id: string;
-  color_name: string;
-  color_hex:  string;
-  images:     string[];
-  sort_order: number;
-  created_at: string;
+  id:           string;
+  product_id:   string;
+  color_name:   string;
+  display_name: string | null;
+  color_hex:    string;
+  images:       string[];
+  sort_order:   number;
+  created_at:   string;
 }
 
 interface OrderItem { name: string; qty: number; price: number }
@@ -171,10 +174,6 @@ function ProductModal({
   const [description,  setDescription]  = useState(product?.description ?? '');
   const [price,        setPrice]        = useState(product?.price       ?? '');
   const [sizes,        setSizes]        = useState<string[]>(product?.sizes  ?? []);
-  const [colors,       setColors]       = useState<string[]>(product?.colors ?? []);
-  const [colorEnabled, setColorEnabled] = useState((product?.colors ?? []).length > 0);
-  const [colorInput,   setColorInput]   = useState('');
-  const [images,       setImages]       = useState<string[]>(product?.images ?? []);
   const [visible,      setVisible]      = useState(product?.visible     ?? true);
   // shipping_cost: '' = inherit global, number string = override
   const [shippingCost, setShippingCost] = useState<string>(
@@ -187,28 +186,15 @@ function ProductModal({
     setSizes(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
   }
 
-  function addColor() {
-    const c = colorInput.trim();
-    if (!c || colors.map(x => x.toLowerCase()).includes(c.toLowerCase())) return;
-    setColors(prev => [...prev, c]);
-    setColorInput('');
-  }
-
-  function removeColor(c: string) {
-    setColors(prev => prev.filter(x => x !== c));
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title || !price) { setError('Titolo e prezzo sono obbligatori'); return; }
     setError('');
     setSaving(true);
 
-    const effectiveColors = colorEnabled ? colors : [];
     try {
       const body = {
-        title, description, price: Number(price), sizes,
-        colors: effectiveColors, images, visible,
+        title, description, price: Number(price), sizes, visible,
         shipping_cost: shippingCost !== '' ? Number(shippingCost) : null,
       };
       const url    = editing ? `/api/merch/products/${product!.id}` : '/api/merch/products';
@@ -299,75 +285,7 @@ function ProductModal({
             )}
           </div>
 
-          {/* Colors */}
-          <div className="space-y-3">
-            {/* Toggle row */}
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[12px] text-[#1a0505] font-medium" style={{ fontFamily: 'var(--font-nunito)' }}>
-                  Colori disponibili
-                </p>
-                <p className="text-[10px] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
-                  Il cliente dovrà scegliere un colore prima di aggiungere al carrello
-                </p>
-              </div>
-              <button type="button" onClick={() => {
-                setColorEnabled(v => !v);
-                if (colorEnabled) setColors([]);
-              }}>
-                <Palette size={20} className={colorEnabled ? 'text-[#731515]' : 'text-[#7a4a4a]/30'} />
-              </button>
-            </div>
-
-            {/* Color tag input (only when enabled) */}
-            {colorEnabled && (
-              <div className="space-y-2 pl-1">
-                {/* Existing color tags */}
-                {colors.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {colors.map(c => (
-                      <span key={c} className="inline-flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-full border border-[#eddada] bg-[#fdf6f6] text-[#3a1a1a]"
-                        style={{ fontFamily: 'var(--font-nunito)' }}>
-                        <span className="w-3 h-3 rounded-full shrink-0 border border-black/10"
-                          style={{ background: colorHex(c) }} />
-                        {c}
-                        <button type="button" onClick={() => removeColor(c)}
-                          className="text-[#7a4a4a]/40 hover:text-[#731515] ml-0.5">
-                          <X size={10} />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
-                {/* Input */}
-                <div className="flex gap-2">
-                  <input
-                    value={colorInput}
-                    onChange={e => setColorInput(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addColor(); } }}
-                    placeholder="es. Nero, Bianco, Bordeaux…"
-                    className={`${inp} flex-1`}
-                    style={{ fontFamily: 'var(--font-nunito)' }}
-                  />
-                  <button type="button" onClick={addColor}
-                    disabled={!colorInput.trim()}
-                    className="px-3 py-2 bg-[#731515] text-white text-[10px] tracking-[0.2em] rounded-lg hover:bg-[#9b2323] disabled:opacity-40 transition-colors shrink-0">
-                    +
-                  </button>
-                </div>
-                {colors.length === 0 && (
-                  <p className="text-[10px] text-[#7a4a4a]/40 italic" style={{ fontFamily: 'var(--font-nunito)' }}>
-                    Premi Invio o + per aggiungere ogni colore
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Images */}
-          <ImageUploader images={images} onChange={setImages} token={token} />
-
-          {/* Stock (only when editing a product that has no color variants) */}
+          {/* Stock — only for products without color variants (stock per variant is managed in Varianti Colore) */}
           {editing && product!.colors.length === 0 && (
             <div>
               <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-2">DISPONIBILITÀ</label>
@@ -646,9 +564,10 @@ function VariantRow({
 }) {
   const isNew = !variant;
 
-  const [name,     setName]     = useState(variant?.color_name ?? '');
-  const [hex,      setHex]      = useState(variant?.color_hex  ?? '#731515');
-  const [images,   setImages]   = useState<string[]>(variant?.images ?? []);
+  const [name,        setName]        = useState(variant?.color_name   ?? '');
+  const [displayName, setDisplayName] = useState(variant?.display_name ?? '');
+  const [hex,         setHex]         = useState(variant?.color_hex    ?? '#731515');
+  const [images,      setImages]      = useState<string[]>(variant?.images ?? []);
   const [saving,   setSaving]   = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirm,  setConfirm]  = useState(false);
@@ -659,7 +578,7 @@ function VariantRow({
     setError('');
     setSaving(true);
     try {
-      const body = { color_name: name.trim(), color_hex: hex, images };
+      const body = { color_name: name.trim(), display_name: displayName.trim() || null, color_hex: hex, images };
       const url    = isNew
         ? `/api/merch/products/${productId}/variants`
         : `/api/merch/products/${productId}/variants/${variant!.id}`;
@@ -701,7 +620,10 @@ function VariantRow({
             style={{ background: variant!.color_hex }}
           />
           <span className="flex-1 text-[13px] text-[#1a0505]" style={{ fontFamily: 'var(--font-nunito)' }}>
-            {variant!.color_name}
+            {variant!.display_name || variant!.color_name}
+            {variant!.display_name && variant!.display_name !== variant!.color_name && (
+              <span className="ml-1.5 text-[10px] text-[#7a4a4a]/40">({variant!.color_name})</span>
+            )}
           </span>
           {variant!.images.length > 0 && (
             <span className="text-[10px] text-[#7a4a4a]/40">
@@ -761,6 +683,21 @@ function VariantRow({
                     />
                   </div>
                 </div>
+              </div>
+
+              {/* Display name (shown in cart/checkout) */}
+              <div>
+                <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">NOME NEL CARRELLO</label>
+                <input
+                  value={displayName}
+                  onChange={e => setDisplayName(e.target.value)}
+                  placeholder="es. Midnight Blue, Bordeaux Red… (lascia vuoto per usare il nome colore)"
+                  className={inp}
+                  style={{ fontFamily: 'var(--font-nunito)' }}
+                />
+                <p className="mt-1 text-[9px] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
+                  Appare nel carrello e nel checkout al posto del nome colore interno.
+                </p>
               </div>
 
               {/* Images for this variant */}
@@ -852,7 +789,10 @@ function ProductCard({
     setToggling(false);
   }
 
-  const thumb = product.images[0];
+  // Prefer product-level image; fall back to first variant that has images
+  const thumb = product.images[0]
+    || (product.product_variants ?? []).find(v => v.images.length > 0)?.images[0]
+    || '';
 
   return (
     <div className="border border-[#eddada] rounded-xl overflow-hidden bg-white group">

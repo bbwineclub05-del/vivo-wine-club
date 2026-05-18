@@ -4,8 +4,9 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, User } from 'lucide-react';
+import { Menu, X, User, ShoppingBag } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
+import { useCart } from '@/contexts/CartContext';
 
 const NAV_LINKS = [
   { href: '/events',      label: 'EVENTS',        page: true  },
@@ -60,6 +61,7 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const router = useRouter();
   const { user } = useAuth();
+  const { itemCount, setIsOpen: openCart } = useCart();
 
   function handleHashLink(href: string) {
     setMobileOpen(false);
@@ -149,16 +151,44 @@ export default function Navbar() {
               <User size={13} className="shrink-0" />
               {user ? 'MY AREA' : 'SIGN IN'}
             </Link>
+            <div className="w-px h-4 bg-[#e8d5d5]" />
+            {/* Cart icon */}
+            <button
+              onClick={() => openCart(true)}
+              aria-label="Apri carrello"
+              className="relative flex items-center text-[#6b3333] hover:text-[#731515] transition-colors duration-300"
+            >
+              <ShoppingBag size={17} />
+              {itemCount > 0 && (
+                <span className="absolute -top-2 -right-2 min-w-[16px] h-4 px-0.5 bg-[#731515] text-white text-[9px] font-semibold rounded-full flex items-center justify-center leading-none">
+                  {itemCount > 99 ? '99+' : itemCount}
+                </span>
+              )}
+            </button>
           </div>
 
-          {/* Hamburger */}
-          <button
-            onClick={() => setMobileOpen((v) => !v)}
-            className="lg:hidden p-2 text-[#6b3333] hover:text-[#731515] transition-colors"
-            aria-label="Menu"
-          >
-            {mobileOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
+          {/* Mobile cart + hamburger */}
+          <div className="lg:hidden flex items-center gap-2">
+            <button
+              onClick={() => openCart(true)}
+              aria-label="Apri carrello"
+              className="relative p-2 text-[#6b3333] hover:text-[#731515] transition-colors"
+            >
+              <ShoppingBag size={18} />
+              {itemCount > 0 && (
+                <span className="absolute top-0.5 right-0.5 min-w-[15px] h-[15px] px-0.5 bg-[#731515] text-white text-[8px] font-semibold rounded-full flex items-center justify-center leading-none">
+                  {itemCount > 99 ? '99+' : itemCount}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setMobileOpen((v) => !v)}
+              className="p-2 text-[#6b3333] hover:text-[#731515] transition-colors"
+              aria-label="Menu"
+            >
+              {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+          </div>
         </div>
       </motion.nav>
 

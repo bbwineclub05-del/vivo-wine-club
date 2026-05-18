@@ -29,7 +29,7 @@ export async function POST(request: Request, { params }: Ctx) {
   if (!auth.ok) return auth.response;
 
   const { id } = await params;
-  const { color_name, color_hex, images, sort_order } = await request.json();
+  const { color_name, display_name, color_hex, images, sort_order } = await request.json();
 
   if (!color_name || !color_hex) {
     return NextResponse.json({ error: 'color_name e color_hex sono obbligatori' }, { status: 400 });
@@ -40,11 +40,12 @@ export async function POST(request: Request, { params }: Ctx) {
   const { data, error } = await db
     .from('product_variants')
     .insert({
-      product_id: id,
+      product_id:   id,
       color_name,
+      display_name: display_name ?? null,
       color_hex,
-      images:     images ?? [],
-      sort_order: sort_order ?? 0,
+      images:       images ?? [],
+      sort_order:   sort_order ?? 0,
     })
     .select()
     .single();

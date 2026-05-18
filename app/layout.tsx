@@ -3,6 +3,7 @@ import { Syne, Nunito } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/contexts/CartContext";
 import { AuthProvider } from "@/lib/auth";
+import CartDrawer from "@/components/CartDrawer";
 
 const syne = Syne({
   subsets: ["latin"],
@@ -60,7 +61,10 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         <AuthProvider>
-          <CartProvider>{children}</CartProvider>
+          <CartProvider>
+            {children}
+            <CartDrawer />
+          </CartProvider>
         </AuthProvider>
       </body>
     </html>

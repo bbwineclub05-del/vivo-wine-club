@@ -6,18 +6,18 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Check, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import CartDrawer from '@/components/CartDrawer';
 import BackButton from '@/components/BackButton';
 import { useCart } from '@/contexts/CartContext';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface ProductVariant {
-  id:         string;
-  color_name: string;
-  color_hex:  string;
-  images:     string[];
-  sort_order: number;
+  id:           string;
+  color_name:   string;
+  display_name: string | null;
+  color_hex:    string;
+  images:       string[];
+  sort_order:   number;
 }
 
 interface StockEntry {
@@ -60,12 +60,12 @@ const ProductCard = memo(function ProductCard({ product, index, reducedMotion }:
   const [sizeErr,         setSizeErr]         = useState(false);
   const [colorErr,        setColorErr]        = useState(false);
 
-  // Images shown depend on which variant (if any) is selected
-  const displayImages: string[] = (
-    selectedVariant && selectedVariant.images.length > 0
-      ? selectedVariant.images
-      : product.images
-  );
+  // Images shown depend on which variant is selected.
+  // When none is selected, fall back to the first variant that has images,
+  // then to the (legacy) product-level images array.
+  const displayImages: string[] = selectedVariant && selectedVariant.images.length > 0
+    ? selectedVariant.images
+    : (product.product_variants.find(v => v.images.length > 0)?.images ?? product.images);
   const currentImage = displayImages[activeImg] ?? '';
 
   // When variant changes, reset image index
@@ -85,13 +85,18 @@ const ProductCard = memo(function ProductCard({ product, index, reducedMotion }:
     const sz  = hasSizes ? size : null;
     if (isSoldOut(vid, sz)) return; // guard against race condition
 
+    // Stable cart identity: productId + variantId + size.
+    // Guarantees Blue and Red are always separate rows even if names collide.
+    const cartKey = `${product.id}:${vid ?? ''}:${sz ?? ''}`;
+
     const parts = [product.title];
     if (hasSizes    && size)            parts.push(size);
-    if (hasVariants && selectedVariant) parts.push(selectedVariant.color_name);
+    if (hasVariants && selectedVariant) parts.push(selectedVariant.display_name || selectedVariant.color_name);
     const cartName = parts.join(' — ');
 
     addItem({
       id:           product.id,
+      cartKey,
       name:         cartName,
       price:        product.price,
       icon:         '',
@@ -440,7 +445,6 @@ export default function WearTheClubPage() {
         </section>
       </main>
       <Footer />
-      <CartDrawer />
     </>
   );
 }

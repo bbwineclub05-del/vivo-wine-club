@@ -4,7 +4,11 @@ import { createContext, useContext, useState, ReactNode } from 'react';
 
 export interface CartItem {
   id: string;
-  name: string;         // includes size/color when applicable, e.g. "Classic Tee — M — Nero"
+  // Stable unique key: "<productId>:<variantId|''>:<size|''>".
+  // Used for all cart identity ops (add/remove/update) so two color variants
+  // of the same product are always kept as separate rows.
+  cartKey: string;
+  name: string;         // display label, e.g. "Classic Tee — M — Midnight Blue"
   price: number;
   quantity: number;
   icon: string;
@@ -17,8 +21,8 @@ export interface CartItem {
 interface CartContextType {
   items: CartItem[];
   addItem: (item: Omit<CartItem, 'quantity'>) => void;
-  removeItem: (name: string) => void;
-  updateQuantity: (name: string, quantity: number) => void;
+  removeItem: (cartKey: string) => void;
+  updateQuantity: (cartKey: string, quantity: number) => void;
   clearCart: () => void;
   total: number;
   itemCount: number;
@@ -32,13 +36,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
 
-  // Unique key is `name` — size variants produce distinct names.
+  // cartKey is the stable identity: "<productId>:<variantId|''>:<size|''>".
+  // Different color variants of the same product have different cartKeys, so
+  // they are always kept as separate rows regardless of their display name.
   const addItem = (newItem: Omit<CartItem, 'quantity'>) => {
     setItems((prev) => {
-      const existing = prev.find((item) => item.name === newItem.name);
+      const existing = prev.find((item) => item.cartKey === newItem.cartKey);
       if (existing) {
         return prev.map((item) =>
-          item.name === newItem.name
+          item.cartKey === newItem.cartKey
             ? { ...item, quantity: item.quantity + 1 }
             : item
         );
@@ -48,17 +54,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setIsOpen(true);
   };
 
-  const removeItem = (name: string) => {
-    setItems((prev) => prev.filter((item) => item.name !== name));
+  const removeItem = (cartKey: string) => {
+    setItems((prev) => prev.filter((item) => item.cartKey !== cartKey));
   };
 
-  const updateQuantity = (name: string, quantity: number) => {
+  const updateQuantity = (cartKey: string, quantity: number) => {
     if (quantity <= 0) {
-      removeItem(name);
+      removeItem(cartKey);
       return;
     }
     setItems((prev) =>
-      prev.map((item) => (item.name === name ? { ...item, quantity } : item))
+      prev.map((item) => (item.cartKey === cartKey ? { ...item, quantity } : item))
     );
   };
 

@@ -41,10 +41,11 @@ const ProductCard = memo(function ProductCard({
   const handleAdd = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     addItem({
-      id:    product.id,
-      name:  product.title,
-      price: product.price,
-      icon:  '',
+      id:      product.id,
+      cartKey: `${product.id}::`,
+      name:    product.title,
+      price:   product.price,
+      icon:    '',
       image,
     });
     setAdded(true);

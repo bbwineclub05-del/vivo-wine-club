@@ -11,13 +11,14 @@ export async function PATCH(request: Request, { params }: Ctx) {
 
   const { variantId } = await params;
   const body = await request.json();
-  const { color_name, color_hex, images, sort_order } = body;
+  const { color_name, display_name, color_hex, images, sort_order } = body;
 
   const updates: Record<string, unknown> = {};
-  if (color_name  !== undefined) updates.color_name  = color_name;
-  if (color_hex   !== undefined) updates.color_hex   = color_hex;
-  if (images      !== undefined) updates.images      = images;
-  if (sort_order  !== undefined) updates.sort_order  = sort_order;
+  if (color_name   !== undefined) updates.color_name   = color_name;
+  if (display_name !== undefined) updates.display_name = display_name;
+  if (color_hex    !== undefined) updates.color_hex    = color_hex;
+  if (images       !== undefined) updates.images       = images;
+  if (sort_order   !== undefined) updates.sort_order   = sort_order;
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: 'No fields to update' }, { status: 400 });

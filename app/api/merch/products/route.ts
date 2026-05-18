@@ -14,9 +14,10 @@ export async function GET(request: Request) {
   const db = getSupabaseAdmin() as any;
   const { data, error } = await db
     .from('products')
-    .select('*')
+    .select('*, product_variants ( id, images, sort_order )')
     .order('sort_order', { ascending: true })
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .order('sort_order', { ascending: true, referencedTable: 'product_variants' });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ products: data });
