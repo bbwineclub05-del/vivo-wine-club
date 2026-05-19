@@ -43,6 +43,7 @@ const NAV_LINKS = [
   { label: 'Events',        href: '/events'       },
   { label: 'Wine Visits',   href: '/wine-map'      },
   { label: 'Wear the Club', href: '/wear-the-club' },
+  { label: 'News',          href: '/news'          },
   { label: 'Who We Are',    href: '/who-we-are'    },
   { label: 'Collaborate',   href: '/collaborate'   },
   { label: 'FAQ',           href: '/faq'           },

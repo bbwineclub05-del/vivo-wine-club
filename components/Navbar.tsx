@@ -12,6 +12,7 @@ const NAV_LINKS = [
   { href: '/events',      label: 'EVENTS',        page: true  },
   { href: '/wine-map',    label: 'WINE VISITS',    page: true  },
   { href: '/wear-the-club', label: 'WEAR THE CLUB', page: true  },
+  { href: '/news',        label: 'NEWS',           page: true  },
   { href: '/who-we-are',  label: 'WHO WE ARE',     page: true  },
   { href: '/collaborate', label: 'COLLABORATE',    page: true  },
 ];

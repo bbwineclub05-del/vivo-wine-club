@@ -438,7 +438,7 @@ export default function WearTheClubPage() {
                 className="mt-14 text-center text-xs text-[#7a4a4a]/60 tracking-widest"
                 style={{ fontFamily: 'var(--font-nunito)' }}
               >
-                ALL ITEMS SHIP WITHIN 5–7 BUSINESS DAYS · FREE RETURNS
+                ALL ITEMS SHIP WITHIN 5–7 BUSINESS DAYS
               </motion.p>
             )}
           </div>

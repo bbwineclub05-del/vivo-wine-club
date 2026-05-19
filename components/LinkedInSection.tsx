@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
 
@@ -70,7 +71,7 @@ function ImageSlider({ images, imageFit }: { images: string[]; imageFit: 'cover'
 }
 
 /* ── News card ── */
-function NewsCard({
+export function NewsCard({
   post,
   index,
   reducedMotion,
@@ -245,16 +246,36 @@ export default function LinkedInSection() {
             No news published yet.
           </p>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {posts.map((post, i) => (
-              <NewsCard
-                key={post.id}
-                post={post}
-                index={i}
-                reducedMotion={reducedMotion}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {posts.slice(0, 3).map((post, i) => (
+                <NewsCard
+                  key={post.id}
+                  post={post}
+                  index={i}
+                  reducedMotion={reducedMotion}
+                />
+              ))}
+            </div>
+
+            {posts.length > 0 && (
+              <motion.div
+                initial={{ opacity: reducedMotion ? 1 : 0, y: reducedMotion ? 0 : 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: d(0.6), delay: d(0.4) }}
+                className="mt-8 flex justify-center"
+              >
+                <Link
+                  href="/news"
+                  className="group inline-flex items-center gap-2 border border-[#731515]/30 hover:border-[#731515] px-8 py-3 text-[11px] tracking-[0.35em] text-[#731515] hover:bg-[#731515] hover:text-white transition-all duration-300"
+                >
+                  EXPLORE MORE
+                  <ArrowUpRight size={13} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-300" />
+                </Link>
+              </motion.div>
+            )}
+          </>
         )}
 
       </div>
