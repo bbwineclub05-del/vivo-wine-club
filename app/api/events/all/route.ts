@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
+export const dynamic = 'force-dynamic';
+
 /** GET /api/events/all — all events including unpublished, for admin panel */
 export async function GET() {
   try {

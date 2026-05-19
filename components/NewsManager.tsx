@@ -476,6 +476,19 @@ export default function NewsManager() {
 
   useEffect(() => { load(); }, [load]);
 
+  // ── Realtime: re-fetch when another session changes news ──────────────────
+  useEffect(() => {
+    if (!accessToken) return;
+    supabase.realtime.setAuth(accessToken);
+    const channel = supabase
+      .channel('news_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'news' }, () => {
+        load();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [accessToken, load]);
+
   async function handleCreate(form: FormState) {
     setCreating(true);
     try {

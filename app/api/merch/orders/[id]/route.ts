@@ -1,14 +1,15 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { requireAdmin } from '@/lib/auth-guard';
+import { requireAdminOrStaff } from '@/lib/auth-guard';
 import { sendMerchShippingNotification } from '@/lib/merch-email';
 
 // ── PATCH /api/merch/orders/[id] — update status ──────────────────────────────
+// Staff can fulfil orders (mark evaso) and send shipping emails.
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const auth = await requireAdmin(request);
+  const auth = await requireAdminOrStaff(request);
   if (!auth.ok) return auth.response;
 
   const { id } = await params;
@@ -36,7 +37,7 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const auth = await requireAdmin(request);
+  const auth = await requireAdminOrStaff(request);
   if (!auth.ok) return auth.response;
 
   const { id } = await params;

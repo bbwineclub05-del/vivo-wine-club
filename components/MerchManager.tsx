@@ -1059,13 +1059,13 @@ export default function MerchManager() {
     } finally { setShippingSaving(false); }
   }
 
-  // ── Realtime subscription on merch_orders (authenticated) ──
+  // ── Realtime subscriptions (orders + products + variants) ────────────────
   useEffect(() => {
     if (!token) return;
-    // Authenticate the realtime connection so RLS policies allow access
     supabase.realtime.setAuth(token);
     const channel = supabase
-      .channel('merch_orders_realtime')
+      .channel('merch_realtime')
+      // Orders: granular state updates (avoid full refetch)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'merch_orders' },
@@ -1079,9 +1079,16 @@ export default function MerchManager() {
           }
         },
       )
+      // Products + variants: full refetch (simpler, includes joined variant images)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
+        loadProducts(token);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'product_variants' }, () => {
+        loadProducts(token);
+      })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [token]);
+  }, [token, loadProducts]);
 
   function handleSaved(p: Product) {
     setProducts(prev => {

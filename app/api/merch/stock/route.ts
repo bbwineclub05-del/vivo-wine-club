@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { requireAdmin } from '@/lib/auth-guard';
+import { requireAdminOrStaff } from '@/lib/auth-guard';
 
 // ── GET /api/merch/stock?product_id=xxx ───────────────────────────────────────
+// Staff can read and update stock levels.
 export async function GET(request: Request) {
-  const auth = await requireAdmin(request);
+  const auth = await requireAdminOrStaff(request);
   if (!auth.ok) return auth.response;
 
   const { searchParams } = new URL(request.url);
@@ -25,7 +26,7 @@ export async function GET(request: Request) {
 // ── POST /api/merch/stock ─────────────────────────────────────────────────────
 // Upsert a stock entry: { product_id, variant_id?, size?, quantity }
 export async function POST(request: Request) {
-  const auth = await requireAdmin(request);
+  const auth = await requireAdminOrStaff(request);
   if (!auth.ok) return auth.response;
 
   const body = await request.json();

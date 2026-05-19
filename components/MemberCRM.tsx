@@ -367,6 +367,7 @@ export default function MemberCRM() {
   }, []);
 
   const load = useCallback(async () => {
+    if (!accessToken) return; // don't fetch until auth session is ready
     setLoading(true);
     setError('');
     try {
@@ -385,6 +386,19 @@ export default function MemberCRM() {
   }, [accessToken]);
 
   useEffect(() => { load(); }, [load]);
+
+  // ── Realtime: re-fetch when tickets or members change ────────────────────
+  useEffect(() => {
+    if (!accessToken) return;
+    supabase.realtime.setAuth(accessToken);
+    const channel = supabase
+      .channel('crm_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, () => {
+        load();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [accessToken, load]);
 
   /* Sort + filter */
   const filtered = useMemo(() => {

@@ -28,10 +28,13 @@ export async function POST(request: Request) {
     const arrayBuffer = await file.arrayBuffer();
     const inputBuffer = Buffer.from(arrayBuffer);
 
-    // Resize to max 1600px on either side, maintain aspect ratio, convert to WebP
+    // Resize to max 1600px on either side, maintain aspect ratio, convert to WebP.
+    // .rotate() with no args reads the EXIF Orientation tag and auto-corrects
+    // the rotation — fixes upside-down/sideways photos from smartphones.
     let processedBuffer: Buffer;
     try {
       processedBuffer = await sharp(inputBuffer)
+        .rotate()
         .resize(MAX_PX, MAX_PX, { fit: 'inside', withoutEnlargement: true })
         .webp({ quality: 88 })
         .toBuffer();

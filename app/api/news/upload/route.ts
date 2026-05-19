@@ -37,10 +37,13 @@ export async function POST(request: Request) {
     const arrayBuffer = await file.arrayBuffer();
     const inputBuffer = Buffer.from(arrayBuffer);
 
-    // Resize to card dimensions with cover + centre crop, output WebP
+    // Resize to card dimensions with cover + centre crop, output WebP.
+    // .rotate() with no args reads the EXIF Orientation tag and auto-corrects
+    // the rotation — fixes upside-down/sideways photos from smartphones.
     let processedBuffer: Buffer;
     try {
       processedBuffer = await sharp(inputBuffer)
+        .rotate()
         .resize(CARD_W, CARD_H, { fit: 'cover', position: 'centre' })
         .webp({ quality: 88 })
         .toBuffer();

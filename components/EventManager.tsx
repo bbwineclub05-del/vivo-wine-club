@@ -822,7 +822,24 @@ export default function EventManager() {
       .finally(() => setLoading(false));
   };
 
+  // Keep a ref so the Realtime handler always calls the latest load()
+  const loadRef = useRef(load);
+  loadRef.current = load;
+
   useEffect(load, []);
+
+  // ── Realtime: re-fetch when another session changes events ────────────────
+  useEffect(() => {
+    if (!accessToken) return;
+    supabase.realtime.setAuth(accessToken);
+    const channel = supabase
+      .channel('events_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, () => {
+        loadRef.current();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [accessToken]);
 
   /* ── KPIs ── */
   const total     = events.length;

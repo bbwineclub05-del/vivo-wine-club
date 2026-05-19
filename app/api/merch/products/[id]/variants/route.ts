@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { requireAdmin } from '@/lib/auth-guard';
+import { requireAdmin, requireAdminOrStaff } from '@/lib/auth-guard';
 
 type Ctx = { params: Promise<{ id: string }> };
 
 // ── GET /api/merch/products/[id]/variants ─────────────────────────────────────
+// Staff can view variants (needed to manage stock per colour).
 export async function GET(request: Request, { params }: Ctx) {
-  const auth = await requireAdmin(request);
+  const auth = await requireAdminOrStaff(request);
   if (!auth.ok) return auth.response;
 
   const { id } = await params;
