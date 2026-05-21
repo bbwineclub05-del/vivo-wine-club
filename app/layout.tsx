@@ -4,6 +4,7 @@ import "./globals.css";
 import { CartProvider } from "@/contexts/CartContext";
 import { AuthProvider } from "@/lib/auth";
 import CartDrawer from "@/components/CartDrawer";
+import { GoogleAnalytics } from "@next/third-parties/google";
 
 const syne = Syne({
   subsets: ["latin"],
@@ -67,6 +68,7 @@ export default function RootLayout({
           </CartProvider>
         </AuthProvider>
       </body>
+      <GoogleAnalytics gaId="G-8331QRTG4Q" />
     </html>
   );
 }
