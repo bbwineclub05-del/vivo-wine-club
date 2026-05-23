@@ -29,7 +29,7 @@ export async function POST(request: Request) {
   const auth = await requireAdmin(request);
   if (!auth.ok) return auth.response;
 
-  const { title, description, price, sizes, colors, images, visible, shipping_cost } = await request.json();
+  const { title, description, price, sizes, colors, images, visible, shipping_cost, slug, details } = await request.json();
   if (!title || price == null) {
     return NextResponse.json({ error: 'title e price sono obbligatori' }, { status: 400 });
   }
@@ -69,6 +69,8 @@ export async function POST(request: Request) {
       images:            images ?? [],
       visible:           visible ?? true,
       shipping_cost:     shipping_cost != null ? Number(shipping_cost) : null,
+      slug:              slug || null,
+      details:           details ?? null,
       stripe_product_id: stripeProductId,
       stripe_price_id:   stripePriceId,
       updated_at:        new Date().toISOString(),

@@ -22,7 +22,7 @@ export async function GET() {
   // ── Attempt 1: full select (needs shipping_cost + display_name columns) ──
   let { data, error } = await ORDER(
     db.from('products').select(`
-      id, title, description, price, sizes, images, sort_order, shipping_cost,
+      id, title, description, price, sizes, images, sort_order, shipping_cost, slug, details,
       product_variants ( id, color_name, display_name, color_hex, images, sort_order ),
       product_stock    ( variant_id, size, quantity )
     `),

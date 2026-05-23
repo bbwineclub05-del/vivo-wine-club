@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useCallback, useEffect, memo } from 'react';
+import { useState, useEffect, memo } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { Check, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import BackButton from '@/components/BackButton';
-import { useCart } from '@/contexts/CartContext';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -34,6 +34,7 @@ interface Product {
   sizes:            string[];
   images:           string[];
   shipping_cost:    number | null;
+  slug:             string | null;
   product_variants: ProductVariant[];
   product_stock:    StockEntry[];
 }
@@ -47,18 +48,11 @@ interface ProductCardProps {
 }
 
 const ProductCard = memo(function ProductCard({ product, index, reducedMotion }: ProductCardProps) {
-  const { addItem } = useCart();
-
   const hasVariants = product.product_variants.length > 0;
-  const hasSizes    = product.sizes.length > 0;
 
   // Selected state
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
-  const [size,            setSize]            = useState<string>(product.sizes[0] ?? '');
   const [activeImg,       setActiveImg]       = useState(0);
-  const [added,           setAdded]           = useState(false);
-  const [sizeErr,         setSizeErr]         = useState(false);
-  const [colorErr,        setColorErr]        = useState(false);
 
   // Images shown depend on which variant is selected.
   // When none is selected, fall back to the first variant that has images,
@@ -72,54 +66,6 @@ const ProductCard = memo(function ProductCard({ product, index, reducedMotion }:
   function selectVariant(v: ProductVariant) {
     setSelectedVariant(v);
     setActiveImg(0);
-    setColorErr(false);
-  }
-
-  const handleAdd = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (hasSizes    && !size)            { setSizeErr(true);  return; }
-    if (hasVariants && !selectedVariant) { setColorErr(true); return; }
-    setSizeErr(false); setColorErr(false);
-
-    const vid = selectedVariant?.id ?? null;
-    const sz  = hasSizes ? size : null;
-    if (isSoldOut(vid, sz)) return; // guard against race condition
-
-    // Stable cart identity: productId + variantId + size.
-    // Guarantees Blue and Red are always separate rows even if names collide.
-    const cartKey = `${product.id}:${vid ?? ''}:${sz ?? ''}`;
-
-    const parts = [product.title];
-    if (hasSizes    && size)            parts.push(size);
-    if (hasVariants && selectedVariant) parts.push(selectedVariant.display_name || selectedVariant.color_name);
-    const cartName = parts.join(' — ');
-
-    addItem({
-      id:           product.id,
-      cartKey,
-      name:         cartName,
-      price:        product.price,
-      icon:         '',
-      image:        currentImage,
-      variantId:    vid,
-      size:         sz,
-      shippingCost: product.shipping_cost,
-    });
-    setAdded(true);
-    setTimeout(() => setAdded(false), 1800);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [addItem, product, size, selectedVariant, hasSizes, hasVariants, currentImage]);
-
-  // Stock helpers
-  function getStock(variantId: string | null, sz: string | null): number {
-    const entry = product.product_stock?.find(
-      s => s.variant_id === variantId && s.size === sz,
-    );
-    // If no entry exists, treat as unlimited (undefined stock = in stock)
-    return entry === undefined ? Infinity : entry.quantity;
-  }
-  function isSoldOut(variantId: string | null, sz: string | null) {
-    return getStock(variantId, sz) === 0;
   }
 
   // Light colors need a dark border to be visible
@@ -138,7 +84,7 @@ const ProductCard = memo(function ProductCard({ product, index, reducedMotion }:
       className="group flex flex-col cursor-default"
     >
       {/* ── Main image + gallery ── */}
-      <div className="relative rounded-xl overflow-hidden aspect-square bg-[#f5eded]">
+      <Link href={`/wear-the-club/${product.slug || product.id}`} className="relative rounded-xl overflow-hidden aspect-square bg-[#f5eded] block">
 
         {/* Main image with crossfade on change */}
         <AnimatePresence mode="wait" initial={false}>
@@ -156,8 +102,9 @@ const ProductCard = memo(function ProductCard({ product, index, reducedMotion }:
                 alt={product.title}
                 fill
                 loading="lazy"
+                quality={90}
                 className="object-cover transition-transform duration-500 group-hover:scale-105"
-                sizes="(max-width: 768px) 50vw, 33vw"
+                sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-5xl opacity-20">🍷</div>
@@ -171,14 +118,14 @@ const ProductCard = memo(function ProductCard({ product, index, reducedMotion }:
         {displayImages.length > 1 && (
           <>
             <button
-              onClick={() => setActiveImg(i => (i - 1 + displayImages.length) % displayImages.length)}
+              onClick={e => { e.preventDefault(); setActiveImg(i => (i - 1 + displayImages.length) % displayImages.length); }}
               className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/80 hover:bg-white flex items-center justify-center shadow transition-opacity opacity-0 group-hover:opacity-100"
             >
               <ChevronLeft size={14} className="text-[#731515]" />
             </button>
             <button
-              onClick={() => setActiveImg(i => (i + 1) % displayImages.length)}
-              className="absolute right-12 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/80 hover:bg-white flex items-center justify-center shadow transition-opacity opacity-0 group-hover:opacity-100"
+              onClick={e => { e.preventDefault(); setActiveImg(i => (i + 1) % displayImages.length); }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/80 hover:bg-white flex items-center justify-center shadow transition-opacity opacity-0 group-hover:opacity-100"
             >
               <ChevronRight size={14} className="text-[#731515]" />
             </button>
@@ -187,39 +134,14 @@ const ProductCard = memo(function ProductCard({ product, index, reducedMotion }:
               {displayImages.map((_, i) => (
                 <button
                   key={i}
-                  onClick={() => setActiveImg(i)}
+                  onClick={e => { e.preventDefault(); setActiveImg(i); }}
                   className={`w-1.5 h-1.5 rounded-full transition-colors ${i === activeImg ? 'bg-white' : 'bg-white/40'}`}
                 />
               ))}
             </div>
           </>
         )}
-
-        {/* ADD button */}
-        <div className="absolute top-3 right-3">
-          <motion.button
-            onClick={handleAdd}
-            whileTap={reducedMotion ? undefined : { scale: 0.9 }}
-            className={`w-10 h-10 rounded-full flex items-center justify-center text-white shadow-lg transition-colors duration-300 ${
-              added ? 'bg-[#2d6e2d]' : 'bg-[#731515] hover:bg-[#aa4848]'
-            }`}
-            aria-label={`Add ${product.title} to cart`}
-            title={(!hasVariants && !hasSizes && isSoldOut(null, null)) ? 'Esaurito' : undefined}
-          >
-            <AnimatePresence mode="wait" initial={false}>
-              {added ? (
-                <motion.span key="check" initial={{ scale: 0, rotate: -30 }} animate={{ scale: 1, rotate: 0 }} exit={{ scale: 0 }} transition={{ duration: 0.2 }}>
-                  <Check size={13} strokeWidth={2.5} />
-                </motion.span>
-              ) : (
-                <motion.span key="plus" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} transition={{ duration: 0.15 }}>
-                  <Plus size={13} strokeWidth={2.5} />
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </motion.button>
-        </div>
-      </div>
+      </Link>
 
       {/* Thumbnail strip — only when > 1 image */}
       {displayImages.length > 1 && (
@@ -245,87 +167,40 @@ const ProductCard = memo(function ProductCard({ product, index, reducedMotion }:
 
       {/* ── Info ── */}
       <div className={`${displayImages.length > 1 ? 'mt-2' : 'mt-4'} px-0.5`}>
-        <div className="flex items-baseline justify-between mb-1.5">
-          <h3
-            className="text-sm font-medium text-[#1a0505] group-hover:text-[#731515] transition-colors duration-300"
+        <div className="flex items-baseline justify-between mb-3">
+          <Link
+            href={`/wear-the-club/${product.slug || product.id}`}
+            className="text-sm font-medium text-[#1a0505] hover:text-[#731515] transition-colors duration-300"
             style={{ fontFamily: 'var(--font-syne)' }}
           >
             {product.title}
-          </h3>
+          </Link>
           <span className="text-sm text-[#731515]" style={{ fontFamily: 'var(--font-syne)' }}>
             €{product.price}
           </span>
         </div>
-        <p className="text-xs text-[#7a4a4a] leading-relaxed mb-3" style={{ fontFamily: 'var(--font-nunito)' }}>
-          {product.description}
-        </p>
-
-        {/* Size selector */}
-        {hasSizes && (
-          <div className="flex items-center gap-1.5 flex-wrap mb-3">
-            {product.sizes.map((s) => {
-              const soldOut = isSoldOut(selectedVariant?.id ?? null, s);
-              return (
-                <button
-                  key={s}
-                  type="button"
-                  disabled={soldOut}
-                  onClick={() => { if (!soldOut) { setSize(s); setSizeErr(false); } }}
-                  title={soldOut ? 'Esaurito' : undefined}
-                  className={`relative w-10 h-10 text-[10px] tracking-widest border transition-colors duration-150 ${
-                    soldOut
-                      ? 'border-[#e8d5d5] text-[#c0a0a0]/50 cursor-not-allowed line-through'
-                      : size === s
-                      ? 'border-[#731515] bg-[#731515] text-white'
-                      : sizeErr
-                      ? 'border-red-300 text-[#7a4a4a] hover:border-[#731515]'
-                      : 'border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515] hover:text-[#731515]'
-                  }`}
-                >
-                  {s}
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Variant color selector — only shown when product has variants */}
+        {/* Variant color swatches — click to preview images */}
         {hasVariants && (
           <div className="flex flex-wrap items-center gap-2">
             {product.product_variants.map((v) => {
-              const active   = selectedVariant?.id === v.id;
-              const light    = isLight(v.color_hex);
-              // A variant is sold out only when ALL sizes (or the variant itself) are sold out
-              const soldOut  = hasSizes
-                ? product.sizes.every(s => isSoldOut(v.id, s))
-                : isSoldOut(v.id, null);
+              const active = selectedVariant?.id === v.id;
+              const light  = isLight(v.color_hex);
               return (
                 <button
                   key={v.id}
                   type="button"
-                  title={soldOut ? `${v.color_name} — Esaurito` : v.color_name}
-                  disabled={soldOut}
-                  onClick={() => { if (!soldOut) selectVariant(v); }}
+                  title={v.color_name}
+                  onClick={() => selectVariant(v)}
                   className={`relative w-7 h-7 rounded-full border-2 transition-all duration-150 ${
-                    soldOut
-                      ? 'opacity-40 cursor-not-allowed'
-                      : active
+                    active
                       ? 'border-[#731515] scale-110 shadow-md'
-                      : colorErr
-                      ? 'border-red-300 hover:border-[#731515]'
                       : light
                       ? 'border-[#e8d5d5] hover:border-[#731515]'
                       : 'border-transparent hover:border-[#731515]'
                   }`}
                   style={{ background: v.color_hex }}
                   aria-label={v.color_name}
-                >
-                  {soldOut && (
-                    <span className="absolute inset-0 flex items-center justify-center">
-                      <span className="block w-full h-px bg-[#731515]/60 rotate-45" />
-                    </span>
-                  )}
-                </button>
+                />
               );
             })}
             {selectedVariant && (
@@ -334,13 +209,6 @@ const ProductCard = memo(function ProductCard({ product, index, reducedMotion }:
               </span>
             )}
           </div>
-        )}
-
-        {/* Validation errors */}
-        {(sizeErr || colorErr) && (
-          <p className="text-[10px] text-[#731515] mt-1.5" style={{ fontFamily: 'var(--font-nunito)' }}>
-            {sizeErr ? 'Seleziona una taglia' : 'Seleziona un colore'}
-          </p>
         )}
       </div>
     </motion.div>

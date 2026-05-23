@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, Ticket, Users, FileText, RefreshCw, BarChart2, ChevronDown, Globe } from 'lucide-react';
+import { TrendingUp, Ticket, Users, FileText, RefreshCw, BarChart2, ChevronDown, Globe, ExternalLink } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 /* ── Types ── */
@@ -56,16 +56,15 @@ interface AnalyticsData {
 }
 
 interface VisitorWeek {
-  week: string;
   label: string;
   visitors: number;
 }
 
 interface VisitorData {
-  totalVisitors: number;
-  lastMonthVisitors: number;
+  todayVisitors: number;
+  last7daysVisitors: number;
+  last30daysVisitors: number;
   weeklyChart: VisitorWeek[];
-  hasData: boolean;
 }
 
 /* ── Tiny SVG Line Chart ── */
@@ -285,7 +284,7 @@ export default function AnalyticsDashboard() {
 
   useEffect(() => { load(''); }, [load]);
 
-  /* ── Load visitor stats from Vercel drain table ── */
+  /* ── Load visitor stats from Google Analytics Data API ── */
   const loadVisitors = useCallback(async () => {
     if (!accessToken) return;
     setVisitorsLoading(true);
@@ -343,6 +342,16 @@ export default function AnalyticsDashboard() {
           <BarChart2 size={15} className="text-[#731515]" />
         </div>
         <h2 className="text-[10px] tracking-[0.4em] text-[#1a0505]">ANALYTICS</h2>
+        <a
+          href="https://analytics.google.com/analytics/web/#/a395406455p538468146"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1 text-[8px] tracking-[0.2em] text-[#7a4a4a]/50 hover:text-[#731515] border border-[#e8d5d5] hover:border-[#731515]/30 px-2 py-1 transition-all duration-200"
+          style={{ fontFamily: 'var(--font-nunito)' }}
+        >
+          GA4
+          <ExternalLink size={9} />
+        </a>
         {liveConnected && (
           <span className="flex items-center gap-1 text-[8px] tracking-[0.2em] text-green-600">
             <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
@@ -571,91 +580,64 @@ export default function AnalyticsDashboard() {
         </Card>
       )}
 
-      {/* ── Visitatori del Sito ── */}
-      <Card title="VISITATORI DEL SITO">
+      {/* ── Visitatori del Sito (Google Analytics) ── */}
+      <Card title="VISITATORI DEL SITO — GOOGLE ANALYTICS">
         {visitorsLoading ? (
           <p className="text-xs text-[#7a4a4a]/40 italic py-4" style={{ fontFamily: 'var(--font-nunito)' }}>
             Caricamento dati visitatori…
           </p>
-        ) : !visitors?.hasData ? (
-          <div className="flex flex-col gap-3 py-2">
-            <div className="flex items-start gap-3 px-4 py-4 bg-[#fdf6f6] border border-[#e8d5d5]">
-              <Globe size={14} className="text-[#731515] shrink-0 mt-0.5" />
-              <div className="flex flex-col gap-1">
-                <span className="text-xs font-medium text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>
-                  Drain non ancora configurato
-                </span>
-                <p className="text-[11px] text-[#7a4a4a] leading-relaxed" style={{ fontFamily: 'var(--font-nunito)' }}>
-                  Per attivare il tracciamento dei visitatori, configura un <strong>Vercel Analytics Drain</strong> nelle impostazioni del progetto su Vercel:
-                </p>
-                <ol className="mt-1 flex flex-col gap-0.5 text-[11px] text-[#7a4a4a]/80 list-decimal list-inside" style={{ fontFamily: 'var(--font-nunito)' }}>
-                  <li>Vai su <em>Vercel Dashboard → vivowineclub → Settings → Drains</em></li>
-                  <li>Clicca <strong>Add Drain</strong></li>
-                  <li>Endpoint: <code className="text-[#731515] text-[10px]">https://vivowineclub.com/api/analytics/drain</code></li>
-                  <li>Events: seleziona <strong>Web Analytics</strong></li>
-                  <li>Aggiungi <code className="text-[10px]">VERCEL_DRAIN_SECRET</code> come variabile d&apos;ambiente con lo stesso valore usato come secret nel drain</li>
-                  <li>Esegui questo SQL su Supabase: <code className="text-[10px] text-[#731515]">CREATE TABLE site_analytics (id bigint generated always as identity primary key, occurred_at timestamptz default now(), session_id text, path text, country text, city text, referrer text, device_type text);</code></li>
-                </ol>
-              </div>
-            </div>
-            <button
-              onClick={loadVisitors}
-              className="self-start text-[9px] tracking-[0.2em] text-[#731515] border border-[#731515]/30 px-3 py-1.5 hover:bg-[#731515]/5 transition-colors"
-            >
-              RIPROVA
-            </button>
-          </div>
+        ) : !visitors ? (
+          <a
+            href="https://analytics.google.com/analytics/web/#/a395406455p538468146"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="self-start inline-flex items-center gap-2 bg-[#731515] hover:bg-[#5a1010] text-white text-[10px] tracking-[0.25em] px-5 py-2.5 transition-colors duration-200"
+            style={{ fontFamily: 'var(--font-nunito)' }}
+          >
+            Apri Google Analytics →
+          </a>
         ) : (
           <div className="flex flex-col gap-6">
-            {/* KPI row */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-1.5">
-                  <Globe size={11} className="text-[#731515]" />
-                  <span className="text-[9px] tracking-[0.35em] text-[#7a4a4a]/60">VISITATORI TOTALI</span>
+            {/* KPI row: oggi / 7gg / 30gg */}
+            <div className="grid grid-cols-3 gap-4">
+              {[
+                { label: 'OGGI',          value: visitors.todayVisitors      },
+                { label: 'ULTIMI 7 GG',   value: visitors.last7daysVisitors  },
+                { label: 'ULTIMI 30 GG',  value: visitors.last30daysVisitors },
+              ].map(({ label, value }) => (
+                <div key={label} className="flex flex-col gap-1">
+                  <div className="flex items-center gap-1.5">
+                    <Globe size={11} className="text-[#731515]" />
+                    <span className="text-[9px] tracking-[0.35em] text-[#7a4a4a]/60">{label}</span>
+                  </div>
+                  <span
+                    className="text-[clamp(1.4rem,3vw,2rem)] font-light text-[#1a0505] leading-none"
+                    style={{ fontFamily: 'var(--font-syne)' }}
+                  >
+                    {value.toLocaleString('it-IT')}
+                  </span>
+                  <span className="text-[10px] text-[#7a4a4a]/40" style={{ fontFamily: 'var(--font-nunito)' }}>
+                    utenti attivi
+                  </span>
                 </div>
-                <span
-                  className="text-[clamp(1.6rem,3vw,2rem)] font-light text-[#1a0505] leading-none"
-                  style={{ fontFamily: 'var(--font-syne)' }}
-                >
-                  {visitors.totalVisitors.toLocaleString('it-IT')}
-                </span>
-                <span className="text-[10px] text-[#7a4a4a]/40" style={{ fontFamily: 'var(--font-nunito)' }}>
-                  visitatori unici (da sempre)
-                </span>
-              </div>
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-1.5">
-                  <Globe size={11} className="text-[#731515]" />
-                  <span className="text-[9px] tracking-[0.35em] text-[#7a4a4a]/60">ULTIMI 30 GIORNI</span>
-                </div>
-                <span
-                  className="text-[clamp(1.6rem,3vw,2rem)] font-light text-[#1a0505] leading-none"
-                  style={{ fontFamily: 'var(--font-syne)' }}
-                >
-                  {visitors.lastMonthVisitors.toLocaleString('it-IT')}
-                </span>
-                <span className="text-[10px] text-[#7a4a4a]/40" style={{ fontFamily: 'var(--font-nunito)' }}>
-                  visitatori unici
-                </span>
-              </div>
+              ))}
             </div>
 
             {/* Weekly bar chart */}
             {visitors.weeklyChart.length > 0 && (
               <div className="flex flex-col gap-3">
-                <div className="text-[9px] tracking-[0.3em] text-[#7a4a4a]/50">VISITE SETTIMANALI (ULTIME 8 SETTIMANE)</div>
-                <div className="flex items-end gap-1.5 h-20">
+                <div className="text-[9px] tracking-[0.3em] text-[#7a4a4a]/50">UTENTI ATTIVI PER SETTIMANA (ULTIME 4 SETTIMANE)</div>
+                <div className="flex items-end gap-2 h-20">
                   {(() => {
                     const maxV = Math.max(...visitors.weeklyChart.map((w) => w.visitors), 1);
-                    return visitors.weeklyChart.map((w) => {
+                    return visitors.weeklyChart.map((w, i) => {
                       const pct = (w.visitors / maxV) * 100;
                       return (
-                        <div key={w.week} className="flex-1 flex flex-col items-center gap-1 group relative">
+                        <div key={i} className="flex-1 flex flex-col items-center gap-1 group relative">
                           {/* Tooltip */}
                           <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center pointer-events-none z-10">
                             <div className="bg-[#1a0505] text-white text-[9px] px-2 py-1 whitespace-nowrap rounded-sm" style={{ fontFamily: 'var(--font-nunito)' }}>
-                              {w.visitors} visitatori
+                              {w.visitors.toLocaleString('it-IT')} utenti
                             </div>
                             <div className="w-1.5 h-1.5 bg-[#1a0505] rotate-45 -mt-[3px]" />
                           </div>
@@ -668,7 +650,7 @@ export default function AnalyticsDashboard() {
                               style={{ backgroundColor: w.visitors > 0 ? '#731515' : '#e8d5d5' }}
                             />
                           </div>
-                          <span className="text-[7px] text-[#7a4a4a]/40 leading-none" style={{ fontFamily: 'var(--font-nunito)' }}>
+                          <span className="text-[7px] text-[#7a4a4a]/40 leading-none text-center" style={{ fontFamily: 'var(--font-nunito)' }}>
                             {w.label}
                           </span>
                         </div>
@@ -681,7 +663,7 @@ export default function AnalyticsDashboard() {
 
             <div className="flex items-center justify-between pt-2 border-t border-[#e8d5d5]">
               <span className="text-[9px] text-[#7a4a4a]/40" style={{ fontFamily: 'var(--font-nunito)' }}>
-                Via Vercel Analytics Drain → Supabase
+                Via Google Analytics Data API · Property 538468146
               </span>
               <button
                 onClick={loadVisitors}

@@ -100,3 +100,16 @@ ALTER PUBLICATION supabase_realtime ADD TABLE products;
 ALTER PUBLICATION supabase_realtime ADD TABLE product_variants;
 ALTER PUBLICATION supabase_realtime ADD TABLE product_stock;
 ALTER PUBLICATION supabase_realtime ADD TABLE merch_orders;
+
+
+-- ── 5. Product page columns ──────────────────────────────────────────────────
+
+-- slug: human-readable URL key for /wear-the-club/[slug]
+ALTER TABLE products
+  ADD COLUMN IF NOT EXISTS slug text UNIQUE;
+
+CREATE INDEX IF NOT EXISTS products_slug_idx ON products(slug);
+
+-- details: editable product info block (material, care instructions, shipping note)
+ALTER TABLE products
+  ADD COLUMN IF NOT EXISTS details jsonb DEFAULT NULL;

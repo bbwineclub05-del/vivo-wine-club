@@ -15,6 +15,13 @@ const supabase = createClient(
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
+interface ProductDetails {
+  material?:   string;
+  dimensions?: string;
+  care?:       string;
+  shipping?:   string;
+}
+
 interface Product {
   id:                string;
   title:             string;
@@ -25,6 +32,8 @@ interface Product {
   images:            string[];
   visible:           boolean;
   shipping_cost:     number | null;
+  slug:              string | null;
+  details:           ProductDetails | null;
   stripe_product_id: string | null;
   stripe_price_id:   string | null;
   sort_order:        number;
@@ -170,17 +179,35 @@ function ProductModal({
 }) {
   const editing = !!product;
 
-  const [title,        setTitle]        = useState(product?.title       ?? '');
-  const [description,  setDescription]  = useState(product?.description ?? '');
-  const [price,        setPrice]        = useState(product?.price       ?? '');
-  const [sizes,        setSizes]        = useState<string[]>(product?.sizes  ?? []);
-  const [visible,      setVisible]      = useState(product?.visible     ?? true);
+  const [title,           setTitle]           = useState(product?.title       ?? '');
+  const [description,     setDescription]     = useState(product?.description ?? '');
+  const [price,           setPrice]           = useState(product?.price       ?? '');
+  const [sizes,           setSizes]           = useState<string[]>(product?.sizes  ?? []);
+  const [visible,         setVisible]         = useState(product?.visible     ?? true);
   // shipping_cost: '' = inherit global, number string = override
-  const [shippingCost, setShippingCost] = useState<string>(
+  const [shippingCost,    setShippingCost]    = useState<string>(
     product?.shipping_cost != null ? String(product.shipping_cost) : ''
   );
-  const [saving,       setSaving]       = useState(false);
-  const [error,        setError]        = useState('');
+  const [slug,            setSlug]            = useState(product?.slug ?? '');
+  const [detailMaterial,   setDetailMaterial]   = useState(product?.details?.material   ?? '');
+  const [detailDimensions, setDetailDimensions] = useState(product?.details?.dimensions ?? '');
+  const [detailCare,       setDetailCare]       = useState(product?.details?.care       ?? '');
+  const [detailShipping,   setDetailShipping]   = useState(product?.details?.shipping   ?? '');
+  const [saving,          setSaving]          = useState(false);
+  const [error,           setError]           = useState('');
+
+  function toSlug(v: string) {
+    return v.toLowerCase().trim()
+      .replace(/[àáäâ]/g, 'a').replace(/[èéëê]/g, 'e')
+      .replace(/[ìíïî]/g, 'i').replace(/[òóöô]/g, 'o').replace(/[ùúüû]/g, 'u')
+      .replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
+  }
+
+  function handleTitleChange(v: string) {
+    setTitle(v);
+    // Auto-fill slug only when creating (not editing) and slug hasn't been manually changed
+    if (!editing && !slug) setSlug(toSlug(v));
+  }
 
   function toggleSize(s: string) {
     setSizes(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
@@ -193,9 +220,17 @@ function ProductModal({
     setSaving(true);
 
     try {
+      const details: Record<string, string> = {};
+      if (detailMaterial.trim())   details.material   = detailMaterial.trim();
+      if (detailDimensions.trim()) details.dimensions = detailDimensions.trim();
+      if (detailCare.trim())       details.care       = detailCare.trim();
+      if (detailShipping.trim())   details.shipping   = detailShipping.trim();
+
       const body = {
         title, description, price: Number(price), sizes, visible,
         shipping_cost: shippingCost !== '' ? Number(shippingCost) : null,
+        slug: slug.trim() || null,
+        details: Object.keys(details).length > 0 ? details : null,
       };
       const url    = editing ? `/api/merch/products/${product!.id}` : '/api/merch/products';
       const method = editing ? 'PATCH' : 'POST';
@@ -231,8 +266,26 @@ function ProductModal({
           {/* Title */}
           <div>
             <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">TITOLO *</label>
-            <input required value={title} onChange={e => setTitle(e.target.value)}
+            <input required value={title} onChange={e => handleTitleChange(e.target.value)}
               placeholder="es. Classic Tee" className={inp} style={{ fontFamily: 'var(--font-nunito)' }} />
+          </div>
+
+          {/* Slug */}
+          <div>
+            <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">SLUG URL</label>
+            <div className="relative">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[11px] text-[#7a4a4a]/40 select-none pointer-events-none"
+                style={{ fontFamily: 'var(--font-nunito)' }}>
+                /wear-the-club/
+              </span>
+              <input value={slug} onChange={e => setSlug(toSlug(e.target.value))}
+                placeholder="classic-tee"
+                className={`${inp} pl-[108px]`}
+                style={{ fontFamily: 'var(--font-nunito)' }} />
+            </div>
+            <p className="mt-1 text-[9px] text-[#7a4a4a]/45" style={{ fontFamily: 'var(--font-nunito)' }}>
+              Usato nell&apos;URL della pagina prodotto. Auto-generato dal titolo.
+            </p>
           </div>
 
           {/* Description */}
@@ -292,6 +345,37 @@ function ProductModal({
               <StockSection productId={product!.id} sizes={sizes} token={token} />
             </div>
           )}
+
+          {/* Details section — Additional Info */}
+          <div className="border-t border-[#eddada] pt-4">
+            <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-3">ADDITIONAL INFO (pagina prodotto)</label>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-[9px] tracking-[0.3em] text-[#7a4a4a]/60 mb-1">TESSUTO / FABRIC</label>
+                <textarea value={detailMaterial} onChange={e => setDetailMaterial(e.target.value)}
+                  placeholder="es. 100% organic cotton, 200g/m² jersey"
+                  rows={2} className={`${inp} resize-none`} style={{ fontFamily: 'var(--font-nunito)' }} />
+              </div>
+              <div>
+                <label className="block text-[9px] tracking-[0.3em] text-[#7a4a4a]/60 mb-1">DIMENSIONI / DIMENSIONS</label>
+                <textarea value={detailDimensions} onChange={e => setDetailDimensions(e.target.value)}
+                  placeholder="es. S: chest 96cm, length 70cm — M: chest 102cm, length 72cm"
+                  rows={2} className={`${inp} resize-none`} style={{ fontFamily: 'var(--font-nunito)' }} />
+              </div>
+              <div>
+                <label className="block text-[9px] tracking-[0.3em] text-[#7a4a4a]/60 mb-1">CURA / CARE</label>
+                <textarea value={detailCare} onChange={e => setDetailCare(e.target.value)}
+                  placeholder="es. Machine wash 30°C, do not tumble dry"
+                  rows={2} className={`${inp} resize-none`} style={{ fontFamily: 'var(--font-nunito)' }} />
+              </div>
+              <div>
+                <label className="block text-[9px] tracking-[0.3em] text-[#7a4a4a]/60 mb-1">SPEDIZIONE E RESI / SHIPPING & RETURNS</label>
+                <textarea value={detailShipping} onChange={e => setDetailShipping(e.target.value)}
+                  placeholder="es. Ships in 5–7 business days. Free returns within 30 days."
+                  rows={2} className={`${inp} resize-none`} style={{ fontFamily: 'var(--font-nunito)' }} />
+              </div>
+            </div>
+          </div>
 
           {/* Visible */}
           <div className="flex items-center justify-between py-2">
@@ -789,10 +873,10 @@ function ProductCard({
     setToggling(false);
   }
 
-  // Prefer product-level image; fall back to first variant that has images
-  const thumb = product.images[0]
-    || (product.product_variants ?? []).find(v => v.images.length > 0)?.images[0]
-    || '';
+  // Use first available image across all color variants; neutral placeholder if none
+  const thumb = (product.product_variants ?? [])
+    .flatMap(v => v.images)
+    .find(Boolean) ?? '';
 
   return (
     <div className="border border-[#eddada] rounded-xl overflow-hidden bg-white group">

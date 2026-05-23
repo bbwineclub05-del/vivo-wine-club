@@ -219,19 +219,19 @@ export default function CartDrawer() {
               <div className="px-8 py-6 border-t border-[#e8d5d5] space-y-4">
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs tracking-[0.25em] text-[#7a4a4a]/70">SUBTOTALE</span>
+                    <span className="text-xs tracking-[0.25em] text-[#7a4a4a]/70">SUBTOTAL</span>
                     <span className="text-sm text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>
                       €{total.toFixed(2)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs tracking-[0.25em] text-[#7a4a4a]/70">SPEDIZIONE</span>
+                    <span className="text-xs tracking-[0.25em] text-[#7a4a4a]/70">SHIPPING</span>
                     <span className="text-sm text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>
-                      {effectiveShipping > 0 ? `€${effectiveShipping.toFixed(2)}` : 'Gratis'}
+                      {effectiveShipping > 0 ? `€${effectiveShipping.toFixed(2)}` : 'Free Shipping'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between pt-1.5 border-t border-[#e8d5d5]">
-                    <span className="text-xs tracking-[0.3em] text-[#7a4a4a]">TOTALE</span>
+                    <span className="text-xs tracking-[0.3em] text-[#7a4a4a]">TOTAL</span>
                     <span className="text-2xl font-light text-[#731515]" style={{ fontFamily: 'var(--font-syne)' }}>
                       €{(total + effectiveShipping).toFixed(2)}
                     </span>

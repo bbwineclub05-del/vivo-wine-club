@@ -1,108 +1,105 @@
 import { NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { BetaAnalyticsDataClient } from '@google-analytics/data';
 import { requireAdmin } from '@/lib/auth-guard';
 
-/**
- * GET /api/analytics/visitors
- *
- * Returns visitor stats aggregated from the `site_analytics` table
- * (populated by the Vercel Analytics Drain at /api/analytics/drain).
- *
- * Response:
- *   {
- *     totalVisitors:     number,   // unique session_ids all time
- *     lastMonthVisitors: number,   // unique session_ids in last 30 days
- *     weeklyChart: [              // last 8 ISO weeks
- *       { week: "2026-W18", label: "May 4", visitors: 42 },
- *       ...
- *     ],
- *     hasData: boolean            // false when table is empty / drain not yet set up
- *   }
- */
+export const dynamic = 'force-dynamic';
 
-function isoWeek(date: Date): string {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  const week = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-  return `${d.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
+const PROPERTY_ID = '538468146';
+
+function getClient() {
+  const clientEmail = process.env.GOOGLE_SA_CLIENT_EMAIL;
+  const privateKey   = process.env.GOOGLE_SA_PRIVATE_KEY?.replace(/\\n/g, '\n');
+
+  if (!clientEmail || !privateKey) {
+    throw new Error('Google Analytics service account credentials not configured');
+  }
+
+  return new BetaAnalyticsDataClient({
+    credentials: { client_email: clientEmail, private_key: privateKey },
+  });
 }
 
-function weekLabel(iso: string): string {
-  const [year, w] = iso.split('-W');
-  const d = new Date(Date.UTC(Number(year), 0, 1));
-  d.setUTCDate(d.getUTCDate() + (Number(w) - 1) * 7 - (d.getUTCDay() || 7) + 1);
-  return d.toLocaleDateString('en-GB', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+/** Run a single-value activeUsers report for a GA date-range string (e.g. "today", "7daysAgo"). */
+async function fetchTotal(
+  client: BetaAnalyticsDataClient,
+  startDate: string,
+  endDate = 'today',
+): Promise<number> {
+  const [res] = await client.runReport({
+    property: `properties/${PROPERTY_ID}`,
+    dateRanges: [{ startDate, endDate }],
+    metrics: [{ name: 'activeUsers' }],
+  });
+  const value = res.rows?.[0]?.metricValues?.[0]?.value;
+  return value ? parseInt(value, 10) : 0;
 }
 
 export async function GET(request: Request) {
   const auth = await requireAdmin(request);
   if (!auth.ok) return auth.response;
 
-  const db = getSupabaseAdmin() as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+  try {
+    const client = getClient();
 
-  // ── 1. Total unique visitors (all time) ─────────────────────────────────
-  const { data: allRows, error: allErr } = await db
-    .from('site_analytics')
-    .select('session_id')
-    .not('session_id', 'is', null);
+    // Run all three scalar queries + daily breakdown in parallel
+    const [todayVisitors, last7Visitors, last30Visitors, dailyRes] = await Promise.all([
+      fetchTotal(client, 'today', 'today'),
+      fetchTotal(client, '7daysAgo', 'today'),
+      fetchTotal(client, '30daysAgo', 'today'),
+      // Daily breakdown for the last 28 days to build weekly chart
+      client.runReport({
+        property: `properties/${PROPERTY_ID}`,
+        dateRanges: [{ startDate: '27daysAgo', endDate: 'today' }],
+        dimensions: [{ name: 'date' }],
+        metrics: [{ name: 'activeUsers' }],
+        orderBys: [{ dimension: { dimensionName: 'date' }, desc: false }],
+      }),
+    ]);
 
-  if (allErr) return NextResponse.json({ error: allErr.message }, { status: 500 });
+    // ── Build weekly chart (4 complete weeks, Mon→Sun, newest last) ──────────
+    // Group GA daily rows (format YYYYMMDD) into ISO weeks
+    const dayMap: Record<string, number> = {};
+    for (const row of (dailyRes[0].rows ?? [])) {
+      const raw  = row.dimensionValues?.[0]?.value ?? ''; // e.g. "20260519"
+      const date = `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}`;
+      dayMap[date] = parseInt(row.metricValues?.[0]?.value ?? '0', 10);
+    }
 
-  const totalVisitors = new Set((allRows ?? []).map((r: { session_id: string }) => r.session_id)).size;
-  const hasData = (allRows ?? []).length > 0;
+    // Build 4-week buckets ending today
+    const today = new Date();
+    // Snap to start of current week (Monday)
+    const dow = today.getDay() === 0 ? 6 : today.getDay() - 1; // 0=Mon
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - dow);
 
-  // ── 2. Last 30 days unique visitors ─────────────────────────────────────
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const weeklyChart: { label: string; visitors: number }[] = [];
 
-  const { data: monthRows } = await db
-    .from('site_analytics')
-    .select('session_id')
-    .not('session_id', 'is', null)
-    .gte('occurred_at', thirtyDaysAgo.toISOString());
+    for (let w = 3; w >= 0; w--) {
+      const start = new Date(weekStart);
+      start.setDate(weekStart.getDate() - w * 7);
+      const end = new Date(start);
+      end.setDate(start.getDate() + 6);
 
-  const lastMonthVisitors = new Set((monthRows ?? []).map((r: { session_id: string }) => r.session_id)).size;
+      let visitors = 0;
+      for (let d = 0; d <= 6; d++) {
+        const day = new Date(start);
+        day.setDate(start.getDate() + d);
+        const key = day.toISOString().slice(0, 10);
+        visitors += dayMap[key] ?? 0;
+      }
 
-  // ── 3. Weekly chart — last 8 weeks ──────────────────────────────────────
-  const eightWeeksAgo = new Date();
-  eightWeeksAgo.setDate(eightWeeksAgo.getDate() - 56);
+      const label = start.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+      weeklyChart.push({ label, visitors });
+    }
 
-  const { data: weekRows } = await db
-    .from('site_analytics')
-    .select('session_id, occurred_at')
-    .not('session_id', 'is', null)
-    .gte('occurred_at', eightWeeksAgo.toISOString());
-
-  // Build last-8-weeks skeleton
-  const weeks: string[] = [];
-  for (let i = 7; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i * 7);
-    weeks.push(isoWeek(d));
+    return NextResponse.json({
+      todayVisitors,
+      last7daysVisitors: last7Visitors,
+      last30daysVisitors: last30Visitors,
+      weeklyChart,
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Unknown error';
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
-  // Deduplicate while preserving order
-  const uniqueWeeks = [...new Set(weeks)];
-
-  // Count unique session_ids per week
-  const weekMap: Record<string, Set<string>> = {};
-  for (const w of uniqueWeeks) weekMap[w] = new Set();
-
-  for (const row of (weekRows ?? [])) {
-    const w = isoWeek(new Date(row.occurred_at));
-    if (weekMap[w]) weekMap[w].add(row.session_id);
-  }
-
-  const weeklyChart = uniqueWeeks.map((w) => ({
-    week:     w,
-    label:    weekLabel(w),
-    visitors: weekMap[w].size,
-  }));
-
-  return NextResponse.json({
-    totalVisitors,
-    lastMonthVisitors,
-    weeklyChart,
-    hasData,
-  });
 }
