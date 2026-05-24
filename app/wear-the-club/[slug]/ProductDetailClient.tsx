@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, ChevronLeft, ChevronRight, Plus, Minus, ShoppingBag, Zap, ArrowLeft } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
-import type { ProductFull, ProductVariant } from './page';
+import type { ProductFull, ProductVariant, ProductTextVariant } from './page';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -62,30 +61,76 @@ function AccordionItem({ label, children }: { label: string; children: React.Rea
 
 export default function ProductDetailClient({ product }: { product: ProductFull }) {
   const { addItem, setIsOpen: openCart } = useCart();
-  const router = useRouter();
 
-  const hasVariants = product.product_variants.length > 0;
-  const hasSizes    = product.sizes.length > 0;
+  const hasVariants     = product.product_variants.length > 0;
+  const hasSizes        = product.sizes.length > 0;
+  const hasTextVariants = product.product_text_variants.length > 0;
 
-  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
-  const [size,            setSize]            = useState<string>(product.sizes[0] ?? '');
-  const [activeImg,       setActiveImg]       = useState(0);
-  const [added,           setAdded]           = useState(false);
-  const [sizeErr,         setSizeErr]         = useState(false);
-  const [colorErr,        setColorErr]        = useState(false);
-  const [touchStartX,     setTouchStartX]     = useState<number | null>(null);
+  // Build combination lookup: "textVariantId:colorVariantId" → images[]
+  // Memoised so it's not rebuilt on every keystroke/interaction render.
+  const combinationMap = useMemo(() => {
+    const combs = product.product_variant_combinations ?? [];
+    const map = new Map<string, string[]>(
+      combs
+        .filter(c => Array.isArray(c.images) && c.images.length > 0)
+        .map(c => [`${c.text_variant_id}:${c.color_variant_id}`, c.images]),
+    );
+    return map;
+  }, [product.product_variant_combinations]);
 
-  // Images: selected variant → first variant with images → product images
-  const displayImages: string[] =
-    selectedVariant && selectedVariant.images.length > 0
-      ? selectedVariant.images
-      : (product.product_variants.find(v => v.images.length > 0)?.images ?? product.images);
-  const currentImage = displayImages[activeImg] ?? '';
+  const [selectedVariant,     setSelectedVariant]     = useState<ProductVariant | null>(null);
+  const [selectedTextVariant, setSelectedTextVariant] = useState<ProductTextVariant | null>(null);
+  const [size,                setSize]                = useState<string>(product.sizes[0] ?? '');
+  const [activeImg,           setActiveImg]           = useState(0);
+  const [added,               setAdded]               = useState(false);
+  const [sizeErr,             setSizeErr]             = useState(false);
+  const [colorErr,            setColorErr]            = useState(false);
+  const [touchStartX,         setTouchStartX]         = useState<number | null>(null);
+
+  // Image priority:
+  //   1. colour+text combination (most specific) — only when BOTH are selected
+  //   2. fallback to colour images when both selected but no combo exists
+  //   3. text variant images (only text selected, no colour)
+  //   4. colour variant images (only colour selected, no text)
+  //   5. first colour variant with images
+  //   6. product-level images (legacy)
+  const displayImages: string[] = (() => {
+    if (selectedTextVariant && selectedVariant) {
+      // Both selected: check for combination first
+      const combImgs = combinationMap.get(`${selectedTextVariant.id}:${selectedVariant.id}`);
+      if (combImgs && combImgs.length > 0) return combImgs;
+      // No combination — fall back to the colour images so the swatch stays meaningful
+      if (selectedVariant.images.length > 0) return selectedVariant.images;
+    }
+    if (selectedTextVariant && selectedTextVariant.images.length > 0) return selectedTextVariant.images;
+    if (selectedVariant && selectedVariant.images.length > 0) return selectedVariant.images;
+    return product.product_variants.find(v => v.images.length > 0)?.images ?? product.images;
+  })();
+  // Clamp activeImg to the current gallery length (avoids blank image after switching
+  // from a longer gallery to a shorter one without an explicit reset).
+  const safeActiveImg = Math.min(activeImg, Math.max(0, displayImages.length - 1));
+  const currentImage  = displayImages[safeActiveImg] ?? '';
+
+  // Composite key for AnimatePresence: includes selection IDs so the crossfade
+  // always fires when the user switches text or colour variants — even when the
+  // fallback URL happens to be identical (e.g. switching text variants with no
+  // combination images, both falling back to the same colour image).
+  const galleryKey = `${selectedTextVariant?.id ?? 'none'}:${selectedVariant?.id ?? 'none'}:${currentImage || 'empty'}`;
 
   function selectVariant(v: ProductVariant) {
     setSelectedVariant(v);
     setActiveImg(0);
     setColorErr(false);
+  }
+
+  function selectTextVariant(tv: ProductTextVariant) {
+    // Toggle off if already selected
+    if (selectedTextVariant?.id === tv.id) {
+      setSelectedTextVariant(null);
+    } else {
+      setSelectedTextVariant(tv);
+    }
+    setActiveImg(0);
   }
 
   function getStock(variantId: string | null, sz: string | null): number {
@@ -106,10 +151,11 @@ export default function ProductDetailClient({ product }: { product: ProductFull 
     if (touchStartX === null || displayImages.length < 2) return;
     const dx = e.changedTouches[0].clientX - touchStartX;
     if (Math.abs(dx) > 40) {
-      setActiveImg(i =>
+      // Use safeActiveImg as the base so we never start from an out-of-bounds index
+      setActiveImg(
         dx < 0
-          ? (i + 1) % displayImages.length
-          : (i - 1 + displayImages.length) % displayImages.length,
+          ? (safeActiveImg + 1) % displayImages.length
+          : (safeActiveImg - 1 + displayImages.length) % displayImages.length,
       );
     }
     setTouchStartX(null);
@@ -123,13 +169,15 @@ export default function ProductDetailClient({ product }: { product: ProductFull 
   }, [hasSizes, size, hasVariants, selectedVariant]);
 
   const buildCartItem = useCallback(() => {
-    const vid = selectedVariant?.id ?? null;
-    const sz  = hasSizes ? size : null;
-    const cartKey = `${product.id}:${vid ?? ''}:${sz ?? ''}`;
+    const vid  = selectedVariant?.id ?? null;
+    const tvid = selectedTextVariant?.id ?? null;
+    const sz   = hasSizes ? size : null;
+    const cartKey = `${product.id}:${vid ?? ''}:${sz ?? ''}:${tvid ?? ''}`;
 
     const parts = [product.title];
     if (hasSizes    && size)            parts.push(size);
     if (hasVariants && selectedVariant) parts.push(selectedVariant.display_name || selectedVariant.color_name);
+    if (selectedTextVariant)            parts.push(`"${selectedTextVariant.text_label}"`);
 
     return {
       id:           product.id,
@@ -142,7 +190,7 @@ export default function ProductDetailClient({ product }: { product: ProductFull 
       size:         sz,
       shippingCost: product.shipping_cost,
     };
-  }, [product, size, selectedVariant, hasSizes, hasVariants, currentImage]);
+  }, [product, size, selectedVariant, selectedTextVariant, hasSizes, hasVariants, currentImage]);
 
   const handleAddToCart = useCallback(() => {
     if (!validate()) return;
@@ -197,7 +245,7 @@ export default function ProductDetailClient({ product }: { product: ProductFull 
             >
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
-                  key={currentImage || 'empty'}
+                  key={galleryKey}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
@@ -245,7 +293,7 @@ export default function ProductDetailClient({ product }: { product: ProductFull 
                         key={i}
                         onClick={() => setActiveImg(i)}
                         aria-label={`Image ${i + 1}`}
-                        className={`w-1.5 h-1.5 rounded-full transition-colors ${i === activeImg ? 'bg-white' : 'bg-white/40'}`}
+                        className={`w-1.5 h-1.5 rounded-full transition-colors ${i === safeActiveImg ? 'bg-white' : 'bg-white/40'}`}
                       />
                     ))}
                   </div>
@@ -261,7 +309,7 @@ export default function ProductDetailClient({ product }: { product: ProductFull 
                     key={i}
                     onClick={() => setActiveImg(i)}
                     className={`relative w-16 h-16 rounded-xl overflow-hidden border-2 transition-all duration-200 ${
-                      i === activeImg
+                      i === safeActiveImg
                         ? 'border-[#731515] shadow-md'
                         : 'border-transparent hover:border-[#731515]/40'
                     }`}
@@ -364,6 +412,43 @@ export default function ProductDetailClient({ product }: { product: ProductFull 
                     Select a color
                   </p>
                 )}
+              </div>
+            )}
+
+            {/* Text variant selector */}
+            {hasTextVariants && (
+              <div className="mb-5">
+                <div className="flex items-center justify-between mb-2.5">
+                  <span className="text-[10px] tracking-[0.35em] text-[#1a0505]">ENGRAVING</span>
+                  {selectedTextVariant && (
+                    <span className="text-[11px] text-[#7a4a4a]/70" style={{ fontFamily: 'var(--font-nunito)' }}>
+                      {selectedTextVariant.text_label}
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {product.product_text_variants.map(tv => {
+                    const active = selectedTextVariant?.id === tv.id;
+                    return (
+                      <button
+                        key={tv.id}
+                        type="button"
+                        onClick={() => selectTextVariant(tv)}
+                        className={`px-4 py-2 text-[11px] tracking-wide border transition-all duration-150 rounded-lg ${
+                          active
+                            ? 'border-[#731515] bg-[#731515] text-white'
+                            : 'border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515] hover:text-[#731515]'
+                        }`}
+                        style={{ fontFamily: 'var(--font-nunito)' }}
+                      >
+                        {tv.text_label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[9px] text-[#7a4a4a]/40 mt-2" style={{ fontFamily: 'var(--font-nunito)' }}>
+                  Click to preview the engraving. Click again to deselect.
+                </p>
               </div>
             )}
 
@@ -480,6 +565,7 @@ export default function ProductDetailClient({ product }: { product: ProductFull 
         </AccordionItem>
         <div className="border-t border-[#e8d5d5]" />
       </div>
+
     </div>
   );
 }

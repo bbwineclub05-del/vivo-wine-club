@@ -113,3 +113,85 @@ CREATE INDEX IF NOT EXISTS products_slug_idx ON products(slug);
 -- details: editable product info block (material, care instructions, shipping note)
 ALTER TABLE products
   ADD COLUMN IF NOT EXISTS details jsonb DEFAULT NULL;
+
+
+-- ── 6. Text variants ─────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS product_text_variants (
+  id         uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  product_id uuid REFERENCES products(id) ON DELETE CASCADE NOT NULL,
+  text_label text NOT NULL,
+  images     text[] DEFAULT '{}' NOT NULL,
+  sort_order integer DEFAULT 0 NOT NULL,
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS product_text_variants_product_id_idx
+  ON product_text_variants(product_id);
+
+ALTER TABLE product_text_variants ENABLE ROW LEVEL SECURITY;
+
+-- authenticated users can read all text variants
+DROP POLICY IF EXISTS "authenticated_select_product_text_variants" ON product_text_variants;
+CREATE POLICY "authenticated_select_product_text_variants"
+  ON product_text_variants FOR SELECT
+  TO authenticated
+  USING (true);
+
+-- anonymous users can read text variants of visible products
+DROP POLICY IF EXISTS "anon_select_product_text_variants" ON product_text_variants;
+CREATE POLICY "anon_select_product_text_variants"
+  ON product_text_variants FOR SELECT
+  TO anon
+  USING (
+    EXISTS (
+      SELECT 1 FROM products p
+      WHERE p.id = product_text_variants.product_id
+        AND p.visible = true
+    )
+  );
+
+ALTER PUBLICATION supabase_realtime ADD TABLE product_text_variants;
+
+
+-- ── 7. Variant combinations ───────────────────────────────────────────────────
+-- Links a text variant + a color variant to a specific set of images.
+-- One row per (text_variant_id, color_variant_id) pair.
+
+CREATE TABLE IF NOT EXISTS product_variant_combinations (
+  id               uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  product_id       uuid REFERENCES products(id) ON DELETE CASCADE NOT NULL,
+  text_variant_id  uuid REFERENCES product_text_variants(id) ON DELETE CASCADE NOT NULL,
+  color_variant_id uuid REFERENCES product_variants(id) ON DELETE CASCADE NOT NULL,
+  images           text[] DEFAULT '{}' NOT NULL,
+  created_at       timestamptz DEFAULT now(),
+  UNIQUE (text_variant_id, color_variant_id)
+);
+
+CREATE INDEX IF NOT EXISTS product_variant_combinations_product_id_idx
+  ON product_variant_combinations(product_id);
+
+CREATE INDEX IF NOT EXISTS product_variant_combinations_text_variant_id_idx
+  ON product_variant_combinations(text_variant_id);
+
+ALTER TABLE product_variant_combinations ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "authenticated_select_product_variant_combinations" ON product_variant_combinations;
+CREATE POLICY "authenticated_select_product_variant_combinations"
+  ON product_variant_combinations FOR SELECT
+  TO authenticated
+  USING (true);
+
+DROP POLICY IF EXISTS "anon_select_product_variant_combinations" ON product_variant_combinations;
+CREATE POLICY "anon_select_product_variant_combinations"
+  ON product_variant_combinations FOR SELECT
+  TO anon
+  USING (
+    EXISTS (
+      SELECT 1 FROM products p
+      WHERE p.id = product_variant_combinations.product_id
+        AND p.visible = true
+    )
+  );
+
+ALTER PUBLICATION supabase_realtime ADD TABLE product_variant_combinations;

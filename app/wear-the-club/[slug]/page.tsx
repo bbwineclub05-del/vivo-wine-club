@@ -31,27 +31,44 @@ export interface ProductDetails {
   shipping?:   string;
 }
 
-export interface ProductFull {
+export interface ProductTextVariant {
+  id:         string;
+  text_label: string;
+  images:     string[];
+  sort_order: number;
+}
+
+export interface ProductVariantCombination {
   id:               string;
-  title:            string;
-  description:      string;
-  price:            number;
-  sizes:            string[];
+  text_variant_id:  string;
+  color_variant_id: string;
   images:           string[];
-  shipping_cost:    number | null;
-  slug:             string | null;
-  details:          ProductDetails | null;
-  product_variants: ProductVariant[];
-  product_stock:    StockEntry[];
+}
+
+export interface ProductFull {
+  id:                          string;
+  title:                       string;
+  description:                 string;
+  price:                       number;
+  sizes:                       string[];
+  images:                      string[];
+  shipping_cost:               number | null;
+  slug:                        string | null;
+  details:                     ProductDetails | null;
+  product_variants:            ProductVariant[];
+  product_stock:               StockEntry[];
+  product_text_variants:       ProductTextVariant[];
+  product_variant_combinations: ProductVariantCombination[];
 }
 
 // ── Data fetching ─────────────────────────────────────────────────────────────
 
-// Full select — requires shipping_cost, slug, details, display_name columns
+// Full select — requires shipping_cost, slug, details, display_name, text_variants columns/tables
 const SELECT_FULL = `
   id, title, description, price, sizes, images, shipping_cost, slug, details,
-  product_variants ( id, color_name, display_name, color_hex, images, sort_order ),
-  product_stock    ( variant_id, size, quantity )
+  product_variants      ( id, color_name, display_name, color_hex, images, sort_order ),
+  product_stock         ( variant_id, size, quantity ),
+  product_text_variants ( id, text_label, images, sort_order )
 `;
 
 // Base select — works even before migrations add the new columns
@@ -66,7 +83,8 @@ function isColumnError(err: { message?: string; code?: string } | null): boolean
   return (
     err.message?.includes('does not exist') ||
     err.code === 'PGRST204' ||
-    err.code === '42703'
+    err.code === '42703' ||
+    err.code === '42P01'
   );
 }
 
@@ -114,6 +132,22 @@ async function fetchProduct(param: string): Promise<ProductFull | null> {
 
   if (!data) return null;
 
+  // Fetch combinations separately (table may not exist yet — fail gracefully)
+  let combinations: ProductVariantCombination[] = [];
+  try {
+    const { data: combData, error: combError } = await db
+      .from('product_variant_combinations')
+      .select('id, text_variant_id, color_variant_id, images')
+      .eq('product_id', data.id);
+    if (!combError) {
+      combinations = (combData ?? []).filter(
+        (c: ProductVariantCombination) => Array.isArray(c.images),
+      );
+    }
+  } catch {
+    // table not yet created — combinations stays []
+  }
+
   // Normalise missing columns so the rest of the code can rely on them existing
   return {
     shipping_cost: null,
@@ -124,6 +158,8 @@ async function fetchProduct(param: string): Promise<ProductFull | null> {
       ...v,
       display_name: v.display_name ?? null,
     })),
+    product_text_variants:        data.product_text_variants ?? [],
+    product_variant_combinations: combinations,
   } as ProductFull;
 }
 

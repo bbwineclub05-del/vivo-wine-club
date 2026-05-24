@@ -19,24 +19,26 @@ export async function GET() {
       .order('created_at', { ascending: true })
       .order('sort_order', { ascending: true, referencedTable: 'product_variants' });
 
-  // ── Attempt 1: full select (needs shipping_cost + display_name columns) ──
+  // ── Attempt 1: full select (needs shipping_cost + display_name + text_variants) ──
   let { data, error } = await ORDER(
     db.from('products').select(`
       id, title, description, price, sizes, images, sort_order, shipping_cost, slug, details,
-      product_variants ( id, color_name, display_name, color_hex, images, sort_order ),
-      product_stock    ( variant_id, size, quantity )
+      product_variants      ( id, color_name, display_name, color_hex, images, sort_order ),
+      product_stock         ( variant_id, size, quantity ),
+      product_text_variants ( id, text_label, images, sort_order )
     `),
   );
 
-  // ── Fallback: columns may not exist yet in the DB ──
+  // ── Fallback: columns/tables may not exist yet in the DB ──
   const isColumnError =
     error &&
     (error.message?.includes('does not exist') ||
       error.code === 'PGRST204' ||
-      error.code === '42703');
+      error.code === '42703' ||
+      error.code === '42P01');
 
   if (isColumnError) {
-    console.warn('[products/public] New columns missing — falling back to base select. Run SQL migrations to fix:', error.message);
+    console.warn('[products/public] New columns/tables missing — falling back to base select. Run SQL migrations to fix:', error.message);
     ({ data, error } = await ORDER(
       db.from('products').select(`
         id, title, description, price, sizes, images, sort_order,
