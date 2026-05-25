@@ -195,3 +195,29 @@ CREATE POLICY "anon_select_product_variant_combinations"
   );
 
 ALTER PUBLICATION supabase_realtime ADD TABLE product_variant_combinations;
+
+
+-- ── 8. Member discounts ───────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS member_discounts (
+  id          uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  title       text NOT NULL,
+  description text,
+  logo_url    text,
+  code        text,
+  partner     text,
+  expires_at  date,
+  visible     boolean DEFAULT true NOT NULL,
+  sort_order  integer DEFAULT 0 NOT NULL,
+  created_at  timestamptz DEFAULT now()
+);
+
+ALTER TABLE member_discounts ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "authenticated_select_member_discounts" ON member_discounts;
+CREATE POLICY "authenticated_select_member_discounts"
+  ON member_discounts FOR SELECT
+  TO authenticated
+  USING (visible = true);
+
+ALTER PUBLICATION supabase_realtime ADD TABLE member_discounts;

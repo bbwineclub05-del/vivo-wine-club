@@ -7,8 +7,16 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 const VALID_STATUSES = ['pending', 'approved', 'rejected'];
 
-function welcomeHtml(name: string) {
+function welcomeHtml(name: string, inviteLink?: string) {
   const firstName = name.split(' ')[0];
+  const setPasswordButton = inviteLink ? `
+  <p style="text-align:center;margin:16px 0 0;">
+    <a href="${inviteLink}"
+       style="background-color:#3d0808;color:white;padding:14px 32px;text-decoration:none;
+              border-radius:4px;font-size:14px;letter-spacing:0.08em;">
+      SET YOUR PASSWORD →
+    </a>
+  </p>` : '';
   return `
 <div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1a0505;">
   <div style="text-align:center;background-color:#6b1a1a;padding:28px;margin-bottom:36px;border-radius:4px;">
@@ -32,13 +40,14 @@ function welcomeHtml(name: string) {
     up to date with everything happening at Vivo.
   </p>
 
-  <p style="text-align:center;margin:40px 0;">
+  <p style="text-align:center;margin:40px 0 0;">
     <a href="https://vivowineclub.com/members"
        style="background-color:#6b1a1a;color:white;padding:14px 32px;text-decoration:none;
               border-radius:4px;font-size:14px;letter-spacing:0.08em;">
       ACCESS MEMBERS AREA →
     </a>
   </p>
+  ${setPasswordButton}
 
   <div style="border-top:1px solid #e8d5d5;margin-top:40px;padding-top:24px;">
     <p style="color:#7a4a4a;font-size:13px;line-height:1.6;">
@@ -138,22 +147,71 @@ export async function PATCH(
 
     if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 });
 
-    // Send email notification to applicant
-    if (status === 'approved' || status === 'rejected') {
+    // On approval: create auth user, set role, send welcome email with invite link
+    if (status === 'approved') {
+      const supabase = getSupabaseAdmin();
+      let inviteLink: string | undefined;
+
+      // Try to generate an invite link (new user)
+      const { data: linkData, error: linkErr } = await supabase.auth.admin.generateLink({
+        type:  'invite',
+        email: app.email,
+        options: {
+          data:       { name: app.name },
+          redirectTo: 'https://vivowineclub.com/members/impostazioni',
+        },
+      });
+
+      if (!linkErr && linkData?.properties?.action_link) {
+        inviteLink = linkData.properties.action_link;
+        // Set member role on the newly created user
+        const newUserId = linkData.user?.id;
+        if (newUserId) {
+          await supabase.auth.admin.updateUserById(newUserId, {
+            app_metadata: { role: 'member' },
+          });
+        }
+      } else {
+        // User already exists — find and update their role
+        console.log('[applications] generateLink error (user may exist):', linkErr?.message);
+        const { data: usersData } = await supabase.auth.admin.listUsers({ perPage: 1000, page: 1 });
+        const existingUser = usersData?.users?.find(u => u.email === app.email);
+        if (existingUser) {
+          await supabase.auth.admin.updateUserById(existingUser.id, {
+            app_metadata: { role: 'member' },
+          });
+        }
+      }
+
       try {
         const emailResult = await resend.emails.send({
           from:    'noreply@vivowineclub.com',
           to:      app.email,
-          subject: status === 'approved'
-            ? `Welcome to Vivo Wine Club, ${app.name.split(' ')[0]}!`
-            : 'Your Vivo Wine Club application',
-          html: status === 'approved' ? welcomeHtml(app.name) : rejectionHtml(app.name),
+          subject: `Welcome to Vivo Wine Club, ${app.name.split(' ')[0]}!`,
+          html:    welcomeHtml(app.name, inviteLink),
         });
 
         if (emailResult.error) {
           console.error('[applications] Resend error:', JSON.stringify(emailResult.error));
         } else {
-          console.log('[applications] Email sent, id:', emailResult.data?.id, 'status:', status);
+          console.log('[applications] Welcome email sent, id:', emailResult.data?.id);
+        }
+      } catch (emailErr) {
+        console.error('[applications] Resend exception:', emailErr);
+      }
+    } else if (status === 'rejected') {
+      try {
+        const emailResult = await resend.emails.send({
+          from:    'noreply@vivowineclub.com',
+          to:      app.email,
+          subject: 'Your Vivo Wine Club application',
+          html:    rejectionHtml(app.name),
+        });
+
+        if (emailResult.error) {
+          console.error('[applications] Resend error:', JSON.stringify(emailResult.error));
+        } else {
+          console.log('[applications] Rejection email sent, id:', emailResult.data?.id);
         }
       } catch (emailErr) {
         console.error('[applications] Resend exception:', emailErr);

@@ -8,7 +8,7 @@ import {
   Home, CheckSquare, BarChart3, Users, FileText,
   Mail, LogOut, KeyRound, ScanLine, Menu, X,
   Wine, Shield, ArrowUpRight, CreditCard, User, CalendarDays, GlassWater, MapPin, Images,
-  Database, ChevronDown, UsersRound, Lock, ShoppingBag,
+  Database, ChevronDown, UsersRound, Lock, ShoppingBag, Tag,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -24,12 +24,14 @@ import CrmClienti from '@/components/CrmClienti';
 import MediaManager from '@/components/MediaManager';
 import TeamManagement from '@/components/TeamManagement';
 import MerchManager from '@/components/MerchManager';
+import DiscountManager from '@/components/DiscountManager';
+import MemberPortal from '@/components/MemberPortal';
 import { isSuperAdmin } from '@/lib/admins';
 
 /* ─────────────────────────────────────────────
    Types
 ───────────────────────────────────────────── */
-type Section = 'overview' | 'settings' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm' | 'crm-wine' | 'crm-bordeaux' | 'crm-clienti' | 'media' | 'team' | 'merch';
+type Section = 'overview' | 'settings' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm' | 'crm-wine' | 'crm-bordeaux' | 'crm-clienti' | 'media' | 'team' | 'merch' | 'discounts';
 
 // Maps section IDs to the permission key in team_members.permissions
 const SECTION_PERM: Partial<Record<Section, string>> = {
@@ -44,6 +46,7 @@ const SECTION_PERM: Partial<Record<Section, string>> = {
   analytics:     'analytics',
   pipeline:      'pipeline',
   merch:         'merch',
+  discounts:     'merch',
 };
 
 interface NavItem {
@@ -59,10 +62,11 @@ const NAV_MAIN: NavItem[] = [
 
 // Visible to both admin and staff
 const NAV_SHARED: NavItem[] = [
-  { id: 'tasks',  label: 'Task Board',      icon: CheckSquare  },
-  { id: 'events', label: 'Gestione Eventi', icon: CalendarDays },
-  { id: 'news',   label: 'Gestione News',   icon: FileText     },
-  { id: 'merch',  label: 'Gestione Merch',  icon: ShoppingBag  },
+  { id: 'tasks',     label: 'Task Board',      icon: CheckSquare  },
+  { id: 'events',    label: 'Gestione Eventi', icon: CalendarDays },
+  { id: 'news',      label: 'Gestione News',   icon: FileText     },
+  { id: 'merch',     label: 'Gestione Merch',  icon: ShoppingBag  },
+  { id: 'discounts', label: 'Gestione Sconti', icon: Tag          },
 ];
 
 // Admin only
@@ -591,13 +595,17 @@ function MembersPageInner() {
   const [activeSection,     setActiveSection]     = useState<Section>(initialSection);
   const [sidebarOpen,       setSidebarOpen]        = useState(false);
   const [isStaff,           setIsStaff]            = useState(false);
+  const [isMember,          setIsMember]           = useState(false);
+  const [token,             setToken]              = useState('');
   const [staffPermissions,  setStaffPermissions]   = useState<Record<string, boolean> | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) return;
+      setToken(session.access_token);
       const role = session.user.app_metadata?.role ?? session.user.user_metadata?.role;
       setIsStaff(role === 'staff');
+      setIsMember(role === 'member' && !isAdmin(session.user.email ?? ''));
 
       // Fetch granular permissions for all authenticated users (admins get full set)
       try {
@@ -624,6 +632,17 @@ function MembersPageInner() {
   const admin      = isAdmin(user.email ?? '');
   const superAdmin = isSuperAdmin(user.email ?? '');
   const displayName = user.name || user.email?.split('@')[0] || 'Member';
+
+  // Members (role === 'member', not admin/staff) get the MemberPortal
+  if (isMember && !admin && !isStaff) {
+    return (
+      <MemberPortal
+        user={{ name: user.name, email: user.email }}
+        token={token}
+        onLogout={handleLogout}
+      />
+    );
+  }
 
   /** Returns true if the current user can access this section. */
   function canAccess(section: Section): boolean {
@@ -818,6 +837,15 @@ function MembersPageInner() {
 
                 {(admin || isStaff) && activeSection === 'merch' && (
                   canAccess('merch') ? <MerchManager /> : <UnauthorisedSection title="Gestione Merch" />
+                )}
+
+                {(admin || isStaff) && activeSection === 'discounts' && (
+                  canAccess('discounts') ? (
+                    <>
+                      <SectionHeader title="Gestione Sconti" subtitle="Sconti e convenzioni per i membri del club." />
+                      <DiscountManager token={token} />
+                    </>
+                  ) : <UnauthorisedSection title="Gestione Sconti" />
                 )}
 
                 {superAdmin && activeSection === 'team' && <TeamManagement />}
