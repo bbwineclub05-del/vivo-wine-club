@@ -36,7 +36,7 @@ function CopyButton({ text }: { text: string }) {
   return (
     <button
       onClick={handleCopy}
-      title="Copia codice"
+      title="Copy code"
       className="p-1 rounded text-[#731515]/50 hover:text-[#731515] transition-colors"
     >
       {copied ? <Check size={11} className="text-[#2d6e2d]" /> : <Copy size={11} />}
@@ -48,7 +48,7 @@ function CopyButton({ text }: { text: string }) {
 
 function DiscountCard({ discount }: { discount: Discount }) {
   const expiryStr = discount.expires_at
-    ? new Date(discount.expires_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
+    ? new Date(discount.expires_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })
     : null;
 
   return (
@@ -95,7 +95,7 @@ function DiscountCard({ discount }: { discount: Discount }) {
       {/* Expiry */}
       {expiryStr && (
         <p className="text-[10px] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
-          Scade il {expiryStr}
+          Expires {expiryStr}
         </p>
       )}
 
@@ -128,10 +128,10 @@ export default function DiscountsView({ token }: { token: string }) {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
-        if (!res.ok) { setError(data.error ?? 'Errore caricamento'); return; }
+        if (!res.ok) { setError(data.error ?? 'Failed to load deals'); return; }
         setDiscounts(data.discounts ?? []);
       } catch {
-        setError('Errore di rete');
+        setError('Network error');
       } finally {
         setLoading(false);
       }
@@ -161,12 +161,12 @@ export default function DiscountsView({ token }: { token: string }) {
         <div className="w-14 h-14 rounded-full bg-[#fdf6f6] border border-[#eddada] flex items-center justify-center mb-4">
           <GlassWater size={22} className="text-[#731515]/30" strokeWidth={1.5} />
         </div>
-        <p className="text-[9px] tracking-[0.5em] text-[#7a4a4a]/40 uppercase mb-2">Nessuno sconto</p>
+        <p className="text-[9px] tracking-[0.5em] text-[#7a4a4a]/40 uppercase mb-2">No deals yet</p>
         <p
           className="text-sm text-[#7a4a4a]/50 font-light"
           style={{ fontFamily: 'var(--font-nunito)' }}
         >
-          Nessuno sconto disponibile al momento.
+          No deals or perks available at the moment.
         </p>
       </div>
     );

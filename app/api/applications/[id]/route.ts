@@ -9,14 +9,22 @@ const VALID_STATUSES = ['pending', 'approved', 'rejected'];
 
 function welcomeHtml(name: string, inviteLink?: string) {
   const firstName = name.split(' ')[0];
-  const setPasswordButton = inviteLink ? `
-  <p style="text-align:center;margin:16px 0 0;">
+  const ctaBlock = inviteLink
+    ? `
+  <p style="text-align:center;margin:40px 0 0;">
     <a href="${inviteLink}"
-       style="background-color:#3d0808;color:white;padding:14px 32px;text-decoration:none;
+       style="background-color:#6b1a1a;color:white;padding:14px 32px;text-decoration:none;
               border-radius:4px;font-size:14px;letter-spacing:0.08em;">
       SET YOUR PASSWORD →
     </a>
-  </p>` : '';
+  </p>`
+    : `
+  <p style="text-align:center;margin:40px 0 0;">
+    <a href="https://vivowineclub.com/login"
+       style="color:#6b1a1a;font-size:13px;text-decoration:underline;">
+      Log in to your account →
+    </a>
+  </p>`;
   return `
 <div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1a0505;">
   <div style="text-align:center;background-color:#6b1a1a;padding:28px;margin-bottom:36px;border-radius:4px;">
@@ -36,18 +44,10 @@ function welcomeHtml(name: string, inviteLink?: string) {
   </p>
 
   <p style="line-height:1.7;color:#3a1a1a;">
-    Log in to your members area to explore what's coming up, manage your profile, and stay
+    Set your password to access your members area, explore upcoming events, and stay
     up to date with everything happening at Vivo.
   </p>
-
-  <p style="text-align:center;margin:40px 0 0;">
-    <a href="https://vivowineclub.com/members"
-       style="background-color:#6b1a1a;color:white;padding:14px 32px;text-decoration:none;
-              border-radius:4px;font-size:14px;letter-spacing:0.08em;">
-      ACCESS MEMBERS AREA →
-    </a>
-  </p>
-  ${setPasswordButton}
+  ${ctaBlock}
 
   <div style="border-top:1px solid #e8d5d5;margin-top:40px;padding-top:24px;">
     <p style="color:#7a4a4a;font-size:13px;line-height:1.6;">

@@ -42,9 +42,9 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { id: 'home',      label: 'Home',                  icon: Home  },
-  { id: 'discounts', label: 'Sconti & Convenzioni',   icon: Tag   },
-  { id: 'settings',  label: 'Impostazioni',           icon: KeyRound },
+  { id: 'home',      label: 'Home',         icon: Home     },
+  { id: 'discounts', label: 'Deals & Perks', icon: Tag      },
+  { id: 'settings',  label: 'Settings',      icon: KeyRound },
 ];
 
 function NavBtn({
@@ -131,8 +131,8 @@ function SettingsSection() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
-    if (pwd !== conf)   { setError('Le password non corrispondono.'); return; }
-    if (pwd.length < 6) { setError('Minimo 6 caratteri.'); return; }
+    if (pwd !== conf)   { setError("Passwords don't match."); return; }
+    if (pwd.length < 6) { setError('Minimum 6 characters.'); return; }
     setStatus('loading');
     const { error: err } = await supabase.auth.updateUser({ password: pwd });
     if (err) { setError(err.message); setStatus('error'); }
@@ -141,10 +141,10 @@ function SettingsSection() {
 
   return (
     <>
-      <SectionHeader title="Impostazioni" subtitle="Gestisci la sicurezza del tuo account." />
+      <SectionHeader title="Settings" subtitle="Manage your account security." />
       <div className="max-w-md">
         <Card>
-          <CardLabel icon={KeyRound} label="Cambia Password" />
+          <CardLabel icon={KeyRound} label="Change Password" />
           {status === 'success' ? (
             <motion.p
               initial={{ opacity: 0, y: -4 }}
@@ -152,12 +152,12 @@ function SettingsSection() {
               className="text-sm text-[#2d6e2d] bg-[#2d6e2d]/8 border border-[#2d6e2d]/20 px-4 py-3 rounded-lg"
               style={{ fontFamily: 'var(--font-nunito)' }}
             >
-              Password aggiornata con successo.
+              Password updated successfully.
             </motion.p>
           ) : (
             <form onSubmit={onSubmit} className="flex flex-col gap-4">
               <div>
-                <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-2">NUOVA PASSWORD</label>
+                <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-2">NEW PASSWORD</label>
                 <input
                   type="password" required placeholder="••••••••" value={pwd}
                   onChange={e => { setPwd(e.target.value); setStatus('idle'); }}
@@ -165,7 +165,7 @@ function SettingsSection() {
                 />
               </div>
               <div>
-                <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-2">CONFERMA PASSWORD</label>
+                <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-2">CONFIRM PASSWORD</label>
                 <input
                   type="password" required placeholder="••••••••" value={conf}
                   onChange={e => { setConf(e.target.value); setStatus('idle'); }}
@@ -180,7 +180,7 @@ function SettingsSection() {
                 disabled={status === 'loading'}
                 className="w-full py-2.5 bg-[#731515] text-white text-[10px] tracking-[0.3em] hover:bg-[#9b2323] disabled:opacity-55 disabled:cursor-not-allowed transition-colors duration-200 rounded-lg mt-1"
               >
-                {status === 'loading' ? 'AGGIORNAMENTO…' : 'AGGIORNA PASSWORD'}
+                {status === 'loading' ? 'UPDATING…' : 'UPDATE PASSWORD'}
               </button>
             </form>
           )}
@@ -199,13 +199,13 @@ function HomeSection({
   user:             { name?: string | null; email?: string | null };
   onGoToDiscounts:  () => void;
 }) {
-  const firstName = user.name?.split(' ')[0] ?? user.email?.split('@')[0] ?? 'Membro';
+  const firstName = user.name?.split(' ')[0] ?? user.email?.split('@')[0] ?? 'Member';
 
   return (
     <>
       <SectionHeader
-        title={`Benvenuto, ${firstName}!`}
-        subtitle="Il tuo spazio riservato Vivo Wine Club."
+        title={`Welcome, ${firstName}!`}
+        subtitle="Your exclusive Vivo Wine Club space."
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -230,10 +230,10 @@ function HomeSection({
 
           <ul className="space-y-2">
             {[
-              'Accesso prioritario agli eventi',
-              'Visite esclusive in cantina',
-              'Esperienze riservate ai membri',
-              'Accesso al merch Vivo',
+              'Priority access to all events',
+              'Exclusive private winery visits',
+              'Members-only experiences',
+              'Access to Vivo merch',
             ].map(b => (
               <li
                 key={b}
@@ -252,9 +252,9 @@ function HomeSection({
           <CardLabel icon={User} label="My Profile" />
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-6">
             {[
-              { label: 'NOME COMPLETO', value: user.name,  muted: !user.name },
-              { label: 'EMAIL',         value: user.email, muted: false      },
-              { label: 'MEMBRO DAL',    value: '2026',     muted: true       },
+              { label: 'FULL NAME',    value: user.name,  muted: !user.name },
+              { label: 'EMAIL',        value: user.email, muted: false      },
+              { label: 'MEMBER SINCE', value: '2026',     muted: true       },
             ].map(({ label, value, muted }) => (
               <div key={label} className="border-l-2 border-[#eddada] pl-4">
                 <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">{label}</div>
@@ -268,7 +268,7 @@ function HomeSection({
             ))}
           </div>
           <p className="text-[10px] text-[#7a4a4a]/35 italic" style={{ fontFamily: 'var(--font-nunito)' }}>
-            * La modifica del profilo sarà disponibile al lancio completo della piattaforma.
+            * Profile editing will be available at full platform launch.
           </p>
         </Card>
 
@@ -282,12 +282,12 @@ function HomeSection({
               <Tag size={18} className="text-white/70" />
             </div>
             <div>
-              <div className="text-[8px] tracking-[0.5em] text-white/30 mb-0.5 uppercase">Esclusivo per membri</div>
+              <div className="text-[8px] tracking-[0.5em] text-white/30 mb-0.5 uppercase">Members Only</div>
               <div className="text-[15px] font-light text-white/90" style={{ fontFamily: 'var(--font-syne)' }}>
-                Sconti & Convenzioni
+                Deals & Perks
               </div>
               <p className="text-[11px] text-white/35 mt-0.5" style={{ fontFamily: 'var(--font-nunito)' }}>
-                Accedi alle offerte esclusive riservate ai membri Vivo Wine Club.
+                Access exclusive offers and perks reserved for Vivo Wine Club members.
               </p>
             </div>
           </div>
@@ -295,7 +295,7 @@ function HomeSection({
             onClick={e => { e.stopPropagation(); onGoToDiscounts(); }}
             className="shrink-0 inline-flex items-center gap-2 text-[9px] tracking-[0.3em] text-white bg-[#731515] px-6 py-3 rounded-lg hover:bg-[#9b2323] transition-colors duration-200 uppercase"
           >
-            Scopri
+            Explore
             <ArrowUpRight size={11} />
           </button>
         </div>
@@ -385,7 +385,7 @@ function SidebarContent({
           style={{ fontFamily: 'var(--font-nunito)' }}
         >
           <LogOut size={12} />
-          Esci
+          Log out
         </button>
       </div>
 
@@ -489,8 +489,8 @@ export default function MemberPortal({ user, token, onLogout, initialSection = '
                 {activeSection === 'discounts' && (
                   <>
                     <SectionHeader
-                      title="Sconti & Convenzioni"
-                      subtitle="Offerte esclusive per i membri Vivo Wine Club."
+                      title="Deals & Perks"
+                      subtitle="Exclusive offers and perks for Vivo Wine Club members."
                     />
                     <DiscountsView token={token} />
                   </>
