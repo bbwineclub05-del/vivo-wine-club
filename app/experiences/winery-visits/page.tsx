@@ -36,7 +36,7 @@ function Lightbox({ src, alt, onClose }: { src: string; alt: string; onClose: ()
     >
       <button
         onClick={onClose}
-        className="absolute top-6 right-6 text-[#C4B5A0] hover:text-[#F5EEE6] transition-colors z-10"
+        className="absolute top-4 right-4 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#C4B5A0] hover:text-[#F5EEE6] transition-colors z-10"
         aria-label="Close"
       >
         <X size={24} />

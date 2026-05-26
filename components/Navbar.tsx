@@ -169,22 +169,22 @@ export default function Navbar() {
           </div>
 
           {/* Mobile cart + hamburger */}
-          <div className="lg:hidden flex items-center gap-2">
+          <div className="lg:hidden flex items-center gap-1">
             <button
               onClick={() => openCart(true)}
               aria-label="Apri carrello"
-              className="relative p-2 text-[#6b3333] hover:text-[#731515] transition-colors"
+              className="relative min-w-[44px] min-h-[44px] flex items-center justify-center text-[#6b3333] hover:text-[#731515] transition-colors"
             >
               <ShoppingBag size={18} />
               {itemCount > 0 && (
-                <span className="absolute top-0.5 right-0.5 min-w-[15px] h-[15px] px-0.5 bg-[#731515] text-white text-[8px] font-semibold rounded-full flex items-center justify-center leading-none">
+                <span className="absolute top-1.5 right-1.5 min-w-[15px] h-[15px] px-0.5 bg-[#731515] text-white text-[8px] font-semibold rounded-full flex items-center justify-center leading-none">
                   {itemCount > 99 ? '99+' : itemCount}
                 </span>
               )}
             </button>
             <button
               onClick={() => setMobileOpen((v) => !v)}
-              className="p-2 text-[#6b3333] hover:text-[#731515] transition-colors"
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#6b3333] hover:text-[#731515] transition-colors"
               aria-label="Menu"
             >
               {mobileOpen ? <X size={20} /> : <Menu size={20} />}

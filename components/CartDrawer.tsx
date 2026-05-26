@@ -110,7 +110,7 @@ export default function CartDrawer() {
             className="fixed right-0 z-[70] bg-white border-l border-[#e8d5d5] flex flex-col" style={{ top: 64, height: 'calc(100dvh - 64px)', width: 'min(100vw, 448px)' }}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-8 py-6 border-b border-[#e8d5d5]">
+            <div className="flex items-center justify-between px-5 py-4 sm:px-8 sm:py-6 border-b border-[#e8d5d5]">
               <div className="flex items-center gap-3">
                 <ShoppingBag size={18} className="text-[#731515]" />
                 <span className="text-sm tracking-[0.3em] text-[#1a0505]">CART</span>
@@ -124,7 +124,7 @@ export default function CartDrawer() {
             </div>
 
             {/* Items */}
-            <div className="flex-1 overflow-y-auto px-8 py-6">
+            <div className="flex-1 overflow-y-auto px-5 py-5 sm:px-8 sm:py-6">
               <AnimatePresence>
                 {items.length === 0 ? (
                   <motion.div
@@ -216,7 +216,7 @@ export default function CartDrawer() {
 
             {/* Footer */}
             {items.length > 0 && (
-              <div className="px-8 py-6 border-t border-[#e8d5d5] space-y-4">
+              <div className="px-5 py-5 sm:px-8 sm:py-6 border-t border-[#e8d5d5] space-y-4">
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <span className="text-xs tracking-[0.25em] text-[#7a4a4a]/70">SUBTOTAL</span>

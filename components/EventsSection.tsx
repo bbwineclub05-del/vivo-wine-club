@@ -9,7 +9,7 @@ import { type EventData, type EventStatus } from '@/lib/events';
 const StatusBadge = memo(function StatusBadge({ status, slug }: { status: EventStatus; slug: string }) {
   if (status === 'open') {
     return (
-      <Link href={`/checkout/${slug}`} className="text-[9px] tracking-[0.28em] px-4 lg:px-5 py-2.5 bg-[#731515] text-[#F5EEE6] border border-[#731515] hover:bg-[#aa4848] hover:border-[#aa4848] transition-all duration-300 whitespace-nowrap">
+      <Link href={`/checkout/${slug}`} className="text-[9px] tracking-[0.28em] px-4 lg:px-5 py-3 min-h-[44px] inline-flex items-center bg-[#731515] text-[#F5EEE6] border border-[#731515] hover:bg-[#aa4848] hover:border-[#aa4848] transition-all duration-300 whitespace-nowrap">
         BUY TICKETS
       </Link>
     );
@@ -96,7 +96,7 @@ function EventRow({
       </div>
 
       {/* Mobile badge */}
-      <div className="sm:hidden pb-5 pl-[56px]">
+      <div className="sm:hidden pb-5 pl-14">
         <StatusBadge status={event.status} slug={event.slug} />
       </div>
 

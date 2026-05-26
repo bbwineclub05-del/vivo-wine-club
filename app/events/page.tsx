@@ -20,7 +20,7 @@ function StatusBadge({ status, slug }: { status: EventStatus; slug: string }) {
     return (
       <Link
         href={`/checkout/${slug}`}
-        className="inline-block text-[9px] tracking-[0.28em] px-5 py-2.5 bg-[#731515] text-white hover:bg-[#aa4848] transition-colors duration-300 whitespace-nowrap"
+        className="inline-flex items-center text-[9px] tracking-[0.28em] px-5 py-3 min-h-[44px] bg-[#731515] text-white hover:bg-[#aa4848] transition-colors duration-300 whitespace-nowrap"
       >
         BUY TICKETS
       </Link>
@@ -175,7 +175,7 @@ export default async function EventsPage() {
               Events
             </h1>
             <p
-              className="mt-4 text-sm md:text-base text-white/75 font-light italic whitespace-nowrap leading-relaxed"
+              className="mt-4 text-sm md:text-base text-white/75 font-light italic leading-relaxed"
               style={{ fontFamily: 'var(--font-nunito)' }}
             >
               All our upcoming and past experiences — tastings, winery tours, and wine parties across Europe.

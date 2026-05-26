@@ -113,7 +113,7 @@ function UpcomingRow({
         <div className="sm:hidden pb-4 pl-20">
           <Link
             href={`/checkout/${event.slug}`}
-            className="text-[9px] tracking-[0.28em] px-5 py-2.5 inline-flex transition-all duration-300 hover:opacity-80"
+            className="text-[9px] tracking-[0.28em] px-5 py-3 min-h-[44px] inline-flex items-center transition-all duration-300 hover:opacity-80"
             style={{ background: btnBg, color: btnText }}
           >
             {event.price > 0 ? 'BUY TICKETS' : 'REGISTER'}

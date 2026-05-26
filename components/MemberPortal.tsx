@@ -370,7 +370,7 @@ function TicketCard({
     <Card className="!p-0 overflow-hidden">
       <div className="flex items-stretch">
         {/* Date column */}
-        <div className="shrink-0 w-[72px] bg-[#fdf6f6] border-r border-[#eddada] flex flex-col items-center justify-center py-5 px-2">
+        <div className="shrink-0 w-[60px] sm:w-[72px] bg-[#fdf6f6] border-r border-[#eddada] flex flex-col items-center justify-center py-5 px-1 sm:px-2">
           <div className="text-[10px] tracking-[0.3em] text-[#731515] uppercase font-semibold">
             {ev?.month ?? '—'}
           </div>
@@ -422,16 +422,16 @@ function TicketCard({
             </div>
           )}
 
-          <div className="flex items-center justify-between pt-2 border-t border-[#eddada]">
+          <div className="flex items-center justify-between pt-2 border-t border-[#eddada] gap-2">
             <span
-              className="text-[10px] text-[#7a4a4a]/40 font-mono"
+              className="text-[10px] text-[#7a4a4a]/40 font-mono truncate min-w-0"
             >
               {ticket.order_id}
             </span>
             <button
               onClick={() => onDownload(ticket.order_id, ev?.slug ?? ticket.event_id)}
               disabled={isDownloading}
-              className="inline-flex items-center gap-1.5 text-[9px] tracking-[0.3em] text-white bg-[#731515] px-3 py-1.5 rounded-lg hover:bg-[#9b2323] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 uppercase"
+              className="inline-flex items-center gap-1.5 text-[9px] tracking-[0.3em] text-white bg-[#731515] px-3 py-2.5 rounded-lg hover:bg-[#9b2323] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 uppercase shrink-0"
             >
               {isDownloading ? (
                 <span className="w-3 h-3 border border-white/40 border-t-white rounded-full animate-spin" />
@@ -1145,16 +1145,19 @@ export default function MemberPortal({ user, token, onLogout, initialSection = '
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative z-10">
 
         {/* Mobile top bar */}
-        <div className="lg:hidden flex items-center justify-between px-4 py-3 bg-[#0e0202] border-b border-white/[0.06] shrink-0">
+        <div className="lg:hidden flex items-center justify-between px-2 py-1 bg-[#0e0202] border-b border-white/[0.06] shrink-0">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="text-white/50 hover:text-white p-1 transition-colors"
+            className="text-white/50 hover:text-white min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors"
+            aria-label="Open menu"
           >
             <Menu size={20} />
           </button>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logobianco.png" alt="Vivo" className="h-6 opacity-70" />
-          <UserAvatar name={displayName} size={28} />
+          <div className="min-w-[44px] min-h-[44px] flex items-center justify-center">
+            <UserAvatar name={displayName} size={30} />
+          </div>
         </div>
 
         {/* Scrollable content area */}

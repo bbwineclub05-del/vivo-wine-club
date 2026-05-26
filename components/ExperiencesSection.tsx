@@ -72,7 +72,7 @@ export default function ExperiencesSection() {
             EXPERIENCES
           </h2>
           <p
-            className="mt-6 text-base md:text-lg text-[#7a4a4a] font-light italic whitespace-nowrap"
+            className="mt-6 text-base md:text-lg text-[#7a4a4a] font-light italic"
             style={{ fontFamily: 'var(--font-nunito)' }}
           >
             Experiences for every taste, from lively wine parties to intimate cellar visits
