@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { isAdminEmail } from '@/lib/admins';
+import { emailShell, ctaButton, divider } from '@/lib/email-shell';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -10,30 +11,23 @@ function buildInviteHtml(bodyText: string, eventSlug: string): string {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
-  const htmlBody = escaped
-    .replace(/\n\n/g, '</p><p style="margin:0 0 16px;color:#3a1a1a;line-height:1.7;">')
-    .replace(/\n/g, '<br/>');
 
-  return `
-<div style="font-family:sans-serif;max-width:580px;margin:0 auto;color:#1a0505;">
-  <div style="text-align:center;background-color:#6b1a1a;padding:24px;margin-bottom:32px;">
-    <img src="https://vivowineclub.com/logobianco.png" style="height:52px;" alt="Vivo Wine Club" />
-  </div>
-  <div style="padding:0 8px;">
-    <p style="margin:0 0 16px;color:#3a1a1a;line-height:1.7;">${htmlBody}</p>
-  </div>
-  <div style="text-align:center;margin:36px 0;">
-    <a href="https://vivowineclub.com/checkout/${eventSlug}"
-       style="display:inline-block;background-color:#6b1a1a;color:white;padding:14px 32px;border-radius:6px;text-decoration:none;font-size:13px;letter-spacing:0.08em;font-weight:600;">
-      PRENOTA IL TUO POSTO →
-    </a>
-  </div>
-  <p style="margin-top:40px;color:#bbb;font-size:11px;text-align:center;border-top:1px solid #e8d5d5;padding-top:20px;">
-    Vivo Wine Club &middot;
-    <a href="https://vivowineclub.com" style="color:#6b1a1a;">vivowineclub.com</a> &middot;
-    <a href="mailto:info@vivowineclub.com" style="color:#6b1a1a;">info@vivowineclub.com</a>
-  </p>
-</div>`;
+  const paragraphs = escaped
+    .split(/\n\n+/)
+    .map(block => block.replace(/\n/g, '<br/>'))
+    .map(p => `<p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#3a1a1a;line-height:1.75;" class="em-p">${p}</p>`)
+    .join('');
+
+  const body = `
+${paragraphs}
+${divider('24px 0')}
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+  <tr><td align="center">
+    ${ctaButton('BOOK YOUR SPOT →', `https://vivowineclub.com/checkout/${eventSlug}`)}
+  </td></tr>
+</table>`;
+
+  return emailShell(body);
 }
 
 /**

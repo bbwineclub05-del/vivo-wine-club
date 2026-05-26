@@ -1,12 +1,10 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import QRCode from 'qrcode';
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
-import { readFileSync } from 'fs';
-import { join } from 'path';
 import { Resend } from 'resend';
 import { dbEventToEventData, type EventData, type DbEvent } from '@/lib/events';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { generateTicketPdf } from '@/lib/ticket-pdf';
+import { emailShell, heading, para, ctaButton, divider } from '@/lib/email-shell';
 
 /** Resolve event by slug from Supabase */
 async function resolveEvent(slug: string): Promise<EventData | undefined> {
@@ -38,182 +36,6 @@ interface Body {
   phone: string;
 }
 
-// ── PDF generation ────────────────────────────────────────────────────────────
-
-/** Word-wrap `text` into lines of at most `maxChars` characters. */
-function wrapText(text: string, maxChars: number): string[] {
-  const words = text.split(' ');
-  const lines: string[] = [];
-  let current = '';
-  for (const word of words) {
-    const candidate = current ? `${current} ${word}` : word;
-    if (candidate.length <= maxChars) {
-      current = candidate;
-    } else {
-      if (current) lines.push(current);
-      // If a single word is longer than maxChars, hard-break it
-      current = word.length > maxChars ? word.slice(0, maxChars) : word;
-    }
-  }
-  if (current) lines.push(current);
-  return lines;
-}
-
-async function generateTicketPdf(params: {
-  event: EventData;
-  firstName: string;
-  lastName: string;
-  email: string;
-  total: number;
-  ticketId: string;
-  ticketNum: number;
-  totalTickets: number;
-}): Promise<Uint8Array> {
-  const { event, firstName, lastName, email, total, ticketId, ticketNum, totalTickets } = params;
-
-  const pdfDoc = await PDFDocument.create();
-  const page   = pdfDoc.addPage([595, 842]); // A4
-  const W      = page.getWidth();
-  const H      = page.getHeight();
-
-  const BORDEAUX = rgb(0.44, 0.10, 0.18);
-  const DARK     = rgb(0.10, 0.02, 0.02);
-  const GRAY     = rgb(0.48, 0.29, 0.29);
-  const LIGHT    = rgb(0.91, 0.84, 0.84);
-  const WHITE    = rgb(1, 1, 1);
-
-  const bold    = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-  const regular = await pdfDoc.embedFont(StandardFonts.Helvetica);
-
-  // ── Header bar ──
-  page.drawRectangle({ x: 0, y: H - 90, width: W, height: 90, color: BORDEAUX });
-
-  try {
-    const logoBytes = readFileSync(join(process.cwd(), 'public', 'logobianco.png'));
-    const logoImg   = await pdfDoc.embedPng(logoBytes);
-    const logoDims  = logoImg.scaleToFit(160, 50);
-    page.drawImage(logoImg, {
-      x: 40,
-      y: H - 90 + (90 - logoDims.height) / 2,
-      width:  logoDims.width,
-      height: logoDims.height,
-    });
-  } catch {
-    page.drawText('VIVO WINE CLUB', { x: 40, y: H - 56, size: 18, font: bold, color: WHITE });
-  }
-
-  const headerLabel  = totalTickets > 1 ? `TICKET ${ticketNum} OF ${totalTickets}` : 'EVENT TICKET';
-  const headerLabelW = bold.widthOfTextAtSize(headerLabel, 9);
-  page.drawText(headerLabel, {
-    x: W - 40 - headerLabelW, y: H - 53,
-    size: 9, font: bold, color: WHITE, opacity: 0.7,
-  });
-
-  // ── Event type + title ──
-  let y = H - 122;
-  page.drawText(event.type.toUpperCase(), { x: 40, y, size: 7.5, font: bold, color: BORDEAUX });
-
-  y -= 26;
-  const titleWords  = wrapText(event.title, 34); // ~34 chars at size 20 fits within margins
-  for (const line of titleWords) {
-    page.drawText(line, { x: 40, y, size: 20, font: bold, color: DARK });
-    y -= 26;
-  }
-
-  // ── Description ──
-  y -= 6;
-  const descLines = wrapText(event.description, 72);
-  for (const line of descLines) {
-    page.drawText(line, { x: 40, y, size: 9, font: regular, color: GRAY });
-    y -= 14;
-  }
-
-  // ── EVENT DETAILS section ──
-  y -= 14;
-  page.drawLine({ start: { x: 40, y }, end: { x: W - 40, y }, thickness: 0.5, color: LIGHT });
-  y -= 14;
-  page.drawText('EVENT DETAILS', { x: 40, y, size: 7, font: bold, color: GRAY, opacity: 0.6 });
-  y -= 14;
-
-  const dateStr  = `${event.month} ${event.day}, ${event.year}`;
-  const dateTime = event.time ? `${dateStr}  ·  ${event.time}` : dateStr;
-  const priceStr = total === 0 ? 'Free' : `€${event.price.toFixed(2)} per ticket`;
-
-  const eventRows: [string, string][] = [
-    ['Date & Time', dateTime],
-    ['Location',    event.locationFull],
-    ['Type',        event.type],
-    ['Price',       priceStr],
-  ];
-
-  for (const [label, value] of eventRows) {
-    page.drawText(label.toUpperCase(), { x: 40, y, size: 7, font: bold, color: GRAY });
-    const valLines = wrapText(value, 55);
-    page.drawText(valLines[0], { x: 160, y, size: 9.5, font: regular, color: DARK });
-    if (valLines[1]) {
-      page.drawText(valLines[1], { x: 160, y: y - 13, size: 9.5, font: regular, color: DARK });
-      y -= 13;
-    }
-    y -= 23;
-  }
-
-  // ── YOUR TICKET section ──
-  y -= 4;
-  page.drawLine({ start: { x: 40, y }, end: { x: W - 40, y }, thickness: 0.5, color: LIGHT });
-  y -= 14;
-  page.drawText('YOUR TICKET', { x: 40, y, size: 7, font: bold, color: GRAY, opacity: 0.6 });
-  y -= 14;
-
-  const ticketRows: [string, string][] = [
-    ['Attendee', `${firstName} ${lastName}`],
-    ['Email',    email],
-    ['Ticket',   totalTickets > 1 ? `${ticketNum} of ${totalTickets}` : '1 of 1'],
-  ];
-
-  for (const [label, value] of ticketRows) {
-    page.drawText(label.toUpperCase(), { x: 40, y, size: 7, font: bold, color: GRAY });
-    const valLines = wrapText(value, 55);
-    page.drawText(valLines[0], { x: 160, y, size: 9.5, font: regular, color: DARK });
-    if (valLines[1]) {
-      page.drawText(valLines[1], { x: 160, y: y - 13, size: 9.5, font: regular, color: DARK });
-      y -= 13;
-    }
-    y -= 23;
-  }
-
-  // ── QR code ──
-  y -= 10;
-  page.drawLine({ start: { x: 40, y }, end: { x: W - 40, y }, thickness: 0.5, color: LIGHT });
-  y -= 18;
-
-  const qrBuffer = await QRCode.toBuffer(ticketId, { width: 180, margin: 1 });
-  const qrImage  = await pdfDoc.embedPng(qrBuffer);
-  const qrSize   = 150;
-  const qrX      = (W - qrSize) / 2;
-
-  const qrLabel    = 'SHOW THIS QR CODE AT THE ENTRANCE';
-  const qrLabelW   = bold.widthOfTextAtSize(qrLabel, 8);
-  page.drawText(qrLabel, { x: (W - qrLabelW) / 2, y, size: 8, font: bold, color: BORDEAUX });
-  y -= 14;
-  page.drawImage(qrImage, { x: qrX, y: y - qrSize, width: qrSize, height: qrSize });
-  const qrSub    = 'One scan per ticket · valid for this event only';
-  const qrSubW   = regular.widthOfTextAtSize(qrSub, 7.5);
-  page.drawText(qrSub, { x: (W - qrSubW) / 2, y: y - qrSize - 12, size: 7.5, font: regular, color: GRAY });
-
-  // ── Footer ──
-  const footerY = 36;
-  page.drawLine({
-    start: { x: 40, y: footerY + 18 }, end: { x: W - 40, y: footerY + 18 },
-    thickness: 0.5, color: LIGHT,
-  });
-  page.drawText(`Ticket ID: ${ticketId}`, { x: 40, y: footerY + 4, size: 7, font: regular, color: GRAY });
-  const contact    = 'vivowineclub.com · info@vivowineclub.com';
-  const contactW   = regular.widthOfTextAtSize(contact, 7);
-  page.drawText(contact, { x: W - 40 - contactW, y: footerY + 4, size: 7, font: regular, color: GRAY });
-
-  return pdfDoc.save();
-}
-
 // ── Email helpers ─────────────────────────────────────────────────────────────
 
 function buyerEmailHtml(params: {
@@ -225,49 +47,34 @@ function buyerEmailHtml(params: {
 }): string {
   const { firstName, event, qty, total, orderId } = params;
   const eventDate  = `${event.month} ${event.day}, ${event.year}`;
-  const totalLabel = total === 0 ? 'Gratuito' : `&#8364;${total.toFixed(2)}`;
-  return `
-<div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1a0505;">
-  <div style="text-align:center;background-color:#6b1a1a;padding:24px;margin-bottom:32px;border-radius:4px;">
-    <img src="https://vivowineclub.com/logobianco.png" style="height:56px;" alt="Vivo Wine Club" />
-  </div>
+  const totalLabel = total === 0 ? 'Free' : `&euro;${total.toFixed(2)}`;
 
-  <h2 style="text-align:center;font-weight:300;font-size:26px;margin-bottom:6px;">
-    You&#39;re in, ${firstName}!
-  </h2>
-  <p style="text-align:center;color:#7a4a4a;font-style:italic;margin-bottom:32px;">
-    Your ticket${qty > 1 ? 's' : ''} for <strong>${event.title}</strong> ${qty > 1 ? 'are' : 'is'} confirmed.
-    Find your ${qty > 1 ? `${qty} ticket PDFs` : 'ticket PDF'} attached to this email.
-  </p>
+  const detailRows = [
+    ['Event',    event.title,        'font-weight:700;'],
+    ['Date',     eventDate,          ''],
+    ['Location', event.locationFull, ''],
+    ['Tickets',  String(qty),        ''],
+  ].map(([label, value, extra]) => `
+    <tr>
+      <td style="padding:10px 0;border-bottom:1px solid #f0e4e4;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#7a4a4a;" class="em-p">${label}</td>
+      <td style="padding:10px 0;border-bottom:1px solid #f0e4e4;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#1a0505;text-align:right;${extra}" class="em-p">${value}</td>
+    </tr>`).join('');
 
-  <table style="width:100%;border-collapse:collapse;margin-bottom:28px;font-size:14px;">
-    <tr>
-      <td style="padding:10px 0;border-bottom:1px solid #f0e4e4;color:#7a4a4a;">Event</td>
-      <td style="padding:10px 0;border-bottom:1px solid #f0e4e4;text-align:right;font-weight:600;">${event.title}</td>
-    </tr>
-    <tr>
-      <td style="padding:10px 0;border-bottom:1px solid #f0e4e4;color:#7a4a4a;">Date</td>
-      <td style="padding:10px 0;border-bottom:1px solid #f0e4e4;text-align:right;">${eventDate}</td>
-    </tr>
-    <tr>
-      <td style="padding:10px 0;border-bottom:1px solid #f0e4e4;color:#7a4a4a;">Location</td>
-      <td style="padding:10px 0;border-bottom:1px solid #f0e4e4;text-align:right;">${event.locationFull}</td>
-    </tr>
-    <tr>
-      <td style="padding:10px 0;border-bottom:1px solid #f0e4e4;color:#7a4a4a;">Tickets</td>
-      <td style="padding:10px 0;border-bottom:1px solid #f0e4e4;text-align:right;">${qty}</td>
-    </tr>
-    <tr>
-      <td style="padding:10px 0;color:#7a4a4a;">Total</td>
-      <td style="padding:10px 0;text-align:right;font-weight:700;color:#731515;font-size:16px;">${totalLabel}</td>
-    </tr>
-  </table>
+  const body = `
+${heading(`You're in, ${firstName}!`, `Your ticket${qty > 1 ? 's' : ''} for ${event.title} ${qty > 1 ? 'are' : 'is'} confirmed.`)}
+${para(`Find your ${qty > 1 ? `${qty} ticket PDFs` : 'ticket PDF'} attached to this email.`, 'text-align:center;')}
+${divider()}
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:20px;">
+  ${detailRows}
+  <tr>
+    <td style="padding:14px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#7a4a4a;" class="em-p">Total</td>
+    <td style="padding:14px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;color:#731515;text-align:right;">${totalLabel}</td>
+  </tr>
+</table>
+${divider('8px 0 0')}
+<p style="margin:12px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#7a4a4a;text-align:center;line-height:1.6;" class="em-muted">Order ID: ${orderId}</p>`;
 
-  <p style="margin-top:40px;color:#aaa;font-size:11px;text-align:center;line-height:1.6;">
-    Order ID: ${orderId}<br/>
-    Vivo Wine Club &#183; info@vivowineclub.com &#183; vivowineclub.com
-  </p>
-</div>`;
+  return emailShell(body);
 }
 
 function adminEmailHtml(params: {
@@ -282,21 +89,29 @@ function adminEmailHtml(params: {
 }): string {
   const { firstName, lastName, email, phone, event, qty, total, orderId } = params;
   const eventDate = `${event.month} ${event.day}, ${event.year}`;
-  return `
-<div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1a0505;">
-  <h2 style="font-weight:400;margin-bottom:24px;">New ticket order — ${event.title}</h2>
-  <table style="width:100%;border-collapse:collapse;font-size:14px;">
-    <tr><td style="padding:9px 0;border-bottom:1px solid #eee;color:#666;">Order ID</td><td style="padding:9px 0;border-bottom:1px solid #eee;text-align:right;font-family:monospace;">${orderId}</td></tr>
-    <tr><td style="padding:9px 0;border-bottom:1px solid #eee;color:#666;">Event</td><td style="padding:9px 0;border-bottom:1px solid #eee;text-align:right;font-weight:600;">${event.title}</td></tr>
-    <tr><td style="padding:9px 0;border-bottom:1px solid #eee;color:#666;">Date</td><td style="padding:9px 0;border-bottom:1px solid #eee;text-align:right;">${eventDate}</td></tr>
-    <tr><td style="padding:9px 0;border-bottom:1px solid #eee;color:#666;">Location</td><td style="padding:9px 0;border-bottom:1px solid #eee;text-align:right;">${event.locationFull}</td></tr>
-    <tr><td style="padding:9px 0;border-bottom:1px solid #eee;color:#666;">Buyer</td><td style="padding:9px 0;border-bottom:1px solid #eee;text-align:right;">${firstName} ${lastName}</td></tr>
-    <tr><td style="padding:9px 0;border-bottom:1px solid #eee;color:#666;">Email</td><td style="padding:9px 0;border-bottom:1px solid #eee;text-align:right;">${email}</td></tr>
-    <tr><td style="padding:9px 0;border-bottom:1px solid #eee;color:#666;">Phone</td><td style="padding:9px 0;border-bottom:1px solid #eee;text-align:right;">${phone}</td></tr>
-    <tr><td style="padding:9px 0;border-bottom:1px solid #eee;color:#666;">Tickets</td><td style="padding:9px 0;border-bottom:1px solid #eee;text-align:right;">${qty}</td></tr>
-    <tr><td style="padding:9px 0;color:#666;">Total</td><td style="padding:9px 0;text-align:right;font-weight:700;color:#731515;">€${total.toFixed(2)}</td></tr>
-  </table>
-</div>`;
+
+  const rows = [
+    ['Order ID', `<span style="font-family:monospace;">${orderId}</span>`],
+    ['Event',    `<strong>${event.title}</strong>`],
+    ['Date',     eventDate],
+    ['Location', event.locationFull],
+    ['Buyer',    `${firstName} ${lastName}`],
+    ['Email',    email],
+    ['Phone',    phone],
+    ['Tickets',  String(qty)],
+    ['Total',    `<strong style="color:#731515;">&euro;${total.toFixed(2)}</strong>`],
+  ].map(([k, v], i) => `
+    <tr class="${i % 2 === 0 ? 'em-row-even' : ''}">
+      <td style="padding:9px 12px;font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#7a4a4a;width:110px;white-space:nowrap;" class="em-label">${k}</td>
+      <td style="padding:9px 12px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#1a0505;border-bottom:1px solid #f5eded;">${v}</td>
+    </tr>`).join('');
+
+  const body = `
+<h2 style="margin:0 0 20px;font-family:Georgia,'Times New Roman',serif;font-size:20px;font-weight:400;color:#1a0505;" class="em-h1">New ticket order — ${event.title}</h2>
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;border:1px solid #eddada;border-radius:4px;overflow:hidden;">
+  ${rows}
+</table>`;
+  return emailShell(body);
 }
 
 // ── Customer CRM upsert ───────────────────────────────────────────────────────

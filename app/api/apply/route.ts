@@ -1,46 +1,36 @@
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { supabase } from '@/lib/supabase';
+import { emailShell, heading, para, ctaButton, divider } from '@/lib/email-shell';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const CONFIRMATION_HTML = `
-<div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1a0505;">
-  <div style="text-align:center;background-color:#6b1a1a;padding:24px;margin-bottom:32px;border-radius:4px;">
-    <img src="https://vivowineclub.com/logobianco.png" style="height:64px;" />
-  </div>
-  <h2 style="text-align:center;">We received your application.</h2>
-  <p>Thank you for applying to Vivo Wine Club. We will review your application and get back to you within a few days.</p>
-  <p style="text-align:center;">
-    <a href="https://vivowineclub.com" style="background-color:#6b1a1a;color:white;padding:12px 24px;text-decoration:none;border-radius:4px;font-size:14px;">
-      VISIT OUR WEBSITE →
-    </a>
-  </p>
-  <p style="margin-top:32px;color:#999;font-size:12px;text-align:center;">
-    The Vivo Wine Club Team<br>
-    info@vivowineclub.com<br>
-    vivowineclub.com
-  </p>
-</div>
-`;
+function confirmationHtml(): string {
+  const body = `
+${heading('We received your application.')}
+${para('Thank you for applying to Vivo Wine Club. We will review your application and get back to you within a few days.')}
+${divider()}
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top:8px;">
+  <tr><td align="center">
+    ${ctaButton('VISIT OUR WEBSITE →', 'https://vivowineclub.com')}
+  </td></tr>
+</table>`;
+  return emailShell(body);
+}
 
-function notificationHtml(data: Record<string, string>) {
-  return `
-<div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1a0505;">
-  <h2>New membership application</h2>
-  <table style="width:100%;border-collapse:collapse;">
-    ${Object.entries(data)
-      .map(
-        ([k, v]) => `
-    <tr>
-      <td style="padding:8px 12px;background:#f5f0f0;font-weight:600;width:140px;text-transform:uppercase;font-size:12px;">${k}</td>
-      <td style="padding:8px 12px;border-bottom:1px solid #e8d5d5;">${v || '—'}</td>
-    </tr>`
-      )
-      .join('')}
-  </table>
-</div>
-`;
+function notificationHtml(data: Record<string, string>): string {
+  const rows = Object.entries(data).map(([k, v], i) => `
+    <tr class="${i % 2 === 0 ? 'em-row-even' : ''}">
+      <td style="padding:9px 12px;font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#7a4a4a;width:130px;white-space:nowrap;" class="em-label">${k}</td>
+      <td style="padding:9px 12px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#1a0505;border-bottom:1px solid #f5eded;">${v || '—'}</td>
+    </tr>`).join('');
+
+  const body = `
+<h2 style="margin:0 0 20px;font-family:Georgia,'Times New Roman',serif;font-size:20px;font-weight:400;color:#1a0505;" class="em-h1">New membership application</h2>
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;border:1px solid #eddada;border-radius:4px;overflow:hidden;">
+  ${rows}
+</table>`;
+  return emailShell(body);
 }
 
 export async function POST(request: Request) {
@@ -73,7 +63,7 @@ export async function POST(request: Request) {
       from: 'noreply@vivowineclub.com',
       to: email,
       subject: 'We received your application — Vivo Wine Club',
-      html: CONFIRMATION_HTML,
+      html: confirmationHtml(),
     }),
     resend.emails.send({
       from: 'noreply@vivowineclub.com',

@@ -2,104 +2,42 @@ import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { requireAdmin } from '@/lib/auth-guard';
+import { emailShell, heading, para, ctaButton, divider } from '@/lib/email-shell';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const VALID_STATUSES = ['pending', 'approved', 'rejected'];
 
-function welcomeHtml(name: string, inviteLink?: string) {
+function welcomeHtml(name: string, inviteLink?: string): string {
   const firstName = name.split(' ')[0];
   const ctaBlock = inviteLink
-    ? `
-  <p style="text-align:center;margin:40px 0 0;">
-    <a href="${inviteLink}"
-       style="background-color:#6b1a1a;color:white;padding:14px 32px;text-decoration:none;
-              border-radius:4px;font-size:14px;letter-spacing:0.08em;">
-      SET YOUR PASSWORD →
-    </a>
-  </p>`
-    : `
-  <p style="text-align:center;margin:40px 0 0;">
-    <a href="https://vivowineclub.com/login"
-       style="color:#6b1a1a;font-size:13px;text-decoration:underline;">
-      Log in to your account →
-    </a>
-  </p>`;
-  return `
-<div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1a0505;">
-  <div style="text-align:center;background-color:#6b1a1a;padding:28px;margin-bottom:36px;border-radius:4px;">
-    <img src="https://vivowineclub.com/logobianco.png" style="height:64px;" alt="Vivo Wine Club" />
-  </div>
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top:28px;">
+  <tr><td align="center">${ctaButton('SET YOUR PASSWORD →', inviteLink)}</td></tr>
+</table>`
+    : `${para('<a href="https://vivowineclub.com/login" style="color:#731515;">Log in to your account →</a>', 'text-align:center;')}`;
 
-  <h2 style="text-align:center;font-weight:300;font-size:26px;margin-bottom:8px;">
-    Welcome to the club, ${firstName}.
-  </h2>
-  <p style="text-align:center;color:#7a4a4a;font-style:italic;margin-bottom:32px;font-size:15px;">
-    Your application has been approved.
-  </p>
-
-  <p style="line-height:1.7;color:#3a1a1a;">
-    We're excited to have you as part of Vivo Wine Club. You now have access to our exclusive
-    events, private winery visits, and a community of people who love wine as much as we do.
-  </p>
-
-  <p style="line-height:1.7;color:#3a1a1a;">
-    Set your password to access your members area, explore upcoming events, and stay
-    up to date with everything happening at Vivo.
-  </p>
-  ${ctaBlock}
-
-  <div style="border-top:1px solid #e8d5d5;margin-top:40px;padding-top:24px;">
-    <p style="color:#7a4a4a;font-size:13px;line-height:1.6;">
-      Have questions? Reach us at
-      <a href="mailto:info@vivowineclub.com" style="color:#6b1a1a;">info@vivowineclub.com</a> —
-      we're always happy to help.
-    </p>
-  </div>
-
-  <p style="margin-top:32px;color:#bbb;font-size:11px;text-align:center;">
-    Vivo Wine Club · vivowineclub.com
-  </p>
-</div>
-`;
+  const body = `
+${heading(`Welcome to the club, ${firstName}.`, 'Your application has been approved.')}
+${divider()}
+${para(`We're excited to have you as part of Vivo Wine Club. You now have access to our exclusive events, private winery visits, and a community of people who love wine as much as we do.`)}
+${para('Set your password to access your members area, explore upcoming events, and stay up to date with everything happening at Vivo.')}
+${ctaBlock}
+${divider('28px 0 0')}
+${para('Have questions? Reach us at <a href="mailto:info@vivowineclub.com" style="color:#731515;">info@vivowineclub.com</a> — we\'re always happy to help.', 'font-size:13px;')}`;
+  return emailShell(body);
 }
 
-function rejectionHtml(name: string) {
+function rejectionHtml(name: string): string {
   const firstName = name.split(' ')[0];
-  return `
-<div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1a0505;">
-  <div style="text-align:center;background-color:#6b1a1a;padding:28px;margin-bottom:36px;border-radius:4px;">
-    <img src="https://vivowineclub.com/logobianco.png" style="height:64px;" alt="Vivo Wine Club" />
-  </div>
-
-  <h2 style="text-align:center;font-weight:300;font-size:24px;margin-bottom:8px;">
-    Thank you for applying, ${firstName}.
-  </h2>
-
-  <p style="line-height:1.7;color:#3a1a1a;">
-    We truly appreciate your interest in Vivo Wine Club. After careful review, we're unable
-    to offer you a membership at this time — our current intake is limited and we receive
-    many applications.
-  </p>
-
-  <p style="line-height:1.7;color:#3a1a1a;">
-    We hope to welcome you in a future round. In the meantime, you can still attend our
-    open events and follow us on LinkedIn for updates.
-  </p>
-
-  <p style="text-align:center;margin:40px 0;">
-    <a href="https://vivowineclub.com/events"
-       style="background-color:#6b1a1a;color:white;padding:14px 32px;text-decoration:none;
-              border-radius:4px;font-size:14px;letter-spacing:0.08em;">
-      VIEW UPCOMING EVENTS →
-    </a>
-  </p>
-
-  <p style="margin-top:32px;color:#bbb;font-size:11px;text-align:center;">
-    Vivo Wine Club · vivowineclub.com
-  </p>
-</div>
-`;
+  const body = `
+${heading(`Thank you for applying, ${firstName}.`)}
+${divider()}
+${para(`We truly appreciate your interest in Vivo Wine Club. After careful review, we're unable to offer you a membership at this time — our current intake is limited and we receive many applications.`)}
+${para('We hope to welcome you in a future round. In the meantime, you can still attend our open events and follow us on LinkedIn for updates.')}
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top:28px;">
+  <tr><td align="center">${ctaButton('VIEW UPCOMING EVENTS →', 'https://vivowineclub.com/events')}</td></tr>
+</table>`;
+  return emailShell(body);
 }
 
 export async function PATCH(

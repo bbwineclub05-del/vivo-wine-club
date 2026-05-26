@@ -176,6 +176,14 @@ a, button, [role="button"] {
   max-width: 100vw;
 }
 
+@keyframes carousel-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.carousel-strip {
+  animation: carousel-scroll 90s linear infinite;
+}
+
 
 /* ── Subtle noise texture ────────────────────────────────────────── */
 /* z-index: -1 keeps it below all content including the navbar.

@@ -221,3 +221,29 @@ CREATE POLICY "authenticated_select_member_discounts"
   USING (visible = true);
 
 ALTER PUBLICATION supabase_realtime ADD TABLE member_discounts;
+
+
+-- ── 9. Member profiles ────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS profiles (
+  id             uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  full_name      text,
+  city           text,
+  wine_interests text[] DEFAULT '{}' NOT NULL,
+  avatar_url     text,
+  created_at     timestamptz DEFAULT now(),
+  updated_at     timestamptz DEFAULT now()
+);
+
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "profiles_owner_select" ON profiles;
+CREATE POLICY "profiles_owner_select"
+  ON profiles FOR SELECT TO authenticated
+  USING (auth.uid() = id);
+
+DROP POLICY IF EXISTS "profiles_owner_modify" ON profiles;
+CREATE POLICY "profiles_owner_modify"
+  ON profiles FOR ALL TO authenticated
+  USING (auth.uid() = id)
+  WITH CHECK (auth.uid() = id);

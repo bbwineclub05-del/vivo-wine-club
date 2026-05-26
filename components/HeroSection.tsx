@@ -97,7 +97,7 @@ export default function HeroSection() {
         className="absolute inset-0 w-full h-full object-cover"
         style={{ zIndex: 0 }}
       >
-        <source src="/videosito.mp4" type="video/mp4" />
+        <source src="/videosito vero.mov" type="video/mp4" />
       </video>
 
       {/* Bordeaux overlay */}

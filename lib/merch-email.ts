@@ -1,52 +1,11 @@
 import { Resend } from 'resend';
+import { emailShell } from '@/lib/email-shell';
 
 const resend = new Resend(process.env.RESEND_API_KEY!);
 
 const FROM = 'Vivo Wine Club <info@vivowineclub.com>';
-const LOGO = 'https://vivowineclub.com/logobianco.png';
 
 export interface MerchOrderItem { name: string; qty: number; price: number }
-
-// ── HTML shell ────────────────────────────────────────────────────────────────
-
-function emailShell(body: string) {
-  return `<!DOCTYPE html>
-<html lang="it">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Vivo Wine Club</title>
-</head>
-<body style="margin:0;padding:0;background:#f9f3f3;font-family:Georgia,serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9f3f3;padding:32px 16px;">
-    <tr><td align="center">
-      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #eddada;">
-        <tr>
-          <td style="background:#1a0505;padding:28px 32px;text-align:center;">
-            <img src="${LOGO}" alt="Vivo Wine Club" height="44" style="display:block;margin:0 auto;" />
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:36px 32px;">
-            ${body}
-          </td>
-        </tr>
-        <tr>
-          <td style="background:#fdf6f6;border-top:1px solid #eddada;padding:20px 32px;text-align:center;">
-            <p style="margin:0;font-family:sans-serif;font-size:12px;color:#7a4a4a;line-height:1.8;">
-              Vivo Wine Club &nbsp;&middot;&nbsp;
-              <a href="https://vivowineclub.com" style="color:#731515;text-decoration:none;">vivowineclub.com</a>
-              &nbsp;&middot;&nbsp;
-              <a href="mailto:info@vivowineclub.com" style="color:#731515;text-decoration:none;">info@vivowineclub.com</a>
-            </p>
-          </td>
-        </tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`;
-}
 
 // ── Shared item rows ──────────────────────────────────────────────────────────
 
