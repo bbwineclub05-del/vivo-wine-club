@@ -8,7 +8,7 @@ import {
   Home, CheckSquare, BarChart3, Users, FileText,
   Mail, LogOut, KeyRound, ScanLine, Menu, X,
   Wine, Shield, ArrowUpRight, CreditCard, User, CalendarDays, GlassWater, MapPin, Images,
-  Database, ChevronDown, UsersRound, Lock, ShoppingBag, Tag,
+  Database, ChevronDown, UsersRound, Lock, ShoppingBag, Tag, FolderOpen,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -25,13 +25,14 @@ import MediaManager from '@/components/MediaManager';
 import TeamManagement from '@/components/TeamManagement';
 import MerchManager from '@/components/MerchManager';
 import DiscountManager from '@/components/DiscountManager';
+import DocumentManager from '@/components/DocumentManager';
 import MemberPortal from '@/components/MemberPortal';
 import { isSuperAdmin } from '@/lib/admins';
 
 /* ─────────────────────────────────────────────
    Types
 ───────────────────────────────────────────── */
-type Section = 'overview' | 'settings' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm' | 'crm-wine' | 'crm-bordeaux' | 'crm-clienti' | 'media' | 'team' | 'merch' | 'discounts';
+type Section = 'overview' | 'settings' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm' | 'crm-wine' | 'crm-bordeaux' | 'crm-clienti' | 'media' | 'team' | 'merch' | 'discounts' | 'documents';
 
 // Maps section IDs to the permission key in team_members.permissions
 const SECTION_PERM: Partial<Record<Section, string>> = {
@@ -47,6 +48,7 @@ const SECTION_PERM: Partial<Record<Section, string>> = {
   pipeline:      'pipeline',
   merch:         'merch',
   discounts:     'merch',
+  documents:     'documents',
 };
 
 interface NavItem {
@@ -62,11 +64,12 @@ const NAV_MAIN: NavItem[] = [
 
 // Visible to both admin and staff
 const NAV_SHARED: NavItem[] = [
-  { id: 'tasks',     label: 'Task Board',      icon: CheckSquare  },
-  { id: 'events',    label: 'Gestione Eventi', icon: CalendarDays },
-  { id: 'news',      label: 'Gestione News',   icon: FileText     },
-  { id: 'merch',     label: 'Gestione Merch',  icon: ShoppingBag  },
-  { id: 'discounts', label: 'Gestione Sconti', icon: Tag          },
+  { id: 'tasks',     label: 'Task Board',          icon: CheckSquare  },
+  { id: 'events',    label: 'Gestione Eventi',     icon: CalendarDays },
+  { id: 'news',      label: 'Gestione News',       icon: FileText     },
+  { id: 'merch',     label: 'Gestione Merch',      icon: ShoppingBag  },
+  { id: 'discounts', label: 'Gestione Sconti',     icon: Tag          },
+  { id: 'documents', label: 'Gestione Documenti',  icon: FolderOpen   },
 ];
 
 // Admin only
@@ -846,6 +849,12 @@ function MembersPageInner() {
                       <DiscountManager token={token} />
                     </>
                   ) : <UnauthorisedSection title="Gestione Sconti" />
+                )}
+
+                {(admin || isStaff) && activeSection === 'documents' && (
+                  canAccess('documents') ? (
+                    <DocumentManager token={token} isAdmin={admin} />
+                  ) : <UnauthorisedSection title="Gestione Documenti" />
                 )}
 
                 {superAdmin && activeSection === 'team' && <TeamManagement />}

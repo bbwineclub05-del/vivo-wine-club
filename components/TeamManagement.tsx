@@ -21,6 +21,7 @@ interface Permissions {
   analytics: boolean;
   pipeline:  boolean;
   merch:     boolean;
+  documents: boolean;
 }
 
 interface TeamMember {
@@ -37,15 +38,16 @@ interface TeamMember {
 }
 
 const PERMISSION_LABELS: { key: keyof Permissions; label: string }[] = [
-  { key: 'tasks',     label: 'Task Board'          },
-  { key: 'events',    label: 'Gestione Eventi'      },
-  { key: 'news',      label: 'Gestione News'        },
-  { key: 'crm',       label: 'CRM'                  },
-  { key: 'media',     label: 'Gestione Media'       },
-  { key: 'merch',     label: 'Gestione Merch'       },
-  { key: 'scanner',   label: 'Scanner'              },
-  { key: 'analytics', label: 'Analytics'            },
-  { key: 'pipeline',  label: 'Pipeline Membership'  },
+  { key: 'tasks',     label: 'Task Board'              },
+  { key: 'events',    label: 'Gestione Eventi'         },
+  { key: 'news',      label: 'Gestione News'           },
+  { key: 'crm',       label: 'CRM'                     },
+  { key: 'media',     label: 'Gestione Media'          },
+  { key: 'merch',     label: 'Gestione Merch & Sconti' },
+  { key: 'documents', label: 'Gestione Documenti'      },
+  { key: 'scanner',   label: 'Scanner'                 },
+  { key: 'analytics', label: 'Analytics'               },
+  { key: 'pipeline',  label: 'Pipeline Membership'     },
 ];
 
 // ── Small helpers ─────────────────────────────────────────────────────────────

@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { requireAdmin } from '@/lib/auth-guard';
+import { requireAdminOrStaff } from '@/lib/auth-guard';
 
 type Ctx = { params: Promise<{ id: string; textVariantId: string }> };
 
 // ── PATCH /api/merch/products/[id]/text-variants/[textVariantId] ──────────────
 export async function PATCH(request: Request, { params }: Ctx) {
-  const auth = await requireAdmin(request);
+  const auth = await requireAdminOrStaff(request);
   if (!auth.ok) return auth.response;
 
   const { textVariantId } = await params;
@@ -37,7 +37,7 @@ export async function PATCH(request: Request, { params }: Ctx) {
 
 // ── DELETE /api/merch/products/[id]/text-variants/[textVariantId] ─────────────
 export async function DELETE(request: Request, { params }: Ctx) {
-  const auth = await requireAdmin(request);
+  const auth = await requireAdminOrStaff(request);
   if (!auth.ok) return auth.response;
 
   const { textVariantId } = await params;

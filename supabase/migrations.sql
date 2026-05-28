@@ -247,3 +247,16 @@ CREATE POLICY "profiles_owner_modify"
   ON profiles FOR ALL TO authenticated
   USING (auth.uid() = id)
   WITH CHECK (auth.uid() = id);
+
+-- ── Documents ────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS documents (
+  id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  title       text        NOT NULL,
+  description text,
+  category    text        NOT NULL DEFAULT 'Altro',
+  file_path   text        NOT NULL,
+  file_name   text        NOT NULL,
+  file_size   bigint,
+  uploaded_by text        NOT NULL,
+  created_at  timestamptz DEFAULT now()
+);

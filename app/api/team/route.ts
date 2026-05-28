@@ -6,6 +6,7 @@ import { isSuperAdmin, isAdminEmail, FOUNDERS } from '@/lib/admins';
 const DEFAULT_PERMISSIONS = {
   tasks: true, events: true, news: true, crm: true,
   media: true, scanner: true, analytics: false, pipeline: false,
+  merch: true, documents: true,
 };
 
 /** Name lookup: founders first, then user_metadata, then email prefix. */

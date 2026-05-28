@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { requireAdmin, requireAdminOrStaff } from '@/lib/auth-guard';
+import { requireAdminOrStaff } from '@/lib/auth-guard';
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -27,7 +27,7 @@ export async function GET(request: Request, { params }: Ctx) {
 // Checks for an existing row first, then UPDATEs or INSERTs accordingly
 // (avoids relying on a UNIQUE constraint for ON CONFLICT).
 export async function PUT(request: Request, { params }: Ctx) {
-  const auth = await requireAdmin(request);
+  const auth = await requireAdminOrStaff(request);
   if (!auth.ok) return auth.response;
 
   const { id } = await params;

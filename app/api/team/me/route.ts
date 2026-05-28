@@ -5,7 +5,7 @@ import { isAdminEmail } from '@/lib/admins';
 
 const FULL_PERMISSIONS = {
   tasks: true, events: true, news: true, crm: true,
-  media: true, scanner: true, analytics: true, pipeline: true, merch: true,
+  media: true, scanner: true, analytics: true, pipeline: true, merch: true, documents: true,
 };
 
 /**

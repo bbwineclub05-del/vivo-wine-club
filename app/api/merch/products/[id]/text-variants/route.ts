@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { requireAdmin, requireAdminOrStaff } from '@/lib/auth-guard';
+import { requireAdminOrStaff } from '@/lib/auth-guard';
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -25,7 +25,7 @@ export async function GET(request: Request, { params }: Ctx) {
 
 // ── POST /api/merch/products/[id]/text-variants ───────────────────────────────
 export async function POST(request: Request, { params }: Ctx) {
-  const auth = await requireAdmin(request);
+  const auth = await requireAdminOrStaff(request);
   if (!auth.ok) return auth.response;
 
   const { id } = await params;
