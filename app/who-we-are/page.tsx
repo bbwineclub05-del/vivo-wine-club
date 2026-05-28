@@ -20,26 +20,32 @@ const TEAM_MEMBERS = [
   {
     name: 'Carolina Maria Carra',
     initials: 'CC',
-    role: 'Team Media',
+    role: 'Team Media Associate',
     linkedin: 'https://www.linkedin.com/in/carolina-maria-carra/',
   },
   {
     name: 'Giulia Zalum',
     initials: 'GZ',
-    role: 'Team Media',
+    role: 'Team Media Associate',
     linkedin: 'https://www.linkedin.com/in/giulia-zalum-391a83255/',
   },
   {
     name: 'Gabriele Lisanti',
     initials: 'GL',
-    role: 'Team Events',
+    role: 'Team Events Associate',
     linkedin: 'https://www.linkedin.com/in/gabrielelisanti/',
   },
   {
     name: 'Marcello Abbadati',
     initials: 'MA',
-    role: 'Team Food',
+    role: 'Team Events Associate — Sommelier',
     linkedin: 'https://www.linkedin.com/in/marcelloabbadati/',
+  },
+  {
+    name: 'Elena Catellani',
+    initials: 'EC',
+    role: 'Team Media Associate',
+    linkedin: 'https://www.linkedin.com/in/elena-catellani-a70aa72b0/',
   },
 ];
 
@@ -321,7 +327,7 @@ export default function WhoWeArePage() {
               </h2>
             </motion.div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               {TEAM_MEMBERS.map((member, i) => (
                 <motion.div
                   key={member.name}
@@ -329,7 +335,7 @@ export default function WhoWeArePage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: '-30px' }}
                   transition={{ duration: 0.6, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
-                  className="flex flex-col items-center text-center gap-3 p-6 bg-[#731515] hover:bg-[#aa4848] transition-colors duration-300"
+                  className="flex flex-col items-center text-center gap-2.5 p-4 md:p-3 bg-[#731515] hover:bg-[#aa4848] transition-colors duration-300"
                 >
                   {/* Avatar */}
                   <div className="w-12 h-12 rounded-full border-2 border-white/30 flex items-center justify-center shrink-0">
