@@ -55,24 +55,46 @@ export async function GET(request: Request) {
     (existing ?? []).map((m: Record<string, unknown>) => [m.email as string, m]),
   );
 
-  // 3. Auto-insert Auth users not yet in team_members (ignoreDuplicates keeps existing data)
+  // 3. Auto-insert Auth users not yet in team_members (ignoreDuplicates keeps existing data).
+  // Skip users whose app_metadata.role is 'member' — they belong in the CRM, not the staff roster.
   const toInsert = authUsers
-    .filter((u) => u.email && !existingByEmail.has(u.email))
-    .map((u) => ({
-      auth_user_id: u.id,
-      email:        u.email!,
-      name:         resolveName(u.email!, u.user_metadata as Record<string, string>),
-      role:         isAdminEmail(u.email!) ? 'admin' : 'staff',
-      permissions:  DEFAULT_PERMISSIONS,
-      active:       true,
-      invited_at:   u.created_at,
-    }));
+    .filter((u) => {
+      if (!u.email) return false;
+      if (existingByEmail.has(u.email)) return false;
+      const authRole = (u.app_metadata as Record<string, string> | undefined)?.role;
+      return authRole !== 'member';
+    })
+    .map((u) => {
+      const authRole = (u.app_metadata as Record<string, string> | undefined)?.role;
+      return {
+        auth_user_id: u.id,
+        email:        u.email!,
+        name:         resolveName(u.email!, u.user_metadata as Record<string, string>),
+        role:         isAdminEmail(u.email!) ? 'admin' : (authRole ?? 'staff'),
+        permissions:  DEFAULT_PERMISSIONS,
+        active:       true,
+        invited_at:   u.created_at,
+      };
+    });
 
   if (toInsert.length > 0) {
     await db.from('team_members').upsert(toInsert, {
       onConflict:       'email',
       ignoreDuplicates: true,
     });
+  }
+
+  // 3b. Cleanup: remove any existing team_members rows whose auth role is 'member'.
+  // These were incorrectly auto-synced from approved applications.
+  const wronglyAddedEmails = authUsers
+    .filter((u) => {
+      const authRole = (u.app_metadata as Record<string, string> | undefined)?.role;
+      return authRole === 'member' && u.email && existingByEmail.has(u.email);
+    })
+    .map((u) => u.email!);
+
+  if (wronglyAddedEmails.length > 0) {
+    await db.from('team_members').delete().in('email', wronglyAddedEmails);
   }
 
   // 4. Re-fetch the now-complete team_members list
