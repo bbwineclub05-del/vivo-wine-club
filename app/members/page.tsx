@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useRef, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,6 +9,7 @@ import {
   Mail, LogOut, KeyRound, ScanLine, Menu, X,
   Wine, Shield, ArrowUpRight, CreditCard, User, CalendarDays, GlassWater, MapPin, Images,
   Database, ChevronDown, UsersRound, Lock, ShoppingBag, Tag, FolderOpen,
+  Camera, Loader2,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -94,9 +95,20 @@ const NAV_SHARED_BOTTOM: NavItem[] = [
    Sub-components
 ───────────────────────────────────────────── */
 
-/** Monogram avatar */
-function UserAvatar({ name, size = 36 }: { name: string; size?: number }) {
+/** Monogram avatar — shows photo if src is provided, falls back to initials */
+function UserAvatar({ name, size = 36, src }: { name: string; size?: number; src?: string | null }) {
   const initials = name.trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || '?';
+  if (src) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={src}
+        alt={name}
+        style={{ width: size, height: size, minWidth: size }}
+        className="rounded-full object-cover"
+      />
+    );
+  }
   return (
     <div
       style={{ width: size, height: size, minWidth: size, fontSize: Math.round(size * 0.37) }}
@@ -342,20 +354,20 @@ function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }
   return (
     <div className="mb-8">
       <h1
-        className="text-[clamp(1.6rem,2.5vw,2.2rem)] font-light text-[#1a0505] leading-none tracking-tight"
+        className="text-[clamp(1.6rem,2.5vw,2.2rem)] font-light text-white leading-none tracking-tight"
         style={{ fontFamily: 'var(--font-syne)' }}
       >
         {title}
       </h1>
       {subtitle && (
         <p
-          className="mt-2 text-sm text-[#7a4a4a]/70 font-light"
+          className="mt-2 text-sm text-white/55 font-light"
           style={{ fontFamily: 'var(--font-nunito)' }}
         >
           {subtitle}
         </p>
       )}
-      <div className="mt-5 h-px w-16 bg-[#731515]/30" />
+      <div className="mt-5 h-px w-16 bg-white/25" />
     </div>
   );
 }
@@ -412,11 +424,55 @@ function OverviewSection({
   user,
   isAdmin,
   isStaff,
+  token,
 }: {
-  user: { name?: string | null; email?: string | null };
+  user:    { name?: string | null; email?: string | null };
   isAdmin: boolean;
   isStaff: boolean;
+  token:   string;
 }) {
+  const [avatarUrl,   setAvatarUrl]  = useState<string | null>(null);
+  const [uploading,   setUploading]  = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!token) return;
+    fetch('/api/member/profile', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(d => { if (d.profile?.avatar_url) setAvatarUrl(d.profile.avatar_url); })
+      .catch(() => {/* silent — avatar is optional */});
+  }, [token]);
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setAvatarError(null);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res  = await fetch('/api/member/profile/avatar', {
+        method:  'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body:    fd,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setAvatarError(data.error ?? 'Upload failed');
+        return;
+      }
+      if (data.url) setAvatarUrl(data.url);
+    } catch {
+      setAvatarError('Upload failed — please try again');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  }
+
+  const displayName = user.name || user.email?.split('@')[0] || 'U';
+
   return (
     <>
       <SectionHeader title="Overview" subtitle="Il tuo profilo e la tua membership." />
@@ -462,23 +518,56 @@ function OverviewSection({
         {/* Profile */}
         <Card className="lg:col-span-2">
           <CardLabel icon={User} label="My Profile" />
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-6">
-            {[
-              { label: 'NOME COMPLETO', value: user.name,  muted: !user.name },
-              { label: 'EMAIL',         value: user.email, muted: false       },
-              { label: 'MEMBRO DAL',    value: '2026',     muted: true        },
-            ].map(({ label, value, muted }) => (
-              <div key={label} className="border-l-2 border-[#eddada] pl-4">
-                <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">{label}</div>
-                <div
-                  className={`text-[13px] leading-snug ${muted ? 'text-[#7a4a4a]/40 italic' : 'text-[#1a0505]'}`}
-                  style={{ fontFamily: 'var(--font-nunito)' }}
-                >
-                  {value ?? '—'}
+
+          {/* Avatar + info row */}
+          <div className="flex items-start gap-5 mb-6">
+
+            {/* Avatar with camera overlay */}
+            <div className="relative shrink-0">
+              <UserAvatar name={displayName} size={88} src={avatarUrl} />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                title="Cambia foto profilo"
+                className="absolute -bottom-1 -right-1 w-[22px] h-[22px] bg-[#731515] rounded-full flex items-center justify-center hover:bg-[#9b2323] disabled:opacity-50 transition-colors duration-200 shadow-sm"
+              >
+                {uploading
+                  ? <Loader2 size={11} className="animate-spin text-white" />
+                  : <Camera size={11} className="text-white" />}
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarChange}
+              />
+            </div>
+
+            {/* Info fields */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 flex-1 min-w-0">
+              {avatarError && (
+                <p className="col-span-full text-[10px] text-red-400 mb-1">{avatarError}</p>
+              )}
+              {[
+                { label: 'NOME COMPLETO', value: user.name,  muted: !user.name },
+                { label: 'EMAIL',         value: user.email, muted: false       },
+                { label: 'MEMBRO DAL',    value: '2026',     muted: true        },
+              ].map(({ label, value, muted }) => (
+                <div key={label} className="border-l-2 border-[#eddada] pl-4">
+                  <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">{label}</div>
+                  <div
+                    className={`text-[13px] leading-snug ${muted ? 'text-[#7a4a4a]/40 italic' : 'text-[#1a0505]'}`}
+                    style={{ fontFamily: 'var(--font-nunito)' }}
+                  >
+                    {value ?? '—'}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
+
           <p className="text-[10px] text-[#7a4a4a]/35 italic" style={{ fontFamily: 'var(--font-nunito)' }}>
             * La modifica del profilo sarà disponibile al lancio completo della piattaforma.
           </p>
@@ -679,10 +768,18 @@ function MembersPageInner() {
   };
 
   return (
-    <div className="flex bg-[#f6f0f0] overflow-hidden" style={{ height: '100dvh' }}>
+    <div className="flex overflow-hidden relative" style={{ height: '100dvh', background: '#0a0101' }}>
+
+      {/* ── Fixed background image (vigna.jpg) ── */}
+      <div
+        className="fixed inset-0 z-0 pointer-events-none"
+        style={{ backgroundImage: 'url(/vigna.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }}
+      >
+        <div className="absolute inset-0 bg-[#0a0101]/65" />
+      </div>
 
       {/* ── Desktop sidebar ── */}
-      <aside className="hidden lg:flex w-[230px] shrink-0 bg-[#0e0202] flex-col border-r border-white/[0.04]" style={{ height: '100dvh' }}>
+      <aside className="hidden lg:flex w-[230px] shrink-0 bg-[#0e0202] flex-col border-r border-white/[0.04] relative z-10" style={{ height: '100dvh' }}>
         <SidebarContent {...sidebarProps} />
       </aside>
 
@@ -720,7 +817,7 @@ function MembersPageInner() {
       </AnimatePresence>
 
       {/* ── Main content ── */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative z-10">
 
         {/* Mobile top bar */}
         <div className="lg:hidden flex items-center justify-between px-4 py-3 bg-[#0e0202] border-b border-white/[0.06] shrink-0">
@@ -748,7 +845,7 @@ function MembersPageInner() {
               >
 
                 {activeSection === 'overview' && (
-                  <OverviewSection user={{ name: user.name, email: user.email }} isAdmin={admin} isStaff={isStaff} />
+                  <OverviewSection user={{ name: user.name, email: user.email }} isAdmin={admin} isStaff={isStaff} token={token} />
                 )}
 
                 {activeSection === 'settings' && <SettingsSection />}

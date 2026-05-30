@@ -196,12 +196,14 @@ export async function sendEventConfirmationEmails(params: {
   const db = getSupabaseAdmin() as any;
   const ticketIds = Array.from({ length: qty }, (_, i) => `${orderId}-${i + 1}`);
   const ticketRows = ticketIds.map((tid) => ({
-    order_id:   tid,
-    qr_code:    tid,
-    event_id:   event.slug,
-    email:      email,
-    name:       `${firstName} ${lastName}`,
-    checked_in: false,
+    order_id:       tid,
+    qr_code:        tid,
+    event_id:       event.slug,
+    email:          email,
+    name:           `${firstName} ${lastName}`,
+    checked_in:     false,
+    payment_status: 'paid',
+    // email_sent intentionally omitted — upsert must not overwrite an existing true
   }));
 
   const { error: ticketErr } = await db.from('tickets').upsert(ticketRows, { onConflict: 'order_id' });
@@ -209,6 +211,21 @@ export async function sendEventConfirmationEmails(params: {
     console.error(`${tag} ticket upsert FAILED:`, JSON.stringify(ticketErr));
   } else {
     console.log(`${tag} ${qty} ticket row(s) upserted OK`);
+  }
+
+  // ── 1b. Guard: skip if emails were already sent for this order ────────────────
+  // Check the first ticket of this order. If email_sent=true, a previous confirm
+  // call already sent the emails — return early so refreshing the success page
+  // never triggers a second send.
+  const { data: sentCheck } = await db
+    .from('tickets')
+    .select('email_sent')
+    .eq('order_id', `${orderId}-1`)
+    .maybeSingle();
+
+  if (sentCheck?.email_sent === true) {
+    console.log(`${tag} emails already sent — skipping duplicate send`);
+    return;
   }
 
   // ── 2. Upsert CRM customer ────────────────────────────────────────────────────
@@ -266,6 +283,13 @@ export async function sendEventConfirmationEmails(params: {
       console.log(`${tag} admin email sent — id=${adminResult.data?.id}`);
     }
 
+    // Mark all tickets in this order so a second confirm call is a no-op
+    await db
+      .from('tickets')
+      .update({ email_sent: true })
+      .like('order_id', `${orderId}-%`);
+    console.log(`${tag} email_sent=true set on all order tickets`);
+
   } catch (emailErr) {
     // Catch any unexpected error (pdf-lib, network, Resend SDK) so the caller
     // is NOT blocked from completing the checkout redirect.
@@ -306,12 +330,13 @@ export async function POST(request: Request) {
   // Paid event — save one ticket row per ticket immediately so records are in the
   // DB regardless of whether the buyer completes payment and the success page loads.
   const paidTicketRows = Array.from({ length: qty }, (_, i) => ({
-    order_id:   `${orderId}-${i + 1}`,
-    qr_code:    `${orderId}-${i + 1}`,
-    event_id:   event.slug,
-    email:      email,
-    name:       `${firstName} ${lastName}`,
-    checked_in: false,
+    order_id:       `${orderId}-${i + 1}`,
+    qr_code:        `${orderId}-${i + 1}`,
+    event_id:       event.slug,
+    email:          email,
+    name:           `${firstName} ${lastName}`,
+    checked_in:     false,
+    payment_status: 'pending',
   }));
   await (getSupabaseAdmin() as any).from('tickets').upsert(paidTicketRows, { onConflict: 'order_id' });
 

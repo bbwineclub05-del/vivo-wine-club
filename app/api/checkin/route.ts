@@ -55,6 +55,7 @@ export async function POST(request: Request) {
       .update({ checked_in: true, scanned_at: now, scanned_by: by })
       .eq(col, val)
       .eq('checked_in', false)          // ← atomic: only wins if still unchecked
+      .eq('payment_status', 'paid')     // ← reject unpaid/abandoned tickets
       .select('name, email, event_id')
       .maybeSingle();
 
@@ -81,7 +82,7 @@ export async function POST(request: Request) {
   for (const [col, val] of [['qr_code', token], ['order_id', token]] as const) {
     const { data } = await db
       .from('tickets')
-      .select('name, email, event_id, checked_in, scanned_at, scanned_by')
+      .select('name, email, event_id, checked_in, scanned_at, scanned_by, payment_status')
       .eq(col, val)
       .maybeSingle();
     if (data) { ticket = data; break; }
@@ -91,7 +92,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ valid: false, reason: 'invalid' });
   }
 
-  // Ticket exists but checked_in is already true.
+  // Ticket exists but payment was never completed.
+  if (ticket.payment_status !== 'paid') {
+    return NextResponse.json({ valid: false, reason: 'unpaid' });
+  }
+
+  // Ticket exists, is paid, but already checked in.
   return NextResponse.json({
     valid:      false,
     reason:     'already_scanned',

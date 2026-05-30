@@ -23,8 +23,8 @@ export async function GET(request: Request) {
   }
 
   const role = user.app_metadata?.role ?? user.user_metadata?.role;
-  if (role !== 'staff') {
-    return NextResponse.json({ error: 'Forbidden — staff only' }, { status: 403 });
+  if (role !== 'staff' && role !== 'admin') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const { searchParams } = new URL(request.url);
@@ -39,6 +39,7 @@ export async function GET(request: Request) {
     .from('tickets')
     .select('order_id, qr_code, name, email, checked_in, scanned_at, scanned_by')
     .eq('event_id', eventId)
+    .eq('payment_status', 'paid')      // only confirmed purchases
     .order('checked_in', { ascending: true })
     .order('name',       { ascending: true });
 

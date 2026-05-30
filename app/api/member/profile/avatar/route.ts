@@ -3,7 +3,7 @@ import sharp from 'sharp';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { getAuthUser } from '@/lib/auth-guard';
 
-const BUCKET = 'media';
+const BUCKET = 'avatars';
 const MAX_PX  = 400;
 
 export async function POST(request: Request) {
@@ -13,8 +13,6 @@ export async function POST(request: Request) {
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const supabase = getSupabaseAdmin() as any;
-
-    await supabase.storage.createBucket(BUCKET, { public: true }).catch(() => {/* already exists */});
 
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
@@ -37,7 +35,8 @@ export async function POST(request: Request) {
       processedBuffer = inputBuffer;
     }
 
-    const storagePath = `avatars/${auth.userId}-${Date.now()}.webp`;
+    // Stable path per user — upsert overwrites the previous avatar
+    const storagePath = `${auth.userId}.webp`;
 
     const { error: uploadError } = await supabase.storage
       .from(BUCKET)
@@ -48,8 +47,10 @@ export async function POST(request: Request) {
     }
 
     const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(storagePath);
+    // Cache-buster so the browser always fetches the fresh image
+    const urlWithBust = `${publicUrl}?t=${Date.now()}`;
 
-    // Upsert the profile's avatar_url
+    // Upsert the profile's avatar_url (store base URL without cache-buster)
     const { error: profileError } = await supabase
       .from('profiles')
       .upsert(
@@ -61,7 +62,7 @@ export async function POST(request: Request) {
       console.error('[avatar] profile upsert error:', profileError);
     }
 
-    return NextResponse.json({ url: publicUrl });
+    return NextResponse.json({ url: urlWithBust });
   } catch (err) {
     console.error('[/api/member/profile/avatar]', err);
     return NextResponse.json(
