@@ -212,7 +212,7 @@ function KpiCard({
     >
       <div className="flex items-center justify-between">
         <div className="text-[9px] tracking-[0.35em] text-[#7a4a4a]/60">{label}</div>
-        <div className="w-7 h-7 bg-[#731515]/6 flex items-center justify-center">
+        <div className="w-7 h-7 bg-[#fde8e8] flex items-center justify-center">
           <Icon size={13} className="text-[#731515]" />
         </div>
       </div>
@@ -338,7 +338,7 @@ export default function AnalyticsDashboard() {
   const header = (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 bg-[#731515]/8 flex items-center justify-center shrink-0">
+        <div className="w-8 h-8 bg-[#fde8e8] flex items-center justify-center shrink-0">
           <BarChart2 size={15} className="text-[#731515]" />
         </div>
         <h2 className="text-[10px] tracking-[0.4em] text-[#1a0505]">ANALYTICS</h2>
@@ -346,7 +346,7 @@ export default function AnalyticsDashboard() {
           href="https://analytics.google.com/analytics/web/#/a395406455p538468146"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-1 text-[8px] tracking-[0.2em] text-[#7a4a4a]/50 hover:text-[#731515] border border-[#e8d5d5] hover:border-[#731515]/30 px-2 py-1 transition-all duration-200"
+          className="flex items-center gap-1 text-[8px] tracking-[0.2em] text-[#7a4a4a]/50 hover:text-[#731515] border border-[#e8d5d5] bg-white hover:border-[#731515]/30 px-2 py-1 transition-all duration-200"
           style={{ fontFamily: 'var(--font-nunito)' }}
         >
           GA4
@@ -385,7 +385,7 @@ export default function AnalyticsDashboard() {
         <button
           onClick={() => load(selectedEvent)}
           disabled={loading}
-          className="w-7 h-7 flex items-center justify-center border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515]/40 hover:text-[#731515] disabled:opacity-40 transition-all duration-200"
+          className="w-7 h-7 flex items-center justify-center border border-[#e8d5d5] bg-white text-[#7a4a4a] hover:border-[#731515]/40 hover:text-[#731515] disabled:opacity-40 transition-all duration-200"
           aria-label="Refresh"
         >
           <RefreshCw size={11} className={loading ? 'animate-spin' : ''} />
@@ -434,7 +434,7 @@ export default function AnalyticsDashboard() {
 
       {/* Event filter active banner */}
       {isFiltered && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-[#731515]/5 border border-[#731515]/15 text-[9px] tracking-[0.25em] text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>
+        <div className="flex items-center gap-2 px-3 py-2 bg-[#fde8e8] border border-[#731515]/15 text-[9px] tracking-[0.25em] text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>
           <span>FILTERING:</span>
           <span className="font-medium">{selectedTitle}</span>
           <button

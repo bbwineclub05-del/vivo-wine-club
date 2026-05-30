@@ -281,7 +281,7 @@ function CustomerRow({
               {customer.events.map(slug => (
                 <span
                   key={slug}
-                  className="inline-block text-[10px] bg-[#731515]/8 text-[#731515] border border-[#731515]/15 px-2.5 py-1 rounded-full"
+                  className="inline-block text-[10px] bg-[#fde8e8] text-[#731515] border border-[#731515]/15 px-2.5 py-1 rounded-full"
                   style={{ fontFamily: 'var(--font-nunito)' }}
                 >
                   {slug}
@@ -397,7 +397,7 @@ export default function CrmClienti() {
         <button
           onClick={load}
           disabled={loading}
-          className="inline-flex items-center gap-2 px-4 py-2 border border-[#eddada] text-[#7a4a4a] text-[10px] tracking-[0.25em] rounded-lg hover:border-[#731515]/40 transition-colors disabled:opacity-50"
+          className="inline-flex items-center gap-2 px-4 py-2 border border-[#eddada] bg-white text-[#7a4a4a] text-[10px] tracking-[0.25em] rounded-lg hover:border-[#731515]/40 transition-colors disabled:opacity-50"
         >
           <RefreshCw size={11} className={loading ? 'animate-spin' : ''} />
           AGGIORNA

@@ -113,7 +113,7 @@ function CommunicationModal({
             <p className="text-sm text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>
               Errore nell&apos;invio. Riprova.
             </p>
-            <button onClick={() => setStatus('idle')} className="text-[9px] tracking-[0.3em] text-[#731515] border border-[#731515]/30 px-5 py-2.5">
+            <button onClick={() => setStatus('idle')} className="text-[9px] tracking-[0.3em] text-[#731515] border border-[#731515]/30 bg-white px-5 py-2.5">
               RIPROVA
             </button>
           </div>
@@ -122,7 +122,7 @@ function CommunicationModal({
             {/* Recipient chips */}
             <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-3 bg-[#fdf6f6] border border-[#e8d5d5]">
               {recipients.slice(0, 20).map((m) => (
-                <span key={m.id} className="text-[9px] tracking-[0.1em] px-2 py-1 bg-[#731515]/8 text-[#731515]">
+                <span key={m.id} className="text-[9px] tracking-[0.1em] px-2 py-1 bg-[#fde8e8] text-[#731515]">
                   {m.name}
                 </span>
               ))}
@@ -162,7 +162,7 @@ function CommunicationModal({
 
             <div className="flex gap-3 justify-end pt-2">
               <button type="button" onClick={onClose}
-                className="text-[9px] tracking-[0.3em] text-[#7a4a4a] border border-[#e8d5d5] px-5 py-3 hover:text-[#731515] transition-colors">
+                className="text-[9px] tracking-[0.3em] text-[#7a4a4a] border border-[#e8d5d5] bg-white px-5 py-3 hover:text-[#731515] transition-colors">
                 ANNULLA
               </button>
               <button type="submit" disabled={status === 'sending'}
@@ -265,7 +265,7 @@ function EventEmailModal({
           <div className="p-10 text-center flex flex-col items-center gap-4">
             <AlertCircle size={32} className="text-[#731515]" />
             <p className="text-sm text-[#731515]">Errore nell&apos;invio. Riprova.</p>
-            <button onClick={() => setStatus('idle')} className="text-[9px] tracking-[0.3em] text-[#731515] border border-[#731515]/30 px-5 py-2.5">
+            <button onClick={() => setStatus('idle')} className="text-[9px] tracking-[0.3em] text-[#731515] border border-[#731515]/30 bg-white px-5 py-2.5">
               RIPROVA
             </button>
           </div>
@@ -311,7 +311,7 @@ function EventEmailModal({
 
             <div className="flex gap-3 justify-end pt-2">
               <button type="button" onClick={onClose}
-                className="text-[9px] tracking-[0.3em] text-[#7a4a4a] border border-[#e8d5d5] px-5 py-3 hover:text-[#731515] transition-colors">
+                className="text-[9px] tracking-[0.3em] text-[#7a4a4a] border border-[#e8d5d5] bg-white px-5 py-3 hover:text-[#731515] transition-colors">
                 ANNULLA
               </button>
               <button type="submit" disabled={status === 'sending'}
@@ -447,7 +447,7 @@ export default function MemberCRM() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-[#731515]/8 flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 bg-[#fde8e8] flex items-center justify-center shrink-0">
             <Users size={15} className="text-[#731515]" />
           </div>
           <h2 className="text-[10px] tracking-[0.4em] text-[#1a0505]">CRM MEMBRI</h2>
@@ -459,7 +459,7 @@ export default function MemberCRM() {
             </span>
           )}
           <button onClick={load} disabled={loading}
-            className="w-7 h-7 flex items-center justify-center border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515]/40 hover:text-[#731515] disabled:opacity-40 transition-all">
+            className="w-7 h-7 flex items-center justify-center border border-[#e8d5d5] bg-white text-[#7a4a4a] hover:border-[#731515]/40 hover:text-[#731515] disabled:opacity-40 transition-all">
             <RefreshCw size={11} className={loading ? 'animate-spin' : ''} />
           </button>
           <button
@@ -473,7 +473,7 @@ export default function MemberCRM() {
           <button
             onClick={() => { if (selected.size === 0) selectAll(); setModal('event'); }}
             disabled={loading}
-            className="inline-flex items-center gap-1.5 text-[9px] tracking-[0.25em] border border-[#731515]/40 text-[#731515] hover:bg-[#731515]/5 disabled:opacity-40 px-4 py-2.5 transition-colors"
+            className="inline-flex items-center gap-1.5 text-[9px] tracking-[0.25em] border border-[#731515]/40 text-[#731515] bg-white hover:bg-[#fdf0f0] disabled:opacity-40 px-4 py-2.5 transition-colors"
           >
             <CalendarPlus size={11} />
             NUOVO EVENTO
@@ -541,10 +541,10 @@ export default function MemberCRM() {
           Nessun membro trovato.
         </div>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto bg-white rounded-xl border border-[#e8d5d5]">
           <table className="w-full min-w-[640px] border-collapse">
             <thead>
-              <tr className="border-b border-[#e8d5d5]">
+              <tr className="border-b border-[#e8d5d5] bg-white">
                 <th className="pb-3 pr-4 text-left w-8">
                   <input
                     type="checkbox"
@@ -581,7 +581,7 @@ export default function MemberCRM() {
                     exit={{ opacity: 0 }}
                     onClick={() => toggleSelect(m.id)}
                     className={`border-b border-[#e8d5d5] cursor-pointer transition-colors duration-150 ${
-                      selected.has(m.id) ? 'bg-[#731515]/4' : 'hover:bg-[#fdf6f6]'
+                      selected.has(m.id) ? 'bg-[#fde8e8]' : 'bg-white hover:bg-[#fdf6f6]'
                     }`}
                   >
                     <td className="py-3.5 pr-4">
@@ -595,7 +595,7 @@ export default function MemberCRM() {
                     </td>
                     <td className="py-3.5 pr-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-[#731515]/8 flex items-center justify-center text-[#731515] text-xs font-medium shrink-0" style={{ fontFamily: 'var(--font-syne)' }}>
+                        <div className="w-8 h-8 rounded-full bg-[#fde8e8] flex items-center justify-center text-[#731515] text-xs font-medium shrink-0" style={{ fontFamily: 'var(--font-syne)' }}>
                           {m.name.charAt(0).toUpperCase()}
                         </div>
                         <div className="min-w-0">
@@ -608,7 +608,7 @@ export default function MemberCRM() {
                           {m.events.length > 0 && (
                             <div className="flex flex-wrap gap-1 mt-1">
                               {m.events.map((ev) => (
-                                <span key={ev} className="text-[7px] tracking-[0.1em] px-1.5 py-0.5 bg-[#731515]/6 text-[#731515]">
+                                <span key={ev} className="text-[7px] tracking-[0.1em] px-1.5 py-0.5 bg-[#fde8e8] text-[#731515]">
                                   {ev}
                                 </span>
                               ))}
@@ -630,8 +630,8 @@ export default function MemberCRM() {
                     <td className="py-3.5 pr-4 hidden sm:table-cell">
                       <span className={`text-[8px] tracking-[0.2em] px-2 py-0.5 border ${
                         m.tier === 'Staff'
-                          ? 'border-[#731515]/40 text-[#731515] bg-[#731515]/5'
-                          : 'border-[#e8d5d5] text-[#7a4a4a]/60'
+                          ? 'border-[#731515]/40 text-[#731515] bg-[#fde8e8]'
+                          : 'border-[#e8d5d5] text-[#7a4a4a]/60 bg-white'
                       }`}>
                         {m.tier.toUpperCase()}
                       </span>

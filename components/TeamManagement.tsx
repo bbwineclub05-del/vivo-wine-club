@@ -69,17 +69,17 @@ function Toggle({ on, onChange, disabled }: { on: boolean; onChange: (v: boolean
 
 function RoleBadge({ role, isFounder, isSuperAdm }: { role: string; isFounder?: boolean; isSuperAdm?: boolean }) {
   if (isSuperAdm) return (
-    <span className="inline-flex items-center gap-1 text-[9px] tracking-[0.3em] px-2 py-0.5 rounded-full bg-[#731515]/15 text-[#731515] font-medium">
+    <span className="inline-flex items-center gap-1 text-[9px] tracking-[0.3em] px-2 py-0.5 rounded-full bg-[#fbd8d8] text-[#731515] font-medium">
       <Crown size={8} /> SUPER ADMIN
     </span>
   );
   if (isFounder) return (
-    <span className="inline-flex items-center gap-1 text-[9px] tracking-[0.3em] px-2 py-0.5 rounded-full bg-[#731515]/10 text-[#731515] font-medium">
+    <span className="inline-flex items-center gap-1 text-[9px] tracking-[0.3em] px-2 py-0.5 rounded-full bg-[#fbd8d8] text-[#731515] font-medium">
       <Shield size={8} /> ADMIN
     </span>
   );
   return (
-    <span className="inline-flex items-center gap-1 text-[9px] tracking-[0.3em] px-2 py-0.5 rounded-full bg-[#7a4a4a]/10 text-[#7a4a4a] font-medium">
+    <span className="inline-flex items-center gap-1 text-[9px] tracking-[0.3em] px-2 py-0.5 rounded-full bg-[#e8d5d5] text-[#7a4a4a] font-medium">
       <UserCheck size={8} /> STAFF
     </span>
   );
@@ -176,13 +176,13 @@ function AddMemberModal({ onClose, onAdded, token }: {
           </div>
 
           {error && (
-            <p className="text-[12px] text-[#731515] bg-[#731515]/6 border border-[#731515]/15 px-3 py-2 rounded-lg"
+            <p className="text-[12px] text-[#731515] bg-[#fde8e8] border border-[#731515]/15 px-3 py-2 rounded-lg"
               style={{ fontFamily: 'var(--font-nunito)' }}>{error}</p>
           )}
 
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={onClose}
-              className="flex-1 py-2.5 border border-[#eddada] text-[#7a4a4a] text-[10px] tracking-[0.25em] hover:bg-[#fdf6f6] transition-colors rounded-lg">
+              className="flex-1 py-2.5 bg-white border border-[#eddada] text-[#7a4a4a] text-[10px] tracking-[0.25em] hover:bg-[#fdf6f6] transition-colors rounded-lg">
               ANNULLA
             </button>
             <button type="submit" disabled={saving}
@@ -256,7 +256,7 @@ function MemberRow({ member, token, onUpdated, onDeleted }: {
               style={{ fontFamily: 'var(--font-nunito)' }}>{member.name}</span>
             <RoleBadge role={member.role} isFounder={isFounder} isSuperAdm={isSuperAdm} />
             {!member.active && !locked && (
-              <span className="text-[9px] tracking-[0.3em] text-[#7a4a4a]/40 bg-[#7a4a4a]/8 px-2 py-0.5 rounded-full">
+              <span className="text-[9px] tracking-[0.3em] text-[#7a4a4a]/40 bg-[#e8e0e0] px-2 py-0.5 rounded-full">
                 DISATTIVATO
               </span>
             )}
@@ -417,7 +417,7 @@ export default function TeamManagement() {
       )}
 
       {error && (
-        <p className="text-sm text-[#731515] bg-[#731515]/6 border border-[#731515]/15 px-4 py-3 rounded-lg mb-6"
+        <p className="text-sm text-[#731515] bg-[#fde8e8] border border-[#731515]/15 px-4 py-3 rounded-lg mb-6"
           style={{ fontFamily: 'var(--font-nunito)' }}>{error}</p>
       )}
 

@@ -88,7 +88,7 @@ function ImageUploader({ onUploaded, accessToken }: { onUploaded: (urls: string[
         type="button"
         disabled={uploading}
         onClick={() => fileRef.current?.click()}
-        className="inline-flex items-center gap-1.5 text-[9px] tracking-[0.28em] px-4 py-2.5 border border-[#731515]/40 text-[#731515] hover:bg-[#731515]/5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+        className="inline-flex items-center gap-1.5 text-[9px] tracking-[0.28em] px-4 py-2.5 border border-[#731515]/40 bg-white text-[#731515] hover:bg-[#fdf0f0] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
       >
         {uploading ? (
           <>
@@ -267,7 +267,7 @@ function NewsForm({
         <button
           type="button"
           onClick={onCancel}
-          className="text-[9px] tracking-[0.3em] text-[#7a4a4a] hover:text-[#731515] px-5 py-3 border border-[#e8d5d5] transition-colors duration-200"
+          className="text-[9px] tracking-[0.3em] text-[#7a4a4a] hover:text-[#731515] px-5 py-3 border border-[#e8d5d5] bg-white transition-colors duration-200"
         >
           CANCEL
         </button>
@@ -372,7 +372,7 @@ function NewsRow({
             // eslint-disable-next-line @next/next/no-img-element
             <img src={item.images[0]} alt="" className="w-full h-full object-cover" />
           ) : (
-            <div className="w-full h-full bg-[#731515]/10" />
+            <div className="w-full h-full bg-[#fbd8d8]" />
           )}
         </div>
 
@@ -548,7 +548,7 @@ export default function NewsManager() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-[#731515]/8 flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 bg-[#fde8e8] flex items-center justify-center shrink-0">
             <Newspaper size={15} className="text-[#731515]" />
           </div>
           <h2 className="text-[10px] tracking-[0.4em] text-[#1a0505]">GESTIONE NEWS</h2>
@@ -562,7 +562,7 @@ export default function NewsManager() {
           <button
             onClick={load}
             disabled={loading}
-            className="w-7 h-7 flex items-center justify-center border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515]/40 hover:text-[#731515] disabled:opacity-40 transition-all duration-200"
+            className="w-7 h-7 flex items-center justify-center border border-[#e8d5d5] bg-white text-[#7a4a4a] hover:border-[#731515]/40 hover:text-[#731515] disabled:opacity-40 transition-all duration-200"
           >
             <RefreshCw size={11} className={loading ? 'animate-spin' : ''} />
           </button>

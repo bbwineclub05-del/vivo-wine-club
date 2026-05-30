@@ -260,3 +260,76 @@ CREATE TABLE IF NOT EXISTS documents (
   uploaded_by text        NOT NULL,
   created_at  timestamptz DEFAULT now()
 );
+
+
+-- ── 10. Membership card columns + tickets columns ────────────────────────────
+
+-- Add card-related columns to profiles
+ALTER TABLE profiles
+  ADD COLUMN IF NOT EXISTS member_id    text UNIQUE,
+  ADD COLUMN IF NOT EXISTS tier         text,
+  ADD COLUMN IF NOT EXISTS member_since integer;
+
+-- Add ticketing columns to tickets
+ALTER TABLE tickets
+  ADD COLUMN IF NOT EXISTS email_sent      boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS payment_status  text    NOT NULL DEFAULT 'pending';
+
+
+-- ── 11. Backfill member_id / tier / member_since / full_name into profiles ────
+-- Deterministic member ID: 'VIVO-' + hex chars at 0-indexed positions 0,8,16,24
+-- of the UUID with dashes removed (SUBSTRING uses 1-based indexing → +1).
+
+UPDATE profiles p
+SET
+  member_id    = COALESCE(p.member_id, 'VIVO-' || UPPER(
+                   SUBSTRING(REPLACE(p.id::text, '-', ''), 1, 1) ||
+                   SUBSTRING(REPLACE(p.id::text, '-', ''), 9, 1) ||
+                   SUBSTRING(REPLACE(p.id::text, '-', ''), 17, 1) ||
+                   SUBSTRING(REPLACE(p.id::text, '-', ''), 25, 1)
+                 )),
+  tier         = COALESCE(p.tier, CASE
+                   WHEN (u.raw_app_meta_data->>'role') = 'admin' THEN 'Founder'
+                   WHEN (u.raw_app_meta_data->>'role') = 'staff' THEN 'Staff'
+                   ELSE 'Member'
+                 END),
+  member_since = COALESCE(p.member_since, EXTRACT(YEAR FROM u.created_at)::integer),
+  full_name    = COALESCE(p.full_name,
+                   u.raw_user_meta_data->>'full_name',
+                   u.raw_user_meta_data->>'name')
+FROM auth.users u
+WHERE p.id = u.id;
+
+-- Insert profile rows for auth.users who have no profile yet
+INSERT INTO profiles (id, member_id, tier, member_since, full_name, wine_interests)
+SELECT
+  u.id,
+  'VIVO-' || UPPER(
+    SUBSTRING(REPLACE(u.id::text, '-', ''), 1, 1) ||
+    SUBSTRING(REPLACE(u.id::text, '-', ''), 9, 1) ||
+    SUBSTRING(REPLACE(u.id::text, '-', ''), 17, 1) ||
+    SUBSTRING(REPLACE(u.id::text, '-', ''), 25, 1)
+  ),
+  CASE
+    WHEN (u.raw_app_meta_data->>'role') = 'admin' THEN 'Founder'
+    WHEN (u.raw_app_meta_data->>'role') = 'staff' THEN 'Staff'
+    ELSE 'Member'
+  END,
+  EXTRACT(YEAR FROM u.created_at)::integer,
+  COALESCE(u.raw_user_meta_data->>'full_name', u.raw_user_meta_data->>'name'),
+  '{}'::text[]
+FROM auth.users u
+LEFT JOIN profiles p ON p.id = u.id
+WHERE p.id IS NULL;
+
+
+-- ── 12. Public read policy on profiles for card share page ───────────────────
+-- The public card page at /card/[memberId] reads full_name, tier, member_since
+-- using the service-role (admin) client — RLS is bypassed for those calls.
+-- This policy exists so future anon/client reads also work if needed.
+
+DROP POLICY IF EXISTS "anon_select_card_fields" ON profiles;
+CREATE POLICY "anon_select_card_fields"
+  ON profiles FOR SELECT
+  TO anon
+  USING (member_id IS NOT NULL);

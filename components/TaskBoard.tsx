@@ -50,13 +50,13 @@ interface Task {
 /* ── Helpers ── */
 const PRIORITY_STYLES: Record<Priority, string> = {
   high:   'bg-[#731515] text-white',
-  medium: 'bg-[#7a4a4a]/15 text-[#7a4a4a]',
+  medium: 'bg-[#e8d5d5] text-[#7a4a4a]',
   low:    'bg-[#e8d5d5] text-[#7a4a4a]/70',
 };
 
 const STATUS_STYLES: Record<Status, string> = {
-  todo:        'border border-[#e8d5d5] text-[#7a4a4a]',
-  in_progress: 'border border-[#731515]/40 bg-[#731515]/8 text-[#731515]',
+  todo:        'border border-[#e8d5d5] bg-white text-[#7a4a4a]',
+  in_progress: 'border border-[#731515]/40 bg-[#fde8e8] text-[#731515]',
   done:        'border border-green-600/30 bg-green-50 text-green-700',
 };
 
@@ -382,7 +382,7 @@ function NewTaskForm({
           <button
             type="button"
             onClick={onClose}
-            className="text-[10px] tracking-[0.3em] text-[#7a4a4a] hover:text-[#731515] transition-colors px-5 py-3 border border-[#e8d5d5]"
+            className="text-[10px] tracking-[0.3em] text-[#7a4a4a] hover:text-[#731515] transition-colors px-5 py-3 border border-[#e8d5d5] bg-white"
           >
             CANCEL
           </button>
@@ -532,7 +532,7 @@ export default function TaskBoard({ currentEmail }: { currentEmail: string }) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-[#731515]/8 flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 bg-[#fde8e8] flex items-center justify-center shrink-0">
             <ClipboardList size={15} className="text-[#731515]" />
           </div>
           <h2 className="text-[10px] tracking-[0.4em] text-[#1a0505]">TASK BOARD</h2>

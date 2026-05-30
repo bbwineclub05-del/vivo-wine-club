@@ -174,7 +174,7 @@ function ImageUploader({
         type="button"
         onClick={() => fileRef.current?.click()}
         disabled={uploading}
-        className="flex items-center gap-2 text-[10px] tracking-[0.25em] border border-dashed border-[#eddada] text-[#7a4a4a]/60 hover:border-[#731515]/40 hover:text-[#731515]/60 px-4 py-2.5 rounded-lg transition-colors disabled:opacity-50 w-full justify-center"
+        className="flex items-center gap-2 text-[10px] tracking-[0.25em] bg-white border border-dashed border-[#eddada] text-[#7a4a4a]/60 hover:border-[#731515]/40 hover:text-[#731515]/60 px-4 py-2.5 rounded-lg transition-colors disabled:opacity-50 w-full justify-center"
       >
         {uploading ? <Loader2 size={13} className="animate-spin" /> : <ImagePlus size={13} />}
         {uploading ? 'UPLOAD IN CORSO…' : 'AGGIUNGI IMMAGINI'}
@@ -421,13 +421,13 @@ function ProductModal({
           </div>
 
           {error && (
-            <p className="text-[12px] text-[#731515] bg-[#731515]/6 border border-[#731515]/15 px-3 py-2 rounded-lg"
+            <p className="text-[12px] text-[#731515] bg-[#fde8e8] border border-[#731515]/15 px-3 py-2 rounded-lg"
               style={{ fontFamily: 'var(--font-nunito)' }}>{error}</p>
           )}
 
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={onClose}
-              className="flex-1 py-2.5 border border-[#eddada] text-[#7a4a4a] text-[10px] tracking-[0.25em] hover:bg-[#fdf6f6] transition-colors rounded-lg">
+              className="flex-1 py-2.5 bg-white border border-[#eddada] text-[#7a4a4a] text-[10px] tracking-[0.25em] hover:bg-[#fdf6f6] transition-colors rounded-lg">
               ANNULLA
             </button>
             <button type="submit" disabled={saving}
@@ -641,7 +641,7 @@ function VariantManagerModal({
           <button
             onClick={() => setExpandedId('new')}
             disabled={expandedId === 'new'}
-            className="w-full flex items-center justify-center gap-2 text-[10px] tracking-[0.25em] border border-dashed border-[#731515]/30 text-[#731515]/70 hover:border-[#731515] hover:text-[#731515] py-2.5 rounded-lg transition-colors disabled:opacity-40"
+            className="w-full flex items-center justify-center gap-2 text-[10px] tracking-[0.25em] bg-white border border-dashed border-[#731515]/30 text-[#731515]/70 hover:border-[#731515] hover:text-[#731515] py-2.5 rounded-lg transition-colors disabled:opacity-40"
           >
             <Plus size={12} /> NUOVA VARIANTE
           </button>
@@ -833,7 +833,7 @@ function VariantRow({
                     disabled={deleting}
                     onBlur={() => setConfirm(false)}
                     className={`px-3 py-2 text-[10px] tracking-[0.2em] rounded-lg border transition-colors ${
-                      confirm ? 'bg-red-50 border-red-200 text-red-600' : 'border-[#eddada] text-[#7a4a4a]/50 hover:text-red-500 hover:border-red-200'
+                      confirm ? 'bg-red-50 border-red-200 text-red-600' : 'bg-white border-[#eddada] text-[#7a4a4a]/50 hover:text-red-500 hover:border-red-200'
                     }`}
                   >
                     {deleting ? <Loader2 size={12} className="animate-spin" /> : confirm ? 'CONFERMA' : <Trash2 size={12} />}
@@ -841,7 +841,7 @@ function VariantRow({
                 )}
                 <button
                   onClick={onExpand}
-                  className="flex-1 py-2 border border-[#eddada] text-[#7a4a4a] text-[10px] tracking-[0.2em] hover:bg-white transition-colors rounded-lg"
+                  className="flex-1 py-2 bg-white border border-[#eddada] text-[#7a4a4a] text-[10px] tracking-[0.2em] hover:bg-[#fdf6f6] transition-colors rounded-lg"
                 >
                   ANNULLA
                 </button>
@@ -1064,7 +1064,7 @@ function TextVariantManagerModal({
           <button
             onClick={() => setExpandedId('new')}
             disabled={expandedId === 'new'}
-            className="w-full flex items-center justify-center gap-2 text-[10px] tracking-[0.25em] border border-dashed border-[#731515]/30 text-[#731515]/70 hover:border-[#731515] hover:text-[#731515] py-2.5 rounded-lg transition-colors disabled:opacity-40"
+            className="w-full flex items-center justify-center gap-2 text-[10px] tracking-[0.25em] bg-white border border-dashed border-[#731515]/30 text-[#731515]/70 hover:border-[#731515] hover:text-[#731515] py-2.5 rounded-lg transition-colors disabled:opacity-40"
           >
             <Plus size={12} /> NUOVA VARIANTE TESTO
           </button>
@@ -1234,7 +1234,7 @@ function TextVariantRow({
                     disabled={deleting}
                     onBlur={() => setConfirm(false)}
                     className={`px-3 py-2 text-[10px] tracking-[0.2em] rounded-lg border transition-colors ${
-                      confirm ? 'bg-red-50 border-red-200 text-red-600' : 'border-[#eddada] text-[#7a4a4a]/50 hover:text-red-500 hover:border-red-200'
+                      confirm ? 'bg-red-50 border-red-200 text-red-600' : 'bg-white border-[#eddada] text-[#7a4a4a]/50 hover:text-red-500 hover:border-red-200'
                     }`}
                   >
                     {deleting ? <Loader2 size={12} className="animate-spin" /> : confirm ? 'CONFERMA' : <Trash2 size={12} />}
@@ -1242,7 +1242,7 @@ function TextVariantRow({
                 )}
                 <button
                   onClick={onExpand}
-                  className="flex-1 py-2 border border-[#eddada] text-[#7a4a4a] text-[10px] tracking-[0.2em] hover:bg-white transition-colors rounded-lg"
+                  className="flex-1 py-2 bg-white border border-[#eddada] text-[#7a4a4a] text-[10px] tracking-[0.2em] hover:bg-[#fdf6f6] transition-colors rounded-lg"
                 >
                   ANNULLA
                 </button>
@@ -1335,7 +1335,7 @@ function ProductCard({
         {product.sizes.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-2">
             {product.sizes.map(s => (
-              <span key={s} className="text-[9px] tracking-[0.2em] px-1.5 py-0.5 bg-[#7a4a4a]/8 text-[#7a4a4a] rounded">{s}</span>
+              <span key={s} className="text-[9px] tracking-[0.2em] px-1.5 py-0.5 bg-[#e8e0e0] text-[#7a4a4a] rounded">{s}</span>
             ))}
           </div>
         )}
@@ -1355,26 +1355,26 @@ function ProductCard({
         {/* Actions */}
         <div className="flex items-center gap-2 mt-3">
           <button onClick={() => onEdit(product)}
-            className="flex-1 flex items-center justify-center gap-1.5 text-[10px] tracking-[0.2em] border border-[#eddada] text-[#7a4a4a] py-2 rounded-lg hover:bg-[#fdf6f6] transition-colors">
+            className="flex-1 flex items-center justify-center gap-1.5 text-[10px] tracking-[0.2em] bg-white border border-[#eddada] text-[#7a4a4a] py-2 rounded-lg hover:bg-[#fdf6f6] transition-colors">
             <Pencil size={11} /> MODIFICA
           </button>
           <button onClick={() => onVariants(product)}
-            className="p-2 rounded-lg border border-[#eddada] text-[#7a4a4a]/50 hover:text-[#731515] hover:border-[#731515]/30 transition-colors"
+            className="p-2 rounded-lg bg-white border border-[#eddada] text-[#7a4a4a]/50 hover:text-[#731515] hover:border-[#731515]/30 transition-colors"
             title="Varianti colore">
             <Palette size={13} />
           </button>
           <button onClick={() => onTextVariants(product)}
-            className="p-2 rounded-lg border border-[#eddada] text-[#7a4a4a]/50 hover:text-[#731515] hover:border-[#731515]/30 transition-colors"
+            className="p-2 rounded-lg bg-white border border-[#eddada] text-[#7a4a4a]/50 hover:text-[#731515] hover:border-[#731515]/30 transition-colors"
             title="Varianti testo">
             <Type size={13} />
           </button>
           <button onClick={toggleVisible} disabled={toggling}
-            className="p-2 rounded-lg border border-[#eddada] text-[#7a4a4a]/50 hover:text-[#731515] hover:border-[#731515]/30 transition-colors"
+            className="p-2 rounded-lg bg-white border border-[#eddada] text-[#7a4a4a]/50 hover:text-[#731515] hover:border-[#731515]/30 transition-colors"
             title={visible ? 'Nascondi' : 'Mostra'}>
             {toggling ? <Loader2 size={13} className="animate-spin" /> : visible ? <Eye size={13} /> : <EyeOff size={13} />}
           </button>
           <button onClick={handleDelete} disabled={deleting} onBlur={() => setConfirm(false)}
-            className={`p-2 rounded-lg border transition-colors ${confirm ? 'bg-red-50 border-red-200 text-red-600' : 'border-[#eddada] text-[#7a4a4a]/50 hover:text-red-500 hover:border-red-200'}`}
+            className={`p-2 rounded-lg border transition-colors ${confirm ? 'bg-red-50 border-red-200 text-red-600' : 'bg-white border-[#eddada] text-[#7a4a4a]/50 hover:text-red-500 hover:border-red-200'}`}
             title={confirm ? 'Conferma eliminazione' : 'Elimina'}>
             {deleting ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
           </button>
@@ -1686,7 +1686,7 @@ export default function MerchManager() {
                   {shippingSaving ? <Loader2 size={11} className="animate-spin" /> : 'SALVA'}
                 </button>
                 <button onClick={() => { setShippingEditing(false); setShippingEditVal(globalShipping); }}
-                  className="px-3 py-1.5 border border-[#eddada] text-[#7a4a4a] text-[10px] rounded-lg hover:bg-[#fdf6f6]">
+                  className="px-3 py-1.5 bg-white border border-[#eddada] text-[#7a4a4a] text-[10px] rounded-lg hover:bg-[#fdf6f6]">
                   ANNULLA
                 </button>
               </div>

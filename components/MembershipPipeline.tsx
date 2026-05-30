@@ -77,7 +77,7 @@ function AppCard({
         className="w-full flex items-center gap-4 p-5 text-left hover:bg-[#fdf6f6] transition-colors duration-150"
       >
         {/* Avatar */}
-        <div className="w-9 h-9 rounded-full bg-[#731515]/8 flex items-center justify-center shrink-0 text-[#731515] text-sm font-medium" style={{ fontFamily: 'var(--font-syne)' }}>
+        <div className="w-9 h-9 rounded-full bg-[#fde8e8] flex items-center justify-center shrink-0 text-[#731515] text-sm font-medium" style={{ fontFamily: 'var(--font-syne)' }}>
           {app.name.charAt(0).toUpperCase()}
         </div>
 
@@ -177,7 +177,7 @@ function AppCard({
                   <button
                     onClick={() => handleAction('rejected')}
                     disabled={!!updating}
-                    className="inline-flex items-center gap-1.5 text-[9px] tracking-[0.25em] px-4 py-2.5 border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515]/40 hover:text-[#731515] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                    className="inline-flex items-center gap-1.5 text-[9px] tracking-[0.25em] px-4 py-2.5 border border-[#e8d5d5] bg-white text-[#7a4a4a] hover:border-[#731515]/40 hover:text-[#731515] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                   >
                     <X size={11} />
                     {updating === 'rejected' ? 'REJECTING…' : 'REJECT'}
@@ -279,7 +279,7 @@ export default function MembershipPipeline() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-[#731515]/8 flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 bg-[#fde8e8] flex items-center justify-center shrink-0">
             <Users size={15} className="text-[#731515]" />
           </div>
           <h2 className="text-[10px] tracking-[0.4em] text-[#1a0505]">MEMBERSHIP PIPELINE</h2>
@@ -293,7 +293,7 @@ export default function MembershipPipeline() {
           <button
             onClick={load}
             disabled={loading}
-            className="w-7 h-7 flex items-center justify-center border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515]/40 hover:text-[#731515] disabled:opacity-40 transition-all duration-200"
+            className="w-7 h-7 flex items-center justify-center border border-[#e8d5d5] bg-white text-[#7a4a4a] hover:border-[#731515]/40 hover:text-[#731515] disabled:opacity-40 transition-all duration-200"
             aria-label="Refresh"
           >
             <RefreshCw size={11} className={loading ? 'animate-spin' : ''} />
@@ -308,7 +308,7 @@ export default function MembershipPipeline() {
             key={s}
             onClick={() => setFilter(s)}
             className={`p-4 border text-left transition-colors duration-200 ${
-              filter === s ? 'border-[#731515]/40 bg-[#731515]/5' : 'border-[#e8d5d5] bg-white hover:border-[#731515]/20'
+              filter === s ? 'border-[#731515]/40 bg-[#fde8e8]' : 'border-[#e8d5d5] bg-white hover:border-[#731515]/20'
             }`}
           >
             <div className="text-[8px] tracking-[0.3em] text-[#7a4a4a]/50 mb-1">

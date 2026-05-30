@@ -199,7 +199,7 @@ export default function MediaManager() {
 
       {/* ── Header ── */}
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 bg-[#731515]/8 flex items-center justify-center shrink-0">
+        <div className="w-8 h-8 bg-[#fde8e8] flex items-center justify-center shrink-0">
           <Images size={15} className="text-[#731515]" />
         </div>
         <h2 className="text-[10px] tracking-[0.4em] text-[#1a0505]">GESTIONE MEDIA</h2>
@@ -266,7 +266,7 @@ export default function MediaManager() {
           <p className="text-xs text-[#7a4a4a]/50 text-center" style={{ fontFamily: 'var(--font-nunito)' }}>
             Trascina le immagini qui, oppure clicca per selezionare
           </p>
-          <span className="text-[9px] tracking-[0.28em] px-4 py-2 border border-[#731515]/30 text-[#731515] hover:bg-[#731515]/5 transition-colors duration-200">
+          <span className="text-[9px] tracking-[0.28em] px-4 py-2 bg-white border border-[#731515]/30 text-[#731515] hover:bg-[#fdf0f0] transition-colors duration-200">
             SELEZIONA FILE
           </span>
         </div>
@@ -331,7 +331,7 @@ export default function MediaManager() {
                     previews.forEach((p) => URL.revokeObjectURL(p.preview));
                     setPreviews([]);
                   }}
-                  className="text-[9px] tracking-[0.3em] text-[#7a4a4a] hover:text-[#731515] px-4 py-3 border border-[#e8d5d5] transition-colors duration-200"
+                  className="text-[9px] tracking-[0.3em] text-[#7a4a4a] hover:text-[#731515] px-4 py-3 bg-white border border-[#e8d5d5] transition-colors duration-200"
                 >
                   ANNULLA
                 </button>
@@ -355,7 +355,7 @@ export default function MediaManager() {
           <button
             onClick={() => loadGallery(folder)}
             disabled={loadingGallery}
-            className="w-7 h-7 flex items-center justify-center border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515]/40 hover:text-[#731515] disabled:opacity-40 transition-all duration-200"
+            className="w-7 h-7 flex items-center justify-center bg-white border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515]/40 hover:text-[#731515] disabled:opacity-40 transition-all duration-200"
           >
             <RefreshCw size={11} className={loadingGallery ? 'animate-spin' : ''} />
           </button>

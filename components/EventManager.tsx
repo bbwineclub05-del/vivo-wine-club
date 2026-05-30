@@ -341,7 +341,7 @@ function EventForm({
         </button>
         <button
           onClick={onCancel}
-          className="px-5 py-2.5 border border-[#eddada] text-[#7a4a4a] text-[10px] tracking-[0.3em] hover:border-[#731515]/40 transition-colors rounded-lg"
+          className="px-5 py-2.5 border border-[#eddada] bg-white text-[#7a4a4a] text-[10px] tracking-[0.3em] hover:border-[#731515]/40 transition-colors rounded-lg"
         >
           ANNULLA
         </button>
@@ -554,7 +554,7 @@ function EventInviteModal({
                     className={`px-4 py-1.5 rounded-lg text-[10px] tracking-[0.25em] font-medium transition-colors ${
                       lang === l
                         ? 'bg-[#731515] text-white'
-                        : 'border border-[#eddada] text-[#7a4a4a] hover:border-[#731515]/40'
+                        : 'border border-[#eddada] bg-white text-[#7a4a4a] hover:border-[#731515]/40'
                     }`}
                   >
                     {l}
@@ -611,7 +611,7 @@ function EventInviteModal({
               </button>
               <button
                 onClick={onClose}
-                className="px-5 py-2.5 border border-[#eddada] text-[#7a4a4a] text-[10px] tracking-[0.3em] rounded-lg hover:border-[#731515]/40 transition-colors"
+                className="px-5 py-2.5 border border-[#eddada] bg-white text-[#7a4a4a] text-[10px] tracking-[0.3em] rounded-lg hover:border-[#731515]/40 transition-colors"
               >
                 ANNULLA
               </button>
@@ -724,7 +724,7 @@ function EventRow({
             <span className="text-[8px] tracking-[0.35em] text-[#7a4a4a]/60">{event.type}</span>
             <StatusPill status={event.status} />
             {event.price > 0 && (
-              <span className="inline-flex items-center gap-1 text-[8px] tracking-[0.2em] bg-[#731515]/8 text-[#731515] px-2 py-0.5 rounded-full border border-[#731515]/15">
+              <span className="inline-flex items-center gap-1 text-[8px] tracking-[0.2em] bg-[#fde8e8] text-[#731515] px-2 py-0.5 rounded-full border border-[#731515]/15">
                 <Tag size={8} /> €{event.price}
               </span>
             )}

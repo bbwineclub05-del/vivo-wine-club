@@ -218,7 +218,7 @@ function EmailModal({
             <span />
           )}
           <div className="flex gap-2">
-            <button onClick={onClose} className="px-4 py-2 text-[11px] tracking-[0.2em] text-[#7a4a4a] border border-[#e8d5d5] hover:border-[#731515] transition-colors">
+            <button onClick={onClose} className="px-4 py-2 text-[11px] tracking-[0.2em] text-[#7a4a4a] border border-[#e8d5d5] bg-white hover:border-[#731515] transition-colors">
               ANNULLA
             </button>
             <button
@@ -374,7 +374,7 @@ export default function CrmBordeaux() {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto border border-[#e8d5d5] rounded-sm">
+      <div className="overflow-x-auto bg-white border border-[#e8d5d5] rounded-sm">
         <table className="w-full min-w-[900px] text-sm border-collapse">
           <thead className="bg-[#fdf6f6] border-b border-[#e8d5d5]">
             <tr>
@@ -400,7 +400,7 @@ export default function CrmBordeaux() {
                 return <EditRow key={c.id} contact={c} onSave={handleSave} onCancel={() => setEditingId(null)} />;
               }
               return (
-                <tr key={c.id} className="hover:bg-[#fdf6f6] transition-colors group">
+                <tr key={c.id} className="bg-white hover:bg-[#fdf6f6] transition-colors group">
                   <td className="px-3 py-3 text-[13px] font-medium text-[#1a0505] max-w-[220px]">
                     <span className="line-clamp-2 leading-snug">{c.company}</span>
                   </td>

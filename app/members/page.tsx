@@ -28,12 +28,13 @@ import MerchManager from '@/components/MerchManager';
 import DiscountManager from '@/components/DiscountManager';
 import DocumentManager from '@/components/DocumentManager';
 import MemberPortal from '@/components/MemberPortal';
+import MembershipCard from '@/components/MembershipCard';
 import { isSuperAdmin } from '@/lib/admins';
 
 /* ─────────────────────────────────────────────
    Types
 ───────────────────────────────────────────── */
-type Section = 'overview' | 'settings' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm' | 'crm-wine' | 'crm-bordeaux' | 'crm-clienti' | 'media' | 'team' | 'merch' | 'discounts' | 'documents';
+type Section = 'overview' | 'settings' | 'card' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm' | 'crm-wine' | 'crm-bordeaux' | 'crm-clienti' | 'media' | 'team' | 'merch' | 'discounts' | 'documents';
 
 // Maps section IDs to the permission key in team_members.permissions
 const SECTION_PERM: Partial<Record<Section, string>> = {
@@ -59,8 +60,9 @@ interface NavItem {
 }
 
 const NAV_MAIN: NavItem[] = [
-  { id: 'overview', label: 'Overview',      icon: Home       },
-  { id: 'settings', label: 'Impostazioni',  icon: KeyRound   },
+  { id: 'overview', label: 'Overview',        icon: Home       },
+  { id: 'card',     label: 'Membership Card', icon: CreditCard },
+  { id: 'settings', label: 'Impostazioni',    icon: KeyRound   },
 ];
 
 // Visible to both admin and staff
@@ -354,20 +356,20 @@ function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }
   return (
     <div className="mb-8">
       <h1
-        className="text-[clamp(1.6rem,2.5vw,2.2rem)] font-light text-white leading-none tracking-tight"
+        className="text-[clamp(1.6rem,2.5vw,2.2rem)] font-light text-[#1a0505] leading-none tracking-tight"
         style={{ fontFamily: 'var(--font-syne)' }}
       >
         {title}
       </h1>
       {subtitle && (
         <p
-          className="mt-2 text-sm text-white/55 font-light"
+          className="mt-2 text-sm text-[#7a4a4a]/70 font-light"
           style={{ fontFamily: 'var(--font-nunito)' }}
         >
           {subtitle}
         </p>
       )}
-      <div className="mt-5 h-px w-16 bg-white/25" />
+      <div className="mt-5 h-px w-16 bg-[#e8d5d5]" />
     </div>
   );
 }
@@ -413,6 +415,116 @@ function UnauthorisedSection({ title }: { title: string }) {
           Contatta l&apos;amministratore.
         </p>
       </div>
+    </>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   Section: Membership Card
+───────────────────────────────────────────── */
+function CardSection({ token }: { token: string }) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [cardData, setCardData] = useState<{
+    memberId: string; name: string; tier: string; memberSince: number;
+  } | null>(null);
+  const [loading,     setLoading]     = useState(true);
+  const [downloading, setDownloading] = useState(false);
+  const [copied,      setCopied]      = useState(false);
+
+  useEffect(() => {
+    if (!token) return;
+    fetch('/api/member/card', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(d => { if (d.memberId) setCardData(d); })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [token]);
+
+  async function handleDownload() {
+    if (!cardRef.current || !cardData) return;
+    setDownloading(true);
+    try {
+      const { toPng } = await import('html-to-image');
+      await document.fonts.ready;
+      const dataUrl = await toPng(cardRef.current, { pixelRatio: 3, cacheBust: true });
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = `vivo-card-${cardData.memberId}.png`;
+      a.click();
+    } catch (err) {
+      console.error('[CardSection] download error:', err);
+    } finally {
+      setDownloading(false);
+    }
+  }
+
+  function handleCopyLink() {
+    if (!cardData) return;
+    const url = `https://vivowineclub.com/card/${cardData.memberId}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(() => {});
+  }
+
+  return (
+    <>
+      <SectionHeader title="Membership Card" subtitle="La tua tessera digitale Vivo Wine Club." />
+
+      {loading ? (
+        <div className="flex items-center justify-center h-40">
+          <div className="w-5 h-5 rounded-full border-2 border-white/20 border-t-white/60 animate-spin" />
+        </div>
+      ) : cardData ? (
+        <div className="flex flex-col items-center gap-8 max-w-[520px] mx-auto">
+
+          {/* The card itself */}
+          <div className="w-full">
+            <MembershipCard {...cardData} cardRef={cardRef} />
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex items-center gap-3 flex-wrap justify-center">
+            <button
+              onClick={handleDownload}
+              disabled={downloading}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#731515] text-white text-[10px] tracking-[0.3em] rounded-lg hover:bg-[#9b2323] disabled:opacity-50 transition-colors duration-200"
+              style={{ fontFamily: 'var(--font-nunito)' }}
+            >
+              {downloading ? 'DOWNLOADING...' : 'DOWNLOAD PNG'}
+            </button>
+
+            <button
+              onClick={handleCopyLink}
+              className="inline-flex items-center gap-2 px-5 py-2.5 border border-[#731515]/30 text-[#731515] text-[10px] tracking-[0.3em] rounded-lg hover:bg-[#fdf0f0] hover:border-[#731515]/50 transition-all duration-200"
+              style={{ fontFamily: 'var(--font-nunito)' }}
+            >
+              {copied ? 'LINK COPIATO' : 'CONDIVIDI LINK'}
+            </button>
+          </div>
+
+          {/* Share URL display */}
+          <div className="w-full">
+            <div className="text-[8px] tracking-[0.4em] text-[#7B1D1D] mb-2" style={{ fontFamily: 'var(--font-nunito)' }}>
+              URL PUBBLICA
+            </div>
+            <div
+              className="w-full bg-[#fdf6f6] border border-[#e8d5d5] rounded-lg px-4 py-3 text-[12px] text-[#1a0505] truncate"
+              style={{ fontFamily: 'var(--font-nunito)' }}
+            >
+              vivowineclub.com/card/{cardData.memberId}
+            </div>
+            <p className="mt-2 text-[10px] text-[#7a4a4a]/60 leading-relaxed" style={{ fontFamily: 'var(--font-nunito)' }}>
+              Chiunque con questo link puo vedere la tua card — nessun login richiesto.
+            </p>
+          </div>
+
+        </div>
+      ) : (
+        <p className="text-[13px] text-[#7a4a4a]/60" style={{ fontFamily: 'var(--font-nunito)' }}>
+          Impossibile caricare la card. Riprova piu tardi.
+        </p>
+      )}
     </>
   );
 }
@@ -833,7 +945,7 @@ function MembersPageInner() {
         </div>
 
         {/* Scrollable content area */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto bg-white">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-6 sm:py-10">
             <AnimatePresence mode="wait">
               <motion.div
@@ -849,6 +961,8 @@ function MembersPageInner() {
                 )}
 
                 {activeSection === 'settings' && <SettingsSection />}
+
+                {activeSection === 'card' && <CardSection token={token} />}
 
                 {(admin || isStaff) && activeSection === 'tasks' && (
                   canAccess('tasks') ? (

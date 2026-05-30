@@ -435,7 +435,7 @@ export default function DocumentManager({
                       onClick={() => handleDownload(doc)}
                       disabled={downloading === doc.id}
                       title="Scarica"
-                      className="w-8 h-8 flex items-center justify-center border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515]/40 hover:text-[#731515] disabled:opacity-40 transition-all duration-200 rounded-lg"
+                      className="w-8 h-8 flex items-center justify-center bg-white border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515]/40 hover:text-[#731515] disabled:opacity-40 transition-all duration-200 rounded-lg"
                     >
                       {downloading === doc.id
                         ? <Loader2 size={12} className="animate-spin" />
@@ -447,7 +447,7 @@ export default function DocumentManager({
                         onClick={() => handleDelete(doc)}
                         disabled={deleting === doc.id}
                         title="Elimina"
-                        className="w-8 h-8 flex items-center justify-center border border-[#e8d5d5] text-[#7a4a4a]/50 hover:border-red-300 hover:text-red-600 disabled:opacity-40 transition-all duration-200 rounded-lg"
+                        className="w-8 h-8 flex items-center justify-center bg-white border border-[#e8d5d5] text-[#7a4a4a]/50 hover:border-red-300 hover:text-red-600 disabled:opacity-40 transition-all duration-200 rounded-lg"
                       >
                         {deleting === doc.id
                           ? <Loader2 size={12} className="animate-spin" />
@@ -493,7 +493,7 @@ export default function DocumentManager({
                       <button
                         onClick={() => handleDownload(doc)}
                         disabled={downloading === doc.id}
-                        className="w-8 h-8 flex items-center justify-center border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515]/40 hover:text-[#731515] disabled:opacity-40 transition-all duration-200 rounded-lg"
+                        className="w-8 h-8 flex items-center justify-center bg-white border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515]/40 hover:text-[#731515] disabled:opacity-40 transition-all duration-200 rounded-lg"
                       >
                         {downloading === doc.id
                           ? <Loader2 size={12} className="animate-spin" />
@@ -504,7 +504,7 @@ export default function DocumentManager({
                         <button
                           onClick={() => handleDelete(doc)}
                           disabled={deleting === doc.id}
-                          className="w-8 h-8 flex items-center justify-center border border-[#e8d5d5] text-[#7a4a4a]/50 hover:border-red-300 hover:text-red-600 disabled:opacity-40 transition-all duration-200 rounded-lg"
+                          className="w-8 h-8 flex items-center justify-center bg-white border border-[#e8d5d5] text-[#7a4a4a]/50 hover:border-red-300 hover:text-red-600 disabled:opacity-40 transition-all duration-200 rounded-lg"
                         >
                           {deleting === doc.id
                             ? <Loader2 size={12} className="animate-spin" />

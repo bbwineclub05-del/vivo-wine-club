@@ -174,7 +174,7 @@ function EmailModal({
             <span />
           )}
           <div className="flex gap-2">
-            <button onClick={onClose} className="px-4 py-2 text-[11px] tracking-[0.2em] text-[#7a4a4a] border border-[#e8d5d5] hover:border-[#731515] transition-colors">
+            <button onClick={onClose} className="px-4 py-2 text-[11px] tracking-[0.2em] text-[#7a4a4a] border border-[#e8d5d5] bg-white hover:border-[#731515] transition-colors">
               ANNULLA
             </button>
             <button
@@ -347,7 +347,7 @@ export default function CrmWine() {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto border border-[#e8d5d5] rounded-sm">
+      <div className="overflow-x-auto bg-white border border-[#e8d5d5] rounded-sm">
         <table className="w-full min-w-[900px] text-sm border-collapse">
           <thead className="bg-[#fdf6f6] border-b border-[#e8d5d5]">
             <tr>
@@ -378,13 +378,13 @@ export default function CrmWine() {
                 return <EditRow key={c.id} contact={c} onSave={handleSave} onCancel={() => setEditingId(null)} />;
               }
               return (
-                <tr key={c.id} className="hover:bg-[#fdf6f6] transition-colors group">
+                <tr key={c.id} className="bg-white hover:bg-[#fdf6f6] transition-colors group">
                   <td className="px-3 py-3 text-[11px] text-[#7a4a4a] whitespace-nowrap">{c.applied ?? '—'}</td>
                   <td className="px-3 py-3 text-[13px] font-medium text-[#1a0505]">{c.people || '—'}</td>
                   <td className="px-3 py-3 text-[13px] text-[#1a0505]">{c.company}</td>
                   <td className="px-3 py-3">
                     {c.source && (
-                      <span className="inline-block text-[9px] tracking-[0.2em] px-2 py-0.5 bg-[#731515]/8 text-[#731515] border border-[#731515]/15">
+                      <span className="inline-block text-[9px] tracking-[0.2em] px-2 py-0.5 bg-[#fde8e8] text-[#731515] border border-[#731515]/15">
                         {c.source}
                       </span>
                     )}

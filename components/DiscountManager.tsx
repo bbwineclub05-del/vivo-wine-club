@@ -555,7 +555,7 @@ export default function DiscountManager({ token }: { token: string }) {
 
       {/* Error */}
       {error && (
-        <div className="bg-[#731515]/8 border border-[#731515]/20 text-[#731515] text-sm px-4 py-3 rounded-lg mb-5">
+        <div className="bg-[#fde8e8] border border-[#731515]/20 text-[#731515] text-sm px-4 py-3 rounded-lg mb-5">
           {error}
         </div>
       )}
