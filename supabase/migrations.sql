@@ -333,3 +333,51 @@ CREATE POLICY "anon_select_card_fields"
   ON profiles FOR SELECT
   TO anon
   USING (member_id IS NOT NULL);
+
+
+-- ── 13. Sponsors table ────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS sponsors (
+  id         uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  name       text        NOT NULL,
+  email      text,
+  phone      text,
+  city       text,
+  website    text,
+  notes      text,
+  active     boolean     NOT NULL DEFAULT true,
+  created_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE sponsors ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "sponsors_admin_all" ON sponsors;
+CREATE POLICY "sponsors_admin_all"
+  ON sponsors FOR ALL
+  TO authenticated
+  USING (true)
+  WITH CHECK (true);
+
+
+-- ── 14. Transactions table (Finance section) ─────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS transactions (
+  id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  date        date        NOT NULL,
+  description text        NOT NULL,
+  category    text        NOT NULL, -- Evento | Membership | Sponsorship | Merchandise | Affitto | Marketing | Altro
+  type        text        NOT NULL CHECK (type IN ('revenue', 'cost')),
+  amount      numeric(12,2) NOT NULL CHECK (amount > 0),
+  notes       text,
+  created_by  uuid        REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_at  timestamptz DEFAULT now()
+);
+
+ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "transactions_authenticated_all" ON transactions;
+CREATE POLICY "transactions_authenticated_all"
+  ON transactions FOR ALL
+  TO authenticated
+  USING (true)
+  WITH CHECK (true);

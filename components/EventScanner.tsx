@@ -81,9 +81,10 @@ export default function EventScanner({
   onClose: () => void;
 }) {
   /* ── Ticket list ── */
-  const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [tab,     setTab]     = useState<'list' | 'scanner'>('list');
+  const [tickets,    setTickets]    = useState<Ticket[]>([]);
+  const [loading,    setLoading]    = useState(true);
+  const [tab,        setTab]        = useState<'list' | 'scanner'>('list');
+  const [checkingIn, setCheckingIn] = useState<string | null>(null); // order_id being toggled
 
   /* ── Scanner ── */
   const [cameraOn,  setCameraOn]  = useState(false);
@@ -263,6 +264,38 @@ export default function EventScanner({
     lockRef.current = false;
   }, []);
 
+  /* ── Manual check-in toggle ── */
+  const toggleCheckIn = useCallback(async (ticket: Ticket) => {
+    if (checkingIn) return;
+    const newValue = !ticket.checked_in;
+    setCheckingIn(ticket.order_id);
+
+    // Optimistic update
+    setTickets(prev => prev.map(t =>
+      t.order_id === ticket.order_id
+        ? { ...t, checked_in: newValue, scanned_at: newValue ? new Date().toISOString() : null, scanned_by: newValue ? 'manuale' : null }
+        : t,
+    ));
+
+    const { error } = await supabase
+      .from('tickets')
+      .update({
+        checked_in: newValue,
+        scanned_at: newValue ? new Date().toISOString() : null,
+        scanned_by: newValue ? 'manuale' : null,
+      })
+      .eq('order_id', ticket.order_id);
+
+    if (error) {
+      // Revert on failure
+      setTickets(prev => prev.map(t =>
+        t.order_id === ticket.order_id ? { ...t, ...ticket } : t,
+      ));
+    }
+
+    setCheckingIn(null);
+  }, [checkingIn]);
+
   /* ── ESC to close ── */
   useEffect(() => {
     const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -420,44 +453,79 @@ export default function EventScanner({
               </div>
             ) : (
               <div className="space-y-2 pb-4">
-                {tickets.map((ticket) => (
-                  <div
-                    key={ticket.order_id}
-                    className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${
-                      ticket.checked_in
-                        ? 'bg-emerald-50 border-emerald-200'
-                        : 'bg-white border-[#eddada]'
-                    }`}
-                  >
-                    {ticket.checked_in ? (
-                      <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
-                    ) : (
-                      <Circle size={16} className="text-[#e0c5c5] shrink-0" />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div
-                        className={`text-sm font-medium truncate ${ticket.checked_in ? 'text-emerald-800' : 'text-[#1a0505]'}`}
-                        style={{ fontFamily: 'var(--font-syne)' }}
-                      >
-                        {ticket.name}
+                {tickets.map((ticket) => {
+                  const isUpdating = checkingIn === ticket.order_id;
+                  return (
+                    <div
+                      key={ticket.order_id}
+                      className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${
+                        ticket.checked_in
+                          ? 'bg-emerald-50 border-emerald-200'
+                          : 'bg-white border-[#eddada]'
+                      }`}
+                    >
+                      {ticket.checked_in ? (
+                        <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
+                      ) : (
+                        <Circle size={16} className="text-[#e0c5c5] shrink-0" />
+                      )}
+
+                      <div className="flex-1 min-w-0">
+                        <div
+                          className={`text-sm font-medium truncate ${ticket.checked_in ? 'text-emerald-800' : 'text-[#1a0505]'}`}
+                          style={{ fontFamily: 'var(--font-syne)' }}
+                        >
+                          {ticket.name}
+                        </div>
+                        <div
+                          className={`text-[11px] truncate ${ticket.checked_in ? 'text-emerald-700/60' : 'text-[#7a4a4a]/50'}`}
+                          style={{ fontFamily: 'var(--font-nunito)' }}
+                        >
+                          {ticket.email}
+                        </div>
                       </div>
-                      <div
-                        className={`text-[11px] truncate ${ticket.checked_in ? 'text-emerald-700/60' : 'text-[#7a4a4a]/50'}`}
-                        style={{ fontFamily: 'var(--font-nunito)' }}
-                      >
-                        {ticket.email}
-                      </div>
+
+                      {/* Scanned-at time (QR scanner) */}
+                      {ticket.checked_in && ticket.scanned_at && ticket.scanned_by !== 'manuale' && (
+                        <div
+                          className="text-[10px] text-emerald-600/70 shrink-0"
+                          style={{ fontFamily: 'var(--font-nunito)' }}
+                        >
+                          {fmtTime(ticket.scanned_at)}
+                        </div>
+                      )}
+
+                      {/* Manual check-in button */}
+                      {ticket.checked_in ? (
+                        <button
+                          onClick={() => toggleCheckIn(ticket)}
+                          disabled={isUpdating}
+                          title="Clicca per annullare il check-in"
+                          className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-100 border border-emerald-200 text-emerald-700 text-[9px] tracking-[0.2em] hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-all disabled:opacity-50 disabled:cursor-wait"
+                          style={{ fontFamily: 'var(--font-nunito)' }}
+                        >
+                          {isUpdating
+                            ? <span className="w-3 h-3 rounded-full border border-current/40 border-t-current animate-spin" />
+                            : <X size={10} />}
+                          PRESENTE
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => toggleCheckIn(ticket)}
+                          disabled={isUpdating}
+                          title="Check-in manuale"
+                          className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-[9px] tracking-[0.2em] transition-colors disabled:opacity-50 disabled:cursor-wait"
+                          style={{ fontFamily: 'var(--font-nunito)' }}
+                        >
+                          {isUpdating
+                            ? <span className="w-3 h-3 rounded-full border border-white/40 border-t-white animate-spin" />
+                            : <CheckCircle2 size={11} />}
+                          CHECK IN
+                        </button>
+                      )}
                     </div>
-                    {ticket.checked_in && ticket.scanned_at && (
-                      <div
-                        className="text-[10px] text-emerald-600/70 shrink-0"
-                        style={{ fontFamily: 'var(--font-nunito)' }}
-                      >
-                        {fmtTime(ticket.scanned_at)}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

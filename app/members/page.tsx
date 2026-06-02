@@ -9,7 +9,7 @@ import {
   Mail, LogOut, KeyRound, ScanLine, Menu, X,
   Wine, Shield, ArrowUpRight, CreditCard, User, CalendarDays, GlassWater, MapPin, Images,
   Database, ChevronDown, UsersRound, Lock, ShoppingBag, Tag, FolderOpen,
-  Camera, Loader2,
+  Camera, Loader2, Building2, Wallet,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -22,6 +22,7 @@ import EventManager from '@/components/EventManager';
 import CrmWine from '@/components/CrmWine';
 import CrmBordeaux from '@/components/CrmBordeaux';
 import CrmClienti from '@/components/CrmClienti';
+import CrmSponsors from '@/components/CrmSponsors';
 import MediaManager from '@/components/MediaManager';
 import TeamManagement from '@/components/TeamManagement';
 import MerchManager from '@/components/MerchManager';
@@ -29,12 +30,13 @@ import DiscountManager from '@/components/DiscountManager';
 import DocumentManager from '@/components/DocumentManager';
 import MemberPortal from '@/components/MemberPortal';
 import MembershipCard from '@/components/MembershipCard';
-import { isSuperAdmin } from '@/lib/admins';
+import FinanceManager from '@/components/FinanceManager';
+import { isSuperAdmin, isFinanceUser } from '@/lib/admins';
 
 /* ─────────────────────────────────────────────
    Types
 ───────────────────────────────────────────── */
-type Section = 'overview' | 'settings' | 'card' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm' | 'crm-wine' | 'crm-bordeaux' | 'crm-clienti' | 'media' | 'team' | 'merch' | 'discounts' | 'documents';
+type Section = 'overview' | 'settings' | 'card' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm' | 'crm-wine' | 'crm-bordeaux' | 'crm-clienti' | 'crm-sponsors' | 'media' | 'team' | 'merch' | 'discounts' | 'documents' | 'finance';
 
 // Maps section IDs to the permission key in team_members.permissions
 const SECTION_PERM: Partial<Record<Section, string>> = {
@@ -44,7 +46,8 @@ const SECTION_PERM: Partial<Record<Section, string>> = {
   crm:           'crm',
   'crm-wine':    'crm',
   'crm-bordeaux':'crm',
-  'crm-clienti': 'crm',
+  'crm-clienti':  'crm',
+  'crm-sponsors': 'crm',
   media:         'media',
   analytics:     'analytics',
   pipeline:      'pipeline',
@@ -82,10 +85,11 @@ const NAV_ADMIN_ONLY: NavItem[] = [
 ];
 
 const CRM_ITEMS: NavItem[] = [
-  { id: 'crm',          label: 'CRM Membri',        icon: Mail       },
-  { id: 'crm-clienti',  label: 'CRM Clienti',       icon: Users      },
-  { id: 'crm-wine',     label: 'CRM Contatti Vino', icon: GlassWater },
-  { id: 'crm-bordeaux', label: 'CRM Produttori BDX',icon: MapPin     },
+  { id: 'crm',           label: 'CRM Membri',        icon: Mail      },
+  { id: 'crm-clienti',   label: 'CRM Clienti',       icon: Users     },
+  { id: 'crm-sponsors',  label: 'CRM Sponsors',      icon: Building2 },
+  { id: 'crm-wine',      label: 'CRM Contatti Vino', icon: GlassWater },
+  { id: 'crm-bordeaux',  label: 'CRM Produttori BDX',icon: MapPin    },
 ];
 
 // Visible to both admin and staff
@@ -217,6 +221,7 @@ function SidebarContent({
   isStaff,
   canAccess,
   superAdmin,
+  financeUser,
 }: {
   displayName: string;
   email: string;
@@ -227,6 +232,7 @@ function SidebarContent({
   isStaff: boolean;
   canAccess: (section: Section) => boolean;
   superAdmin: boolean;
+  financeUser: boolean;
 }) {
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -321,6 +327,20 @@ function SidebarContent({
               item={{ id: 'team', label: 'Team Management', icon: UsersRound }}
               active={activeSection === 'team'}
               onClick={() => navigate('team')}
+            />
+          </>
+        )}
+
+        {financeUser && (
+          <>
+            <div className="pt-5 pb-1.5 px-3 flex items-center gap-1.5">
+              <Wallet size={8} className="text-white/20" />
+              <span className="text-[8px] tracking-[0.55em] text-white/20 uppercase">Finance</span>
+            </div>
+            <NavBtn
+              item={{ id: 'finance', label: 'Finance', icon: Wallet }}
+              active={activeSection === 'finance'}
+              onClick={() => navigate('finance')}
             />
           </>
         )}
@@ -833,8 +853,9 @@ function MembersPageInner() {
 
   if (!user) return null;
 
-  const admin      = isAdmin(user.email ?? '');
-  const superAdmin = isSuperAdmin(user.email ?? '');
+  const admin       = isAdmin(user.email ?? '');
+  const superAdmin  = isSuperAdmin(user.email ?? '');
+  const financeUser = isFinanceUser(user.email ?? '');
   const displayName = user.name || user.email?.split('@')[0] || 'Member';
 
   // Members (role === 'member', not admin/staff) get the MemberPortal
@@ -877,6 +898,7 @@ function MembersPageInner() {
     isStaff,
     canAccess,
     superAdmin,
+    financeUser,
   };
 
   return (
@@ -1038,6 +1060,22 @@ function MembersPageInner() {
                       <CrmClienti />
                     </>
                   ) : <UnauthorisedSection title="CRM Clienti" />
+                )}
+
+                {(admin || isStaff) && activeSection === 'crm-sponsors' && (
+                  canAccess('crm-sponsors') ? (
+                    <>
+                      <SectionHeader title="CRM Sponsors" subtitle="Gestione degli sponsor del club — contatti, siti web e note." />
+                      <CrmSponsors />
+                    </>
+                  ) : <UnauthorisedSection title="CRM Sponsors" />
+                )}
+
+                {financeUser && activeSection === 'finance' && (
+                  <>
+                    <SectionHeader title="Finance" subtitle="Gestione contabile — revenues, costi e saldo di cassa." />
+                    <FinanceManager />
+                  </>
                 )}
 
                 {(admin || isStaff) && activeSection === 'media' && (

@@ -7,6 +7,7 @@ const PARTNERS = [
   { name: 'Sandrone',              src: '/sponsors/sandrone.avif',                href: 'https://sandroneluciano.com/it/web/?lev1=99&age=over18' },
   { name: 'Beneperora',            src: '/sponsors/beneperora.webp',              href: 'https://beneperora.it/'                                 },
   { name: 'Alata Investment Club', src: '/sponsors/alata.png',                  href: 'https://www.alatainvestmentclub.com/'                   },
+  { name: 'Cassa Rurale',          src: '/sponsors/cassarurale.png',             href: 'https://www.lacassarurale.it/privati-e-famiglie/'       },
 ];
 
 // Logo item width + gap in px — must match the CSS values below
