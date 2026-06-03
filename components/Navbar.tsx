@@ -9,10 +9,11 @@ import { useAuth } from '@/lib/auth';
 import { useCart } from '@/contexts/CartContext';
 
 const NAV_LINKS = [
-  { href: '/events',      label: 'EVENTS',        page: true  },
-  { href: '/wine-map',    label: 'WINE VISITS',    page: true  },
+  { href: '/events',                    label: 'EVENTS',        page: true },
+  { href: '/experiences/wine-party',    label: 'WINE PARTY',    page: true },
+  { href: '/experiences/winery-visits', label: 'WINE VISITS',   page: true },
+  { href: '/experiences/wine-lounge',   label: 'WINE LOUNGE',   page: true },
   { href: '/wear-the-club', label: 'WEAR THE CLUB', page: true  },
-  { href: '/news',        label: 'NEWS',           page: true  },
   { href: '/who-we-are',  label: 'WHO WE ARE',     page: true  },
   { href: '/collaborate', label: 'COLLABORATE',    page: true  },
 ];
@@ -54,7 +55,7 @@ const SOCIALS = [
 ];
 
 const NAV_LINK_CLASS =
-  'relative text-[11px] tracking-[0.28em] text-[#6b3333] hover:text-[#731515] transition-colors duration-300 group whitespace-nowrap';
+  'relative text-[10px] tracking-[0.22em] text-[#6b3333] hover:text-[#731515] transition-colors duration-300 group whitespace-nowrap';
 const NAV_UNDERLINE =
   'absolute -bottom-0.5 left-0 h-px w-0 bg-[#731515] group-hover:w-full transition-all duration-300';
 
@@ -104,7 +105,7 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop nav links */}
-          <div className="hidden lg:flex items-center gap-8 xl:gap-10">
+          <div className="hidden lg:flex items-center gap-4 xl:gap-5">
             {NAV_LINKS.map((link) =>
               link.page ? (
                 <Link

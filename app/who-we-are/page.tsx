@@ -20,32 +20,44 @@ const TEAM_MEMBERS = [
   {
     name: 'Carolina Maria Carra',
     initials: 'CC',
-    role: 'Team Media Associate',
+    role: 'Team Media',
     linkedin: 'https://www.linkedin.com/in/carolina-maria-carra/',
   },
   {
     name: 'Giulia Zalum',
     initials: 'GZ',
-    role: 'Team Media Associate',
+    role: 'Team Media',
     linkedin: 'https://www.linkedin.com/in/giulia-zalum-391a83255/',
+  },
+  {
+    name: 'Elena Catellani',
+    initials: 'EC',
+    role: 'Team Media',
+    linkedin: 'https://www.linkedin.com/in/elena-catellani-a70aa72b0/',
   },
   {
     name: 'Gabriele Lisanti',
     initials: 'GL',
-    role: 'Team Events Associate',
+    role: 'Team Events',
     linkedin: 'https://www.linkedin.com/in/gabrielelisanti/',
   },
   {
     name: 'Marcello Abbadati',
     initials: 'MA',
-    role: 'Team Events Associate — Sommelier',
+    role: 'Team Events · Sommelier',
     linkedin: 'https://www.linkedin.com/in/marcelloabbadati/',
   },
   {
-    name: 'Elena Catellani',
-    initials: 'EC',
-    role: 'Team Media Associate',
-    linkedin: 'https://www.linkedin.com/in/elena-catellani-a70aa72b0/',
+    name: 'Giovanni Giachino',
+    initials: 'GG',
+    role: 'Team Events · Sommelier',
+    linkedin: 'https://www.linkedin.com/in/giovanni-giachino-/',
+  },
+  {
+    name: 'Francesco Basile',
+    initials: 'FB',
+    role: 'Team Events',
+    linkedin: null, // no LinkedIn profile
   },
 ];
 
@@ -69,7 +81,7 @@ const FOUNDERS = [
   {
     name: 'Cristiano Michelotti',
     city: 'Florence',
-    role: 'Co-Founder & Creative Director',
+    role: 'Co-Founder',
     image: '/cristiano.png',
     bio: 'A true Tuscan wine enthusiast, with a deep passion for the great wines of his region — from Chianti to Montalcino and Bolgheri. Currently studying at ESCP.',
     linkedin: 'https://www.linkedin.com/in/cristiano-michelotti-799a49299/',
@@ -135,24 +147,23 @@ function FounderCard({
           >
             {city.toUpperCase()}
           </p>
-          <p
-            className="text-xs text-[#7a4a4a] mt-0.5"
-            style={{ fontFamily: 'var(--font-nunito)' }}
-          >
-            {role}
-          </p>
+          <div className="flex items-center gap-2 mt-0.5">
+            <p
+              className="text-xs text-[#7a4a4a]"
+              style={{ fontFamily: 'var(--font-nunito)' }}
+            >
+              {role}
+            </p>
+            <span className="text-[#7a4a4a] group-hover:text-[#731515] transition-colors duration-300 shrink-0">
+              <LinkedInIcon />
+            </span>
+          </div>
           <p
             className="text-xs text-[#7a4a4a]/80 leading-relaxed mt-3 flex-1"
             style={{ fontFamily: 'var(--font-nunito)' }}
           >
             {bio}
           </p>
-          {/* LinkedIn icon — always pinned to the bottom */}
-          <div className="mt-4 pt-4 border-t border-[#e8d5d5]">
-            <span className="w-10 h-10 border border-[#e8d5d5] flex items-center justify-center text-[#7a4a4a] group-hover:border-[#731515]/50 group-hover:text-[#731515] transition-all duration-300">
-              <LinkedInIcon />
-            </span>
-          </div>
         </div>
       </a>
     </motion.div>
@@ -197,7 +208,7 @@ export default function WhoWeArePage() {
         </div>
 
         {/* ── OUR STORY ── */}
-        <section className="relative overflow-hidden pb-20 md:pb-28">
+        <section className="relative overflow-hidden pb-10 md:pb-14">
           <div className="fog-left" style={{ top: '20%' }} />
 
           <div className="max-w-5xl mx-auto px-6 lg:px-10">
@@ -211,7 +222,7 @@ export default function WhoWeArePage() {
               className="origin-left w-full h-px bg-gradient-to-r from-[#731515]/30 via-[#731515]/10 to-transparent mb-20"
             />
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-10 lg:gap-16 items-start">
               {/* Label + title */}
               <motion.div
                 initial={{ opacity: 0, y: 24 }}
@@ -289,7 +300,7 @@ export default function WhoWeArePage() {
               </h2>
             </motion.div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
               {FOUNDERS.map((founder, i) => (
                 <FounderCard key={founder.name} {...founder} index={i} />
               ))}
@@ -327,7 +338,7 @@ export default function WhoWeArePage() {
               </h2>
             </motion.div>
 
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
               {TEAM_MEMBERS.map((member, i) => (
                 <motion.div
                   key={member.name}
@@ -362,15 +373,17 @@ export default function WhoWeArePage() {
                   </div>
 
                   {/* LinkedIn */}
-                  <a
-                    href={member.linkedin}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={`${member.name} on LinkedIn`}
-                    className="w-7 h-7 border border-white/30 flex items-center justify-center text-white/70 hover:border-white hover:text-white transition-all duration-300"
-                  >
-                    <LinkedInIcon />
-                  </a>
+                  {member.linkedin && (
+                    <a
+                      href={member.linkedin}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`${member.name} on LinkedIn`}
+                      className="w-7 h-7 border border-white/30 flex items-center justify-center text-white/70 hover:border-white hover:text-white transition-all duration-300"
+                    >
+                      <LinkedInIcon />
+                    </a>
+                  )}
                 </motion.div>
               ))}
             </div>

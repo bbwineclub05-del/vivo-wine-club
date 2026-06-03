@@ -275,19 +275,30 @@ export default function WinePartyPage() {
         </section>
 
         {/* ── 5. CLOSING ── */}
-        <section className="py-14 md:py-20 bg-[#080103] relative overflow-hidden">
+        <section className="py-10 md:py-14 bg-[#080103] relative overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_60%,rgba(115,21,21,0.12),transparent_65%)] pointer-events-none" />
-          <div className="max-w-2xl mx-auto px-8 md:px-16 text-center relative z-10">
+          <div className="max-w-5xl mx-auto px-8 md:px-16 relative z-10 flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-8">
             <motion.h2
               initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
-              className="text-[clamp(2rem,5vw,4rem)] font-light text-[#F5EEE6] leading-tight"
+              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light text-[#F5EEE6] leading-tight"
               style={{ fontFamily: 'var(--font-syne)' }}
             >
-              Don&apos;t miss the next one.
+              Don&apos;t miss the next one
             </motion.h2>
+            <motion.a
+              href="/membership"
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, delay: 0.15 }}
+              className="shrink-0 inline-flex items-center gap-2 px-7 py-3.5 min-h-[44px] bg-[#731515] text-[#F5EEE6] text-[11px] tracking-[0.35em] hover:bg-[#9b2323] transition-colors"
+              style={{ fontFamily: 'var(--font-nunito)' }}
+            >
+              BECOME A MEMBER
+            </motion.a>
           </div>
         </section>
 

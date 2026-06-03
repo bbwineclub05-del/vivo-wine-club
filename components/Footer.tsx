@@ -40,13 +40,13 @@ function MailIcon() {
 }
 
 const NAV_LINKS = [
-  { label: 'Events',        href: '/events'       },
-  { label: 'Wine Visits',   href: '/wine-map'      },
-  { label: 'Wear the Club', href: '/wear-the-club' },
-  { label: 'News',          href: '/news'          },
-  { label: 'Who We Are',    href: '/who-we-are'    },
-  { label: 'Collaborate',   href: '/collaborate'   },
-  { label: 'FAQ',           href: '/faq'           },
+  { label: 'Events',        href: '/events'                    },
+  { label: 'Wine Party',    href: '/experiences/wine-party'    },
+  { label: 'Wine Visits',   href: '/experiences/winery-visits' },
+  { label: 'Wine Lounge',   href: '/experiences/wine-lounge'   },
+  { label: 'Wear the Club', href: '/wear-the-club'             },
+  { label: 'Who We Are',    href: '/who-we-are'                },
+  { label: 'Collaborate',   href: '/collaborate'               },
 ];
 
 const CONTACTS = [

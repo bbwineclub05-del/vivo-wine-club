@@ -18,6 +18,8 @@ interface Props {
   btnBg?: string;
   /** Text colour for ticket button */
   btnText?: string;
+  /** Max number of events to display */
+  limit?: number;
 }
 
 /** Stateless event row used inside ExperienceUpcoming */
@@ -132,6 +134,7 @@ export default function ExperienceUpcoming({
   mutedColor = 'light',
   btnBg = '#731515',
   btnText = '#F5EEE6',
+  limit,
 }: Props) {
   const [events, setEvents] = useState<EventData[]>([]);
 
@@ -154,14 +157,16 @@ export default function ExperienceUpcoming({
     );
   }
 
+  const visible = limit ? events.slice(0, limit) : events;
+
   return (
     <div className="flex flex-col">
-      {events.map((event, i) => (
+      {visible.map((event, i) => (
         <UpcomingRow
           key={event.slug}
           event={event}
           index={i}
-          isLast={i === events.length - 1}
+          isLast={i === visible.length - 1}
           accentColor={accentColor}
           mutedColor={mutedColor}
           btnBg={btnBg}

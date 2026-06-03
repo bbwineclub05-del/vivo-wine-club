@@ -35,7 +35,7 @@ const WINE_INTERESTS = [
   'Orange Wine',
   'Aged Reds',
   'Wine & Food Pairing',
-  'Winery Visits',
+  'Wine Visits',
 ];
 
 // ── Sub-components ─────────────────────────────────────────────────────────────

@@ -4,6 +4,7 @@ import "./globals.css";
 import { CartProvider } from "@/contexts/CartContext";
 import { AuthProvider } from "@/lib/auth";
 import CartDrawer from "@/components/CartDrawer";
+import CookieBanner from "@/components/CookieBanner";
 import { GoogleAnalytics } from "@next/third-parties/google";
 
 const syne = Syne({
@@ -91,6 +92,7 @@ export default function RootLayout({
           <CartProvider>
             {children}
             <CartDrawer />
+            <CookieBanner />
           </CartProvider>
         </AuthProvider>
       </body>

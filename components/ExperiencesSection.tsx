@@ -16,17 +16,17 @@ const EXPERIENCES = [
   },
   {
     id: 2,
+    title: 'Wine Visits',
+    description: 'Private cellar tours and guided tastings at iconic estates',
+    image: '/Winery visits/pichon baron copertina.jpeg',
+    href: '/experiences/winery-visits',
+  },
+  {
+    id: 3,
     title: 'Wine Lounge',
     description: 'The perfect evening in the most interesting wine bars across Europe',
     image: '/events/bottiglie.jpg',
     href: '/experiences/wine-lounge',
-  },
-  {
-    id: 3,
-    title: 'Winery Visits',
-    description: 'Private cellar tours and guided tastings at iconic estates',
-    image: '/Winery visits/pichon baron copertina.jpeg',
-    href: '/experiences/winery-visits',
   },
 ] as const;
 
