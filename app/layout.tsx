@@ -27,9 +27,35 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Vivo Wine Club — The Art of Fine Wine, Shared",
+  title: "Vivo Wine Club",
   description:
     "The exclusive club for wine lovers. Tastings, winery tours and access to the world's rarest and finest wines.",
+  icons: {
+    icon:       '/vivo-favicon.png',
+    shortcut:   '/vivo-favicon.png',
+    apple:      '/vivo-favicon.png',
+  },
+  openGraph: {
+    title:       'Vivo Wine Club',
+    description: "The exclusive club for wine lovers. Tastings, winery tours and access to the world's rarest and finest wines.",
+    url:         'https://www.vivowineclub.com',
+    siteName:    'Vivo Wine Club',
+    images: [
+      {
+        url:    '/vivo-favicon.png',
+        width:  1200,
+        height: 1200,
+        alt:    'Vivo Wine Club',
+      },
+    ],
+    type: 'website',
+  },
+  twitter: {
+    card:        'summary_large_image',
+    title:       'Vivo Wine Club',
+    description: "The exclusive club for wine lovers. Tastings, winery tours and access to the world's rarest and finest wines.",
+    images:      ['/vivo-favicon.png'],
+  },
 };
 
 export default function RootLayout({
