@@ -10,9 +10,9 @@ import { useCart } from '@/contexts/CartContext';
 
 const NAV_LINKS = [
   { href: '/events',                    label: 'EVENTS',        page: true },
-  { href: '/experiences/wine-party',    label: 'WINE PARTY',    page: true },
-  { href: '/experiences/winery-visits', label: 'WINE VISITS',   page: true },
-  { href: '/experiences/wine-lounge',   label: 'WINE LOUNGE',   page: true },
+  { href: '/experiences/wine-party',    label: 'PARTY',    page: true },
+  { href: '/experiences/winery-visits', label: 'VISITS',   page: true },
+  { href: '/experiences/wine-lounge',   label: 'LOUNGE',   page: true },
   { href: '/wear-the-club', label: 'WEAR THE CLUB', page: true  },
   { href: '/who-we-are',  label: 'WHO WE ARE',     page: true  },
   { href: '/collaborate', label: 'COLLABORATE',    page: true  },
@@ -55,7 +55,7 @@ const SOCIALS = [
 ];
 
 const NAV_LINK_CLASS =
-  'relative text-[10px] tracking-[0.22em] text-[#6b3333] hover:text-[#731515] transition-colors duration-300 group whitespace-nowrap';
+  'relative text-[13px] tracking-[0.18em] text-[#6b3333] hover:text-[#731515] transition-colors duration-300 group whitespace-nowrap';
 const NAV_UNDERLINE =
   'absolute -bottom-0.5 left-0 h-px w-0 bg-[#731515] group-hover:w-full transition-all duration-300';
 

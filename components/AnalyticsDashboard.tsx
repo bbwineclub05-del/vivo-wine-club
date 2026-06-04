@@ -49,6 +49,7 @@ interface EventOption {
 interface AnalyticsData {
   events: EventOption[];
   kpis: KPIs;
+  selectedEventPrice: number | null;
   ticketsByEvent: TicketByEvent[];
   revenueByMonth: MonthRevenue[];
   subscriberGrowth: SubscriberWeek[];
@@ -282,7 +283,7 @@ export default function AnalyticsDashboard() {
     }
   }, [accessToken]);
 
-  useEffect(() => { load(''); }, [load]);
+  useEffect(() => { load(selectedEventRef.current); }, [load]);
 
   /* ── Load visitor stats from Google Analytics Data API ── */
   const loadVisitors = useCallback(async () => {
@@ -423,6 +424,7 @@ export default function AnalyticsDashboard() {
   const selectedTitle = isFiltered
     ? (data.events.find((e) => e.slug === selectedEvent)?.title ?? selectedEvent)
     : '';
+  const isFreeEvent = isFiltered && data.selectedEventPrice === 0;
 
   const maxTickets = Math.max(...ticketsByEvent.map((e) => e.tickets), 1);
 
@@ -450,8 +452,8 @@ export default function AnalyticsDashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <KpiCard
           label="TOTAL REVENUE"
-          value={`€${kpis.totalRevenue.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`}
-          sub={isFiltered ? selectedTitle : 'from Stripe'}
+          value={isFreeEvent ? '€0' : `€${kpis.totalRevenue.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`}
+          sub={isFreeEvent ? 'free event' : isFiltered ? selectedTitle : 'from Stripe'}
           icon={TrendingUp}
           delay={0}
         />

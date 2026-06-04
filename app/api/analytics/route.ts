@@ -51,6 +51,18 @@ export async function GET(request: NextRequest) {
       }));
     } catch {/* non-fatal */}
 
+    // ── Build tickets query — filter at DB level when an event is selected ───
+    // NOTE: each row in `tickets` is one individual ticket (checkout creates
+    // one row per ticket via Array.from({ length: qty }, ...)).
+    // There is no ticket_count column — count rows directly.
+    let ticketsQuery = db
+      .from('tickets')
+      .select('event_id, name, email, created_at')
+      .order('created_at', { ascending: false });
+    if (filterSlug) {
+      ticketsQuery = ticketsQuery.eq('event_id', filterSlug);
+    }
+
     // ── Parallel fetches ──────────────────────────────────────────────────────
     const [
       ticketsRes,
@@ -58,45 +70,59 @@ export async function GET(request: NextRequest) {
       applicationsRes,
       stripeCharges,
     ] = await Promise.allSettled([
-      db.from('tickets').select('event_id, ticket_count, name, created_at').order('created_at', { ascending: false }),
+      ticketsQuery,
       db.from('subscribers').select('created_at').order('created_at', { ascending: true }),
       db.from('applications').select('id, created_at'),
       stripe.charges.list({ limit: 100, created: { gte: sixMonthsAgo } }),
     ]);
 
     // ── Tickets ───────────────────────────────────────────────────────────────
-    const allTickets: { event_id: string; ticket_count: number; name: string; created_at: string }[] =
-      ticketsRes.status === 'fulfilled' ? (ticketsRes.value.data ?? []) : [];
+    // Debug: log raw Supabase response to diagnose schema issues
+    if (ticketsRes.status === 'fulfilled') {
+      const { data: tData, error: tErr } = ticketsRes.value as { data: unknown; error: unknown };
+      console.log('[analytics] tickets query — error:', JSON.stringify(tErr));
+      console.log('[analytics] tickets query — row count:', Array.isArray(tData) ? tData.length : tData);
+      if (Array.isArray(tData) && tData.length > 0) {
+        console.log('[analytics] tickets first row keys:', Object.keys(tData[0] as object));
+      }
+    } else {
+      console.log('[analytics] tickets query rejected:', ticketsRes.reason);
+    }
 
-    // Apply event filter
-    const tickets = filterSlug
-      ? allTickets.filter((t) => t.event_id === filterSlug)
-      : allTickets;
+    const tickets: { event_id: string; name: string; email: string; created_at: string }[] =
+      ticketsRes.status === 'fulfilled' ? ((ticketsRes.value.data as typeof tickets | null) ?? []) : [];
 
-    const totalTickets = tickets.reduce((s, t) => s + (t.ticket_count ?? 1), 0);
+    // 1 row = 1 ticket
+    const totalTickets = tickets.length;
 
-    // Group by event
+    // Group by event — each row counts as 1 ticket
     const byEvent: Record<string, { tickets: number; revenue: number; title: string }> = {};
     for (const t of tickets) {
       const slug  = t.event_id;
       const price = EVENT_PRICE[slug] ?? 0;
-      const qty   = t.ticket_count ?? 1;
       if (!byEvent[slug]) {
         byEvent[slug] = { tickets: 0, revenue: 0, title: EVENT_TITLE[slug] ?? slug };
       }
-      byEvent[slug].tickets  += qty;
-      byEvent[slug].revenue  += price * qty;
+      byEvent[slug].tickets  += 1;
+      byEvent[slug].revenue  += price;
+    }
+
+    // Ensure every known event appears in the chart even if 0 tickets
+    for (const e of eventsList) {
+      if (!byEvent[e.slug]) {
+        byEvent[e.slug] = { tickets: 0, revenue: 0, title: e.title };
+      }
     }
 
     const ticketsByEvent = Object.entries(byEvent)
       .map(([slug, d]) => ({ slug, ...d }))
       .sort((a, b) => b.tickets - a.tickets);
 
-    // Recent ticket activity (last 5)
+    // Recent ticket activity (last 5, deduplicated by email+event)
     const recentTickets = tickets.slice(0, 5).map((t) => ({
       buyer: t.name,
       event: EVENT_TITLE[t.event_id] ?? t.event_id,
-      tickets: t.ticket_count ?? 1,
+      tickets: 1,
       date: t.created_at,
     }));
 
@@ -148,14 +174,14 @@ export async function GET(request: NextRequest) {
     let revenueByMonth: { month: string; label: string; revenue: number }[];
 
     if (filterSlug) {
-      // When filtering by event, compute revenue from DB tickets × event price
+      // When filtering by event: each ticket row = 1 ticket, revenue = count × price
       const price = EVENT_PRICE[filterSlug] ?? 0;
-      totalRevenue = tickets.reduce((s, t) => s + (t.ticket_count ?? 1) * price, 0);
+      totalRevenue = tickets.length * price;
 
       const monthRevenue: Record<string, number> = {};
       for (const t of tickets) {
-        const m = new Date(t.created_at).toISOString().slice(0, 7);
-        monthRevenue[m] = (monthRevenue[m] || 0) + (t.ticket_count ?? 1) * price;
+        const m = t.created_at ? new Date(t.created_at).toISOString().slice(0, 7) : '';
+        if (m) monthRevenue[m] = (monthRevenue[m] || 0) + price;
       }
       revenueByMonth = months.map((m) => ({
         month: m,
@@ -192,6 +218,7 @@ export async function GET(request: NextRequest) {
         totalApplications,
         conversionRate,
       },
+      selectedEventPrice: filterSlug ? (EVENT_PRICE[filterSlug] ?? null) : null,
       ticketsByEvent,
       revenueByMonth,
       subscriberGrowth,

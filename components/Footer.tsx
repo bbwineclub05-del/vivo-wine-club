@@ -41,9 +41,9 @@ function MailIcon() {
 
 const NAV_LINKS = [
   { label: 'Events',        href: '/events'                    },
-  { label: 'Wine Party',    href: '/experiences/wine-party'    },
-  { label: 'Wine Visits',   href: '/experiences/winery-visits' },
-  { label: 'Wine Lounge',   href: '/experiences/wine-lounge'   },
+  { label: 'Party',    href: '/experiences/wine-party'    },
+  { label: 'Visits',   href: '/experiences/winery-visits' },
+  { label: 'Lounge',   href: '/experiences/wine-lounge'   },
   { label: 'Wear the Club', href: '/wear-the-club'             },
   { label: 'Who We Are',    href: '/who-we-are'                },
   { label: 'Collaborate',   href: '/collaborate'               },
