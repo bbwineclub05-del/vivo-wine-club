@@ -207,6 +207,7 @@ function MemberRow({ member, token, onUpdated, onDeleted }: {
 }) {
   const [expanded,   setExpanded]   = useState(false);
   const [saving,     setSaving]     = useState(false);
+  const [saveError,  setSaveError]  = useState('');
   const [deleting,   setDeleting]   = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
 
@@ -216,6 +217,7 @@ function MemberRow({ member, token, onUpdated, onDeleted }: {
 
   const patch = useCallback(async (body: Record<string, unknown>) => {
     setSaving(true);
+    setSaveError('');
     try {
       const res  = await fetch(`/api/team/${member.id}`, {
         method:  'PATCH',
@@ -224,7 +226,9 @@ function MemberRow({ member, token, onUpdated, onDeleted }: {
       });
       const data = await res.json();
       if (res.ok) onUpdated(data.member);
-    } finally { setSaving(false); }
+      else setSaveError(data.error ?? 'Errore nel salvataggio');
+    } catch { setSaveError('Errore di rete'); }
+    finally { setSaving(false); }
   }, [member.id, token, onUpdated]);
 
   async function handleDelete() {
@@ -311,6 +315,14 @@ function MemberRow({ member, token, onUpdated, onDeleted }: {
           </div>
         )}
       </div>
+
+      {/* Save error */}
+      {saveError && (
+        <div className="px-4 pb-2.5">
+          <p className="text-[11px] text-[#731515] bg-[#fde8e8] border border-[#731515]/15 px-3 py-1.5 rounded-lg"
+            style={{ fontFamily: 'var(--font-nunito)' }}>{saveError}</p>
+        </div>
+      )}
 
       {/* ── Permissions panel (staff only) ── */}
       <AnimatePresence initial={false}>

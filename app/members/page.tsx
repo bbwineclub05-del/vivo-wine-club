@@ -844,6 +844,34 @@ function MembersPageInner() {
     });
   }, []);
 
+  // Re-fetch permissions when the window regains focus so that changes made
+  // by a superAdmin in Team Management are picked up without a full page reload.
+  useEffect(() => {
+    if (!token || !isStaff) return;
+
+    async function refreshPermissions() {
+      try {
+        const res = await fetch('/api/team/me', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setStaffPermissions(data.permissions ?? {});
+        }
+      } catch { /* non-fatal */ }
+    }
+
+    const onFocus      = () => refreshPermissions();
+    const onVisibility = () => { if (!document.hidden) refreshPermissions(); };
+
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [token, isStaff]);
+
   useEffect(() => {
     if (user === null) {
       const t = setTimeout(() => router.replace('/login'), 500);
