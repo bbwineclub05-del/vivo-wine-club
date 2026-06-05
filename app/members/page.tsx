@@ -732,6 +732,22 @@ function OverviewSection({
           </div>
         )}
       </div>
+
+      {/* ── Quote ── */}
+      <div className="mt-14 pt-10 border-t border-[#eddada] flex flex-col items-center text-center select-none">
+        <div
+          className="text-[88px] leading-none text-[#731515]/15 mb-[-18px]"
+          style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+        >
+          &#8220;
+        </div>
+        <p
+          className="text-[clamp(0.9rem,1.8vw,1.1rem)] italic text-[#7a4a4a]/55 leading-relaxed tracking-wide max-w-2xl px-4"
+          style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+        >
+          Dio aveva fatto soltanto l&apos;acqua, ma l&apos;uomo ha fatto il vino
+        </p>
+      </div>
     </>
   );
 }

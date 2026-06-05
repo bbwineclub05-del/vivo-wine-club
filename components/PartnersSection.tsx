@@ -3,7 +3,7 @@ import Image from 'next/image';
 const PARTNERS = [
   { name: 'Atelier Vini',          src: '/sponsors/atelier-vini.png',            href: 'https://www.atelierviniecultura.com/'                    },
   { name: 'Canto del Gallo',       src: '/sponsors/canto-del-gallo.jpg',         href: 'https://ilcantodelgallowinebar.it/'                      },
-  { name: 'Pavie Macquin',         src: '/sponsors/pavie maquin.png',            href: 'https://www.pavie-macquin.com/'                         },
+  { name: 'Bertani',                src: '/wineries/bertani logo .png',           href: 'https://www.bertani.net/'                               },
   { name: 'Sandrone',              src: '/sponsors/sandrone.avif',                href: 'https://sandroneluciano.com/it/web/?lev1=99&age=over18' },
   { name: 'Beneperora',            src: '/sponsors/beneperora.webp',              href: 'https://beneperora.it/'                                 },
   { name: 'Alata Investment Club', src: '/sponsors/alata.png',                  href: 'https://www.alatainvestmentclub.com/'                   },
