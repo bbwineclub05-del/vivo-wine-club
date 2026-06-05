@@ -1,6 +1,7 @@
 'use client';
 
 import { memo, useEffect, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import { MapPin } from 'lucide-react';
@@ -52,6 +53,19 @@ function EventRow({
     >
       <div className="flex items-center gap-4 sm:gap-5 md:gap-8 py-5 md:py-7 group">
 
+        {/* Thumbnail */}
+        {event.image_url && (
+          <div className={`relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 shrink-0 overflow-hidden border ${faded ? 'border-[#e8d5d5]' : 'border-[#d4b0b0]/40'}`}>
+            <Image
+              src={event.image_url}
+              alt={event.title}
+              fill
+              className={`object-cover transition-transform duration-500 group-hover:scale-105 ${faded ? 'opacity-40' : ''}`}
+              sizes="(max-width:640px) 64px, (max-width:768px) 80px, 96px"
+            />
+          </div>
+        )}
+
         {/* Date column */}
         <div className="flex flex-col items-end w-10 sm:w-12 md:w-[72px] shrink-0">
           <span className={`text-[8px] tracking-[0.4em] mb-0.5 ${faded ? 'text-[#ccc]' : 'text-[#731515]'}`}>
@@ -95,8 +109,8 @@ function EventRow({
         </div>
       </div>
 
-      {/* Mobile badge */}
-      <div className="sm:hidden pb-5 pl-14">
+      {/* Mobile badge — indent accounts for optional thumbnail + date column */}
+      <div className={`sm:hidden pb-5 ${event.image_url ? 'pl-[calc(64px+1.5rem)]' : 'pl-14'}`}>
         <StatusBadge status={event.status} slug={event.slug} />
       </div>
 
@@ -145,7 +159,7 @@ export default function EventsSection() {
             EVENTS
           </h2>
           <p
-            className="mt-6 text-lg text-[#7a4a4a] font-light italic max-w-xl"
+            className="mt-6 text-lg text-[#7a4a4a] font-light italic"
             style={{ fontFamily: 'var(--font-nunito)' }}
           >
             Exclusive experiences reserved for our members, tastings, tours and unforgettable evenings

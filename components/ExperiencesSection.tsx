@@ -91,7 +91,7 @@ export default function ExperiencesSection() {
           transition={{ duration: reducedMotion ? 0 : 0.9, delay: reducedMotion ? 0 : 0.15, ease: [0.16, 1, 0.3, 1] }}
         >
           {/* Card frame */}
-          <div className="relative overflow-hidden h-[340px] sm:h-[420px] md:h-[520px] lg:h-[560px]">
+          <div className="relative overflow-hidden h-[340px] sm:h-[420px] md:h-[520px] lg:h-[560px] cursor-pointer">
             <AnimatePresence initial={false} custom={dir}>
               <motion.div
                 key={idx}
@@ -104,6 +104,9 @@ export default function ExperiencesSection() {
                 className="absolute inset-0"
                 style={{ willChange: 'transform' }}
               >
+                {/* Full-card link overlay — sits above image/gradient, below buttons */}
+                <Link href={exp.href} className="absolute inset-0 z-[1]" aria-label={`Discover ${exp.title}`} />
+
                 <Image
                   src={exp.image}
                   alt={exp.title}
@@ -115,7 +118,7 @@ export default function ExperiencesSection() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/5" />
 
-                <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-8 md:p-12 flex flex-col sm:flex-row sm:items-end justify-between gap-4 sm:gap-6">
+                <div className="absolute bottom-0 left-0 right-0 z-[2] p-5 sm:p-8 md:p-12 flex flex-col sm:flex-row sm:items-end justify-between gap-4 sm:gap-6">
                   <div>
                     <div className="text-[9px] tracking-[0.45em] text-white/60 mb-2 sm:mb-3">
                       {String(idx + 1).padStart(2, '0')} / {String(N).padStart(2, '0')}
@@ -134,13 +137,10 @@ export default function ExperiencesSection() {
                     </p>
                   </div>
 
-                  <Link
-                    href={exp.href}
-                    className="self-start sm:self-auto shrink-0 flex items-center gap-2 text-[10px] tracking-[0.3em] text-white border border-white/30 px-5 py-2.5 sm:px-6 sm:py-3 hover:bg-white/10 hover:border-white/60 transition-all duration-300 whitespace-nowrap group"
-                  >
+                  <div className="self-start sm:self-auto shrink-0 flex items-center gap-2 text-[10px] tracking-[0.3em] text-white border border-white/30 px-5 py-2.5 sm:px-6 sm:py-3 group-hover:bg-white/10 group-hover:border-white/60 transition-all duration-300 whitespace-nowrap">
                     DISCOVER
-                    <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform duration-300" />
-                  </Link>
+                    <ArrowRight size={12} />
+                  </div>
                 </div>
               </motion.div>
             </AnimatePresence>

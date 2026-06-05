@@ -9,13 +9,12 @@ import { useAuth } from '@/lib/auth';
 import { useCart } from '@/contexts/CartContext';
 
 const NAV_LINKS = [
-  { href: '/events',                    label: 'EVENTS',        page: true },
-  { href: '/experiences/wine-party',    label: 'PARTY',    page: true },
-  { href: '/experiences/winery-visits', label: 'VISITS',   page: true },
-  { href: '/experiences/wine-lounge',   label: 'LOUNGE',   page: true },
-  { href: '/wear-the-club', label: 'WEAR THE CLUB', page: true  },
-  { href: '/who-we-are',  label: 'WHO WE ARE',     page: true  },
-  { href: '/collaborate', label: 'COLLABORATE',    page: true  },
+  { href: '/experiences/wine-party',    label: 'PARTY',         page: true },
+  { href: '/experiences/winery-visits', label: 'VISITS',        page: true },
+  { href: '/experiences/wine-lounge',   label: 'LOUNGE',        page: true },
+  { href: '/wear-the-club',             label: 'WEAR THE CLUB', page: true },
+  { href: '/who-we-are',                label: 'WHO WE ARE',    page: true },
+  { href: '/collaborate',               label: 'COLLABORATE',   page: true },
 ];
 
 function scrollTo(href: string) {
@@ -105,7 +104,7 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop nav links */}
-          <div className="hidden lg:flex items-center gap-4 xl:gap-5">
+          <div className="hidden lg:flex items-center gap-6 xl:gap-8">
             {NAV_LINKS.map((link) =>
               link.page ? (
                 <Link
