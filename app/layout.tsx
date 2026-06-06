@@ -8,6 +8,11 @@ import CookieBanner from "@/components/CookieBanner";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import { NextIntlClientProvider } from 'next-intl';
 import { cookies } from 'next/headers';
+import messagesEn from '../messages/en.json';
+import messagesIt from '../messages/it.json';
+import messagesFr from '../messages/fr.json';
+
+const MESSAGES_MAP = { en: messagesEn, it: messagesIt, fr: messagesFr } as const;
 
 const syne = Syne({
   subsets: ["latin"],
@@ -69,8 +74,8 @@ export default async function RootLayout({
   const LOCALES = ['en', 'it', 'fr'] as const;
   const cookieStore = await cookies();
   const raw = cookieStore.get('locale')?.value ?? '';
-  const locale = (LOCALES as readonly string[]).includes(raw) ? raw : 'en';
-  const messages = (await import(`../messages/${locale}.json`)).default;
+  const locale = (LOCALES as readonly string[]).includes(raw) ? (raw as keyof typeof MESSAGES_MAP) : 'en';
+  const messages = MESSAGES_MAP[locale];
 
   return (
     <html
