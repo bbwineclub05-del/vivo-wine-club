@@ -21,9 +21,9 @@ interface QuoteForm {
 }
 
 const EVENT_TYPES = [
-  { value: 'Wine Party',         label: 'Wine Party'          },
-  { value: 'Wine Visits',        label: 'Wine Visits'         },
-  { value: 'Wine Lounge',        label: 'Wine Lounge'         },
+  { value: 'Wine Party',            label: 'Wine Party'            },
+  { value: 'Wine Visits',           label: 'Wine Visits'           },
+  { value: 'Wine Lounge',           label: 'Wine Lounge'           },
   { value: 'Evento Personalizzato', label: 'Evento Personalizzato' },
 ];
 
@@ -57,13 +57,23 @@ const INITIAL: QuoteForm = {
   paymentConditions: '', description: '', notes: '',
 };
 
-/* ─── Shared input styles ────────────────────────────────────────────── */
-const INPUT =
-  'w-full bg-[#1a0505]/30 border border-[#731515]/20 rounded-lg px-3 py-2 text-[13px] text-white placeholder-white/25 focus:outline-none focus:border-[#731515]/60 transition-colors duration-200';
-const LABEL =
-  'block text-[9.5px] tracking-[0.3em] text-[#c84040] mb-1.5 font-semibold';
+/* ─── Design tokens (matches FinanceManager / DocumentManager) ───────── */
 
-/* ─── Sub-components ─────────────────────────────────────────────────── */
+// White card with bordeaux-tinted shadow — same as other member area sections
+const CARD = 'bg-white border border-[#eddada] rounded-xl shadow-[0_1px_4px_rgba(107,26,26,0.06),0_6px_20px_rgba(107,26,26,0.04)]';
+
+// Cream input — same as FinanceManager inputCls
+const INPUT =
+  'w-full bg-[#fdf6f6] border border-[#eddada] text-[#1a0505] px-3 py-2 text-sm ' +
+  'placeholder:text-[#7a4a4a]/35 focus:outline-none focus:border-[#731515]/50 transition-colors rounded-lg';
+
+// Bordeaux uppercase label
+const LABEL = 'block text-[9px] tracking-[0.35em] text-[#731515] mb-1.5 font-semibold';
+
+// Card section title (slightly larger)
+const CARD_TITLE = 'text-[9px] tracking-[0.4em] text-[#731515] font-semibold mb-4';
+
+/* ─── Field wrapper ──────────────────────────────────────────────────── */
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -76,7 +86,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 /* ─── PDF Preview ────────────────────────────────────────────────────── */
 
-const DIV = <div className="h-px bg-[#d4d4d4] my-3" />;
 const SEC = ({ label }: { label: string }) => (
   <div className="text-[8px] tracking-[0.3em] text-[#5b1a14] font-bold mb-2">{label}</div>
 );
@@ -96,11 +105,9 @@ function QuotePreview({ form, quoteNumber, issueDate }: { form: QuoteForm; quote
           <div className="text-[9px] text-gray-400 mt-0.5">info@vivowineclub.com · vivowineclub.com</div>
         </div>
       </div>
-
-      {/* Bordeaux separator */}
       <div className="mx-8 h-[1.5px] bg-[#5b1a14]" />
 
-      {/* ── Title block ── */}
+      {/* ── Title ── */}
       <div className="px-8 pt-5 pb-4 text-center">
         <div className="text-[18px] font-bold text-[#5b1a14] tracking-widest">PROPOSTA EVENTO</div>
         <div className="text-[9px] text-gray-400 mt-1.5">
@@ -109,107 +116,85 @@ function QuotePreview({ form, quoteNumber, issueDate }: { form: QuoteForm; quote
       </div>
 
       <div className="px-8 space-y-0">
-        {/* ── Client ── */}
-        <div className="h-px bg-[#d4d4d4]" />
-        <div className="py-3">
-          <SEC label="DATI CLIENTE" />
-          <div className="text-[13px] font-bold text-[#1a1010]">
-            {form.clientName || <span className="font-normal italic text-gray-300">Nome cliente</span>}
-          </div>
-          <div className="text-[10px] text-gray-400 mt-0.5">
-            {form.clientEmail || <span className="italic text-gray-300">email@cliente.com</span>}
-          </div>
-        </div>
-
-        {/* ── Event details ── */}
-        <div className="h-px bg-[#d4d4d4]" />
-        <div className="py-3">
-          <SEC label="DETTAGLI EVENTO" />
-          <div className="grid grid-cols-4 gap-3">
-            {[
-              { l: 'TIPO EVENTO',   v: form.eventType  },
-              { l: 'DATA',          v: form.eventDate  },
-              { l: 'LUOGO',         v: form.venue      },
-              { l: 'PARTECIPANTI',  v: form.attendees  },
-            ].map(({ l, v }) => (
-              <div key={l}>
-                <div className="text-[7px] tracking-[0.25em] text-[#5b1a14] font-bold mb-1">{l}</div>
-                <div className="text-[10px] font-medium text-[#1a1010]">
-                  {v || <span className="text-gray-300 font-normal">—</span>}
+        {[
+          { show: true, label: 'DATI CLIENTE', content: (
+            <>
+              <div className="text-[13px] font-bold text-[#1a1010]">
+                {form.clientName || <span className="font-normal italic text-gray-300">Nome cliente</span>}
+              </div>
+              <div className="text-[10px] text-gray-400 mt-0.5">
+                {form.clientEmail || <span className="italic text-gray-300">email@cliente.com</span>}
+              </div>
+            </>
+          )},
+          { show: true, label: 'DETTAGLI EVENTO', content: (
+            <div className="grid grid-cols-4 gap-3">
+              {[
+                { l: 'TIPO EVENTO',  v: form.eventType  },
+                { l: 'DATA',         v: form.eventDate  },
+                { l: 'LUOGO',        v: form.venue      },
+                { l: 'PARTECIPANTI', v: form.attendees  },
+              ].map(({ l, v }) => (
+                <div key={l}>
+                  <div className="text-[7px] tracking-[0.25em] text-[#5b1a14] font-bold mb-1">{l}</div>
+                  <div className="text-[10px] font-medium text-[#1a1010]">
+                    {v || <span className="text-gray-300 font-normal">—</span>}
+                  </div>
                 </div>
+              ))}
+            </div>
+          )},
+          { show: true, label: 'DESCRIZIONE EVENTO', content: (
+            form.description
+              ? <p className="text-[10px] text-gray-500 italic leading-relaxed whitespace-pre-wrap">{form.description}</p>
+              : <p className="text-[10px] text-gray-300 italic">La descrizione apparirà qui...</p>
+          )},
+          { show: form.services.length > 0, label: 'SERVIZI INCLUSI', content: (
+            <div className="grid grid-cols-2 gap-x-6 gap-y-1">
+              {form.services.map(s => (
+                <div key={s} className="text-[10px] text-[#1a1010]">• {s}</div>
+              ))}
+            </div>
+          )},
+          { show: true, label: 'PRICING', content: (
+            <>
+              <div className="text-[8px] text-gray-400 font-semibold">TOTALE</div>
+              <div className="text-[22px] font-bold text-[#5b1a14] leading-tight mt-0.5">
+                € {form.totalPrice || '—'}
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* ── Description ── */}
-        <div className="h-px bg-[#d4d4d4]" />
-        <div className="py-3">
-          <SEC label="DESCRIZIONE EVENTO" />
-          {form.description
-            ? <p className="text-[10px] text-gray-500 italic leading-relaxed whitespace-pre-wrap">{form.description}</p>
-            : <p className="text-[10px] text-gray-300 italic">La descrizione apparirà qui dopo la generazione AI...</p>
-          }
-        </div>
-
-        {/* ── Services ── */}
-        {form.services.length > 0 && (
-          <>
+              {form.paymentConditions && (
+                <div className="mt-2">
+                  <div className="text-[7px] tracking-[0.25em] text-[#5b1a14] font-bold mb-1">CONDIZIONI DI PAGAMENTO</div>
+                  <p className="text-[10px] text-gray-500 leading-relaxed">{form.paymentConditions}</p>
+                </div>
+              )}
+            </>
+          )},
+          { show: !!form.notes, label: 'NOTE', content: (
+            <p className="text-[10px] text-gray-500 leading-relaxed whitespace-pre-wrap">{form.notes}</p>
+          )},
+          { show: true, label: 'FIRME', content: (
+            <div className="grid grid-cols-4 gap-3 mt-4">
+              {FOUNDERS.map(name => (
+                <div key={name}>
+                  <div className="h-px bg-[#d4d4d4] mb-1.5" />
+                  <div className="text-[8px] text-gray-400">{name}</div>
+                </div>
+              ))}
+            </div>
+          )},
+        ].filter(s => s.show).map((section, idx, arr) => (
+          <div key={section.label}>
             <div className="h-px bg-[#d4d4d4]" />
             <div className="py-3">
-              <SEC label="SERVIZI INCLUSI" />
-              <div className="grid grid-cols-2 gap-x-6 gap-y-1">
-                {form.services.map(s => (
-                  <div key={s} className="text-[10px] text-[#1a1010]">•&nbsp; {s}</div>
-                ))}
-              </div>
+              <SEC label={section.label} />
+              {section.content}
             </div>
-          </>
-        )}
-
-        {/* ── Pricing ── */}
-        <div className="h-px bg-[#d4d4d4]" />
-        <div className="py-3">
-          <SEC label="PRICING" />
-          <div className="text-[8px] text-gray-400 font-semibold">TOTALE</div>
-          <div className="text-[22px] font-bold text-[#5b1a14] leading-tight mt-0.5">
-            € {form.totalPrice || '—'}
+            {idx === arr.length - 1 && <div className="h-px bg-[#d4d4d4]" />}
           </div>
-          {form.paymentConditions && (
-            <div className="mt-2">
-              <div className="text-[7px] tracking-[0.25em] text-[#5b1a14] font-bold mb-1">CONDIZIONI DI PAGAMENTO</div>
-              <p className="text-[10px] text-gray-500 leading-relaxed">{form.paymentConditions}</p>
-            </div>
-          )}
-        </div>
-
-        {/* ── Notes ── */}
-        {form.notes && (
-          <>
-            <div className="h-px bg-[#d4d4d4]" />
-            <div className="py-3">
-              <SEC label="NOTE" />
-              <p className="text-[10px] text-gray-500 leading-relaxed whitespace-pre-wrap">{form.notes}</p>
-            </div>
-          </>
-        )}
-
-        {/* ── Signatures ── */}
-        <div className="h-px bg-[#d4d4d4]" />
-        <div className="py-3">
-          <SEC label="FIRME" />
-          <div className="grid grid-cols-4 gap-3 mt-4">
-            {FOUNDERS.map(name => (
-              <div key={name}>
-                <div className="h-px bg-[#d4d4d4] mb-1.5" />
-                <div className="text-[8px] text-gray-400">{name}</div>
-              </div>
-            ))}
-          </div>
-        </div>
+        ))}
       </div>
 
-      {/* ── Footer ── */}
       <div className="bg-[#5b1a14] py-2.5 text-center text-[9px] text-[#ebb5b5]">
         vivowineclub.com &nbsp;·&nbsp; info@vivowineclub.com &nbsp;·&nbsp; Vivo Wine Club
       </div>
@@ -220,65 +205,48 @@ function QuotePreview({ form, quoteNumber, issueDate }: { form: QuoteForm; quote
 /* ─── Send Modal ─────────────────────────────────────────────────────── */
 
 function SendModal({
-  defaultEmail,
-  quoteNumber,
-  onClose,
-  onSend,
-  sending,
+  defaultEmail, quoteNumber, onClose, onSend, sending,
 }: {
-  defaultEmail: string;
-  quoteNumber: string;
-  onClose: () => void;
-  onSend: (to: string, subject: string) => void;
-  sending: boolean;
+  defaultEmail: string; quoteNumber: string;
+  onClose: () => void; onSend: (to: string, subject: string) => void; sending: boolean;
 }) {
   const [to,      setTo]      = useState(defaultEmail);
   const [subject, setSubject] = useState(`Proposta Evento — Vivo Wine Club (N° ${quoteNumber})`);
 
   return (
-    <div className="fixed inset-0 z-[500] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-[500] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={onClose}
+    >
       <div
-        className="bg-[#1c0606] border border-[#731515]/30 rounded-2xl p-6 w-full max-w-md shadow-2xl"
+        className="bg-white border border-[#eddada] rounded-2xl p-6 w-full max-w-md shadow-2xl"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-5">
           <div>
-            <div className="text-[9px] tracking-[0.35em] text-[#c84040] mb-1">INVIO PREVENTIVO</div>
-            <h3 className="text-white font-semibold text-base" style={{ fontFamily: 'var(--font-syne)' }}>
+            <div className="text-[9px] tracking-[0.4em] text-[#731515] mb-1">INVIO PREVENTIVO</div>
+            <h3 className="text-[#1a0505] font-semibold text-base" style={{ fontFamily: 'var(--font-syne)' }}>
               Invia via Mail
             </h3>
           </div>
-          <button onClick={onClose} className="text-white/30 hover:text-white/70 transition-colors">
+          <button onClick={onClose} className="text-[#7a4a4a]/40 hover:text-[#731515] transition-colors">
             <X size={18} />
           </button>
         </div>
 
         <div className="flex flex-col gap-4">
-          <div>
-            <label className={LABEL}>DESTINATARIO</label>
-            <input
-              type="email"
-              value={to}
-              onChange={e => setTo(e.target.value)}
-              className={INPUT}
-              placeholder="email@cliente.com"
-            />
-          </div>
-          <div>
-            <label className={LABEL}>OGGETTO</label>
-            <input
-              type="text"
-              value={subject}
-              onChange={e => setSubject(e.target.value)}
-              className={INPUT}
-            />
-          </div>
+          <Field label="DESTINATARIO">
+            <input type="email" value={to} onChange={e => setTo(e.target.value)} className={INPUT} placeholder="email@cliente.com" />
+          </Field>
+          <Field label="OGGETTO">
+            <input type="text" value={subject} onChange={e => setSubject(e.target.value)} className={INPUT} />
+          </Field>
         </div>
 
         <div className="flex gap-3 mt-6">
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 border border-[#731515]/30 text-white/60 text-[10px] tracking-[0.3em] rounded-lg hover:border-[#731515]/60 transition-colors"
+            className="flex-1 py-2.5 border border-[#eddada] text-[#7a4a4a] text-[10px] tracking-[0.3em] rounded-lg hover:border-[#731515]/30 hover:text-[#731515] transition-colors"
           >
             ANNULLA
           </button>
@@ -307,25 +275,29 @@ export default function QuoteGenerator() {
     });
   }, []);
 
-  const [form,        setForm]        = useState<QuoteForm>(INITIAL);
+  const [form]        = useState<QuoteForm>(INITIAL);
+  const [formState,   setFormState]   = useState<QuoteForm>(INITIAL);
   const [quoteNumber] = useState(() => generateQuoteNumber());
   const issueDate = todayFormatted();
 
-  const [aiLoading,    setAiLoading]    = useState(false);
-  const [aiError,      setAiError]      = useState('');
-  const [pdfLoading,   setPdfLoading]   = useState(false);
-  const [sendModal,    setSendModal]    = useState(false);
-  const [sending,      setSending]      = useState(false);
-  const [sendResult,   setSendResult]   = useState<'ok' | 'err' | null>(null);
-  const [activeTab,    setActiveTab]    = useState<'form' | 'preview'>('form');
+  const [aiLoading,  setAiLoading]  = useState(false);
+  const [aiError,    setAiError]    = useState('');
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [sendModal,  setSendModal]  = useState(false);
+  const [sending,    setSending]    = useState(false);
+  const [sendResult, setSendResult] = useState<'ok' | 'err' | null>(null);
+  const [activeTab,  setActiveTab]  = useState<'form' | 'preview'>('form');
+
+  // Use formState as the working copy
+  const currentForm = formState;
 
   function set<K extends keyof QuoteForm>(field: K) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
-      setForm(prev => ({ ...prev, [field]: e.target.value }));
+      setFormState(prev => ({ ...prev, [field]: e.target.value }));
   }
 
   function toggleService(svc: string) {
-    setForm(prev => ({
+    setFormState(prev => ({
       ...prev,
       services: prev.services.includes(svc)
         ? prev.services.filter(s => s !== svc)
@@ -341,17 +313,17 @@ export default function QuoteGenerator() {
         method:  'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body:    JSON.stringify({
-          clientName: form.clientName,
-          eventType:  form.eventType,
-          eventDate:  form.eventDate,
-          venue:      form.venue,
-          attendees:  form.attendees,
-          services:   form.services,
+          clientName: currentForm.clientName,
+          eventType:  currentForm.eventType,
+          eventDate:  currentForm.eventDate,
+          venue:      currentForm.venue,
+          attendees:  currentForm.attendees,
+          services:   currentForm.services,
         }),
       });
       const data = await res.json();
       if (!res.ok || !data.description) throw new Error(data.error || 'Errore generazione');
-      setForm(prev => ({ ...prev, description: data.description }));
+      setFormState(prev => ({ ...prev, description: data.description }));
     } catch (err) {
       setAiError((err as Error).message || 'Errore generazione AI');
     } finally {
@@ -365,7 +337,7 @@ export default function QuoteGenerator() {
       const res = await fetch('/api/quotes/pdf', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body:    JSON.stringify({ ...form, quoteNumber, issueDate }),
+        body:    JSON.stringify({ ...currentForm, quoteNumber, issueDate }),
       });
       if (!res.ok) throw new Error('PDF generation failed');
       const blob = await res.blob();
@@ -389,41 +361,42 @@ export default function QuoteGenerator() {
       const res = await fetch('/api/quotes/send', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body:    JSON.stringify({ to, subject, quoteData: { ...form, quoteNumber, issueDate } }),
+        body:    JSON.stringify({ to, subject, quoteData: { ...currentForm, quoteNumber, issueDate } }),
       });
       setSendResult(res.ok ? 'ok' : 'err');
     } catch {
       setSendResult('err');
     } finally {
       setSending(false);
-      if (!sending) setSendModal(false);
+      setSendModal(false);
     }
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header + action buttons */}
+    <div className="space-y-5">
+
+      {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <div className="text-[9px] tracking-[0.4em] text-[#c84040] mb-1">PREVENTIVI</div>
+          <div className="text-[9px] tracking-[0.4em] text-[#731515] mb-1">PREVENTIVI</div>
           <h2 className="text-xl text-white font-light" style={{ fontFamily: 'var(--font-syne)' }}>
             Genera Preventivo
           </h2>
-          <p className="text-white/40 text-[12px] mt-0.5">N° {quoteNumber} · {issueDate}</p>
+          <p className="text-white/40 text-[11px] mt-0.5">N° {quoteNumber} · {issueDate}</p>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={downloadPdf}
             disabled={pdfLoading}
-            className="flex items-center gap-1.5 px-4 py-2 bg-[#731515] text-white text-[10px] tracking-[0.25em] rounded-lg hover:bg-[#9b2323] disabled:opacity-50 transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 bg-[#731515] text-white text-[10px] tracking-[0.25em] rounded-lg hover:bg-[#9b2323] disabled:opacity-50 transition-colors duration-200"
           >
             {pdfLoading ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
             SCARICA PDF
           </button>
           <button
             onClick={() => { setSendResult(null); setSendModal(true); }}
-            className="flex items-center gap-1.5 px-4 py-2 border border-[#731515]/40 text-white/70 text-[10px] tracking-[0.25em] rounded-lg hover:bg-[#731515]/20 hover:text-white transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 bg-[#731515] text-white text-[10px] tracking-[0.25em] rounded-lg hover:bg-[#9b2323] transition-colors duration-200"
           >
             <Mail size={12} />
             INVIA VIA MAIL
@@ -431,20 +404,20 @@ export default function QuoteGenerator() {
         </div>
       </div>
 
-      {/* Send result toast */}
+      {/* ── Toasts ── */}
       {sendResult === 'ok' && (
-        <div className="flex items-center gap-2 text-[12px] text-green-400 bg-green-400/10 border border-green-400/20 rounded-lg px-4 py-2.5">
-          <CheckCircle2 size={14} /> Email inviata con successo.
+        <div className="flex items-center gap-2 text-[12px] text-[#2d6a2d] bg-green-50 border border-green-200 rounded-lg px-4 py-2.5">
+          <CheckCircle2 size={14} className="text-green-500 shrink-0" /> Email inviata con successo.
         </div>
       )}
       {sendResult === 'err' && (
-        <div className="flex items-center gap-2 text-[12px] text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg px-4 py-2.5">
-          <AlertCircle size={14} /> Errore nell'invio. Controlla la connessione e riprova.
+        <div className="flex items-center gap-2 text-[12px] text-[#731515] bg-red-50 border border-[#eddada] rounded-lg px-4 py-2.5">
+          <AlertCircle size={14} className="text-[#731515] shrink-0" /> Errore nell'invio. Controlla la connessione e riprova.
         </div>
       )}
 
-      {/* Tab switcher */}
-      <div className="flex gap-1 bg-[#1a0505]/40 p-1 rounded-lg w-fit">
+      {/* ── Tab switcher ── */}
+      <div className="flex gap-1 bg-white/10 p-1 rounded-lg w-fit border border-white/10">
         {(['form', 'preview'] as const).map(tab => (
           <button
             key={tab}
@@ -452,7 +425,7 @@ export default function QuoteGenerator() {
             className={`px-4 py-1.5 rounded-md text-[10px] tracking-[0.3em] transition-colors duration-150 ${
               activeTab === tab
                 ? 'bg-[#731515] text-white'
-                : 'text-white/40 hover:text-white/70'
+                : 'text-white/50 hover:text-white/80'
             }`}
           >
             {tab === 'form' ? 'FORM' : 'ANTEPRIMA PDF'}
@@ -462,118 +435,183 @@ export default function QuoteGenerator() {
 
       {/* ── FORM TAB ── */}
       {activeTab === 'form' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
-          {/* Left column */}
+          {/* ── Left column ── */}
           <div className="space-y-4">
-            <div className="bg-[#1a0505]/30 rounded-xl p-5 border border-[#731515]/15 space-y-4">
-              <div className="text-[9px] tracking-[0.4em] text-[#c84040]">DATI CLIENTE</div>
+
+            {/* Dati Cliente */}
+            <div className={`${CARD} p-5 space-y-4`}>
+              <div className={CARD_TITLE}>DATI CLIENTE</div>
               <Field label="NOME CLIENTE / AZIENDA">
-                <input type="text" value={form.clientName} onChange={set('clientName')} className={INPUT} placeholder="Es. Mario Rossi / Azienda SRL" />
+                <input
+                  type="text"
+                  value={currentForm.clientName}
+                  onChange={set('clientName')}
+                  className={INPUT}
+                  placeholder="Es. Mario Rossi / Azienda SRL"
+                />
               </Field>
               <Field label="EMAIL CLIENTE">
-                <input type="email" value={form.clientEmail} onChange={set('clientEmail')} className={INPUT} placeholder="cliente@email.com" />
+                <input
+                  type="email"
+                  value={currentForm.clientEmail}
+                  onChange={set('clientEmail')}
+                  className={INPUT}
+                  placeholder="cliente@email.com"
+                />
               </Field>
             </div>
 
-            <div className="bg-[#1a0505]/30 rounded-xl p-5 border border-[#731515]/15 space-y-4">
-              <div className="text-[9px] tracking-[0.4em] text-[#c84040]">DETTAGLI EVENTO</div>
+            {/* Dettagli Evento */}
+            <div className={`${CARD} p-5 space-y-4`}>
+              <div className={CARD_TITLE}>DETTAGLI EVENTO</div>
               <Field label="TIPO EVENTO">
-                <select value={form.eventType} onChange={set('eventType')} className={INPUT}>
+                <select value={currentForm.eventType} onChange={set('eventType')} className={INPUT}>
                   <option value="">Seleziona tipo...</option>
-                  {EVENT_TYPES.map(et => <option key={et.value} value={et.value}>{et.label}</option>)}
+                  {EVENT_TYPES.map(et => (
+                    <option key={et.value} value={et.value}>{et.label}</option>
+                  ))}
                 </select>
               </Field>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="DATA EVENTO">
-                  <input type="date" value={form.eventDate} onChange={set('eventDate')} className={`${INPUT} [color-scheme:dark]`} />
+                  <input
+                    type="date"
+                    value={currentForm.eventDate}
+                    onChange={set('eventDate')}
+                    className={`${INPUT} [color-scheme:light]`}
+                  />
                 </Field>
                 <Field label="N° PARTECIPANTI">
-                  <input type="number" min="1" value={form.attendees} onChange={set('attendees')} className={INPUT} placeholder="50" />
+                  <input
+                    type="number"
+                    min="1"
+                    value={currentForm.attendees}
+                    onChange={set('attendees')}
+                    className={INPUT}
+                    placeholder="50"
+                  />
                 </Field>
               </div>
               <Field label="LUOGO">
-                <input type="text" value={form.venue} onChange={set('venue')} className={INPUT} placeholder="Es. Milano, Palazzo Reale" />
+                <input
+                  type="text"
+                  value={currentForm.venue}
+                  onChange={set('venue')}
+                  className={INPUT}
+                  placeholder="Es. Milano, Palazzo Reale"
+                />
               </Field>
             </div>
 
-            <div className="bg-[#1a0505]/30 rounded-xl p-5 border border-[#731515]/15">
-              <div className="text-[9px] tracking-[0.4em] text-[#c84040] mb-3">SERVIZI INCLUSI</div>
-              <div className="grid grid-cols-2 gap-2">
-                {SERVICE_OPTIONS.map(svc => (
-                  <label key={svc} className="flex items-center gap-2 cursor-pointer group">
-                    <div
+            {/* Servizi */}
+            <div className={`${CARD} p-5`}>
+              <div className={CARD_TITLE}>SERVIZI INCLUSI</div>
+              <div className="grid grid-cols-2 gap-y-3 gap-x-4">
+                {SERVICE_OPTIONS.map(svc => {
+                  const checked = currentForm.services.includes(svc);
+                  return (
+                    <button
+                      key={svc}
+                      type="button"
                       onClick={() => toggleService(svc)}
-                      className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center transition-colors cursor-pointer ${
-                        form.services.includes(svc)
+                      className="flex items-center gap-2.5 text-left group"
+                    >
+                      {/* Custom checkbox */}
+                      <div className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center transition-all duration-150 ${
+                        checked
                           ? 'bg-[#731515] border-[#731515]'
-                          : 'border-[#731515]/30 group-hover:border-[#731515]/60'
-                      }`}
-                    >
-                      {form.services.includes(svc) && (
-                        <svg width="8" height="8" viewBox="0 0 12 12" fill="none">
-                          <path d="M2 6l3 3 5-5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      )}
-                    </div>
-                    <span
-                      onClick={() => toggleService(svc)}
-                      className={`text-[12px] transition-colors cursor-pointer ${form.services.includes(svc) ? 'text-white' : 'text-white/50 group-hover:text-white/70'}`}
-                    >
-                      {svc}
-                    </span>
-                  </label>
-                ))}
+                          : 'bg-white border-[#eddada] group-hover:border-[#731515]/40'
+                      }`}>
+                        {checked && (
+                          <svg width="8" height="6" viewBox="0 0 10 8" fill="none">
+                            <path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        )}
+                      </div>
+                      <span className={`text-[12.5px] transition-colors duration-150 ${
+                        checked ? 'text-[#1a0505] font-medium' : 'text-[#7a4a4a] group-hover:text-[#1a0505]'
+                      }`}>
+                        {svc}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
+
           </div>
 
-          {/* Right column */}
+          {/* ── Right column ── */}
           <div className="space-y-4">
-            {/* AI Description */}
-            <div className="bg-[#1a0505]/30 rounded-xl p-5 border border-[#731515]/15 space-y-3">
+
+            {/* Descrizione AI */}
+            <div className={`${CARD} p-5 space-y-3`}>
               <div className="flex items-center justify-between">
-                <div className="text-[9px] tracking-[0.4em] text-[#c84040]">DESCRIZIONE EVENTO</div>
+                <div className={CARD_TITLE} style={{ marginBottom: 0 }}>DESCRIZIONE EVENTO</div>
                 <button
                   onClick={generateDescription}
                   disabled={aiLoading}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#731515]/80 hover:bg-[#731515] text-white text-[9px] tracking-[0.25em] rounded-md transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#731515] text-white text-[9px] tracking-[0.2em] rounded-lg hover:bg-[#9b2323] transition-colors disabled:opacity-50"
                 >
                   {aiLoading ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}
                   {aiLoading ? 'GENERAZIONE...' : 'GENERA CON AI'}
                 </button>
               </div>
+
               {aiError && (
-                <div className="text-[10px] text-red-400 bg-red-400/10 rounded px-2 py-1">{aiError}</div>
+                <div className="flex items-start gap-2 text-[11px] text-[#731515] bg-red-50 border border-[#eddada] rounded-lg px-3 py-2">
+                  <AlertCircle size={12} className="shrink-0 mt-0.5" />
+                  {aiError}
+                </div>
               )}
+
               <textarea
                 rows={10}
-                value={form.description}
+                value={currentForm.description}
                 onChange={set('description')}
                 placeholder="Clicca 'Genera con AI' per creare automaticamente una descrizione professionale, oppure scrivi qui la tua..."
-                className={`${INPUT} resize-none`}
+                className={`${INPUT} resize-none leading-relaxed`}
               />
             </div>
 
             {/* Pricing */}
-            <div className="bg-[#1a0505]/30 rounded-xl p-5 border border-[#731515]/15 space-y-4">
-              <div className="text-[9px] tracking-[0.4em] text-[#c84040]">PRICING</div>
+            <div className={`${CARD} p-5 space-y-4`}>
+              <div className={CARD_TITLE}>PRICING</div>
               <Field label="PREZZO TOTALE (€)">
-                <input type="text" value={form.totalPrice} onChange={set('totalPrice')} className={INPUT} placeholder="Es. 2.500,00" />
+                <input
+                  type="text"
+                  value={currentForm.totalPrice}
+                  onChange={set('totalPrice')}
+                  className={INPUT}
+                  placeholder="Es. 2.500,00"
+                />
               </Field>
               <Field label="CONDIZIONI DI PAGAMENTO">
-                <textarea rows={3} value={form.paymentConditions} onChange={set('paymentConditions')} className={`${INPUT} resize-none`}
-                  placeholder="Es. 50% all'accettazione, 50% il giorno dell'evento." />
+                <textarea
+                  rows={3}
+                  value={currentForm.paymentConditions}
+                  onChange={set('paymentConditions')}
+                  className={`${INPUT} resize-none`}
+                  placeholder="Es. 50% all'accettazione, 50% il giorno dell'evento."
+                />
               </Field>
             </div>
 
-            {/* Notes */}
-            <div className="bg-[#1a0505]/30 rounded-xl p-5 border border-[#731515]/15">
+            {/* Note */}
+            <div className={`${CARD} p-5`}>
               <Field label="NOTE AGGIUNTIVE">
-                <textarea rows={4} value={form.notes} onChange={set('notes')} className={`${INPUT} resize-none`}
-                  placeholder="Informazioni aggiuntive, clausole speciali, note per il cliente..." />
+                <textarea
+                  rows={4}
+                  value={currentForm.notes}
+                  onChange={set('notes')}
+                  className={`${INPUT} resize-none`}
+                  placeholder="Informazioni aggiuntive, clausole speciali, note per il cliente..."
+                />
               </Field>
             </div>
+
           </div>
         </div>
       )}
@@ -581,14 +619,14 @@ export default function QuoteGenerator() {
       {/* ── PREVIEW TAB ── */}
       {activeTab === 'preview' && (
         <div className="max-w-2xl">
-          <QuotePreview form={form} quoteNumber={quoteNumber} issueDate={issueDate} />
+          <QuotePreview form={currentForm} quoteNumber={quoteNumber} issueDate={issueDate} />
         </div>
       )}
 
-      {/* Send modal */}
+      {/* ── Send modal ── */}
       {sendModal && (
         <SendModal
-          defaultEmail={form.clientEmail}
+          defaultEmail={currentForm.clientEmail}
           quoteNumber={quoteNumber}
           onClose={() => setSendModal(false)}
           onSend={handleSend}
