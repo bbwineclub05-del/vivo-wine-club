@@ -1,9 +1,45 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Prevent Next.js from bundling these Node.js-only packages —
-  // they must run as-is in the Node.js runtime (API routes).
-  serverExternalPackages: ['pdf-lib', 'qrcode', 'sharp'],
+  // Packages that must run as external Node.js modules (not bundled).
+  // Keeps each serverless function lean.
+  serverExternalPackages: [
+    'pdf-lib',
+    'qrcode',
+    'sharp',
+    '@google-analytics/data',   // pulls in @grpc — keep isolated to analytics route
+    'google-gax',
+    '@grpc/grpc-js',
+    '@grpc/proto-loader',
+  ],
+
+  // Strip files from the output file trace that Vercel would otherwise
+  // bundle into every serverless function.
+  outputFileTracingExcludes: {
+    // Applied to ALL routes
+    '*': [
+      // macOS-specific native binaries — Vercel runs on Linux, these are dead weight
+      'node_modules/@img/sharp-darwin-x64/**',
+      'node_modules/@img/sharp-libvips-darwin-x64/**',
+      'node_modules/lightningcss-darwin-x64/**',
+      // Windows-specific binaries
+      'node_modules/@img/sharp-win32-x64/**',
+      'node_modules/lightningcss-win32-x64-msvc/**',
+      // Dev / build tools — never needed at runtime
+      'node_modules/typescript/**',
+      'node_modules/@swc/**',
+      'node_modules/@typescript-eslint/**',
+      'node_modules/eslint/**',
+      'node_modules/eslint-plugin-react-hooks/**',
+      'node_modules/eslint-plugin-react/**',
+      'node_modules/eslint-config-next/**',
+      // Source maps from dependencies (no runtime value)
+      'node_modules/**/*.map',
+      // Test infra
+      'node_modules/jest*/**',
+      'node_modules/@jest/**',
+    ],
+  },
 
   // Enable gzip + brotli compression for all responses
   compress: true,
