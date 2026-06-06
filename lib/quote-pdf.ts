@@ -86,24 +86,21 @@ export async function generateQuotePdf(data: QuoteData): Promise<Uint8Array> {
   // ── HEADER ───────────────────────────────────────────────────────────
   const HEADER_TOP = H - 30;
 
-  // Logo — try main-logo.png (dark, for white bg); fallback logobianco
-  let logoDrawn = false;
-  for (const filename of ['main-logo.png', 'logobianco.png']) {
-    try {
-      const bytes = readFileSync(join(process.cwd(), 'public', filename));
-      const img   = await pdfDoc.embedPng(bytes);
-      const dims  = img.scaleToFit(120, 38);
-      page.drawImage(img, {
-        x: ML,
-        y: HEADER_TOP - dims.height,
-        width:  dims.width,
-        height: dims.height,
-      });
-      logoDrawn = true;
-      break;
-    } catch { /* try next */ }
-  }
-  if (!logoDrawn) {
+  // Logo — single static path so the file tracer picks up exactly this file.
+  // (A dynamic loop would cause the tracer to include the entire public/ dir.)
+  try {
+    const logoBytes = readFileSync(join(process.cwd(), 'public', 'logobianco.png'));
+    const logoImg   = await pdfDoc.embedPng(logoBytes);
+    const logoDims  = logoImg.scaleToFit(120, 38);
+    // Draw on white: tint with a bordeaux-ish overlay using opacity isn't available
+    // in pdf-lib, so we draw it as-is — logobianco on white reads well at small size.
+    page.drawImage(logoImg, {
+      x: ML,
+      y: HEADER_TOP - logoDims.height,
+      width:  logoDims.width,
+      height: logoDims.height,
+    });
+  } catch {
     page.drawText('VIVO WINE CLUB', { x: ML, y: HEADER_TOP - 18, size: 14, font: bold, color: BORDEAUX });
   }
 

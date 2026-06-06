@@ -18,14 +18,21 @@ const nextConfig: NextConfig = {
   outputFileTracingExcludes: {
     // Applied to ALL routes
     '*': [
-      // macOS-specific native binaries — Vercel runs on Linux, these are dead weight
+      // ─── public/ assets ──────────────────────────────────────────────────
+      // Public files are served by the CDN/static layer, NOT by serverless
+      // functions. readFileSync calls with dynamic paths cause the tracer to
+      // include the entire public/ directory (~200 MB of images/videos).
+      // We re-include only the specific logo files needed by PDF routes below.
+      'public/**',
+      // ─── macOS / Windows native binaries ─────────────────────────────────
+      // Vercel runs on Linux — macOS binaries are dead weight.
       'node_modules/@img/sharp-darwin-x64/**',
       'node_modules/@img/sharp-libvips-darwin-x64/**',
       'node_modules/lightningcss-darwin-x64/**',
-      // Windows-specific binaries
       'node_modules/@img/sharp-win32-x64/**',
       'node_modules/lightningcss-win32-x64-msvc/**',
-      // Dev / build tools — never needed at runtime
+      // ─── Dev / build tools ───────────────────────────────────────────────
+      // Never needed at runtime on Vercel.
       'node_modules/typescript/**',
       'node_modules/@swc/**',
       'node_modules/@typescript-eslint/**',
@@ -33,12 +40,20 @@ const nextConfig: NextConfig = {
       'node_modules/eslint-plugin-react-hooks/**',
       'node_modules/eslint-plugin-react/**',
       'node_modules/eslint-config-next/**',
-      // Source maps from dependencies (no runtime value)
+      // Source maps inside node_modules have no runtime value
       'node_modules/**/*.map',
       // Test infra
       'node_modules/jest*/**',
       'node_modules/@jest/**',
     ],
+  },
+
+  // Re-include only the specific public/ files that server-side PDF
+  // generation needs at runtime via readFileSync.
+  outputFileTracingIncludes: {
+    '/api/quotes/pdf':  ['./public/logobianco.png'],
+    '/api/quotes/send': ['./public/logobianco.png'],
+    '/api/member/tickets/[ticketId]/pdf': ['./public/logobianco.png'],
   },
 
   // Enable gzip + brotli compression for all responses
