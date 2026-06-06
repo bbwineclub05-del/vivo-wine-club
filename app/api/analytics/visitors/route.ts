@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { BetaAnalyticsDataClient } from '@google-analytics/data';
-import { requireAdmin } from '@/lib/auth-guard';
+import { requireAdminOrStaff } from '@/lib/auth-guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,7 +35,7 @@ async function fetchTotal(
 }
 
 export async function GET(request: Request) {
-  const auth = await requireAdmin(request);
+  const auth = await requireAdminOrStaff(request);
   if (!auth.ok) return auth.response;
 
   try {
