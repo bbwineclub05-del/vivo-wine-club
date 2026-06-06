@@ -1,51 +1,18 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { MapPin } from 'lucide-react';
-import BackButton from '@/components/BackButton';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import EventsHero from '@/components/EventsHero';
+import EventStatusBadge from '@/components/EventStatusBadge';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import {
   dbEventToEventData,
   type EventData,
-  type EventStatus,
   type DbEvent,
 } from '@/lib/events';
 
 export const dynamic = 'force-dynamic';
-
-/* ── Status badge ── */
-function StatusBadge({ status, slug }: { status: EventStatus; slug: string }) {
-  if (status === 'open') {
-    return (
-      <Link
-        href={`/checkout/${slug}`}
-        className="inline-flex items-center text-[9px] tracking-[0.28em] px-5 py-3 min-h-[44px] bg-[#731515] text-white hover:bg-[#aa4848] transition-colors duration-300 whitespace-nowrap"
-      >
-        BUY TICKETS
-      </Link>
-    );
-  }
-  if (status === 'soldout') {
-    return (
-      <span className="inline-block text-[9px] tracking-[0.28em] px-5 py-2.5 bg-[#3a3a3a] text-white whitespace-nowrap">
-        SOLD OUT
-      </span>
-    );
-  }
-  if (status === 'soon') {
-    return (
-      <span className="inline-block text-[9px] tracking-[0.28em] px-5 py-2.5 border border-[#ccc] text-[#aaa] whitespace-nowrap">
-        COMING SOON
-      </span>
-    );
-  }
-  return (
-    <span className="inline-block text-[9px] tracking-[0.28em] px-5 py-2.5 border border-[#ddd] text-[#bbb] whitespace-nowrap">
-      COMPLETED
-    </span>
-  );
-}
 
 /* ── Event row ── */
 function EventRow({ event, isLast }: { event: EventData; isLast: boolean }) {
@@ -115,13 +82,13 @@ function EventRow({ event, isLast }: { event: EventData; isLast: boolean }) {
 
           {/* Mobile badge */}
           <div className="mt-4 sm:hidden">
-            <StatusBadge status={event.status} slug={event.slug} />
+            <EventStatusBadge status={event.status} slug={event.slug} />
           </div>
         </div>
 
         {/* Desktop badge */}
         <div className="shrink-0 self-center hidden sm:block">
-          <StatusBadge status={event.status} slug={event.slug} />
+          <EventStatusBadge status={event.status} slug={event.slug} />
         </div>
       </div>
 
@@ -156,35 +123,7 @@ export default async function EventsPage() {
       <main className="min-h-screen pt-16">
 
         {/* ── HERO IMAGE ── */}
-        <div className="relative w-full h-[220px] sm:h-[280px] md:h-[350px]">
-          <Image
-            src="/events/wine-party8.jpg"
-            alt="Events — Vivo Wine Club"
-            fill
-            className="object-cover"
-            priority
-            sizes="100vw"
-          />
-          <div className="absolute inset-0 bg-[#731515]/60" />
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6">
-            <div className="text-[10px] tracking-[0.5em] text-white/70 mb-4">2026 CALENDAR</div>
-            <h1
-              className="text-[clamp(2rem,5vw,4rem)] font-light text-white leading-tight"
-              style={{ fontFamily: 'var(--font-syne)' }}
-            >
-              Events
-            </h1>
-            <p
-              className="mt-4 text-sm md:text-base text-white/75 font-light italic leading-relaxed"
-              style={{ fontFamily: 'var(--font-nunito)' }}
-            >
-              All our upcoming and past experiences — tastings, winery tours, and wine parties across Europe.
-            </p>
-          </div>
-          <div className="absolute top-6 left-6 md:left-10 z-10">
-            <BackButton className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] text-white/70 hover:text-white transition-colors duration-300" />
-          </div>
-        </div>
+        <EventsHero />
 
         {/* ── Event list ── */}
         <section className="relative overflow-hidden pb-28">

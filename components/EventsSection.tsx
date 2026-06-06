@@ -6,32 +6,34 @@ import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import { MapPin } from 'lucide-react';
 import { type EventData, type EventStatus } from '@/lib/events';
+import { useTranslations } from 'next-intl';
 
 const StatusBadge = memo(function StatusBadge({ status, slug }: { status: EventStatus; slug: string }) {
+  const t = useTranslations('common');
   if (status === 'open') {
     return (
       <Link href={`/checkout/${slug}`} className="text-[9px] tracking-[0.28em] px-4 lg:px-5 py-3 min-h-[44px] inline-flex items-center bg-[#731515] text-[#F5EEE6] border border-[#731515] hover:bg-[#aa4848] hover:border-[#aa4848] transition-all duration-300 whitespace-nowrap">
-        BUY TICKETS
+        {t('buyTickets')}
       </Link>
     );
   }
   if (status === 'soldout') {
     return (
       <span className="text-[9px] tracking-[0.28em] px-4 lg:px-5 py-2.5 bg-[#3a3a3a] text-white whitespace-nowrap">
-        SOLD OUT
+        {t('soldOut')}
       </span>
     );
   }
   if (status === 'soon') {
     return (
       <span className="text-[9px] tracking-[0.28em] px-4 lg:px-5 py-2.5 border border-[#ccc] text-[#aaa] whitespace-nowrap">
-        COMING SOON
+        {t('comingSoon')}
       </span>
     );
   }
   return (
     <span className="text-[9px] tracking-[0.28em] px-4 lg:px-5 py-2.5 border border-[#ddd] text-[#bbb] whitespace-nowrap">
-      COMPLETED
+      {t('completed')}
     </span>
   );
 });
@@ -121,6 +123,8 @@ function EventRow({
 
 export default function EventsSection() {
   const reducedMotion = useReducedMotion();
+  const t = useTranslations('home');
+  const tCommon = useTranslations('common');
   const [allEvents, setAllEvents] = useState<EventData[]>([]);
 
   useEffect(() => {
@@ -151,18 +155,18 @@ export default function EventsSection() {
           transition={{ duration: reducedMotion ? 0 : 0.8 }}
           className="mb-16"
         >
-          <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-4">FEATURED EVENTS</div>
+          <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-4">{t('featuredEvents')}</div>
           <h2
             className="text-[clamp(2.5rem,6vw,5rem)] font-light text-[#1a0505] leading-none section-title"
             style={{ fontFamily: 'var(--font-syne)' }}
           >
-            EVENTS
+            {t('events')}
           </h2>
           <p
             className="mt-6 text-lg text-[#7a4a4a] font-light italic"
             style={{ fontFamily: 'var(--font-nunito)' }}
           >
-            Exclusive experiences reserved for our members, tastings, tours and unforgettable evenings
+            {t('eventsSubtitle')}
           </p>
         </motion.div>
 
@@ -190,7 +194,7 @@ export default function EventsSection() {
             className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] text-[#731515] hover:text-[#aa4848] transition-colors duration-300 group"
             style={{ fontFamily: 'var(--font-nunito)' }}
           >
-            EXPLORE MORE
+            {tCommon('exploreMore')}
             <span className="group-hover:translate-x-0.5 transition-transform duration-300">→</span>
           </Link>
         </motion.div>

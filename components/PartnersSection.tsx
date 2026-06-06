@@ -1,4 +1,7 @@
+'use client';
+
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 
 const PARTNERS = [
   { name: 'Atelier Vini',          src: '/sponsors/atelier-vini.png',            href: 'https://www.atelierviniecultura.com/'                    },
@@ -21,18 +24,19 @@ const COPIES = 6;
 const REPEATED = Array.from({ length: COPIES }, () => PARTNERS).flat();
 
 export default function PartnersSection() {
+  const t = useTranslations('home');
   return (
     <section className="pt-4 pb-0 relative overflow-hidden">
 
       {/* Header */}
       <div className="max-w-5xl mx-auto px-6 lg:px-10">
         <div className="text-center mb-12">
-          <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-3">TRUSTED BY THE BEST</div>
+          <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-3">{t('trustedBy')}</div>
           <h2
             className="text-[clamp(1.8rem,4vw,3rem)] font-light text-[#1a0505] leading-none"
             style={{ fontFamily: 'var(--font-syne)' }}
           >
-            Our Partners & Sponsors
+            {t('partners')}
           </h2>
         </div>
         <div className="w-full h-px bg-gradient-to-r from-transparent via-[#731515]/20 to-transparent mb-14" />

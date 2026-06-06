@@ -5,6 +5,7 @@ import Link from 'next/link';
 import BackButton from '@/components/BackButton';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 function LinkedInIcon() {
   return (
@@ -61,13 +62,13 @@ const TEAM_MEMBERS = [
   },
 ];
 
-const FOUNDERS = [
+const FOUNDERS_DATA = [
   {
     name: 'Giacomo Gallo',
     city: 'Turin',
     role: 'Co-Founder',
     image: '/giacomo2.png',
-    bio: 'Certified sommelier, raised in a family deeply rooted in wine culture. Spent a year in Bordeaux, visiting some of the most prestigious châteaux in the world. His passion was born at home, among the Langa vineyards. Currently studying at ESCP.',
+    bioKey: 'bioGiacomo' as const,
     linkedin: 'https://www.linkedin.com/in/giacomo-gallo-520a85286/',
   },
   {
@@ -75,7 +76,7 @@ const FOUNDERS = [
     city: 'Brescia',
     role: 'Co-Founder',
     image: '/filippo.png',
-    bio: 'Spent a year in Bordeaux, gaining hands-on experience in the wine world. Deeply connected to his home region through Franciacorta, one of Italy\'s finest sparkling wine territories. Currently studying at ESCP.',
+    bioKey: 'bioFilippo' as const,
     linkedin: 'https://www.linkedin.com/in/filippolombardiofficial/',
   },
   {
@@ -83,7 +84,7 @@ const FOUNDERS = [
     city: 'Florence',
     role: 'Co-Founder',
     image: '/cristiano.png',
-    bio: 'A true Tuscan wine enthusiast, with a deep passion for the great wines of his region — from Chianti to Montalcino and Bolgheri. Currently studying at ESCP.',
+    bioKey: 'bioCristiano' as const,
     linkedin: 'https://www.linkedin.com/in/cristiano-michelotti-799a49299/',
   },
   {
@@ -91,7 +92,7 @@ const FOUNDERS = [
     city: 'Milan',
     role: 'Co-Founder',
     image: '/riccardo.png',
-    bio: 'A passionate lover of Piedmontese wines. The most recent addition to the team, but already a key contributor with a special impact. Currently studying at ESCP.',
+    bioKey: 'bioRiccardo' as const,
     linkedin: 'https://www.linkedin.com/in/riccardo-consalvo-76aba124b/',
   },
 ];
@@ -104,7 +105,7 @@ function FounderCard({
   bio,
   linkedin,
   index,
-}: (typeof FOUNDERS)[number] & { index: number }) {
+}: { name: string; city: string; role: string; image: string; bio: string; linkedin: string; index: number }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 32 }}
@@ -171,6 +172,9 @@ function FounderCard({
 }
 
 export default function WhoWeArePage() {
+  const t = useTranslations('whoWeAre');
+  const FOUNDERS = FOUNDERS_DATA.map(f => ({ ...f, bio: t(f.bioKey) }));
+
   return (
     <>
       <Navbar />
@@ -188,18 +192,18 @@ export default function WhoWeArePage() {
           />
           <div className="absolute inset-0 bg-[#731515]/60" />
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6">
-            <div className="text-[10px] tracking-[0.5em] text-white/70 mb-4">THE TEAM</div>
+            <div className="text-[10px] tracking-[0.5em] text-white/70 mb-4">{t('theTeamLabel')}</div>
             <h1
               className="text-[clamp(2rem,5vw,4rem)] font-light text-white leading-tight"
               style={{ fontFamily: 'var(--font-syne)' }}
             >
-              Who We Are
+              {t('heading')}
             </h1>
             <p
               className="mt-4 text-sm md:text-base text-white/75 font-light italic max-w-lg leading-relaxed"
               style={{ fontFamily: 'var(--font-nunito)' }}
             >
-              Four friends. One passion. A mission to change the way young people experience wine.
+              {t('subtitle')}
             </p>
           </div>
           <div className="absolute top-6 left-6 md:left-10 z-10">
@@ -230,12 +234,14 @@ export default function WhoWeArePage() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.8 }}
               >
-                <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-4">OUR STORY</div>
+                <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-4">{t('ourStory')}</div>
                 <h2
                   className="text-[clamp(2rem,5vw,4rem)] font-light text-[#1a0505] leading-tight"
                   style={{ fontFamily: 'var(--font-syne)' }}
                 >
-                  It started<br />in Paris.
+                  {t('storyTitle').split('\n').map((line, i) => (
+                    <span key={i}>{line}{i === 0 && <br />}</span>
+                  ))}
                 </h2>
               </motion.div>
 
@@ -250,20 +256,13 @@ export default function WhoWeArePage() {
                   className="text-base md:text-lg text-[#7a4a4a] font-light leading-relaxed"
                   style={{ fontFamily: 'var(--font-nunito)' }}
                 >
-                  Four students at ESCP, brought together not just by lectures and case studies,
-                  but by a shared obsession with wine. We spent weekends visiting cellars in Bordeaux
-                  and Burgundy, arguing about tannins over cheap bistro tables, and slowly realising
-                  something: wine had an image problem. It felt exclusive, complicated, reserved for
-                  people who already knew.
+                  {t('storyPara1')}
                 </p>
                 <p
                   className="text-base md:text-lg text-[#7a4a4a] font-light leading-relaxed mt-6"
                   style={{ fontFamily: 'var(--font-nunito)' }}
                 >
-                  We wanted to change that. Vivo Wine Club was born from a simple idea — bring great
-                  wine to great people, without the pretension. Themed parties, intimate winery visits,
-                  curated tastings. No dress codes. No gatekeeping. Just bottles worth opening and
-                  people worth meeting.
+                  {t('storyPara2')}
                 </p>
               </motion.div>
             </div>
@@ -291,12 +290,12 @@ export default function WhoWeArePage() {
               transition={{ duration: 0.7 }}
               className="mb-14"
             >
-              <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-3">THE FOUNDERS</div>
+              <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-3">{t('theFounders')}</div>
               <h2
                 className="text-[clamp(2rem,5vw,4rem)] font-light text-[#1a0505] leading-none"
                 style={{ fontFamily: 'var(--font-syne)' }}
               >
-                MEET THE FOUNDERS
+                {t('meetTheFounders')}
               </h2>
             </motion.div>
 
@@ -329,12 +328,12 @@ export default function WhoWeArePage() {
               transition={{ duration: 0.7 }}
               className="mb-14"
             >
-              <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-3">THE TEAM</div>
+              <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-3">{t('theTeamSection')}</div>
               <h2
                 className="text-[clamp(2rem,5vw,4rem)] font-light text-[#1a0505] leading-none"
                 style={{ fontFamily: 'var(--font-syne)' }}
               >
-                OUR TEAM
+                {t('ourTeam')}
               </h2>
             </motion.div>
 
@@ -346,7 +345,7 @@ export default function WhoWeArePage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: '-30px' }}
                   transition={{ duration: 0.6, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
-                  className="flex flex-col items-center text-center gap-2.5 p-4 md:p-3 bg-[#731515] hover:bg-[#aa4848] transition-colors duration-300"
+                  className="flex flex-col items-center text-center gap-2.5 p-3 md:p-4 bg-[#731515] hover:bg-[#aa4848] transition-colors duration-300"
                 >
                   {/* Avatar */}
                   <div className="w-12 h-12 rounded-full border-2 border-white/30 flex items-center justify-center shrink-0">

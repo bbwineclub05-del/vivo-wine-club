@@ -9,7 +9,7 @@ import {
   Mail, LogOut, KeyRound, ScanLine, Menu, X,
   Wine, Shield, ArrowUpRight, CreditCard, User, CalendarDays, GlassWater, MapPin, Images,
   Database, ChevronDown, UsersRound, Lock, ShoppingBag, Tag, FolderOpen,
-  Camera, Loader2, Building2, Wallet,
+  Camera, Loader2, Building2, Wallet, Receipt,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -31,12 +31,13 @@ import DocumentManager from '@/components/DocumentManager';
 import MemberPortal from '@/components/MemberPortal';
 import MembershipCard from '@/components/MembershipCard';
 import FinanceManager from '@/components/FinanceManager';
+import QuoteGenerator from '@/components/QuoteGenerator';
 import { isSuperAdmin, isFinanceUser } from '@/lib/admins';
 
 /* ─────────────────────────────────────────────
    Types
 ───────────────────────────────────────────── */
-type Section = 'overview' | 'settings' | 'card' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm' | 'crm-wine' | 'crm-bordeaux' | 'crm-clienti' | 'crm-sponsors' | 'media' | 'team' | 'merch' | 'discounts' | 'documents' | 'finance';
+type Section = 'overview' | 'settings' | 'card' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm' | 'crm-wine' | 'crm-bordeaux' | 'crm-clienti' | 'crm-sponsors' | 'media' | 'team' | 'merch' | 'discounts' | 'documents' | 'finance' | 'quotes';
 
 // Maps section IDs to the permission key in team_members.permissions
 const SECTION_PERM: Partial<Record<Section, string>> = {
@@ -76,6 +77,7 @@ const NAV_SHARED: NavItem[] = [
   { id: 'merch',     label: 'Gestione Merch',      icon: ShoppingBag  },
   { id: 'discounts', label: 'Gestione Sconti',     icon: Tag          },
   { id: 'documents', label: 'Gestione Documenti',  icon: FolderOpen   },
+  { id: 'quotes',    label: 'Preventivi',          icon: Receipt      },
 ];
 
 // Admin only
@@ -844,7 +846,10 @@ function MembersPageInner() {
       if (!session) return;
       setToken(session.access_token);
       const role = session.user.app_metadata?.role ?? session.user.user_metadata?.role;
-      setIsStaff(role === 'staff');
+      // Include both 'staff' and 'admin' role — team members invited as admin via Team
+      // Management have app_metadata.role = 'admin' but are NOT in the ADMIN_EMAILS
+      // founders list, so isAdmin() = false. Without this, they see nothing.
+      setIsStaff(role === 'staff' || role === 'admin');
       setIsMember(role === 'member' && !isAdmin(session.user.email ?? ''));
 
       // Fetch granular permissions for all authenticated users (admins get full set)
@@ -1151,6 +1156,12 @@ function MembersPageInner() {
                 )}
 
                 {superAdmin && activeSection === 'team' && <TeamManagement />}
+
+                {(admin || isStaff) && activeSection === 'quotes' && (
+                  <>
+                    <QuoteGenerator />
+                  </>
+                )}
 
               </motion.div>
             </AnimatePresence>

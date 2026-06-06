@@ -7,14 +7,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, User, ShoppingBag } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { useCart } from '@/contexts/CartContext';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { useTranslations } from 'next-intl';
 
 const NAV_LINKS = [
-  { href: '/experiences/wine-party',    label: 'PARTY',         page: true },
-  { href: '/experiences/winery-visits', label: 'VISITS',        page: true },
-  { href: '/experiences/wine-lounge',   label: 'LOUNGE',        page: true },
-  { href: '/wear-the-club',             label: 'WEAR THE CLUB', page: true },
-  { href: '/who-we-are',                label: 'WHO WE ARE',    page: true },
-  { href: '/collaborate',               label: 'COLLABORATE',   page: true },
+  { href: '/experiences/wine-party',    key: 'party',        page: true },
+  { href: '/experiences/winery-visits', key: 'visits',       page: true },
+  { href: '/experiences/wine-lounge',   key: 'lounge',       page: true },
+  { href: '/wear-the-club',             key: 'wearTheClub',  page: true },
+  { href: '/who-we-are',                key: 'whoWeAre',     page: true },
+  { href: '/collaborate',               key: 'collaborate',  page: true },
 ];
 
 function scrollTo(href: string) {
@@ -63,6 +65,7 @@ export default function Navbar() {
   const router = useRouter();
   const { user } = useAuth();
   const { itemCount, setIsOpen: openCart } = useCart();
+  const t = useTranslations('nav');
 
   function handleHashLink(href: string) {
     setMobileOpen(false);
@@ -112,7 +115,7 @@ export default function Navbar() {
                   href={link.href}
                   className={NAV_LINK_CLASS}
                 >
-                  {link.label}
+                  {t(link.key as Parameters<typeof t>[0])}
                   <span className={NAV_UNDERLINE} />
                 </Link>
               ) : (
@@ -121,7 +124,7 @@ export default function Navbar() {
                   onClick={() => handleHashLink(link.href)}
                   className={NAV_LINK_CLASS}
                 >
-                  {link.label}
+                  {t(link.key as Parameters<typeof t>[0])}
                   <span className={NAV_UNDERLINE} />
                 </button>
               )
@@ -145,12 +148,14 @@ export default function Navbar() {
               ))}
             </div>
             <div className="w-px h-4 bg-[#e8d5d5]" />
+            <LanguageSwitcher />
+            <div className="w-px h-4 bg-[#e8d5d5]" />
             <Link
               href={user ? '/members' : '/login'}
               className="flex items-center gap-1.5 text-[10px] tracking-[0.28em] text-[#6b3333] hover:text-[#731515] transition-colors duration-300 group whitespace-nowrap"
             >
               <User size={13} className="shrink-0" />
-              {user ? 'MY AREA' : 'SIGN IN'}
+              {user ? t('myArea') : t('signIn')}
             </Link>
             <div className="w-px h-4 bg-[#e8d5d5]" />
             {/* Cart icon */}
@@ -212,7 +217,7 @@ export default function Navbar() {
                     onClick={() => setMobileOpen(false)}
                     className="text-left text-[11px] tracking-[0.4em] text-[#6b3333] hover:text-[#731515] transition-colors"
                   >
-                    {link.label}
+                    {t(link.key as Parameters<typeof t>[0])}
                   </Link>
                 ) : (
                   <button
@@ -220,7 +225,7 @@ export default function Navbar() {
                     onClick={() => handleHashLink(link.href)}
                     className="text-left text-[11px] tracking-[0.4em] text-[#6b3333] hover:text-[#731515] transition-colors"
                   >
-                    {link.label}
+                    {t(link.key as Parameters<typeof t>[0])}
                   </button>
                 )
               )}
@@ -230,7 +235,7 @@ export default function Navbar() {
                 className="text-left text-[11px] tracking-[0.4em] text-[#6b3333] hover:text-[#731515] transition-colors flex items-center gap-2"
               >
                 <User size={13} />
-                {user ? 'MY AREA' : 'SIGN IN'}
+                {user ? t('myArea') : t('signIn')}
               </Link>
               <div className="pt-4 border-t border-[#e8d5d5] flex items-center gap-4">
                 {SOCIALS.map(({ label, href, Icon }) => (
@@ -239,6 +244,9 @@ export default function Navbar() {
                     <Icon size={16} />
                   </a>
                 ))}
+                <div className="ml-auto">
+                  <LanguageSwitcher up />
+                </div>
               </div>
             </div>
           </motion.div>

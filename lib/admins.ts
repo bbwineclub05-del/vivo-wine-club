@@ -23,13 +23,12 @@ export function isSuperAdmin(email: string): boolean {
 }
 
 // Finance section — explicit whitelist, independent of role
-// TODO: add Marcello Abbadati's real email once confirmed (check team_members table in Supabase)
 export const FINANCE_EMAILS = [
   'giacomogallo1310@gmail.com',
   'filippo.lombardi890@gmail.com',
   'cristianomichelotti@gmail.com',
   'riccardo.consalvo@icloud.com',
-  // 'marcello@example.com', // TODO: replace with Marcello Abbadati's real email
+  'marcelloabbadati02@gmail.com',
 ] as const;
 
 export function isFinanceUser(email: string): boolean {

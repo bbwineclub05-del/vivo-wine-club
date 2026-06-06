@@ -7,6 +7,7 @@ import BackButton from '@/components/BackButton';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { useTranslations } from 'next-intl';
 
 const INPUT_CLASS =
   'w-full bg-white border border-[#e8d5d5] px-4 py-3 text-sm text-[#1a0505] placeholder-[#b09090] focus:outline-none focus:border-[#731515] transition-colors duration-200';
@@ -47,9 +48,9 @@ function minDobDate() {
   return d.toISOString().split('T')[0];
 }
 
-const EMAIL_MISMATCH = 'Email addresses do not match.';
 
 export default function MembershipPage() {
+  const t = useTranslations('membership');
   const [form, setForm] = useState<FormState>(INITIAL);
   const [confirmEmail, setConfirmEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
@@ -90,7 +91,7 @@ export default function MembershipPage() {
       <main className="min-h-screen pt-16">
 
         {/* ── HERO IMAGE ── */}
-        <div className="relative w-full" style={{ height: 350 }}>
+        <div className="relative w-full h-[200px] sm:h-[280px] md:h-[350px]">
           <Image
             src="/vigna.jpg"
             alt="Apply for Membership — Vivo Wine Club"
@@ -103,18 +104,18 @@ export default function MembershipPage() {
           <div className="absolute inset-0 bg-[#731515]/60" />
           {/* Centered text */}
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6">
-            <div className="text-[10px] tracking-[0.5em] text-white/70 mb-4">VIVO WINE CLUB</div>
+            <div className="text-[10px] tracking-[0.5em] text-white/70 mb-4">{t('vivoLabel')}</div>
             <h1
               className="text-[clamp(2rem,5vw,4rem)] font-light text-white leading-tight"
               style={{ fontFamily: 'var(--font-syne)' }}
             >
-              Apply for Membership
+              {t('heading')}
             </h1>
             <p
               className="mt-4 text-sm md:text-base text-white/75 font-light italic max-w-lg leading-relaxed"
               style={{ fontFamily: 'var(--font-nunito)' }}
             >
-              Join a community of young wine lovers. Limited spots available.
+              {t('subtitle')}
             </p>
           </div>
           {/* Back link — top left */}
@@ -136,19 +137,18 @@ export default function MembershipPage() {
               <div className="glass-card p-10 md:p-14 flex flex-col items-center text-center gap-6">
                 <CheckCircle size={48} className="text-[#731515]" strokeWidth={1.2} />
                 <div>
-                  <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-3">APPLICATION RECEIVED</div>
+                  <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-3">{t('applicationReceived')}</div>
                   <h2
                     className="text-3xl md:text-4xl font-light text-[#1a0505] mb-4"
                     style={{ fontFamily: 'var(--font-syne)' }}
                   >
-                    Thank you, {form.fullName.split(' ')[0]}!
+                    {t('thankYouHeading', { name: form.fullName.split(' ')[0] })}
                   </h2>
                   <p
                     className="text-[#7a4a4a] leading-relaxed max-w-sm mx-auto"
                     style={{ fontFamily: 'var(--font-nunito)' }}
                   >
-                    We&apos;ve received your application and will be in touch shortly.
-                    We review every submission personally — stay close.
+                    {t('thankYouBody')}
                   </p>
                 </div>
                 <Link
@@ -156,7 +156,7 @@ export default function MembershipPage() {
                   className="mt-2 inline-flex items-center gap-2 text-[10px] tracking-[0.3em] text-[#7a4a4a] hover:text-[#731515] transition-colors duration-300 group"
                 >
                   <ArrowLeft size={12} className="group-hover:-translate-x-0.5 transition-transform duration-300" />
-                  BACK TO HOME
+                  {t('backToHome')}
                 </Link>
               </div>
             ) : (
@@ -165,11 +165,11 @@ export default function MembershipPage() {
 
                 {/* Full Name */}
                 <div>
-                  <label className={LABEL_CLASS}>FULL NAME *</label>
+                  <label className={LABEL_CLASS}>{t('labelFullName')}</label>
                   <input
                     type="text"
                     required
-                    placeholder="Your full name"
+                    placeholder={t('placeholderFullName')}
                     value={form.fullName}
                     onChange={set('fullName')}
                     className={INPUT_CLASS}
@@ -179,7 +179,7 @@ export default function MembershipPage() {
                 {/* Email + Confirm Email */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
-                    <label className={LABEL_CLASS}>EMAIL *</label>
+                    <label className={LABEL_CLASS}>{t('labelEmail')}</label>
                     <input
                       type="email"
                       required
@@ -190,7 +190,7 @@ export default function MembershipPage() {
                     />
                   </div>
                   <div>
-                    <label className={LABEL_CLASS}>CONFIRM EMAIL *</label>
+                    <label className={LABEL_CLASS}>{t('labelConfirmEmail')}</label>
                     <input
                       type="email"
                       required
@@ -202,7 +202,7 @@ export default function MembershipPage() {
                     />
                     {confirmEmail.length > 0 && form.email !== confirmEmail && (
                       <p className="mt-1.5 text-[10px] text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>
-                        {EMAIL_MISMATCH}
+                        {t('emailMismatch')}
                       </p>
                     )}
                   </div>
@@ -211,7 +211,7 @@ export default function MembershipPage() {
                 {/* Row: Phone + City */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
-                    <label className={LABEL_CLASS}>PHONE NUMBER</label>
+                    <label className={LABEL_CLASS}>{t('labelPhone')}</label>
                     <input
                       type="tel"
                       placeholder="+39 000 000 0000"
@@ -221,11 +221,11 @@ export default function MembershipPage() {
                     />
                   </div>
                   <div>
-                    <label className={LABEL_CLASS}>CITY OF RESIDENCE *</label>
+                    <label className={LABEL_CLASS}>{t('labelCity')}</label>
                     <input
                       type="text"
                       required
-                      placeholder="Milan, Paris, London…"
+                      placeholder={t('placeholderCity')}
                       value={form.city}
                       onChange={set('city')}
                       className={INPUT_CLASS}
@@ -236,7 +236,7 @@ export default function MembershipPage() {
                 {/* Row: Date of Birth + How did you hear */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
-                    <label className={LABEL_CLASS}>DATE OF BIRTH *</label>
+                    <label className={LABEL_CLASS}>{t('labelDob')}</label>
                     <input
                       type="date"
                       required
@@ -248,48 +248,48 @@ export default function MembershipPage() {
                     />
                   </div>
                   <div>
-                    <label className={LABEL_CLASS}>HOW DID YOU HEAR ABOUT US? *</label>
+                    <label className={LABEL_CLASS}>{t('labelSource')}</label>
                     <select
                       required
                       value={form.source}
                       onChange={set('source')}
                       className={`${INPUT_CLASS} appearance-none bg-[url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23731515' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")] bg-no-repeat bg-[right_1rem_center] pr-10`}
                     >
-                      <option value="" disabled>Select an option</option>
-                      <option value="Instagram">Instagram</option>
-                      <option value="LinkedIn">LinkedIn</option>
-                      <option value="TikTok">TikTok</option>
-                      <option value="Friend">Friend</option>
-                      <option value="Event">Event</option>
-                      <option value="Other">Other</option>
+                      <option value="" disabled>{t('selectOption')}</option>
+                      <option value="Instagram">{t('sourceInstagram')}</option>
+                      <option value="LinkedIn">{t('sourceLinkedin')}</option>
+                      <option value="TikTok">{t('sourceTiktok')}</option>
+                      <option value="Friend">{t('sourceFriend')}</option>
+                      <option value="Event">{t('sourceEvent')}</option>
+                      <option value="Other">{t('sourceOther')}</option>
                     </select>
                   </div>
                 </div>
 
                 {/* Wine experience */}
                 <div>
-                  <label className={LABEL_CLASS}>WINE EXPERIENCE *</label>
+                  <label className={LABEL_CLASS}>{t('labelExperience')}</label>
                   <select
                     required
                     value={form.experience}
                     onChange={set('experience')}
                     className={`${INPUT_CLASS} appearance-none bg-[url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23731515' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")] bg-no-repeat bg-[right_1rem_center] pr-10`}
                   >
-                    <option value="" disabled>Select your level</option>
-                    <option value="Beginner">Beginner — I&apos;m just starting to explore wine</option>
-                    <option value="Intermediate">Intermediate — I know my way around a wine list</option>
-                    <option value="Advanced">Advanced — I can identify regions, grapes and vintages</option>
-                    <option value="Sommelier">Sommelier — professionally trained</option>
+                    <option value="" disabled>{t('selectLevel')}</option>
+                    <option value="Beginner">{t('expBeginner')}</option>
+                    <option value="Intermediate">{t('expIntermediate')}</option>
+                    <option value="Advanced">{t('expAdvanced')}</option>
+                    <option value="Sommelier">{t('expSommelier')}</option>
                   </select>
                 </div>
 
                 {/* Motivation */}
                 <div>
-                  <label className={LABEL_CLASS}>WHY DO YOU WANT TO JOIN VIVO WINE CLUB? *</label>
+                  <label className={LABEL_CLASS}>{t('labelMotivation')}</label>
                   <textarea
                     required
                     rows={4}
-                    placeholder="Tell us about yourself and what draws you to the club…"
+                    placeholder={t('placeholderMotivation')}
                     value={form.motivation}
                     onChange={set('motivation')}
                     className={`${INPUT_CLASS} resize-none`}
@@ -303,14 +303,14 @@ export default function MembershipPage() {
                   className="w-full py-4 bg-[#731515] text-white text-[11px] tracking-[0.35em] hover:bg-[#aa4848] disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-300"
                   style={{ fontFamily: 'var(--font-nunito)' }}
                 >
-                  {loading ? 'SENDING…' : 'SEND APPLICATION'}
+                  {loading ? t('sending') : t('sendApplication')}
                 </button>
 
                 <p
                   className="text-center text-[10px] tracking-[0.2em] text-[#7a4a4a]/60"
                   style={{ fontFamily: 'var(--font-nunito)' }}
                 >
-                  We review every application personally. You&apos;ll hear from us within a few days.
+                  {t('reviewNote')}
                 </p>
               </form>
             )}

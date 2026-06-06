@@ -6,6 +6,8 @@ import { AuthProvider } from "@/lib/auth";
 import CartDrawer from "@/components/CartDrawer";
 import CookieBanner from "@/components/CookieBanner";
 import { GoogleAnalytics } from "@next/third-parties/google";
+import { NextIntlClientProvider } from 'next-intl';
+import { cookies } from 'next/headers';
 
 const syne = Syne({
   subsets: ["latin"],
@@ -59,17 +61,25 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const LOCALES = ['en', 'it', 'fr'] as const;
+  const cookieStore = await cookies();
+  const raw = cookieStore.get('locale')?.value ?? '';
+  const locale = (LOCALES as readonly string[]).includes(raw) ? raw : 'en';
+  const messages = (await import(`../messages/${locale}.json`)).default;
+
   return (
     <html
-      lang="en"
-      className={`${syne.variable} ${nunito.variable}`}
+      lang={locale}
+      translate="no"
+      className={`${syne.variable} ${nunito.variable} notranslate`}
     >
       <head>
+        <meta name="google" content="notranslate" />
         {/* Preload desktop hero video — only fetched on wider screens */}
         <link
           rel="preload"
@@ -88,13 +98,15 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased">
-        <AuthProvider>
-          <CartProvider>
-            {children}
-            <CartDrawer />
-            <CookieBanner />
-          </CartProvider>
-        </AuthProvider>
+        <NextIntlClientProvider locale={locale} messages={messages} formats={{}} timeZone="UTC" now={new Date()}>
+          <AuthProvider>
+            <CartProvider>
+              {children}
+              <CartDrawer />
+              <CookieBanner />
+            </CartProvider>
+          </AuthProvider>
+        </NextIntlClientProvider>
       </body>
       <GoogleAnalytics gaId="G-8331QRTG4Q" />
     </html>

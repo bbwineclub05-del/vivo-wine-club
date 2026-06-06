@@ -8,6 +8,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import BackButton from '@/components/BackButton';
+import { useTranslations } from 'next-intl';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -233,6 +234,7 @@ function SkeletonCard() {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function WearTheClubPage() {
+  const t                       = useTranslations('wearTheClub');
   const reducedMotion           = useReducedMotion();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading,  setLoading]  = useState(true);
@@ -262,15 +264,15 @@ export default function WearTheClubPage() {
           />
           <div className="absolute inset-0 bg-[#731515]/60" />
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6">
-            <div className="text-[10px] tracking-[0.5em] text-white/70 mb-4">VIVO WINE CLUB</div>
+            <div className="text-[10px] tracking-[0.5em] text-white/70 mb-4">{t('vivoLabel')}</div>
             <h1
               className="text-[clamp(2rem,5vw,4rem)] font-light text-white leading-tight mb-3"
               style={{ fontFamily: 'var(--font-syne)' }}
             >
-              WEAR THE CLUB
+              {t('heading')}
             </h1>
             <p className="text-sm md:text-base text-white/75 font-light italic" style={{ fontFamily: 'var(--font-nunito)' }}>
-              Each piece carries the identity of the club. Wear it, share it, live it.
+              {t('subtitle')}
             </p>
           </div>
           <div className="absolute top-6 left-6 md:left-10 z-10">
@@ -306,7 +308,7 @@ export default function WearTheClubPage() {
                 className="mt-14 text-center text-xs text-[#7a4a4a]/60 tracking-widest"
                 style={{ fontFamily: 'var(--font-nunito)' }}
               >
-                ALL ITEMS SHIP WITHIN 5–7 BUSINESS DAYS
+                {t('shipping')}
               </motion.p>
             )}
           </div>

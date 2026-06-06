@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { X, ChevronDown } from 'lucide-react';
 import BackButton from '@/components/BackButton';
 import ExperienceUpcoming from '@/components/ExperienceUpcoming';
+import { useTranslations } from 'next-intl';
 
 /* ── Gallery photos ── */
 const GALLERY = [
@@ -27,7 +28,7 @@ const GALLERY = [
   { id: 15, src: '/events/wine-party11.JPG', alt: 'Wine Party — photo 15' },
 ];
 
-const PILLS = ['Great Wine', 'Live DJ Set', 'Curated Crowd'];
+const PILL_KEYS = ['pill1', 'pill2', 'pill3'] as const;
 
 function Lightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
   return (
@@ -61,6 +62,7 @@ function Lightbox({ src, alt, onClose }: { src: string; alt: string; onClose: ()
 }
 
 export default function WinePartyPage() {
+  const t = useTranslations('wineParty');
   const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
   const [gallery,  setGallery]  = useState(GALLERY);
 
@@ -126,7 +128,7 @@ export default function WinePartyPage() {
                 initial={{ y: '110%' }}
                 animate={{ y: '0%' }}
                 transition={{ duration: 1, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                className="text-[clamp(3.5rem,9vw,8rem)] font-light leading-none"
+                className="text-[clamp(2.5rem,9vw,8rem)] font-light leading-none"
                 style={{ fontFamily: 'var(--font-syne)' }}
               >
                 Wine Party
@@ -141,7 +143,7 @@ export default function WinePartyPage() {
                 className="text-xl md:text-2xl text-[#C4B5A0] font-light italic"
                 style={{ fontFamily: 'var(--font-nunito)' }}
               >
-                Where wine meets the night.
+                {t('heroTagline')}
               </motion.p>
             </div>
           </div>
@@ -170,28 +172,26 @@ export default function WinePartyPage() {
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
             >
-              <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-5">THE CONCEPT</div>
+              <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-5">{t('theConcept')}</div>
               <p
                 className="text-xl md:text-2xl text-[#C4B5A0] font-light leading-relaxed"
                 style={{ fontFamily: 'var(--font-nunito)' }}
               >
-                A Wine Party is not just an event — it&apos;s a vibe. We bring together great bottles,
-                a carefully curated DJ set and a crowd that actually cares about what&apos;s in their glass.
-                No dress codes, no pretension. Just good wine, good music and good people.
+                {t('conceptBody')}
               </p>
             </motion.div>
 
             <div className="flex flex-wrap gap-4 mt-10">
-              {PILLS.map((pill, i) => (
+              {PILL_KEYS.map((key, i) => (
                 <motion.div
-                  key={pill}
+                  key={key}
                   initial={{ opacity: 0, y: 16 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.6, delay: i * 0.12, ease: [0.16, 1, 0.3, 1] }}
                   className="px-6 py-3 border border-[#731515]/40 text-[#731515] text-[11px] tracking-[0.35em] rounded-full"
                 >
-                  {pill}
+                  {t(key)}
                 </motion.div>
               ))}
             </div>
@@ -208,12 +208,12 @@ export default function WinePartyPage() {
               transition={{ duration: 0.7 }}
               className="mb-8"
             >
-              <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-3">GALLERY</div>
+              <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-3">{t('gallery')}</div>
               <h2
                 className="text-[clamp(2rem,4vw,3.5rem)] font-light text-[#F5EEE6] leading-none"
                 style={{ fontFamily: 'var(--font-syne)' }}
               >
-                THE NIGHTS
+                {t('theNights')}
               </h2>
             </motion.div>
 
@@ -255,12 +255,12 @@ export default function WinePartyPage() {
               transition={{ duration: 0.8 }}
               className="mb-10"
             >
-              <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-3">UPCOMING</div>
+              <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-3">{t('upcoming')}</div>
               <h2
                 className="text-[clamp(2rem,5vw,4rem)] font-light text-[#F5EEE6] leading-none"
                 style={{ fontFamily: 'var(--font-syne)' }}
               >
-                NEXT PARTIES
+                {t('nextParties')}
               </h2>
             </motion.div>
 
@@ -277,16 +277,16 @@ export default function WinePartyPage() {
         {/* ── 5. CLOSING ── */}
         <section className="py-10 md:py-14 bg-[#080103] relative overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_60%,rgba(115,21,21,0.12),transparent_65%)] pointer-events-none" />
-          <div className="max-w-5xl mx-auto px-8 md:px-16 relative z-10 flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-8">
+          <div className="max-w-5xl mx-auto px-8 md:px-16 relative z-10 flex flex-col lg:flex-row items-start lg:items-center gap-6">
             <motion.h2
               initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
-              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light text-[#F5EEE6] leading-tight"
+              className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-light text-[#F5EEE6] leading-tight"
               style={{ fontFamily: 'var(--font-syne)' }}
             >
-              Don&apos;t miss the next one
+              {t('dontMissNext')}
             </motion.h2>
             <motion.a
               href="/membership"
@@ -297,7 +297,7 @@ export default function WinePartyPage() {
               className="shrink-0 inline-flex items-center gap-2 px-7 py-3.5 min-h-[44px] bg-[#731515] text-[#F5EEE6] text-[11px] tracking-[0.35em] hover:bg-[#9b2323] transition-colors"
               style={{ fontFamily: 'var(--font-nunito)' }}
             >
-              BECOME A MEMBER
+              {t('becomeAMember')}
             </motion.a>
           </div>
         </section>

@@ -6,10 +6,12 @@ import { motion } from 'framer-motion';
 import { ChevronDown, ArrowLeft } from 'lucide-react';
 import ExperienceUpcoming from '@/components/ExperienceUpcoming';
 import { WINERIES } from '@/lib/wineries';
+import { useTranslations } from 'next-intl';
 
-const PILLS = ['Private Access', 'Expert Guides', 'Iconic Estates'];
+const PILL_KEYS = ['pill1', 'pill2', 'pill3'] as const;
 
 export default function WineryVisitsPage() {
+  const t = useTranslations('wineryVisits');
   return (
     <div className="bg-[#1A2E5C] min-h-screen text-[#F5EEE6]">
 
@@ -36,7 +38,7 @@ export default function WineryVisitsPage() {
             className="flex items-center gap-2 text-[#C4B5A0] hover:text-[#F5EEE6] transition-colors duration-300 text-[10px] tracking-[0.35em]"
           >
             <ArrowLeft size={13} />
-            BACK
+            {t('back')}
           </Link>
         </motion.div>
 
@@ -55,7 +57,7 @@ export default function WineryVisitsPage() {
               initial={{ y: '110%' }}
               animate={{ y: '0%' }}
               transition={{ duration: 1, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className="text-[clamp(3.5rem,9vw,8rem)] font-light leading-none"
+              className="text-[clamp(2.5rem,9vw,8rem)] font-light leading-none"
               style={{ fontFamily: 'var(--font-syne)' }}
             >
               Wine Visits
@@ -70,7 +72,7 @@ export default function WineryVisitsPage() {
               className="text-xl md:text-2xl text-[#C4B5A0] font-light italic"
               style={{ fontFamily: 'var(--font-nunito)' }}
             >
-              Behind the bottle, behind the vines.
+              {t('heroTagline')}
             </motion.p>
           </div>
         </div>
@@ -99,28 +101,26 @@ export default function WineryVisitsPage() {
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
           >
-            <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-5">THE CONCEPT</div>
+            <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-5">{t('theConcept')}</div>
             <p
               className="text-xl md:text-2xl text-[#C4B5A0] font-light leading-relaxed"
               style={{ fontFamily: 'var(--font-nunito)' }}
             >
-              There is no better way to understand a wine than to stand in the vineyard where it was born.
-              We organise private visits to iconic estates — cellars, barrel rooms, and guided tastings
-              with the people who make the wine. Small groups, real access, no tourist traps.
+              {t('conceptBody')}
             </p>
           </motion.div>
 
           <div className="flex flex-wrap gap-4 mt-10">
-            {PILLS.map((pill, i) => (
+            {PILL_KEYS.map((key, i) => (
               <motion.div
-                key={pill}
+                key={key}
                 initial={{ opacity: 0, y: 16 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: i * 0.12, ease: [0.16, 1, 0.3, 1] }}
                 className="px-6 py-3 border border-[#731515]/40 text-[#731515] text-[11px] tracking-[0.35em] rounded-full"
               >
-                {pill}
+                {t(key)}
               </motion.div>
             ))}
           </div>
@@ -137,12 +137,12 @@ export default function WineryVisitsPage() {
             transition={{ duration: 0.8 }}
             className="mb-10"
           >
-            <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-3">UPCOMING</div>
+            <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-3">{t('upcoming')}</div>
             <h2
               className="text-[clamp(2rem,5vw,4rem)] font-light text-[#F5EEE6] leading-none"
               style={{ fontFamily: 'var(--font-syne)' }}
             >
-              UPCOMING VISITS
+              {t('upcomingVisits')}
             </h2>
           </motion.div>
 
@@ -167,7 +167,7 @@ export default function WineryVisitsPage() {
               className="inline-flex items-center gap-3 text-[11px] tracking-[0.35em] text-[#C9A84C] hover:text-[#F5EEE6] transition-colors duration-300"
               style={{ fontFamily: 'var(--font-nunito)' }}
             >
-              EXPLORE MORE EVENTS
+              {t('exploreMoreEvents')}
               <span className="text-base leading-none">→</span>
             </Link>
           </motion.div>
@@ -184,12 +184,12 @@ export default function WineryVisitsPage() {
             transition={{ duration: 0.8 }}
             className="mb-10"
           >
-            <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-3">THE ESTATES</div>
+            <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-3">{t('theEstates')}</div>
             <h2
               className="text-[clamp(2rem,5vw,4rem)] font-light text-[#F5EEE6] leading-none"
               style={{ fontFamily: 'var(--font-syne)' }}
             >
-              PAST VISITS
+              {t('pastVisits')}
             </h2>
           </motion.div>
 
@@ -253,16 +253,16 @@ export default function WineryVisitsPage() {
       {/* ── 5. CLOSING ── */}
       <section className="py-10 md:py-14 bg-[#101D3A] relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_60%,rgba(115,21,21,0.12),transparent_65%)] pointer-events-none" />
-        <div className="max-w-5xl mx-auto px-8 md:px-16 relative z-10 flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-8">
+        <div className="max-w-5xl mx-auto px-8 md:px-16 relative z-10 flex flex-col lg:flex-row items-start lg:items-center gap-6">
           <motion.h2
             initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light text-[#F5EEE6] leading-tight"
+            className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-light text-[#F5EEE6] leading-tight"
             style={{ fontFamily: 'var(--font-syne)' }}
           >
-            Reserve your spot early
+            {t('reserveSpot')}
           </motion.h2>
           <motion.a
             href="/membership"
@@ -273,7 +273,7 @@ export default function WineryVisitsPage() {
             className="shrink-0 inline-flex items-center gap-2 px-7 py-3.5 min-h-[44px] bg-[#731515] text-[#F5EEE6] text-[11px] tracking-[0.35em] hover:bg-[#9b2323] transition-colors"
             style={{ fontFamily: 'var(--font-nunito)' }}
           >
-            BECOME A MEMBER
+            {t('becomeAMember')}
           </motion.a>
         </div>
       </section>

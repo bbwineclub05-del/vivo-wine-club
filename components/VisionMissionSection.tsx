@@ -1,8 +1,10 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 
 export default function VisionMissionSection() {
+  const t = useTranslations('mission');
   return (
     <section className="py-14 md:py-20 bg-[#fdf6f6]">
       <div className="max-w-3xl mx-auto px-6 lg:px-10 text-center">
@@ -16,13 +18,13 @@ export default function VisionMissionSection() {
           <h3
             className="text-[clamp(1.8rem,3vw,2.6rem)] font-light text-[#1a0505] leading-none"
             style={{ fontFamily: 'var(--font-syne)' }}
-          >Our Mission</h3>
+          >{t('heading')}</h3>
           <div className="w-8 h-px bg-[#731515]/30" />
           <p
             className="text-lg font-normal text-[#7a4a4a] leading-relaxed max-w-2xl"
             style={{ fontFamily: 'var(--font-nunito)' }}
           >
-            Vivo Wine Club was born from a simple passion: making fine wine accessible, social and exciting. We bring together the most curious wine lovers across Europe for exclusive cellar visits, curated tastings and unforgettable evenings.
+            {t('body')}
           </p>
         </motion.div>
       </div>

@@ -1,7 +1,10 @@
 'use client';
 
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 
 /* ── Social icon SVGs ── */
 function InstagramIcon() {
@@ -40,48 +43,30 @@ function MailIcon() {
 }
 
 const NAV_LINKS = [
-  { label: 'Party',         href: '/experiences/wine-party'    },
-  { label: 'Visits',        href: '/experiences/winery-visits' },
-  { label: 'Lounge',        href: '/experiences/wine-lounge'   },
-  { label: 'Wear the Club', href: '/wear-the-club'             },
-  { label: 'Who We Are',    href: '/who-we-are'                },
-  { label: 'Collaborate',   href: '/collaborate'               },
+  { key: 'party',       href: '/experiences/wine-party'    },
+  { key: 'visits',      href: '/experiences/winery-visits' },
+  { key: 'lounge',      href: '/experiences/wine-lounge'   },
+  { key: 'wearTheClub', href: '/wear-the-club'             },
+  { key: 'whoWeAre',    href: '/who-we-are'                },
+  { key: 'collaborate', href: '/collaborate'               },
 ];
 
-const CONTACTS = [
-  {
-    Icon: MailIcon,
-    label: 'EMAIL',
-    value: 'info@vivowineclub.com',
-    href: 'mailto:info@vivowineclub.com',
-  },
-  {
-    Icon: InstagramIcon,
-    label: 'INSTAGRAM',
-    value: '@vivo.wineclub',
-    href: 'https://www.instagram.com/vivo.wineclub/',
-  },
-  {
-    Icon: LinkedInIcon,
-    label: 'LINKEDIN',
-    value: 'Vivo Wine Club',
-    href: 'https://www.linkedin.com/company/vivowineclub/?viewAsMember=true',
-  },
-  {
-    Icon: TikTokIcon,
-    label: 'TIKTOK',
-    value: '@vivowineclub',
-    href: 'https://www.tiktok.com/@vivo.wineclub',
-  },
+const CONTACTS_DATA = [
+  { Icon: MailIcon,      labelKey: 'emailLabel',     value: 'info@vivowineclub.com', href: 'mailto:info@vivowineclub.com' },
+  { Icon: InstagramIcon, labelKey: 'instagramLabel', value: '@vivo.wineclub',        href: 'https://www.instagram.com/vivo.wineclub/' },
+  { Icon: LinkedInIcon,  labelKey: 'linkedinLabel',  value: 'Vivo Wine Club',        href: 'https://www.linkedin.com/company/vivowineclub/?viewAsMember=true' },
+  { Icon: TikTokIcon,    labelKey: 'tiktokLabel',    value: '@vivowineclub',         href: 'https://www.tiktok.com/@vivo.wineclub' },
 ];
 
-const LEGAL = [
-  { label: 'Privacy Policy',   href: '#' },
-  { label: 'Terms of Service', href: '#' },
-  { label: 'Cookie Policy',    href: '#' },
+const LEGAL_KEYS = [
+  { key: 'privacyPolicy',   href: '#' },
+  { key: 'termsOfService',  href: '#' },
+  { key: 'cookiePolicy',    href: '#' },
 ];
 
 export default function Footer() {
+  const t = useTranslations('footer');
+  const tNav = useTranslations('nav');
   return (
     <footer>
 
@@ -95,20 +80,19 @@ export default function Footer() {
             {/* Left */}
             <div className="flex flex-col justify-between h-full">
               <div>
-                <div className="text-[10px] tracking-[0.5em] text-white/50 mb-4">GET IN TOUCH</div>
+                <div className="text-[10px] tracking-[0.5em] text-white/50 mb-4">{t('getInTouch')}</div>
                 <h2
                   className="text-[clamp(2.4rem,5vw,4rem)] font-light text-white leading-none mb-4"
                   style={{ fontFamily: 'var(--font-syne)' }}
                 >
-                  Contact Us
+                  {t('contactUs')}
                 </h2>
                 <div className="w-12 h-px bg-white/25 mb-4" />
                 <p
                   className="text-sm text-white/65 font-light leading-relaxed max-w-sm"
                   style={{ fontFamily: 'var(--font-nunito)' }}
                 >
-                  Interested in joining, partnering, or simply learning more about what we do?
-                  Reach out through any of the channels below.
+                  {t('interestedIn')}
                 </p>
               </div>
 
@@ -116,9 +100,9 @@ export default function Footer() {
 
             {/* Right: contact rows */}
             <div className="flex flex-col divide-y divide-white/10">
-              {CONTACTS.map(({ Icon, label, value, href }) => (
+              {CONTACTS_DATA.map(({ Icon, labelKey, value, href }) => (
                 <a
-                  key={label}
+                  key={labelKey}
                   href={href}
                   target={href.startsWith('http') ? '_blank' : undefined}
                   rel={href.startsWith('http') ? 'noopener noreferrer' : undefined}
@@ -128,7 +112,7 @@ export default function Footer() {
                     <Icon />
                   </span>
                   <div className="flex-1 min-w-0">
-                    <div className="text-[9px] tracking-[0.4em] text-white/45 mb-0.5">{label}</div>
+                    <div className="text-[9px] tracking-[0.4em] text-white/45 mb-0.5">{t(labelKey as Parameters<typeof t>[0])}</div>
                     <div
                       className="text-sm text-white/80 group-hover:text-white transition-colors duration-300"
                       style={{ fontFamily: 'var(--font-nunito)' }}
@@ -162,7 +146,7 @@ export default function Footer() {
                   className="text-[10px] tracking-[0.25em] text-white/50 hover:text-white transition-colors duration-200"
                   style={{ fontFamily: 'var(--font-nunito)' }}
                 >
-                  {link.label.toUpperCase()}
+                  {tNav(link.key as Parameters<typeof tNav>[0])}
                 </Link>
               ))}
             </div>
@@ -176,7 +160,7 @@ export default function Footer() {
                   className="text-[10px] tracking-[0.3em] text-white/50 hover:text-white transition-colors duration-200"
                   style={{ fontFamily: 'var(--font-nunito)' }}
                 >
-                  {link.label.toUpperCase()}
+                  {tNav(link.key as Parameters<typeof tNav>[0])}
                 </Link>
               ))}
             </div>
@@ -192,13 +176,13 @@ export default function Footer() {
       <div className="bg-[#731515] px-6 lg:px-16 py-4">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-[10px] text-white/30">
           <span style={{ fontFamily: 'var(--font-nunito)' }}>
-            © {new Date().getFullYear()} Vivo Wine Club · All rights reserved
+            © {new Date().getFullYear()} Vivo Wine Club · {t('allRightsReserved')}
           </span>
           <div className="flex items-center gap-4 flex-wrap justify-center">
-            {LEGAL.map((l, i) => (
-              <span key={l.label} className="flex items-center gap-4">
-                <Link href={l.href} className="hover:text-white/60 transition-colors duration-200">{l.label}</Link>
-                {i < LEGAL.length - 1 && <span className="text-white/15">|</span>}
+            {LEGAL_KEYS.map((l, i) => (
+              <span key={l.key} className="flex items-center gap-4">
+                <Link href={l.href} className="hover:text-white/60 transition-colors duration-200">{t(l.key as Parameters<typeof t>[0])}</Link>
+                {i < LEGAL_KEYS.length - 1 && <span className="text-white/15">|</span>}
               </span>
             ))}
           </div>

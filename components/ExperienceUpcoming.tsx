@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { MapPin } from 'lucide-react';
 import { type EventData, type EventSection } from '@/lib/events';
+import { useTranslations } from 'next-intl';
 
 interface Props {
   section: EventSection;
@@ -40,6 +41,7 @@ function UpcomingRow({
   btnBg: string;
   btnText: string;
 }) {
+  const tCommon = useTranslations('common');
   return (
     <motion.div
       key={event.slug}
@@ -95,17 +97,17 @@ function UpcomingRow({
             className="shrink-0 hidden sm:inline-flex text-[9px] tracking-[0.28em] px-5 py-2.5 transition-all duration-300 hover:opacity-80"
             style={{ background: btnBg, color: btnText }}
           >
-            {event.price > 0 ? 'BUY TICKETS' : 'REGISTER'}
+            {event.price > 0 ? tCommon('buyTickets') : tCommon('register')}
           </Link>
         )}
         {event.status === 'soldout' && (
           <span className="shrink-0 hidden sm:inline-block text-[9px] tracking-[0.28em] px-5 py-2.5 bg-[#3a3a3a] text-white">
-            SOLD OUT
+            {tCommon('soldOut')}
           </span>
         )}
         {event.status === 'soon' && (
           <span className="shrink-0 hidden sm:inline-block text-[9px] tracking-[0.28em] px-5 py-2.5 border border-white/20 text-white/50">
-            COMING SOON
+            {tCommon('comingSoon')}
           </span>
         )}
       </div>
@@ -118,7 +120,7 @@ function UpcomingRow({
             className="text-[9px] tracking-[0.28em] px-5 py-3 min-h-[44px] inline-flex items-center transition-all duration-300 hover:opacity-80"
             style={{ background: btnBg, color: btnText }}
           >
-            {event.price > 0 ? 'BUY TICKETS' : 'REGISTER'}
+            {event.price > 0 ? tCommon('buyTickets') : tCommon('register')}
           </Link>
         </div>
       )}
@@ -136,6 +138,7 @@ export default function ExperienceUpcoming({
   btnText = '#F5EEE6',
   limit,
 }: Props) {
+  const tCommon = useTranslations('common');
   const [events, setEvents] = useState<EventData[]>([]);
 
   useEffect(() => {
@@ -152,7 +155,7 @@ export default function ExperienceUpcoming({
   if (events.length === 0) {
     return (
       <p className="text-sm italic opacity-40" style={{ fontFamily: 'var(--font-nunito)' }}>
-        No upcoming events — check back soon.
+        {tCommon('noUpcomingEvents')}
       </p>
     );
   }

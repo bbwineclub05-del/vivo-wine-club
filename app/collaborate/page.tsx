@@ -7,14 +7,7 @@ import { Send } from 'lucide-react';
 import BackButton from '@/components/BackButton';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-
-const COLLABORATION_TYPES = [
-  'Winery / Producer',
-  'Bar / Restaurant / Club',
-  'Sponsor / Partner',
-  'Media / Press',
-  'Other',
-];
+import { useTranslations } from 'next-intl';
 
 interface FormState {
   name: string;
@@ -26,6 +19,14 @@ interface FormState {
 const EMPTY: FormState = { name: '', email: '', type: '', proposal: '' };
 
 export default function CollaboratePage() {
+  const t = useTranslations('collaborate');
+  const COLLABORATION_TYPES = [
+    { key: 'typeWinery', value: 'Winery / Producer' },
+    { key: 'typeBar',    value: 'Bar / Restaurant / Club' },
+    { key: 'typeSponsor',value: 'Sponsor / Partner' },
+    { key: 'typeMedia',  value: 'Media / Press' },
+    { key: 'typeOther',  value: 'Other' },
+  ] as const;
   const [form, setForm] = useState<FormState>(EMPTY);
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -45,10 +46,10 @@ export default function CollaboratePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       });
-      if (!res.ok) throw new Error('Something went wrong. Please try again.');
+      if (!res.ok) throw new Error(t('errorMessage'));
       setSent(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong.');
+      setError(err instanceof Error ? err.message : t('errorMessage'));
     } finally {
       setLoading(false);
     }
@@ -80,20 +81,19 @@ export default function CollaboratePage() {
               className="mb-14"
             >
               <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-4">
-                GET IN TOUCH
+                {t('getInTouch')}
               </div>
               <h1
                 className="text-[clamp(2.2rem,5.5vw,4.5rem)] font-light text-[#1a0505] leading-tight mb-6"
                 style={{ fontFamily: 'var(--font-syne)' }}
               >
-                Let&apos;s work together.
+                {t('heading')}
               </h1>
               <p
                 className="text-base text-[#7a4a4a] font-light leading-relaxed max-w-xl"
                 style={{ fontFamily: 'var(--font-nunito)' }}
               >
-                Are you a winery, wine bar, restaurant or industry organisation? We&apos;re always open
-                to creative partnerships and new projects.
+                {t('subtitle')}
               </p>
             </motion.div>
 
@@ -105,12 +105,12 @@ export default function CollaboratePage() {
                 transition={{ duration: 0.6 }}
                 className="p-8 border border-[#731515]/30 bg-[#731515]/5 text-center"
               >
-                <div className="text-[10px] tracking-[0.4em] text-[#731515] mb-3">PROPOSAL SENT</div>
+                <div className="text-[10px] tracking-[0.4em] text-[#731515] mb-3">{t('proposalSent')}</div>
                 <p className="text-base text-[#1a0505] font-light" style={{ fontFamily: 'var(--font-nunito)' }}>
-                  Thank you — we will be in touch soon.
+                  {t('thankYou')}
                 </p>
                 <p className="text-sm text-[#7a4a4a] mt-2" style={{ fontFamily: 'var(--font-nunito)' }}>
-                  A confirmation email has been sent to <strong>{form.email}</strong>.
+                  {t('confirmationEmail')} <strong>{form.email}</strong>.
                 </p>
               </motion.div>
             )}
@@ -128,7 +128,7 @@ export default function CollaboratePage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <input
                   type="text"
-                  placeholder="Full name"
+                  placeholder={t('namePlaceholder')}
                   required
                   value={form.name}
                   onChange={set('name')}
@@ -137,7 +137,7 @@ export default function CollaboratePage() {
                 />
                 <input
                   type="email"
-                  placeholder="Email"
+                  placeholder={t('emailPlaceholder')}
                   required
                   value={form.email}
                   onChange={set('email')}
@@ -155,10 +155,10 @@ export default function CollaboratePage() {
                   className={`${inputBase} appearance-none cursor-pointer ${form.type === '' ? 'text-[#7a4a4a]/50' : 'text-[#1a0505]'}`}
                   style={{ fontFamily: 'var(--font-nunito)' }}
                 >
-                  <option value="" disabled>Type of collaboration</option>
-                  {COLLABORATION_TYPES.map((t) => (
-                    <option key={t} value={t} className="bg-white text-[#1a0505]">
-                      {t}
+                  <option value="" disabled>{t('typePlaceholder')}</option>
+                  {COLLABORATION_TYPES.map((item) => (
+                    <option key={item.value} value={item.value} className="bg-white text-[#1a0505]">
+                      {t(item.key)}
                     </option>
                   ))}
                 </select>
@@ -171,7 +171,7 @@ export default function CollaboratePage() {
 
               {/* Proposal */}
               <textarea
-                placeholder="Briefly describe your proposal..."
+                placeholder={t('proposalPlaceholder')}
                 required
                 rows={6}
                 value={form.proposal}
@@ -195,7 +195,7 @@ export default function CollaboratePage() {
                 className="w-full py-4 bg-[#731515] text-white text-[11px] tracking-[0.4em] flex items-center justify-center gap-3 hover:bg-[#aa4848] disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-300 mt-2"
               >
                 <Send size={13} />
-                {loading ? 'SENDING…' : 'SEND PROPOSAL'}
+                {loading ? t('sending') : t('sendProposal')}
               </motion.button>
             </motion.form>
             )}

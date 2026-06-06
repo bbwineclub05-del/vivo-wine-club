@@ -3,28 +3,18 @@
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
-
-const BENEFITS = [
-  {
-    number: '01',
-    title: 'Winery & Food Visits',
-    body: 'Exclusive access to private visits at iconic wineries and selected food producers — curated experiences beyond the ordinary.',
-  },
-  {
-    number: '02',
-    title: 'Events & Merch',
-    body: 'Priority access to all Vivo events — wine parties, wine lounges, aperitifs — plus exclusive access to Vivo merch drops.',
-  },
-  {
-    number: '03',
-    title: 'Promotions & Discounts',
-    body: 'Member-only promotional offers and discounts with our partner wineries, restaurants and wine producers.',
-  },
-];
+import { useTranslations } from 'next-intl';
 
 export default function MembershipSection() {
   const reducedMotion = useReducedMotion();
   const d = (n: number) => (reducedMotion ? 0 : n);
+  const t = useTranslations('home');
+
+  const BENEFITS = [
+    { number: '01', title: t('benefit1Title'), body: t('benefit1Body') },
+    { number: '02', title: t('benefit2Title'), body: t('benefit2Body') },
+    { number: '03', title: t('benefit3Title'), body: t('benefit3Body') },
+  ];
 
   return (
     <section className="pt-6 pb-16 md:pt-8 md:pb-20 relative overflow-hidden">
@@ -49,12 +39,12 @@ export default function MembershipSection() {
           transition={{ duration: d(0.8) }}
           className="mb-16"
         >
-          <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-5">MEMBERSHIP</div>
+          <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-5">{t('membershipLabel')}</div>
           <h2
             className="text-[clamp(2rem,4.5vw,3.5rem)] font-light text-[#1a0505] leading-tight max-w-3xl"
             style={{ fontFamily: 'var(--font-syne)' }}
           >
-            What You&apos;ll Experience as a Member of Vivo Wine Club
+            {t('membershipHeading')}
           </h2>
         </motion.div>
 
@@ -106,13 +96,13 @@ export default function MembershipSection() {
             className="text-sm text-[#7a4a4a] font-light italic max-w-sm leading-relaxed"
             style={{ fontFamily: 'var(--font-nunito)' }}
           >
-            An exclusive community of wine lovers. By application only.
+            {t('membershipExclusive')}
           </p>
           <Link
             href="/membership"
             className="group inline-flex items-center gap-3 px-10 py-4 bg-[#731515] text-white text-[11px] tracking-[0.35em] hover:bg-[#aa4848] hover:shadow-[0_0_40px_rgba(115,21,21,0.25)] transition-all duration-300 border border-[#731515] whitespace-nowrap"
           >
-            APPLY FOR MEMBERSHIP
+            {t('applyForMembership')}
             <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform duration-300" />
           </Link>
         </motion.div>

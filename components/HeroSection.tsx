@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 
 /* ─── Line-art landmark SVGs ─── */
 
@@ -81,6 +82,7 @@ const CITIES = [
 
 export default function HeroSection() {
   const reducedMotion = useReducedMotion();
+  const t = useTranslations('hero');
 
   // Durations collapse to 0 for users who prefer reduced motion
   const d = (n: number) => (reducedMotion ? 0 : n);
@@ -117,7 +119,7 @@ export default function HeroSection() {
                 className="block text-[clamp(2.4rem,6.5vw,5.8rem)] font-light tracking-[-0.01em] text-white leading-tight"
                 style={{ fontFamily: 'var(--font-syne)' }}
               >
-                The art of
+                {t('line1')}
               </span>
             </motion.div>
           </div>
@@ -133,9 +135,9 @@ export default function HeroSection() {
                 style={{ fontFamily: 'var(--font-syne)' }}
               >
                 <em className="not-italic" style={{ fontStyle: 'italic', color: '#e8b4b4' }}>
-                  fine wine
+                  {t('line2italic')}
                 </em>
-                {', shared.'}
+                {t('line2rest')}
               </span>
             </motion.div>
           </div>
@@ -179,7 +181,7 @@ export default function HeroSection() {
           className="text-[clamp(1rem,2.2vw,1.25rem)] text-white/70 font-light tracking-wide max-w-2xl mx-auto leading-relaxed"
           style={{ fontFamily: 'var(--font-nunito)' }}
         >
-          Where young people discover wine: cellar visits, guided tastings and wine parties with music, good vibes and great bottles.
+          {t('subtitle')}
         </motion.p>
 
         {/* CTA buttons */}
@@ -193,7 +195,7 @@ export default function HeroSection() {
             href="/membership"
             className="px-14 py-5 bg-[#731515] text-white text-[13px] tracking-[0.35em] hover:bg-[#aa4848] hover:shadow-[0_0_40px_rgba(115,21,21,0.3)] transition-all duration-300 border border-[#731515]"
           >
-            BECOME A MEMBER
+            {t('cta')}
           </Link>
         </motion.div>
 

@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 /* ── Types ── */
 export interface NewsItem {
@@ -80,6 +81,7 @@ export function NewsCard({
   index: number;
   reducedMotion: boolean;
 }) {
+  const t = useTranslations('common');
   const d = (n: number) => (reducedMotion ? 0 : n);
 
   return (
@@ -143,7 +145,7 @@ export function NewsCard({
             className="text-[10px] tracking-[0.2em] text-[#731515] group-hover:underline underline-offset-2"
             style={{ fontFamily: 'var(--font-nunito)' }}
           >
-            Read more →
+            {t('readMore')}
           </span>
         </div>
       </div>
@@ -155,6 +157,8 @@ export function NewsCard({
 export default function LinkedInSection() {
   const reducedMotion = useReducedMotion() ?? false;
   const d = (n: number) => (reducedMotion ? 0 : n);
+  const t = useTranslations('home');
+  const tCommon = useTranslations('common');
 
   const [posts,   setPosts]   = useState<NewsItem[]>([]);
   const [ready,   setReady]   = useState(false);
@@ -202,18 +206,18 @@ export default function LinkedInSection() {
           transition={{ duration: d(0.8) }}
           className="mb-8"
         >
-          <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-4">LATEST NEWS</div>
+          <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-4">{t('latestNews')}</div>
           <h2
             className="text-[clamp(2.5rem,6vw,5rem)] font-light text-[#1a0505] leading-none section-title"
             style={{ fontFamily: 'var(--font-syne)' }}
           >
-            Our Latest News
+            {t('ourLatestNews')}
           </h2>
           <p
             className="mt-6 text-lg text-[#7a4a4a] font-light italic max-w-xl"
             style={{ fontFamily: 'var(--font-nunito)' }}
           >
-            Behind-the-scenes stories, winery visits and exclusive moments, shared with our community on LinkedIn.
+            {t('newsSubtitle')}
           </p>
         </motion.div>
 
@@ -243,7 +247,7 @@ export default function LinkedInSection() {
           </div>
         ) : posts.length === 0 ? (
           <p className="text-sm italic text-[#7a4a4a]/40" style={{ fontFamily: 'var(--font-nunito)' }}>
-            No news published yet.
+            {t('noNews')}
           </p>
         ) : (
           <>
@@ -270,7 +274,7 @@ export default function LinkedInSection() {
                   href="/news"
                   className="group inline-flex items-center gap-2 border border-[#731515]/30 hover:border-[#731515] px-8 py-3 text-[11px] tracking-[0.35em] text-[#731515] hover:bg-[#731515] hover:text-white transition-all duration-300"
                 >
-                  EXPLORE MORE
+                  {tCommon('exploreMore')}
                   <ArrowUpRight size={13} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-300" />
                 </Link>
               </motion.div>

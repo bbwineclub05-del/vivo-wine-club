@@ -6,8 +6,9 @@ import { motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import BackButton from '@/components/BackButton';
 import ExperienceUpcoming from '@/components/ExperienceUpcoming';
+import { useTranslations } from 'next-intl';
 
-const PILLS = ['Selected Wine Bars', 'Intimate Setting', 'Great Company'];
+const PILL_KEYS = ['pill1', 'pill2', 'pill3'] as const;
 
 const STATIC_GALLERY = [
   '/events/wine lounge 1.jpg',
@@ -18,6 +19,7 @@ const STATIC_GALLERY = [
 ];
 
 export default function WineLoungeePage() {
+  const t = useTranslations('wineLounge');
   const [gallery, setGallery] = useState<string[]>(STATIC_GALLERY);
 
   useEffect(() => {
@@ -70,7 +72,7 @@ export default function WineLoungeePage() {
               initial={{ y: '110%' }}
               animate={{ y: '0%' }}
               transition={{ duration: 1, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className="text-[clamp(3.5rem,9vw,8rem)] font-light leading-none"
+              className="text-[clamp(2.5rem,9vw,8rem)] font-light leading-none"
               style={{ fontFamily: 'var(--font-syne)' }}
             >
               Wine Lounge
@@ -85,7 +87,7 @@ export default function WineLoungeePage() {
               className="text-xl md:text-2xl text-[#C4B5A0] font-light italic"
               style={{ fontFamily: 'var(--font-nunito)' }}
             >
-              The perfect evening, in the finest bars.
+              {t('heroTagline')}
             </motion.p>
           </div>
         </div>
@@ -114,29 +116,26 @@ export default function WineLoungeePage() {
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
           >
-            <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-5">THE CONCEPT</div>
+            <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-5">{t('theConcept')}</div>
             <p
               className="text-xl md:text-2xl text-[#C4B5A0] font-light leading-relaxed"
               style={{ fontFamily: 'var(--font-nunito)' }}
             >
-              The Wine Lounge is our take on the perfect evening out — a handpicked wine bar,
-              a small group of people who love wine, and a few hours to explore a list together.
-              We scout the most interesting venues across Europe, so all you have to do is show up
-              and taste.
+              {t('conceptBody')}
             </p>
           </motion.div>
 
           <div className="flex flex-wrap gap-4 mt-10">
-            {PILLS.map((pill, i) => (
+            {PILL_KEYS.map((key, i) => (
               <motion.div
-                key={pill}
+                key={key}
                 initial={{ opacity: 0, y: 16 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: i * 0.12, ease: [0.16, 1, 0.3, 1] }}
                 className="px-6 py-3 border border-white/20 text-white/60 text-[11px] tracking-[0.35em] rounded-full"
               >
-                {pill}
+                {t(key)}
               </motion.div>
             ))}
           </div>
@@ -179,12 +178,12 @@ export default function WineLoungeePage() {
             transition={{ duration: 0.8 }}
             className="mb-10"
           >
-            <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-3">UPCOMING</div>
+            <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-3">{t('upcoming')}</div>
             <h2
               className="text-[clamp(2rem,5vw,4rem)] font-light text-[#F5EEE6] leading-none mb-8"
               style={{ fontFamily: 'var(--font-syne)' }}
             >
-              NEXT EVENINGS
+              {t('nextEvenings')}
             </h2>
             <div className="h-px bg-white/10 mb-8" />
             <ExperienceUpcoming
@@ -201,16 +200,16 @@ export default function WineLoungeePage() {
       {/* ── 5. CLOSING ── */}
       <section className="py-10 md:py-14 bg-[#240909] relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_60%,rgba(201,168,76,0.06),transparent_65%)] pointer-events-none" />
-        <div className="max-w-5xl mx-auto px-8 md:px-16 relative z-10 flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-8">
+        <div className="max-w-5xl mx-auto px-8 md:px-16 relative z-10 flex flex-col lg:flex-row items-start lg:items-center gap-6">
           <motion.h2
             initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light text-[#F5EEE6] leading-tight"
+            className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-light text-[#F5EEE6] leading-tight"
             style={{ fontFamily: 'var(--font-syne)' }}
           >
-            Don&apos;t miss the next evening
+            {t('dontMissNext')}
           </motion.h2>
           <motion.a
             href="/membership"
@@ -221,7 +220,7 @@ export default function WineLoungeePage() {
             className="shrink-0 inline-flex items-center gap-2 px-7 py-3.5 min-h-[44px] bg-[#731515] text-[#F5EEE6] text-[11px] tracking-[0.35em] hover:bg-[#9b2323] transition-colors"
             style={{ fontFamily: 'var(--font-nunito)' }}
           >
-            BECOME A MEMBER
+            {t('becomeAMember')}
           </motion.a>
         </div>
       </section>

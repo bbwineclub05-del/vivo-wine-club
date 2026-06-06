@@ -26,13 +26,19 @@ export async function GET(request: Request) {
   const db = getSupabaseAdmin() as any;
   const { data } = await db
     .from('team_members')
-    .select('permissions, active')
+    .select('permissions, active, role')
     .eq('email', auth.email)
     .maybeSingle();
 
   if (!data) {
     // Not in team_members — treat as no permissions
     return NextResponse.json({ permissions: {}, active: false });
+  }
+
+  // Team members with role 'admin' get full permissions (same as ADMIN_EMAILS founders)
+  // This covers non-founder admins invited via Team Management.
+  if (data.role === 'admin') {
+    return NextResponse.json({ permissions: FULL_PERMISSIONS, active: data.active });
   }
 
   return NextResponse.json({ permissions: data.permissions ?? {}, active: data.active });

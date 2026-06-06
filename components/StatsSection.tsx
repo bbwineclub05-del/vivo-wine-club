@@ -1,13 +1,15 @@
 'use client';
 
-const STATS = [
-  { value: '15+', label: 'Events hosted' },
-  { value: '7',   label: 'Cities', sublabel: 'ACROSS EUROPE' },
-  { value: '50+', label: 'Winery partners' },
-  { value: '20+', label: 'Members' },
-];
+import { useTranslations } from 'next-intl';
 
 export default function StatsSection() {
+  const t = useTranslations('stats');
+  const STATS = [
+    { value: '15+', label: t('eventsHosted') },
+    { value: '7',   label: t('cities'), sublabel: t('acrossEurope') },
+    { value: '50+', label: t('wineryPartners') },
+    { value: '20+', label: t('members') },
+  ];
   return (
     <section className="relative overflow-hidden bg-[#731515]">
       <div className="max-w-4xl mx-auto px-6 lg:px-10 py-10">

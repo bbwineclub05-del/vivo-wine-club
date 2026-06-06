@@ -5,32 +5,15 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
-const EXPERIENCES = [
-  {
-    id: 1,
-    title: 'Wine Party',
-    description: 'Themed wine nights with music, curated bottles and a crowd that loves both',
-    image: '/events/copertina.jpg',
-    href: '/experiences/wine-party',
-  },
-  {
-    id: 2,
-    title: 'Wine Visits',
-    description: 'Private cellar tours and guided tastings at iconic estates',
-    image: '/Winery visits/pichon baron copertina.jpeg',
-    href: '/experiences/winery-visits',
-  },
-  {
-    id: 3,
-    title: 'Wine Lounge',
-    description: 'The perfect evening in the most interesting wine bars across Europe',
-    image: '/events/bottiglie.jpg',
-    href: '/experiences/wine-lounge',
-  },
+const EXPERIENCES_DATA = [
+  { id: 1, title: 'Wine Party',  descKey: 'winePartyDesc',  image: '/events/copertina.jpg',                   href: '/experiences/wine-party'    },
+  { id: 2, title: 'Wine Visits', descKey: 'wineVisitsDesc', image: '/Winery visits/pichon baron copertina.jpeg', href: '/experiences/winery-visits' },
+  { id: 3, title: 'Wine Lounge', descKey: 'wineLoungeDesc', image: '/events/bottiglie.jpg',                   href: '/experiences/wine-lounge'   },
 ] as const;
 
-const N = EXPERIENCES.length;
+const N = EXPERIENCES_DATA.length;
 
 // Defined outside component — never recreated
 const slideVariants = {
@@ -42,13 +25,16 @@ const slideVariants = {
 export default function ExperiencesSection() {
   const [[idx, dir], setSlide] = useState([0, 0]);
   const reducedMotion = useReducedMotion();
+  const t = useTranslations('home');
 
   const go   = useCallback((next: number, d: number) => setSlide([((next % N) + N) % N, d]), []);
   const prev = useCallback(() => go(idx - 1, -1), [go, idx]);
   const next = useCallback(() => go(idx + 1,  1), [go, idx]);
   const goTo = useCallback((i: number) => { if (i !== idx) go(i, i > idx ? 1 : -1); }, [go, idx]);
 
-  const exp = EXPERIENCES[idx];
+  const expData = EXPERIENCES_DATA[idx];
+  const tCommon = useTranslations('common');
+  const exp = { ...expData, description: t(expData.descKey) };
   const slideDuration = reducedMotion ? 0 : 0.55;
 
   return (
@@ -64,18 +50,18 @@ export default function ExperiencesSection() {
           transition={{ duration: reducedMotion ? 0 : 0.8 }}
           className="mb-12"
         >
-          <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-4">WHAT WE DO</div>
+          <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-4">{t('whatWeDo')}</div>
           <h2
             className="text-[clamp(2.5rem,6vw,5rem)] font-light text-[#1a0505] leading-none section-title"
             style={{ fontFamily: 'var(--font-syne)' }}
           >
-            EXPERIENCES
+            {t('experiences')}
           </h2>
           <p
             className="mt-6 text-base md:text-lg text-[#7a4a4a] font-light italic"
             style={{ fontFamily: 'var(--font-nunito)' }}
           >
-            Experiences for every taste, from lively wine parties to intimate cellar visits
+            {t('experiencesSubtitle')}
           </p>
         </motion.div>
       </div>
@@ -138,7 +124,7 @@ export default function ExperiencesSection() {
                   </div>
 
                   <div className="self-start sm:self-auto shrink-0 flex items-center gap-2 text-[10px] tracking-[0.3em] text-white border border-white/30 px-5 py-2.5 sm:px-6 sm:py-3 group-hover:bg-white/10 group-hover:border-white/60 transition-all duration-300 whitespace-nowrap">
-                    DISCOVER
+                    {tCommon('discover')}
                     <ArrowRight size={12} />
                   </div>
                 </div>
@@ -166,7 +152,7 @@ export default function ExperiencesSection() {
 
           {/* Dot indicators */}
           <div className="flex items-center justify-center gap-3 mt-6">
-            {EXPERIENCES.map((_, i) => (
+            {EXPERIENCES_DATA.map((_, i) => (
               <button
                 key={i}
                 onClick={() => goTo(i)}
