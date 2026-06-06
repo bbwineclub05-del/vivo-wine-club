@@ -417,15 +417,15 @@ export default function QuoteGenerator() {
       )}
 
       {/* ── Tab switcher ── */}
-      <div className="flex gap-1 bg-white/10 p-1 rounded-lg w-fit border border-white/10">
+      <div className="flex gap-1 p-1 rounded-lg w-fit">
         {(['form', 'preview'] as const).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-1.5 rounded-md text-[10px] tracking-[0.3em] transition-colors duration-150 ${
+            className={`px-4 py-1.5 rounded-md text-[10px] tracking-[0.3em] font-bold border transition-colors duration-150 ${
               activeTab === tab
-                ? 'bg-[#731515] text-white'
-                : 'text-white/50 hover:text-white/80'
+                ? 'bg-[#5b1a14] text-white border-[#5b1a14]'
+                : 'bg-white text-[#5b1a14] border-[#5b1a14] hover:bg-[#5b1a14]/5'
             }`}
           >
             {tab === 'form' ? 'FORM' : 'ANTEPRIMA PDF'}

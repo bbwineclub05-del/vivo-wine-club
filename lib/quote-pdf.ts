@@ -283,7 +283,7 @@ export async function generateQuotePdf(data: QuoteData): Promise<Uint8Array> {
     'Giacomo Gallo',
     'Filippo Lombardi',
     'Cristiano Michelotti',
-    'Riccardo Consalvo',
+    'Marcello Abbadati',
   ];
   const sigColW   = CW / 4;
   const sigLineY  = SIG_TOP - 36;
