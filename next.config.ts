@@ -34,7 +34,12 @@ const nextConfig: NextConfig = {
       // ─── Dev / build tools ───────────────────────────────────────────────
       // Never needed at runtime on Vercel.
       'node_modules/typescript/**',
-      'node_modules/@swc/**',
+      // @swc/core and its platform binaries are the compiler — dev only.
+      // @swc/helpers is a RUNTIME dep injected into compiled output — must NOT be excluded.
+      'node_modules/@swc/core/**',
+      'node_modules/@swc/core-darwin-x64/**',
+      'node_modules/@swc/counter/**',
+      'node_modules/@swc/types/**',
       'node_modules/@typescript-eslint/**',
       'node_modules/eslint/**',
       'node_modules/eslint-plugin-react-hooks/**',
