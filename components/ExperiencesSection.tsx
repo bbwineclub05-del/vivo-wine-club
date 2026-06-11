@@ -104,7 +104,7 @@ export default function ExperiencesSection() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/5" />
 
-                <div className="absolute bottom-0 left-0 right-0 z-[2] p-5 sm:p-8 md:p-12 flex flex-col sm:flex-row sm:items-end justify-between gap-4 sm:gap-6">
+                <div className="absolute bottom-0 left-0 right-0 z-[2] p-5 sm:p-8 md:p-12 flex flex-col sm:flex-row sm:items-end justify-between gap-4 sm:gap-6 pointer-events-none">
                   <div>
                     <div className="text-[9px] tracking-[0.45em] text-white/60 mb-2 sm:mb-3">
                       {String(idx + 1).padStart(2, '0')} / {String(N).padStart(2, '0')}
@@ -123,10 +123,13 @@ export default function ExperiencesSection() {
                     </p>
                   </div>
 
-                  <div className="self-start sm:self-auto shrink-0 flex items-center gap-2 text-[10px] tracking-[0.3em] text-white border border-white/30 px-5 py-2.5 sm:px-6 sm:py-3 group-hover:bg-white/10 group-hover:border-white/60 transition-all duration-300 whitespace-nowrap">
+                  <Link
+                    href={exp.href}
+                    className="pointer-events-auto self-start sm:self-auto shrink-0 flex items-center gap-2 text-[10px] tracking-[0.3em] text-white border border-white/30 px-5 py-2.5 sm:px-6 sm:py-3 hover:bg-white/10 hover:border-white/60 transition-all duration-300 whitespace-nowrap"
+                  >
                     {tCommon('discover')}
                     <ArrowRight size={12} />
-                  </div>
+                  </Link>
                 </div>
               </motion.div>
             </AnimatePresence>

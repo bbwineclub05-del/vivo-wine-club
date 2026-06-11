@@ -58,6 +58,7 @@ export async function GET(request: NextRequest) {
     let ticketsQuery = db
       .from('tickets')
       .select('event_id, name, email, created_at')
+      .eq('payment_status', 'paid')
       .order('created_at', { ascending: false });
     if (filterSlug) {
       ticketsQuery = ticketsQuery.eq('event_id', filterSlug);

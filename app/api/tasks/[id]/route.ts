@@ -4,7 +4,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const VALID_STATUSES = ['todo', 'in_progress', 'done'];
+const VALID_STATUSES = ['todo', 'done'];
 
 async function getTeamMembers(): Promise<{ name: string; email: string }[]> {
   const db = getSupabaseAdmin() as any; // eslint-disable-line @typescript-eslint/no-explicit-any

@@ -2,11 +2,20 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, X, ChevronDown, Trash2, ClipboardList, Check } from 'lucide-react';
+import { Plus, X, ChevronDown, Trash2, ClipboardList, Check, Users, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 /* ── Team member type (from Supabase) ── */
 interface TeamMember { name: string; email: string; }
+
+/* ── Team type ── */
+interface Team {
+  id: string;
+  name: string;
+  color: string;
+  description: string | null;
+  members: string[]; // emails
+}
 
 /* ── Static fallback list for isAdmin / adminName before team loads ── */
 const STATIC_ADMINS = [
@@ -30,9 +39,14 @@ function memberName(email: string, members: TeamMember[]) {
   );
 }
 
+function initials(email: string, members: TeamMember[]) {
+  const name = memberName(email, members);
+  return name.slice(0, 2).toUpperCase();
+}
+
 /* ── Types ── */
 type Priority = 'high' | 'medium' | 'low';
-type Status   = 'todo' | 'in_progress' | 'done';
+type Status   = 'todo' | 'done';
 
 interface Task {
   id: string;
@@ -45,6 +59,7 @@ interface Task {
   priority: Priority;
   status: Status;
   created_at: string;
+  team_id?: string | null;
 }
 
 /* ── Helpers ── */
@@ -55,18 +70,16 @@ const PRIORITY_STYLES: Record<Priority, string> = {
 };
 
 const STATUS_STYLES: Record<Status, string> = {
-  todo:        'border border-[#e8d5d5] bg-white text-[#7a4a4a]',
-  in_progress: 'border border-[#731515]/40 bg-[#fde8e8] text-[#731515]',
-  done:        'border border-green-600/30 bg-green-50 text-green-700',
+  todo: 'border border-[#e8d5d5] bg-white text-[#7a4a4a]',
+  done: 'border border-green-600/30 bg-green-50 text-green-700',
 };
 
 const STATUS_LABELS: Record<Status, string> = {
-  todo:        'TO DO',
-  in_progress: 'IN PROGRESS',
-  done:        'DONE',
+  todo: 'TO DO',
+  done: 'DONE',
 };
 
-const STATUS_ORDER: Status[] = ['todo', 'in_progress', 'done'];
+const STATUS_ORDER: Status[] = ['todo', 'done'];
 
 function nextStatus(s: Status): Status {
   const i = STATUS_ORDER.indexOf(s);
@@ -83,7 +96,14 @@ function isOverdue(due: string | null, status: Status) {
 }
 
 /* ── Empty form ── */
-const EMPTY_FORM = { title: '', description: '', assignee_emails: [] as string[], due_date: '', priority: 'medium' as Priority };
+const EMPTY_FORM = {
+  title: '',
+  description: '',
+  assignee_emails: [] as string[],
+  due_date: '',
+  priority: 'medium' as Priority,
+  team_id: '',
+};
 
 /* ── Task card ── */
 function TaskCard({
@@ -109,7 +129,6 @@ function TaskCard({
 
   const overdue = isOverdue(task.due_date, task.status);
   const assigneeEmails = task.assignee_emails?.length ? task.assignee_emails : (task.assignee_email ? [task.assignee_email] : []);
-  const isAssignedToMe = assigneeEmails.includes(currentEmail);
   const isAssignedByMe = task.assigner_email === currentEmail;
 
   return (
@@ -196,19 +215,153 @@ function TaskCard({
   );
 }
 
+/* ── Kanban board (reusable) ── */
+function KanbanBoard({
+  tasks,
+  currentEmail,
+  members,
+  onStatusChange,
+  onDelete,
+}: {
+  tasks: Task[];
+  currentEmail: string;
+  members: TeamMember[];
+  onStatusChange: (id: string, status: Status) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
+}) {
+  const groups: Record<Status, Task[]> = { todo: [], done: [] };
+  for (const t of tasks) {
+    const s: Status = t.status === 'done' ? 'done' : 'todo';
+    groups[s].push(t);
+  }
+
+  if (tasks.length === 0) {
+    return (
+      <div className="py-10 text-center">
+        <p className="text-xs text-[#7a4a4a]/50 italic" style={{ fontFamily: 'var(--font-nunito)' }}>
+          No tasks yet.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+      {STATUS_ORDER.map((status) => (
+        <div key={status} className="flex flex-col gap-2">
+          <div className="flex items-center justify-between mb-1">
+            <span className={`text-[8px] tracking-[0.3em] px-2.5 py-1 ${STATUS_STYLES[status]}`}>
+              {STATUS_LABELS[status]}
+            </span>
+            {groups[status].length > 0 && (
+              <span className="text-[9px] text-[#7a4a4a]/40">{groups[status].length}</span>
+            )}
+          </div>
+          <AnimatePresence mode="popLayout">
+            {groups[status].length === 0 ? (
+              <div className="border border-dashed border-[#e8d5d5] py-6 text-center">
+                <p className="text-[10px] text-[#7a4a4a]/30 italic" style={{ fontFamily: 'var(--font-nunito)' }}>
+                  Empty
+                </p>
+              </div>
+            ) : (
+              groups[status].map((task) => (
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  currentEmail={currentEmail}
+                  members={members}
+                  onStatusChange={onStatusChange}
+                  onDelete={onDelete}
+                />
+              ))
+            )}
+          </AnimatePresence>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ── Team card ── */
+function TeamCard({
+  team,
+  tasks,
+  onClick,
+}: {
+  team: Team;
+  tasks: Task[];
+  onClick: () => void;
+}) {
+  const teamTasks = tasks.filter((t) => t.team_id === team.id);
+  const counts = { todo: 0, done: 0 };
+  for (const t of teamTasks) {
+    const s: Status = t.status === 'done' ? 'done' : 'todo';
+    counts[s]++;
+  }
+
+  return (
+    <button
+      onClick={onClick}
+      className="bg-white border border-[#e8d5d5] p-6 text-left flex flex-col gap-4 hover:border-[#731515]/40 hover:shadow-sm transition-all duration-200 group"
+    >
+      {/* Team name + color dot */}
+      <div className="flex items-center gap-3">
+        <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: team.color }} />
+        <h3
+          className="text-sm font-semibold text-[#1a0505] group-hover:text-[#731515] transition-colors"
+          style={{ fontFamily: 'var(--font-syne)' }}
+        >
+          {team.name}
+        </h3>
+      </div>
+
+      {/* Members count */}
+      <div className="flex items-center gap-1.5 text-[10px] text-[#7a4a4a]/60" style={{ fontFamily: 'var(--font-nunito)' }}>
+        <Users size={11} />
+        <span>{team.members.length} member{team.members.length !== 1 ? 's' : ''}</span>
+      </div>
+
+      {/* Task counters */}
+      <div className="flex gap-2 flex-wrap">
+        {teamTasks.length === 0 ? (
+          <span className="text-[9px] text-[#7a4a4a]/40 italic" style={{ fontFamily: 'var(--font-nunito)' }}>No tasks</span>
+        ) : (
+          <>
+            {counts.todo > 0 && (
+              <span className="text-[9px] tracking-[0.15em] px-2 py-0.5 border border-[#e8d5d5] text-[#7a4a4a]">
+                {counts.todo} TO DO
+              </span>
+            )}
+            {counts.done > 0 && (
+              <span className="text-[9px] tracking-[0.15em] px-2 py-0.5 border border-green-600/30 bg-green-50 text-green-700">
+                {counts.done} DONE
+              </span>
+            )}
+          </>
+        )}
+      </div>
+    </button>
+  );
+}
+
 /* ── New task form ── */
 function NewTaskForm({
   currentEmail,
   members,
+  teams,
+  defaultTeamId,
   onClose,
   onCreated,
 }: {
   currentEmail: string;
   members: TeamMember[];
+  teams: Team[];
+  defaultTeamId?: string;
   onClose: () => void;
   onCreated: (task: Task) => void;
 }) {
-  const [form, setForm] = useState({ ...EMPTY_FORM });
+  const [form, setForm] = useState({ ...EMPTY_FORM, team_id: defaultTeamId ?? '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -234,7 +387,7 @@ function NewTaskForm({
     });
   }, []);
 
-  const set = (k: 'title' | 'description' | 'due_date' | 'priority') => (
+  const set = (k: 'title' | 'description' | 'due_date' | 'priority' | 'team_id') => (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => setForm((p) => ({ ...p, [k]: e.target.value }));
 
@@ -254,6 +407,7 @@ function NewTaskForm({
           assigner_email:  currentEmail,
           due_date:        form.due_date,
           priority:        form.priority,
+          team_id:         form.team_id || null,
         }),
       });
       const data = await res.json();
@@ -315,7 +469,7 @@ function NewTaskForm({
           style={{ fontFamily: 'var(--font-nunito)' }}
         />
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Assignee multi-select */}
           <div className="relative" ref={dropdownRef}>
             <button
@@ -349,6 +503,24 @@ function NewTaskForm({
             )}
           </div>
 
+          {/* Team */}
+          <div className="relative">
+            <select
+              value={form.team_id}
+              onChange={set('team_id')}
+              className={`${inputClass} appearance-none cursor-pointer`}
+              style={{ fontFamily: 'var(--font-nunito)' }}
+            >
+              <option value="">No team</option>
+              {teams.map((t) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+            <ChevronDown size={12} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#731515]" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Priority */}
           <div className="relative">
             <select
@@ -400,7 +572,7 @@ function NewTaskForm({
 }
 
 /* ── Main component ── */
-type Filter = 'all' | 'mine' | 'by_me';
+type Filter = 'all' | 'mine' | 'by_me' | 'teams';
 
 export default function TaskBoard({ currentEmail }: { currentEmail: string }) {
   const [tasks, setTasks]       = useState<Task[]>([]);
@@ -410,6 +582,9 @@ export default function TaskBoard({ currentEmail }: { currentEmail: string }) {
   const [token, setToken]       = useState('');
   const [liveConnected, setLiveConnected] = useState(false);
   const [members, setMembers]   = useState<TeamMember[]>(STATIC_ADMINS);
+  const [teams, setTeams]       = useState<Team[]>([]);
+  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null); // for team detail drill-down
+  const [teamFilter, setTeamFilter] = useState<string>(''); // '' = no filter, otherwise team id
   // Track IDs we inserted locally to skip duplicate INSERT events from realtime
   const localInsertIds = useRef<Set<string>>(new Set());
 
@@ -433,8 +608,20 @@ export default function TaskBoard({ currentEmail }: { currentEmail: string }) {
     } catch {/* fall back to static list */}
   }
 
-  useEffect(() => { loadMembers(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  /* ── Load teams ── */
+  async function loadTeams() {
+    try {
+      const res = await fetch('/api/teams');
+      if (!res.ok) return;
+      const json = await res.json();
+      console.log('[TaskBoard] teams loaded:', json.teams);
+      setTeams(json.teams ?? []);
+    } catch (err) {
+      console.error('[TaskBoard] loadTeams error:', err);
+    }
+  }
 
+  useEffect(() => { loadMembers(); loadTeams(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { loadTasks(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ── Supabase Realtime ── */
@@ -452,7 +639,6 @@ export default function TaskBoard({ currentEmail }: { currentEmail: string }) {
         (payload) => {
           if (payload.eventType === 'INSERT') {
             const t = payload.new as Task;
-            // Skip if we just inserted this locally (already in optimistic state)
             if (localInsertIds.current.has(t.id)) {
               localInsertIds.current.delete(t.id);
               return;
@@ -471,7 +657,7 @@ export default function TaskBoard({ currentEmail }: { currentEmail: string }) {
         setLiveConnected(status === 'SUBSCRIBED');
       });
     return () => { supabase.removeChannel(channel); };
-  }, [token]);
+  }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function loadTasks() {
     setLoading(true);
@@ -502,7 +688,6 @@ export default function TaskBoard({ currentEmail }: { currentEmail: string }) {
   }
 
   function handleCreated(task: Task) {
-    // Track locally so the incoming realtime INSERT doesn't duplicate it
     localInsertIds.current.add(task.id);
     setTasks((prev) => [task, ...prev]);
   }
@@ -511,22 +696,181 @@ export default function TaskBoard({ currentEmail }: { currentEmail: string }) {
     return (t.assignee_emails?.includes(currentEmail)) || t.assignee_email === currentEmail;
   }
 
+  // Board-view filtered tasks (not teams view)
   const filtered = tasks.filter((t) => {
-    if (filter === 'mine')   return taskAssignedToMe(t);
-    if (filter === 'by_me')  return t.assigner_email === currentEmail;
+    if (filter === 'mine')   { if (!taskAssignedToMe(t)) return false; }
+    if (filter === 'by_me')  { if (t.assigner_email !== currentEmail) return false; }
+    if (teamFilter)          { if (t.team_id !== teamFilter) return false; }
     return true;
   });
-
-  // Group by status for display
-  const groups: Record<Status, Task[]> = { todo: [], in_progress: [], done: [] };
-  for (const t of filtered) groups[t.status].push(t);
 
   const FILTER_TABS: { id: Filter; label: string }[] = [
     { id: 'all',   label: 'ALL' },
     { id: 'mine',  label: 'ASSIGNED TO ME' },
     { id: 'by_me', label: 'ASSIGNED BY ME' },
+    { id: 'teams', label: 'TEAMS' },
   ];
 
+  /* ── Team detail view ── */
+  const selectedTeam = teams.find((t) => t.id === selectedTeamId) ?? null;
+  const teamDetailTasks = selectedTeam ? tasks.filter((t) => t.team_id === selectedTeam.id) : [];
+
+  if (filter === 'teams' && selectedTeam) {
+    const teamCounts = { todo: 0, done: 0 };
+    for (const t of teamDetailTasks) {
+      const s: Status = t.status === 'done' ? 'done' : 'todo';
+      teamCounts[s]++;
+    }
+
+    return (
+      <div className="flex flex-col gap-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSelectedTeamId(null)}
+              className="text-[#7a4a4a]/50 hover:text-[#731515] transition-colors"
+              aria-label="Back to teams"
+            >
+              <ArrowLeft size={16} />
+            </button>
+            <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: selectedTeam.color }} />
+            <h2 className="text-[10px] tracking-[0.4em] text-[#1a0505]">{selectedTeam.name.toUpperCase()}</h2>
+            {liveConnected && (
+              <span className="flex items-center gap-1 text-[8px] tracking-[0.2em] text-green-600">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                LIVE
+              </span>
+            )}
+          </div>
+          <button
+            onClick={() => setShowForm((v) => !v)}
+            className="inline-flex items-center gap-2 text-[9px] tracking-[0.3em] text-white bg-[#731515] hover:bg-[#aa4848] transition-colors px-4 py-2.5 self-start sm:self-auto"
+          >
+            <Plus size={12} />
+            NEW TASK
+          </button>
+        </div>
+
+        {/* Members row */}
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-[9px] tracking-[0.2em] text-[#7a4a4a]/50">MEMBERS</span>
+          {selectedTeam.members.map((email) => (
+            <div
+              key={email}
+              title={email}
+              className="flex items-center gap-1.5 text-[10px] text-[#7a4a4a]"
+              style={{ fontFamily: 'var(--font-nunito)' }}
+            >
+              <div
+                className="w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-semibold text-white shrink-0"
+                style={{ backgroundColor: selectedTeam.color }}
+              >
+                {initials(email, members)}
+              </div>
+              <span>{memberName(email, members)}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Task counters */}
+        <div className="flex gap-3 flex-wrap">
+          <span className="text-[9px] tracking-[0.15em] px-3 py-1.5 border border-[#e8d5d5] text-[#7a4a4a]">
+            {teamCounts.todo} TO DO
+          </span>
+          <span className="text-[9px] tracking-[0.15em] px-3 py-1.5 border border-green-600/30 bg-green-50 text-green-700">
+            {teamCounts.done} DONE
+          </span>
+        </div>
+
+        {/* New task form */}
+        <AnimatePresence>
+          {showForm && (
+            <NewTaskForm
+              currentEmail={currentEmail}
+              members={members}
+              teams={teams}
+              defaultTeamId={selectedTeam.id}
+              onClose={() => setShowForm(false)}
+              onCreated={handleCreated}
+            />
+          )}
+        </AnimatePresence>
+
+        {/* Kanban */}
+        {loading ? (
+          <div className="py-10 text-center text-xs text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
+            Loading tasks…
+          </div>
+        ) : (
+          <KanbanBoard
+            tasks={teamDetailTasks}
+            currentEmail={currentEmail}
+            members={members}
+            onStatusChange={handleStatusChange}
+            onDelete={handleDelete}
+          />
+        )}
+      </div>
+    );
+  }
+
+  /* ── Teams grid view ── */
+  if (filter === 'teams') {
+    return (
+      <div className="flex flex-col gap-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-[#fde8e8] flex items-center justify-center shrink-0">
+              <ClipboardList size={15} className="text-[#731515]" />
+            </div>
+            <h2 className="text-[10px] tracking-[0.4em] text-[#1a0505]">TASK BOARD</h2>
+          </div>
+        </div>
+
+        {/* Filter tabs */}
+        <div className="flex gap-1 border-b border-[#e8d5d5]">
+          {FILTER_TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => { setFilter(tab.id); if (tab.id !== 'teams') setSelectedTeamId(null); }}
+              className={`text-[9px] tracking-[0.2em] px-4 py-2.5 transition-colors duration-200 border-b-2 -mb-px ${
+                filter === tab.id
+                  ? 'border-[#731515] text-[#731515]'
+                  : 'border-transparent text-[#7a4a4a]/50 hover:text-[#7a4a4a]'
+              }`}
+              style={{ fontFamily: 'var(--font-nunito)' }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Teams grid */}
+        {teams.length === 0 ? (
+          <div className="py-10 text-center">
+            <p className="text-xs text-[#7a4a4a]/50 italic" style={{ fontFamily: 'var(--font-nunito)' }}>
+              No teams found.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {teams.map((team) => (
+              <TeamCard
+                key={team.id}
+                team={team}
+                tasks={tasks}
+                onClick={() => setSelectedTeamId(team.id)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  /* ── Default board view ── */
   return (
     <div className="flex flex-col gap-6">
       {/* Header */}
@@ -552,29 +896,52 @@ export default function TaskBoard({ currentEmail }: { currentEmail: string }) {
         </button>
       </div>
 
-      {/* Filter tabs */}
-      <div className="flex gap-1 border-b border-[#e8d5d5]">
-        {FILTER_TABS.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setFilter(tab.id)}
-            className={`text-[9px] tracking-[0.2em] px-4 py-2.5 transition-colors duration-200 border-b-2 -mb-px ${
-              filter === tab.id
-                ? 'border-[#731515] text-[#731515]'
-                : 'border-transparent text-[#7a4a4a]/50 hover:text-[#7a4a4a]'
-            }`}
-            style={{ fontFamily: 'var(--font-nunito)' }}
-          >
-            {tab.label}
-            {tab.id !== 'all' && (
-              <span className="ml-1.5 text-[8px] opacity-60">
-                ({tab.id === 'mine'
-                  ? tasks.filter(taskAssignedToMe).length
-                  : tasks.filter((t) => t.assigner_email === currentEmail).length})
-              </span>
-            )}
-          </button>
-        ))}
+      {/* Filter tabs + team filter */}
+      <div className="flex flex-col gap-2">
+        <div className="flex gap-1 border-b border-[#e8d5d5]">
+          {FILTER_TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => { setFilter(tab.id); if (tab.id !== 'teams') setSelectedTeamId(null); }}
+              className={`text-[9px] tracking-[0.2em] px-4 py-2.5 transition-colors duration-200 border-b-2 -mb-px ${
+                filter === tab.id
+                  ? 'border-[#731515] text-[#731515]'
+                  : 'border-transparent text-[#7a4a4a]/50 hover:text-[#7a4a4a]'
+              }`}
+              style={{ fontFamily: 'var(--font-nunito)' }}
+            >
+              {tab.label}
+              {tab.id !== 'all' && tab.id !== 'teams' && (
+                <span className="ml-1.5 text-[8px] opacity-60">
+                  ({tab.id === 'mine'
+                    ? tasks.filter(taskAssignedToMe).length
+                    : tasks.filter((t) => t.assigner_email === currentEmail).length})
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Team filter dropdown (only when in board view) */}
+        {teams.length > 0 && (
+          <div className="flex items-center gap-2">
+            <Users size={11} className="text-[#7a4a4a]/50 shrink-0" />
+            <div className="relative">
+              <select
+                value={teamFilter}
+                onChange={(e) => setTeamFilter(e.target.value)}
+                className="bg-transparent border border-[#e8d5d5] text-[#7a4a4a] text-[10px] tracking-[0.1em] px-3 py-1.5 pr-7 focus:outline-none focus:border-[#731515]/50 appearance-none cursor-pointer"
+                style={{ fontFamily: 'var(--font-nunito)' }}
+              >
+                <option value="">All teams</option>
+                {teams.map((t) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+              <ChevronDown size={10} className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[#731515]" />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* New task form */}
@@ -583,6 +950,8 @@ export default function TaskBoard({ currentEmail }: { currentEmail: string }) {
           <NewTaskForm
             currentEmail={currentEmail}
             members={members}
+            teams={teams}
+            defaultTeamId={teamFilter || undefined}
             onClose={() => setShowForm(false)}
             onCreated={handleCreated}
           />
@@ -594,49 +963,14 @@ export default function TaskBoard({ currentEmail }: { currentEmail: string }) {
         <div className="py-10 text-center text-xs text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
           Loading tasks…
         </div>
-      ) : filtered.length === 0 ? (
-        <div className="py-10 text-center">
-          <p className="text-xs text-[#7a4a4a]/50 italic" style={{ fontFamily: 'var(--font-nunito)' }}>
-            No tasks yet.
-          </p>
-        </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
-          {STATUS_ORDER.map((status) => (
-            <div key={status} className="flex flex-col gap-2">
-              {/* Column header */}
-              <div className="flex items-center justify-between mb-1">
-                <span className={`text-[8px] tracking-[0.3em] px-2.5 py-1 ${STATUS_STYLES[status]}`}>
-                  {STATUS_LABELS[status]}
-                </span>
-                {groups[status].length > 0 && (
-                  <span className="text-[9px] text-[#7a4a4a]/40">{groups[status].length}</span>
-                )}
-              </div>
-
-              <AnimatePresence mode="popLayout">
-                {groups[status].length === 0 ? (
-                  <div className="border border-dashed border-[#e8d5d5] py-6 text-center">
-                    <p className="text-[10px] text-[#7a4a4a]/30 italic" style={{ fontFamily: 'var(--font-nunito)' }}>
-                      Empty
-                    </p>
-                  </div>
-                ) : (
-                  groups[status].map((task) => (
-                    <TaskCard
-                      key={task.id}
-                      task={task}
-                      currentEmail={currentEmail}
-                      members={members}
-                      onStatusChange={handleStatusChange}
-                      onDelete={handleDelete}
-                    />
-                  ))
-                )}
-              </AnimatePresence>
-            </div>
-          ))}
-        </div>
+        <KanbanBoard
+          tasks={filtered}
+          currentEmail={currentEmail}
+          members={members}
+          onStatusChange={handleStatusChange}
+          onDelete={handleDelete}
+        />
       )}
     </div>
   );

@@ -92,7 +92,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { title, description, assignee_emails, assigner_email, due_date, priority } =
+    const { title, description, assignee_emails, assigner_email, due_date, priority, team_id } =
       body as {
         title: string;
         description?: string;
@@ -100,6 +100,7 @@ export async function POST(request: Request) {
         assigner_email: string;
         due_date?: string;
         priority?: string;
+        team_id?: string;
       };
 
     if (!title || !assigner_email || !assignee_emails?.length) {
@@ -130,6 +131,7 @@ export async function POST(request: Request) {
         due_date:       due_date || null,
         priority:       priority || 'medium',
         status:         'todo',
+        team_id:        team_id || null,
       })
       .select()
       .single();

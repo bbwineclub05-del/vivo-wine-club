@@ -327,19 +327,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ url: `/checkout/success?order_id=${encodeURIComponent(orderId)}` });
   }
 
-  // Paid event — save one ticket row per ticket immediately so records are in the
-  // DB regardless of whether the buyer completes payment and the success page loads.
-  const paidTicketRows = Array.from({ length: qty }, (_, i) => ({
-    order_id:       `${orderId}-${i + 1}`,
-    qr_code:        `${orderId}-${i + 1}`,
-    event_id:       event.slug,
-    email:          email,
-    name:           `${firstName} ${lastName}`,
-    checked_in:     false,
-    payment_status: 'pending',
-  }));
-  await (getSupabaseAdmin() as any).from('tickets').upsert(paidTicketRows, { onConflict: 'order_id' });
-
   // Stripe session; confirmation emails sent in /api/checkout/confirm
   const session = await stripe.checkout.sessions.create({
     mode:           'payment',

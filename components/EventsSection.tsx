@@ -53,11 +53,14 @@ function EventRow({
       viewport={{ once: true, margin: '-30px' }}
       transition={{ duration: reducedMotion ? 0 : 0.55, delay: reducedMotion ? 0 : index * 0.06, ease: [0.16, 1, 0.3, 1] }}
     >
-      <div className="flex items-center gap-4 sm:gap-5 md:gap-8 py-5 md:py-7 group">
+      <div className="relative flex items-center gap-4 sm:gap-5 md:gap-8 py-5 md:py-7 group cursor-pointer">
+
+        {/* Full-row link overlay — sits behind everything, leads to events list */}
+        <Link href="/events" className="absolute inset-0 z-0" aria-label={event.title} />
 
         {/* Thumbnail */}
         {event.image_url && (
-          <div className={`relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 shrink-0 overflow-hidden border ${faded ? 'border-[#e8d5d5]' : 'border-[#d4b0b0]/40'}`}>
+          <div className={`relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 shrink-0 overflow-hidden border z-[1] ${faded ? 'border-[#e8d5d5]' : 'border-[#d4b0b0]/40'}`}>
             <Image
               src={event.image_url}
               alt={event.title}
@@ -69,7 +72,7 @@ function EventRow({
         )}
 
         {/* Date column */}
-        <div className="flex flex-col items-end w-10 sm:w-12 md:w-[72px] shrink-0">
+        <div className="flex flex-col items-end w-10 sm:w-12 md:w-[72px] shrink-0 z-[1]">
           <span className={`text-[8px] tracking-[0.4em] mb-0.5 ${faded ? 'text-[#ccc]' : 'text-[#731515]'}`}>
             {event.month}
           </span>
@@ -84,10 +87,10 @@ function EventRow({
         </div>
 
         {/* Vertical line */}
-        <div className={`w-px self-stretch shrink-0 ${faded ? 'bg-[#e8d5d5]' : 'bg-[#731515]/18'}`} />
+        <div className={`w-px self-stretch shrink-0 z-[1] ${faded ? 'bg-[#e8d5d5]' : 'bg-[#731515]/18'}`} />
 
         {/* Event details */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 z-[1]">
           <div className={`text-[8px] tracking-[0.4em] mb-1.5 ${faded ? 'text-[#ccc]' : 'text-[#7a4a4a]/70'}`}>
             {event.type}
           </div>
@@ -105,14 +108,14 @@ function EventRow({
           </div>
         </div>
 
-        {/* Status badge — desktop */}
-        <div className="shrink-0 self-center hidden sm:block">
+        {/* Status badge — desktop (z-[2] so it stays above the row overlay) */}
+        <div className="shrink-0 self-center hidden sm:block z-[2]">
           <StatusBadge status={event.status} slug={event.slug} />
         </div>
       </div>
 
       {/* Mobile badge — indent accounts for optional thumbnail + date column */}
-      <div className={`sm:hidden pb-5 ${event.image_url ? 'pl-[calc(64px+1.5rem)]' : 'pl-14'}`}>
+      <div className={`relative sm:hidden pb-5 z-[2] ${event.image_url ? 'pl-[calc(64px+1.5rem)]' : 'pl-14'}`}>
         <StatusBadge status={event.status} slug={event.slug} />
       </div>
 

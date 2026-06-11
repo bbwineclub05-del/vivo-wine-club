@@ -171,9 +171,28 @@ export async function generateMetadata(
   const { slug } = await params;
   const product = await fetchProduct(slug);
   if (!product) return {};
+
+  const description = product.description || `Shop ${product.title} at Vivo Wine Club.`;
+  const imageUrl = product.images?.[0] ?? 'https://vivowineclub.com/logobianco.png';
+  const pageUrl  = `https://vivowineclub.com/wear-the-club/${product.slug ?? slug}`;
+
   return {
     title:       `${product.title} — Vivo Wine Club`,
-    description: product.description || `Shop ${product.title} at Vivo Wine Club.`,
+    description,
+    openGraph: {
+      title:       `${product.title} — Vivo Wine Club`,
+      description,
+      url:         pageUrl,
+      siteName:    'Vivo Wine Club',
+      images:      [{ url: imageUrl, width: 1200, height: 1200, alt: product.title }],
+      type:        'website',
+    },
+    twitter: {
+      card:        'summary_large_image',
+      title:       `${product.title} — Vivo Wine Club`,
+      description,
+      images:      [imageUrl],
+    },
   };
 }
 
