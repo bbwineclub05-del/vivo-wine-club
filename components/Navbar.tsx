@@ -89,21 +89,15 @@ export default function Navbar() {
         <div className="max-w-7xl mx-auto px-6 lg:px-10 h-16 flex items-center justify-between gap-6">
 
           {/* Logo — links to home */}
-          <Link href="/" className="flex items-center gap-1.5 group shrink-0">
+          <Link href="/" className="flex items-center group shrink-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/main-logo.png"
               alt="Vivo Wine Club"
-              width={160}
-              height={52}
-              className="w-auto object-contain group-hover:opacity-70 transition-[opacity] duration-300 h-9 sm:h-11"
+              width={200}
+              height={64}
+              className="w-auto object-contain group-hover:opacity-70 transition-[opacity] duration-300 h-11 sm:h-[54px]"
             />
-            <span
-              className="text-[17px] font-light tracking-[0.08em] text-[#1a0505] group-hover:text-[#731515] transition-colors duration-300 leading-tight hidden sm:block"
-              style={{ fontFamily: 'var(--font-syne)' }}
-            >
-              Vivo Wine Club
-            </span>
           </Link>
 
           {/* Desktop nav links */}

@@ -8,7 +8,7 @@ import {
   Home, CheckSquare, BarChart3, Users, FileText,
   Mail, LogOut, KeyRound, ScanLine, Menu, X,
   Wine, Shield, ArrowUpRight, CreditCard, User, CalendarDays, GlassWater, MapPin, Images,
-  Database, ChevronDown, UsersRound, Lock, ShoppingBag, Tag, FolderOpen,
+  Database, ChevronDown, UsersRound, Lock, ShoppingBag, Tag, FolderOpen, Layers,
   Camera, Loader2, Building2, Wallet, Receipt,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
@@ -69,15 +69,20 @@ const NAV_MAIN: NavItem[] = [
   { id: 'settings', label: 'Impostazioni',    icon: KeyRound   },
 ];
 
+// Sub-items for the collapsible Gestione group
+const GESTIONE_ITEMS: NavItem[] = [
+  { id: 'events',    label: 'Eventi',  icon: CalendarDays },
+  { id: 'news',      label: 'News',    icon: FileText     },
+  { id: 'merch',     label: 'Merch',   icon: ShoppingBag  },
+  { id: 'media',     label: 'Media',   icon: Images       },
+  { id: 'discounts', label: 'Sconti',  icon: Tag          },
+];
+
 // Visible to both admin and staff
 const NAV_SHARED: NavItem[] = [
-  { id: 'tasks',     label: 'Task Board',          icon: CheckSquare  },
-  { id: 'events',    label: 'Gestione Eventi',     icon: CalendarDays },
-  { id: 'news',      label: 'Gestione News',       icon: FileText     },
-  { id: 'merch',     label: 'Gestione Merch',      icon: ShoppingBag  },
-  { id: 'discounts', label: 'Gestione Sconti',     icon: Tag          },
-  { id: 'documents', label: 'Gestione Documenti',  icon: FolderOpen   },
-  { id: 'quotes',    label: 'Preventivi',          icon: Receipt      },
+  { id: 'tasks',     label: 'Task Board', icon: CheckSquare },
+  { id: 'documents', label: 'Documenti',  icon: FolderOpen  },
+  { id: 'quotes',    label: 'Preventivi', icon: Receipt     },
 ];
 
 // Admin only
@@ -95,9 +100,7 @@ const CRM_ITEMS: NavItem[] = [
 ];
 
 // Visible to both admin and staff
-const NAV_SHARED_BOTTOM: NavItem[] = [
-  { id: 'media', label: 'Gestione Media', icon: Images },
-];
+const NAV_SHARED_BOTTOM: NavItem[] = [];
 
 /* ─────────────────────────────────────────────
    Sub-components
@@ -212,6 +215,60 @@ function CrmGroupNav({ activeSection, navigate }: { activeSection: Section; navi
   );
 }
 
+/** Collapsible Gestione group (Events, News, Merch) in the sidebar */
+function GestioneGroupNav({ activeSection, navigate }: { activeSection: Section; navigate: (s: Section) => void }) {
+  const isActive = GESTIONE_ITEMS.some((item) => item.id === activeSection);
+  const [open, setOpen] = useState(isActive);
+
+  useEffect(() => {
+    if (isActive) setOpen(true);
+  }, [isActive]);
+
+  return (
+    <div>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className={`w-full flex items-center gap-2.5 px-3 py-[7px] rounded-md text-left transition-all duration-150 text-[12.5px] ${
+          isActive
+            ? 'text-white/75 bg-white/[0.04]'
+            : 'text-white/45 hover:text-white/75 hover:bg-white/[0.06]'
+        }`}
+        style={{ fontFamily: 'var(--font-nunito)' }}
+      >
+        <Layers size={14} className={isActive ? 'text-[#c84040]' : 'text-white/35'} />
+        Gestione
+        <ChevronDown
+          size={11}
+          className={`ml-auto text-white/25 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+        />
+      </button>
+
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="ml-3 pl-2.5 border-l border-white/[0.07] mt-0.5 mb-0.5 space-y-0.5">
+              {GESTIONE_ITEMS.map((item) => (
+                <NavBtn
+                  key={item.id}
+                  item={item}
+                  active={activeSection === item.id}
+                  onClick={() => navigate(item.id)}
+                />
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 /** Sidebar shell — rendered both in desktop aside and mobile drawer */
 function SidebarContent({
   displayName,
@@ -306,6 +363,7 @@ function SidebarContent({
                 {admin ? 'Admin' : 'Gestione'}
               </span>
             </div>
+            <GestioneGroupNav activeSection={activeSection} navigate={navigate} />
             {NAV_SHARED.map(item => (
               <NavBtn key={item.id} item={item} active={activeSection === item.id} onClick={() => navigate(item.id)} />
             ))}

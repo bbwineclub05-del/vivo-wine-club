@@ -8,6 +8,7 @@ import {
   Paperclip, ExternalLink, Upload,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import FounderAccounts from './FounderAccounts';
 
 /* ─────────────────────────────────────────────
    Types
@@ -565,7 +566,10 @@ function CategoryBreakdown({ transactions }: { transactions: Transaction[] }) {
 /* ─────────────────────────────────────────────
    Main component
 ───────────────────────────────────────────── */
+type FinanceTab = 'transazioni' | 'conti_founder';
+
 export default function FinanceManager() {
+  const [financeTab,    setFinanceTab]    = useState<FinanceTab>('transazioni');
   const [transactions,  setTransactions]  = useState<Transaction[]>([]);
   const [loading,       setLoading]       = useState(true);
   const [addModal,      setAddModal]      = useState(false);
@@ -723,25 +727,50 @@ export default function FinanceManager() {
             Gestione Finanziaria
           </h2>
         </div>
-        <div className="flex gap-2">
-          <button
-            onClick={load}
-            disabled={loading}
-            className="inline-flex items-center gap-2 px-4 py-2 border border-[#eddada] bg-white text-[#7a4a4a] text-[10px] tracking-[0.25em] rounded-lg hover:border-[#731515]/40 transition-colors disabled:opacity-50"
-          >
-            <RefreshCw size={11} className={loading ? 'animate-spin' : ''} />
-            AGGIORNA
-          </button>
-          <button
-            onClick={() => setAddModal(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-[#731515] text-white text-[10px] tracking-[0.25em] rounded-lg hover:bg-[#9b2323] transition-colors"
-          >
-            <Plus size={11} />
-            AGGIUNGI
-          </button>
-        </div>
+        {financeTab === 'transazioni' && (
+          <div className="flex gap-2">
+            <button
+              onClick={load}
+              disabled={loading}
+              className="inline-flex items-center gap-2 px-4 py-2 border border-[#eddada] bg-white text-[#7a4a4a] text-[10px] tracking-[0.25em] rounded-lg hover:border-[#731515]/40 transition-colors disabled:opacity-50"
+            >
+              <RefreshCw size={11} className={loading ? 'animate-spin' : ''} />
+              AGGIORNA
+            </button>
+            <button
+              onClick={() => setAddModal(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[#731515] text-white text-[10px] tracking-[0.25em] rounded-lg hover:bg-[#9b2323] transition-colors"
+            >
+              <Plus size={11} />
+              AGGIUNGI
+            </button>
+          </div>
+        )}
       </div>
 
+      {/* ── Tab switcher ── */}
+      <div className="flex gap-1 bg-[#fdf6f6] border border-[#eddada] rounded-xl p-1 w-fit">
+        {([
+          { id: 'transazioni',   label: 'Transazioni' },
+          { id: 'conti_founder', label: 'Conti Founder' },
+        ] as { id: FinanceTab; label: string }[]).map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setFinanceTab(tab.id)}
+            className={`px-5 py-2 text-[10px] tracking-[0.22em] rounded-lg transition-all duration-200 ${
+              financeTab === tab.id
+                ? 'bg-[#731515] text-white shadow-sm'
+                : 'text-[#7a4a4a] hover:text-[#731515]'
+            }`}
+          >
+            {tab.label.toUpperCase()}
+          </button>
+        ))}
+      </div>
+
+      {financeTab === 'conti_founder' && <FounderAccounts />}
+
+      {financeTab === 'transazioni' && <>
       {/* ── KPI strip ── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white border border-[#eddada] rounded-xl p-5 shadow-[0_1px_4px_rgba(107,26,26,0.05)]">
@@ -984,6 +1013,7 @@ export default function FinanceManager() {
       {!loading && monthTxs.length > 0 && (
         <CategoryBreakdown transactions={monthTxs} />
       )}
+      </>}
     </div>
   );
 }
