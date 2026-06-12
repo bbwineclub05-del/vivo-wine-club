@@ -23,8 +23,15 @@ export async function generateMetadata(
     const event = dbEventToEventData(data as DbEvent);
     const title       = `${event.title} — Vivo Wine Club`;
     const description = event.description || `Get your ticket for ${event.title}.`;
-    const imageUrl    = event.image_url ?? 'https://vivowineclub.com/logobianco.png';
-    const pageUrl     = `https://vivowineclub.com/checkout/${slug}`;
+
+    // Ensure absolute URL — Supabase storage URLs already start with https://
+    const raw      = event.image_url;
+    const imageUrl = raw
+      ? (raw.startsWith('http://') || raw.startsWith('https://') ? raw : `https://vivowineclub.com${raw.startsWith('/') ? '' : '/'}${raw}`)
+      : 'https://vivowineclub.com/logobianco.png';
+    const pageUrl  = `https://vivowineclub.com/checkout/${slug}`;
+
+    console.log(`[OG] /checkout/${slug} →`, { imageUrl, title });
 
     return {
       title,

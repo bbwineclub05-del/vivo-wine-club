@@ -165,6 +165,16 @@ async function fetchProduct(param: string): Promise<ProductFull | null> {
 
 // ── Metadata ──────────────────────────────────────────────────────────────────
 
+const BASE = 'https://vivowineclub.com';
+
+/** Ensure image URL is absolute — Supabase storage URLs already start with https://,
+ *  public folder paths like /products/… need the base prepended. */
+function toAbsoluteImage(url: string | undefined | null): string {
+  if (!url) return `${BASE}/logobianco.png`;
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  return `${BASE}${url.startsWith('/') ? '' : '/'}${url}`;
+}
+
 export async function generateMetadata(
   { params }: { params: Promise<{ slug: string }> },
 ): Promise<Metadata> {
@@ -173,10 +183,11 @@ export async function generateMetadata(
   if (!product) return {};
 
   const description = product.description || `Shop ${product.title} at Vivo Wine Club.`;
-  const imageUrl = product.images?.[0] ?? 'https://vivowineclub.com/logobianco.png';
-  const pageUrl  = `https://vivowineclub.com/wear-the-club/${product.slug ?? slug}`;
+  const rawImage    = product.images?.[0] ?? product.product_variants?.[0]?.images?.[0];
+  const imageUrl    = toAbsoluteImage(rawImage);
+  const pageUrl     = `${BASE}/wear-the-club/${product.slug ?? slug}`;
 
-  return {
+  const metadata: Metadata = {
     title:       `${product.title} — Vivo Wine Club`,
     description,
     openGraph: {
@@ -194,6 +205,9 @@ export async function generateMetadata(
       images:      [imageUrl],
     },
   };
+
+  console.log(`[OG] /wear-the-club/${slug} →`, { imageUrl, pageUrl, title: metadata.title });
+  return metadata;
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
