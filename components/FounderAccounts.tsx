@@ -3,8 +3,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Plus, X, Check, Upload, Paperclip, ExternalLink,
-  RefreshCw, TrendingUp, TrendingDown, Wallet,
+  Plus, X, Check, Upload, Paperclip,
+  RefreshCw, TrendingUp, TrendingDown, Wallet, Trash2, Pencil,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
@@ -23,7 +23,9 @@ const CATEGORIES = ['Evento', 'Membership', 'Marketing', 'Operativo', 'Merch', '
 /* ─────────────────────────────────────────────
    Types
 ───────────────────────────────────────────── */
+// Only 2 types are user-facing; rimborso_club / trasferimento_club exist in DB for legacy
 type MovType = 'spesa_personale' | 'incasso_personale' | 'rimborso_club' | 'trasferimento_club';
+type UserMovType = 'spesa_personale' | 'incasso_personale';
 
 interface Movement {
   id:            string;
@@ -43,21 +45,50 @@ interface Movement {
 
 /* ─────────────────────────────────────────────
    Type config
-   amountSign: how the entry affects the Club's debt to the founder
-     +1 → Club owes founder more  (spesa / trasferimento)
-     -1 → Club owes founder less  (incasso / rimborso)
+   amountSign: how entry affects Club's debt to founder
+     +1 → Club owes founder more  (spesa)
+     -1 → founder owes Club more  (incasso)
 ───────────────────────────────────────────── */
 const TYPE_CFG: Record<MovType, {
-  label:       string;
-  short:       string;
-  badgeCls:    string;
-  amountSign:  1 | -1;
-  colorCls:    string;
+  label:      string;
+  sublabel:   string;
+  short:      string;
+  badgeCls:   string;
+  amountSign: 1 | -1;
+  colorCls:   string;
 }> = {
-  spesa_personale:    { label: 'Spesa personale',       short: 'SPESA',     badgeCls: 'bg-blue-50 text-blue-700 border-blue-200',      amountSign:  1, colorCls: 'text-blue-600'    },
-  incasso_personale:  { label: 'Incasso personale',     short: 'INCASSO',   badgeCls: 'bg-orange-50 text-orange-700 border-orange-200', amountSign: -1, colorCls: 'text-orange-600'  },
-  rimborso_club:      { label: 'Rimborso dal Club',     short: 'RIMBORSO',  badgeCls: 'bg-emerald-50 text-emerald-700 border-emerald-200', amountSign: -1, colorCls: 'text-emerald-600' },
-  trasferimento_club: { label: 'Trasferimento al Club', short: 'TRASFERI.', badgeCls: 'bg-purple-50 text-purple-700 border-purple-200', amountSign:  1, colorCls: 'text-purple-600'  },
+  spesa_personale:    {
+    label:      'Ha pagato per il Club',
+    sublabel:   'Il founder ha anticipato una spesa — il Club gli deve rimborsare',
+    short:      'SPESA',
+    badgeCls:   'bg-blue-50 text-blue-700 border-blue-200',
+    amountSign:  1,
+    colorCls:   'text-blue-600',
+  },
+  incasso_personale:  {
+    label:      'Ha incassato per il Club',
+    sublabel:   'Il founder ha ricevuto soldi per il Club — deve trasferirli',
+    short:      'INCASSO',
+    badgeCls:   'bg-orange-50 text-orange-700 border-orange-200',
+    amountSign: -1,
+    colorCls:   'text-orange-600',
+  },
+  rimborso_club:      {
+    label:      'Rimborso dal Club',
+    sublabel:   '',
+    short:      'RIMBORSO',
+    badgeCls:   'bg-emerald-50 text-emerald-700 border-emerald-200',
+    amountSign: -1,
+    colorCls:   'text-emerald-600',
+  },
+  trasferimento_club: {
+    label:      'Trasferimento al Club',
+    sublabel:   '',
+    short:      'TRASFERI.',
+    badgeCls:   'bg-purple-50 text-purple-700 border-purple-200',
+    amountSign:  1,
+    colorCls:   'text-purple-600',
+  },
 };
 
 /* ─────────────────────────────────────────────
@@ -74,12 +105,8 @@ function localToday() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
-
-/** balance > 0 → Club owes founder · balance < 0 → founder owes Club */
-function founderBalance(movements: Movement[], email: string) {
-  return movements
-    .filter(m => m.founder_email === email)
-    .reduce((sum, m) => sum + m.amount * TYPE_CFG[m.type].amountSign, 0);
+function founderName(email: string) {
+  return FOUNDERS.find(f => f.email === email)?.name ?? email.split('@')[0];
 }
 
 const inputCls =
@@ -87,11 +114,11 @@ const inputCls =
   'placeholder:text-[#7a4a4a]/35 focus:outline-none focus:border-[#731515]/50 transition-colors rounded-lg';
 
 /* ─────────────────────────────────────────────
-   Add Movement Modal
+   Movement Form Modal (Add + Edit)
 ───────────────────────────────────────────── */
 interface FormState {
   founder_email: string;
-  type:          MovType;
+  type:          UserMovType;
   date:          string;
   description:   string;
   amount:        string;
@@ -99,24 +126,24 @@ interface FormState {
   notes:         string;
 }
 
-const EMPTY_FORM: FormState = {
-  founder_email: FOUNDERS[0].email,
-  type:          'spesa_personale',
-  date:          localToday(),
-  description:   '',
-  amount:        '',
-  category:      'Evento',
-  notes:         '',
-};
-
-function AddModal({
+function MovModal({
+  initial,
   onSave,
   onClose,
 }: {
-  onSave:  (data: Omit<Movement, 'id' | 'created_by' | 'created_at' | 'settled' | 'settled_date' | 'receipt_url'> & { receipt_url: string | null }) => Promise<void>;
-  onClose: () => void;
+  initial:  Partial<FormState> | null;
+  onSave:   (data: Omit<Movement, 'id' | 'created_by' | 'created_at' | 'settled' | 'settled_date'>) => Promise<void>;
+  onClose:  () => void;
 }) {
-  const [form, setForm] = useState<FormState>({ ...EMPTY_FORM, date: localToday() });
+  const [form, setForm] = useState<FormState>({
+    founder_email: initial?.founder_email ?? FOUNDERS[0].email,
+    type:          (initial?.type as UserMovType) ?? 'spesa_personale',
+    date:          initial?.date ?? localToday(),
+    description:   initial?.description ?? '',
+    amount:        initial?.amount ?? '',
+    category:      initial?.category ?? 'Evento',
+    notes:         initial?.notes ?? '',
+  });
   const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -159,7 +186,7 @@ function AddModal({
     }
   }
 
-  const isPrimaryType = form.type === 'spesa_personale' || form.type === 'incasso_personale';
+  const isEdit = initial !== null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -175,7 +202,9 @@ function AddModal({
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#eddada] sticky top-0 bg-white z-10">
           <div>
             <div className="text-[9px] tracking-[0.4em] text-[#731515] mb-0.5">CONTI FOUNDER</div>
-            <h3 className="text-base font-light text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>Registra movimento</h3>
+            <h3 className="text-base font-light text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>
+              {isEdit ? 'Modifica movimento' : 'Registra movimento'}
+            </h3>
           </div>
           <button onClick={onClose} className="text-[#7a4a4a]/50 hover:text-[#731515] transition-colors p-1"><X size={16} /></button>
         </div>
@@ -206,11 +235,11 @@ function AddModal({
           <div>
             <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">TIPO</div>
             <div className="grid grid-cols-2 gap-2">
-              {(['spesa_personale', 'incasso_personale', 'rimborso_club', 'trasferimento_club'] as MovType[]).map(t => (
+              {(['spesa_personale', 'incasso_personale'] as UserMovType[]).map(t => (
                 <button
                   key={t}
                   onClick={() => set('type', t)}
-                  className={`py-2.5 rounded-lg text-[10px] tracking-[0.1em] font-medium transition-all border ${
+                  className={`py-3 px-3 rounded-lg text-left text-[11px] font-medium transition-all border ${
                     form.type === t
                       ? `${TYPE_CFG[t].badgeCls} border-current`
                       : 'bg-white text-[#7a4a4a] border-[#eddada] hover:border-[#731515]/30'
@@ -222,10 +251,7 @@ function AddModal({
               ))}
             </div>
             <p className="text-[10px] text-[#7a4a4a]/50 mt-1.5 leading-relaxed" style={{ fontFamily: 'var(--font-nunito)' }}>
-              {form.type === 'spesa_personale'    && 'Il founder ha pagato di tasca propria per il Club → il Club gli deve rimborsare.'}
-              {form.type === 'incasso_personale'  && 'Il founder ha incassato soldi per conto del Club → deve trasferirli al Club.'}
-              {form.type === 'rimborso_club'      && 'Il Club ha rimborsato il founder → chiude (o riduce) il debito verso di lui.'}
-              {form.type === 'trasferimento_club' && 'Il founder ha trasferito soldi al Club → chiude (o riduce) il suo debito.'}
+              {TYPE_CFG[form.type].sublabel}
             </p>
           </div>
 
@@ -261,30 +287,28 @@ function AddModal({
             <textarea className={`${inputCls} resize-none`} rows={2} placeholder="Note aggiuntive..." value={form.notes} onChange={e => set('notes', e.target.value)} style={{ fontFamily: 'var(--font-nunito)' }} />
           </div>
 
-          {/* Ricevuta — only for primary types */}
-          {isPrimaryType && (
-            <div>
-              <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">RICEVUTA <span className="text-[#7a4a4a]/40 normal-case tracking-normal">— opzionale</span></div>
-              <label className="flex items-center gap-2 px-3 py-2 border border-dashed border-[#eddada] rounded-lg cursor-pointer hover:border-[#731515]/40 hover:bg-[#fdf6f6] transition-colors">
-                <Upload size={13} className="text-[#7a4a4a]/50 shrink-0" />
-                <span className="text-[11px] text-[#7a4a4a]/60 truncate" style={{ fontFamily: 'var(--font-nunito)' }}>
-                  {file ? file.name : 'Seleziona file…'}
-                </span>
-                {file && (
-                  <button type="button" onClick={e => { e.preventDefault(); setFile(null); }} className="ml-auto text-[#7a4a4a]/40 hover:text-[#731515] shrink-0">
-                    <X size={11} />
-                  </button>
-                )}
-                <input type="file" accept="image/*,.pdf" className="hidden" onChange={e => setFile(e.target.files?.[0] ?? null)} />
-              </label>
-            </div>
-          )}
+          {/* Ricevuta */}
+          <div>
+            <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">RICEVUTA <span className="text-[#7a4a4a]/40 normal-case tracking-normal">— opzionale</span></div>
+            <label className="flex items-center gap-2 px-3 py-2 border border-dashed border-[#eddada] rounded-lg cursor-pointer hover:border-[#731515]/40 hover:bg-[#fdf6f6] transition-colors">
+              <Upload size={13} className="text-[#7a4a4a]/50 shrink-0" />
+              <span className="text-[11px] text-[#7a4a4a]/60 truncate" style={{ fontFamily: 'var(--font-nunito)' }}>
+                {file ? file.name : 'Seleziona file…'}
+              </span>
+              {file && (
+                <button type="button" onClick={e => { e.preventDefault(); setFile(null); }} className="ml-auto text-[#7a4a4a]/40 hover:text-[#731515] shrink-0">
+                  <X size={11} />
+                </button>
+              )}
+              <input type="file" accept="image/*,.pdf" className="hidden" onChange={e => setFile(e.target.files?.[0] ?? null)} />
+            </label>
+          </div>
 
           {error && <p className="text-xs text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>{error}</p>}
 
           <div className="flex gap-3 pt-1">
             <button onClick={handleSave} disabled={saving} className="flex-1 py-2.5 bg-[#731515] text-white text-[10px] tracking-[0.3em] rounded-lg hover:bg-[#9b2323] disabled:opacity-50 transition-colors">
-              {saving ? 'SALVATAGGIO…' : 'REGISTRA'}
+              {saving ? 'SALVATAGGIO…' : isEdit ? 'SALVA MODIFICHE' : 'REGISTRA'}
             </button>
             <button onClick={onClose} className="px-5 py-2.5 border border-[#eddada] text-[#7a4a4a] text-[10px] tracking-[0.3em] rounded-lg hover:border-[#731515]/40 transition-colors">
               ANNULLA
@@ -297,14 +321,62 @@ function AddModal({
 }
 
 /* ─────────────────────────────────────────────
+   Delete Confirm Modal
+───────────────────────────────────────────── */
+function DeleteModal({ mov, onConfirm, onClose }: { mov: Movement; onConfirm: () => Promise<void>; onClose: () => void }) {
+  const [deleting, setDeleting] = useState(false);
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <motion.div className="absolute inset-0 bg-black/50" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} />
+      <motion.div
+        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6"
+        initial={{ opacity: 0, scale: 0.95, y: 16 }}
+        animate={{ opacity: 1, scale: 1,    y: 0  }}
+        exit={{    opacity: 0, scale: 0.95, y: 16 }}
+        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+      >
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-9 h-9 rounded-full bg-red-50 flex items-center justify-center shrink-0">
+            <Trash2 size={15} className="text-red-600" />
+          </div>
+          <div>
+            <h3 className="text-sm font-medium text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>Elimina movimento</h3>
+            <p className="text-[11px] text-[#7a4a4a]/60 mt-0.5" style={{ fontFamily: 'var(--font-nunito)' }}>Questa azione è irreversibile.</p>
+          </div>
+        </div>
+        <p className="text-[12px] text-[#7a4a4a] mb-5 bg-[#fdf6f6] rounded-lg px-3 py-2 border border-[#eddada]" style={{ fontFamily: 'var(--font-nunito)' }}>
+          <span className="font-semibold text-[#1a0505]">{mov.description}</span>
+          <br />
+          <span className="text-[#7a4a4a]/60">{fmtDate(mov.date)} · {fmtEur(mov.amount)}</span>
+        </p>
+        <div className="flex gap-3">
+          <button
+            onClick={async () => { setDeleting(true); await onConfirm(); }}
+            disabled={deleting}
+            className="flex-1 py-2.5 bg-red-600 text-white text-[10px] tracking-[0.25em] rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
+          >
+            {deleting ? 'ELIMINAZIONE…' : 'ELIMINA'}
+          </button>
+          <button onClick={onClose} className="px-5 py-2.5 border border-[#eddada] text-[#7a4a4a] text-[10px] tracking-[0.25em] rounded-lg hover:border-[#731515]/40 transition-colors">
+            ANNULLA
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
    Main component
 ───────────────────────────────────────────── */
 export default function FounderAccounts() {
-  const [movements, setMovements] = useState<Movement[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [showAdd, setShowAdd]     = useState(false);
-  const [filterEmail, setFilterEmail] = useState<string>('');
-  const [settlingId, setSettlingId]   = useState<string | null>(null);
+  const [movements,    setMovements]    = useState<Movement[]>([]);
+  const [loading,      setLoading]      = useState(true);
+  const [showAdd,      setShowAdd]      = useState(false);
+  const [editTarget,   setEditTarget]   = useState<Movement | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Movement | null>(null);
+  const [filterEmail,  setFilterEmail]  = useState<string>('');
+  const [settlingId,   setSettlingId]   = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -318,41 +390,106 @@ export default function FounderAccounts() {
 
   useEffect(() => { load(); }, []);
 
-  async function handleAdd(
-    payload: Omit<Movement, 'id' | 'created_by' | 'created_at' | 'settled' | 'settled_date'>
-  ) {
+  /* ── Add ── */
+  async function handleAdd(payload: Omit<Movement, 'id' | 'created_by' | 'created_at' | 'settled' | 'settled_date'>) {
     const { data: { session } } = await supabase.auth.getSession();
     const { data, error } = await supabase
       .from('founder_accounts')
-      .insert({ ...payload, settled: false, created_by: session?.user.id ?? null })
+      .insert({ ...payload, settled: false, settled_date: null, created_by: session?.user.id ?? null })
       .select()
       .single();
     if (error) throw new Error(error.message);
     setMovements(prev => [data as Movement, ...prev]);
   }
 
-  async function handleSettle(mov: Movement) {
-    setSettlingId(mov.id);
+  /* ── Edit ── */
+  async function handleEdit(payload: Omit<Movement, 'id' | 'created_by' | 'created_at' | 'settled' | 'settled_date'>) {
+    if (!editTarget) return;
     const { data, error } = await supabase
       .from('founder_accounts')
-      .update({ settled: true, settled_date: localToday() })
+      .update(payload)
+      .eq('id', editTarget.id)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    setMovements(prev => prev.map(m => m.id === editTarget.id ? data as Movement : m));
+  }
+
+  /* ── Delete ── */
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    const { error } = await supabase.from('founder_accounts').delete().eq('id', deleteTarget.id);
+    if (error) throw new Error(error.message);
+    setMovements(prev => prev.filter(m => m.id !== deleteTarget.id));
+    setDeleteTarget(null);
+  }
+
+  /* ── Settle (+ auto-create transactions in Saldo di Cassa) ── */
+  async function handleSettle(mov: Movement) {
+    setSettlingId(mov.id);
+    const today   = localToday();
+    const fName   = founderName(mov.founder_email);
+    const cat     = (mov.category ?? 'Altro') as string;
+
+    // 1. Mark settled in founder_accounts
+    const { data, error } = await supabase
+      .from('founder_accounts')
+      .update({ settled: true, settled_date: today })
       .eq('id', mov.id)
       .select()
       .single();
+
     if (!error && data) {
       setMovements(prev => prev.map(m => m.id === mov.id ? data as Movement : m));
     }
+
+    // 2. Mirror into transactions table
+    if (mov.type === 'spesa_personale') {
+      // a) The actual expense (cost)
+      await supabase.from('transactions').insert({
+        date:         mov.date,
+        description:  mov.description,
+        category:     cat,
+        type:         'cost',
+        amount:       mov.amount,
+        notes:        mov.notes ?? null,
+        receipt_url:  mov.receipt_url ?? null,
+        reimbursed_to: null,
+      });
+      // b) The reimbursement (rimborso)
+      await supabase.from('transactions').insert({
+        date:         today,
+        description:  `Rimborso a ${fName} - ${mov.description}`,
+        category:     cat,
+        type:         'rimborso',
+        amount:       mov.amount,
+        notes:        null,
+        receipt_url:  null,
+        reimbursed_to: mov.founder_email,
+      });
+    } else if (mov.type === 'incasso_personale') {
+      // Revenue transferred to Club
+      await supabase.from('transactions').insert({
+        date:         today,
+        description:  mov.description,
+        category:     cat,
+        type:         'revenue',
+        amount:       mov.amount,
+        notes:        mov.notes ?? null,
+        receipt_url:  null,
+        reimbursed_to: null,
+      });
+    }
+
     setSettlingId(null);
   }
 
-  /* ── Computed stats ── */
+  /* ── Computed stats (only unsettled movements) ── */
   const founderStats = useMemo(() =>
     FOUNDERS.map(f => {
-      const movs     = movements.filter(m => m.founder_email === f.email);
-      const balance  = founderBalance(movements, f.email);
-      const spese    = movs.filter(m => m.type === 'spesa_personale'   && !m.settled).reduce((s, m) => s + m.amount, 0);
-      const incassi  = movs.filter(m => m.type === 'incasso_personale' && !m.settled).reduce((s, m) => s + m.amount, 0);
-      return { ...f, balance, spese, incassi, count: movs.length };
+      const open    = movements.filter(m => m.founder_email === f.email && !m.settled);
+      const balance = open.reduce((sum, m) => sum + m.amount * TYPE_CFG[m.type].amountSign, 0);
+      return { ...f, balance, openCount: open.length };
     }),
   [movements]);
 
@@ -364,13 +501,32 @@ export default function FounderAccounts() {
     movements.filter(m => !filterEmail || m.founder_email === filterEmail),
   [movements, filterEmail]);
 
-  const founderName = (email: string) => FOUNDERS.find(f => f.email === email)?.name ?? email.split('@')[0];
-
   return (
     <div className="space-y-6">
-      {/* Modal */}
+      {/* Modals */}
       <AnimatePresence>
-        {showAdd && <AddModal key="add" onSave={handleAdd} onClose={() => setShowAdd(false)} />}
+        {showAdd && (
+          <MovModal key="add" initial={null} onSave={handleAdd} onClose={() => setShowAdd(false)} />
+        )}
+        {editTarget && (
+          <MovModal
+            key="edit"
+            initial={{
+              founder_email: editTarget.founder_email,
+              type:          editTarget.type as UserMovType,
+              date:          editTarget.date,
+              description:   editTarget.description,
+              amount:        String(editTarget.amount),
+              category:      editTarget.category ?? 'Evento',
+              notes:         editTarget.notes ?? '',
+            }}
+            onSave={handleEdit}
+            onClose={() => setEditTarget(null)}
+          />
+        )}
+        {deleteTarget && (
+          <DeleteModal key="del" mov={deleteTarget} onConfirm={handleDelete} onClose={() => setDeleteTarget(null)} />
+        )}
       </AnimatePresence>
 
       {/* ── Header ── */}
@@ -386,12 +542,12 @@ export default function FounderAccounts() {
           </button>
           <button onClick={() => setShowAdd(true)} className="inline-flex items-center gap-2 px-4 py-2 bg-[#731515] text-white text-[10px] tracking-[0.25em] rounded-lg hover:bg-[#9b2323] transition-colors">
             <Plus size={11} />
-            REGISTRA MOVIMENTO
+            REGISTRA
           </button>
         </div>
       </div>
 
-      {/* ── Riepilogo complessivo ── */}
+      {/* ── KPI strip ── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white border border-[#eddada] rounded-xl p-5 shadow-[0_1px_4px_rgba(107,26,26,0.05)]">
           <div className="flex items-center gap-2 mb-3">
@@ -420,13 +576,13 @@ export default function FounderAccounts() {
             <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
               <Wallet size={15} className="text-white/80" />
             </div>
-            <span className="text-[9px] tracking-[0.35em] text-white/60">SALDO NETTO CLUB</span>
+            <span className="text-[9px] tracking-[0.35em] text-white/60">SALDO NETTO APERTO</span>
           </div>
           <div className="text-3xl font-light text-white" style={{ fontFamily: 'var(--font-syne)' }}>
             {netBalance >= 0 ? '+' : '−'}{fmtEur(netBalance)}
           </div>
           <div className="text-[10px] text-white/40 mt-1" style={{ fontFamily: 'var(--font-nunito)' }}>
-            {netBalance >= 0 ? 'Club deve complessivamente ai founder' : 'Founder devono complessivamente al Club'}
+            {netBalance >= 0 ? 'Club deve complessivamente ai founder' : 'Founder devono al Club'}
           </div>
         </div>
       </div>
@@ -434,15 +590,15 @@ export default function FounderAccounts() {
       {/* ── Founder cards ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {founderStats.map(f => {
-          const owesClub    = f.balance < 0;
-          const clubOwes    = f.balance > 0;
-          const isEven      = f.balance === 0;
+          const owesClub = f.balance < 0;
+          const clubOwes = f.balance > 0;
+          const isActive = filterEmail === f.email;
           return (
             <button
               key={f.email}
-              onClick={() => setFilterEmail(filterEmail === f.email ? '' : f.email)}
+              onClick={() => setFilterEmail(isActive ? '' : f.email)}
               className={`bg-white border rounded-xl p-5 text-left transition-all duration-200 hover:shadow-md ${
-                filterEmail === f.email ? 'border-[#731515] shadow-md' : 'border-[#eddada]'
+                isActive ? 'border-[#731515] shadow-md' : 'border-[#eddada]'
               }`}
             >
               {/* Avatar + name */}
@@ -454,35 +610,18 @@ export default function FounderAccounts() {
                 </div>
                 <div>
                   <div className="text-[13px] font-medium text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>{f.name}</div>
-                  <div className="text-[9px] text-[#7a4a4a]/40 tracking-[0.2em]">{f.count} movimenti</div>
+                  <div className={`text-[9px] tracking-[0.2em] ${f.openCount > 0 ? 'text-[#731515]' : 'text-[#7a4a4a]/40'}`}>
+                    {f.openCount} {f.openCount === 1 ? 'operazione aperta' : 'operazioni aperte'}
+                  </div>
                 </div>
               </div>
 
               {/* Balance */}
-              <div className={`text-xl font-light mb-1 ${owesClub ? 'text-orange-600' : clubOwes ? 'text-blue-600' : 'text-[#7a4a4a]/50'}`} style={{ fontFamily: 'var(--font-syne)' }}>
+              <div className={`text-xl font-light ${owesClub ? 'text-orange-600' : clubOwes ? 'text-blue-600' : 'text-[#7a4a4a]/40'}`} style={{ fontFamily: 'var(--font-syne)' }}>
                 {owesClub ? '−' : clubOwes ? '+' : ''}{fmtEur(f.balance)}
               </div>
-              <div className={`text-[10px] mb-3 ${owesClub ? 'text-orange-500/70' : clubOwes ? 'text-blue-500/70' : 'text-[#7a4a4a]/40'}`} style={{ fontFamily: 'var(--font-nunito)' }}>
+              <div className={`text-[10px] mt-0.5 ${owesClub ? 'text-orange-500/70' : clubOwes ? 'text-blue-500/70' : 'text-[#7a4a4a]/40'}`} style={{ fontFamily: 'var(--font-nunito)' }}>
                 {owesClub ? 'Founder deve al Club' : clubOwes ? 'Club deve al founder' : 'In pari'}
-              </div>
-
-              {/* Breakdown */}
-              <div className="space-y-1.5 border-t border-[#eddada] pt-3">
-                {f.spese > 0 && (
-                  <div className="flex items-center justify-between text-[10px]" style={{ fontFamily: 'var(--font-nunito)' }}>
-                    <span className="text-[#7a4a4a]/60">Spese da rimborsare</span>
-                    <span className="text-blue-600 font-medium">{fmtEur(f.spese)}</span>
-                  </div>
-                )}
-                {f.incassi > 0 && (
-                  <div className="flex items-center justify-between text-[10px]" style={{ fontFamily: 'var(--font-nunito)' }}>
-                    <span className="text-[#7a4a4a]/60">Incassi da trasferire</span>
-                    <span className="text-orange-600 font-medium">{fmtEur(f.incassi)}</span>
-                  </div>
-                )}
-                {isEven && f.count === 0 && (
-                  <div className="text-[10px] text-[#7a4a4a]/30 italic" style={{ fontFamily: 'var(--font-nunito)' }}>Nessun movimento</div>
-                )}
               </div>
             </button>
           );
@@ -494,7 +633,7 @@ export default function FounderAccounts() {
         {/* Table header */}
         <div className="flex items-center justify-between px-5 py-3 bg-[#fdf6f6] border-b border-[#eddada]">
           <div className="text-[9px] tracking-[0.4em] text-[#731515]">
-            MOVIMENTI {filterEmail ? `— ${founderName(filterEmail).toUpperCase()}` : '— TUTTI'}
+            STORICO {filterEmail ? `— ${founderName(filterEmail).toUpperCase()}` : '— TUTTI'}
           </div>
           {filterEmail && (
             <button onClick={() => setFilterEmail('')} className="text-[10px] text-[#7a4a4a]/50 hover:text-[#731515] transition-colors flex items-center gap-1" style={{ fontFamily: 'var(--font-nunito)' }}>
@@ -517,7 +656,7 @@ export default function FounderAccounts() {
               const cfg  = TYPE_CFG[m.type];
               const sign = cfg.amountSign === 1 ? '+' : '−';
               return (
-                <div key={m.id} className={`px-5 py-4 flex flex-wrap sm:flex-nowrap items-center gap-4 transition-colors ${m.settled ? 'opacity-50 bg-[#fdf6f6]' : 'hover:bg-[#fdf6f6]/60'}`}>
+                <div key={m.id} className={`px-5 py-4 flex flex-wrap sm:flex-nowrap items-center gap-3 transition-colors ${m.settled ? 'bg-[#fdf6f6]/60' : 'hover:bg-[#fdf6f6]/60'}`}>
                   {/* Date */}
                   <div className="w-20 shrink-0 text-[11px] text-[#7a4a4a]/60 font-mono tabular-nums">
                     {fmtDate(m.date)}
@@ -530,11 +669,11 @@ export default function FounderAccounts() {
 
                   {/* Description + notes */}
                   <div className="flex-1 min-w-0">
-                    <div className="text-[13px] font-medium text-[#1a0505] truncate" style={{ fontFamily: 'var(--font-nunito)' }}>
+                    <div className={`text-[13px] font-medium truncate ${m.settled ? 'text-[#7a4a4a]/50' : 'text-[#1a0505]'}`} style={{ fontFamily: 'var(--font-nunito)' }}>
                       {m.description}
                     </div>
                     {m.notes && (
-                      <div className="text-[10px] text-[#7a4a4a]/50 truncate mt-0.5">{m.notes}</div>
+                      <div className="text-[10px] text-[#7a4a4a]/40 truncate mt-0.5">{m.notes}</div>
                     )}
                     {m.settled && m.settled_date && (
                       <div className="text-[10px] text-emerald-600 mt-0.5 flex items-center gap-1">
@@ -549,14 +688,28 @@ export default function FounderAccounts() {
                   </span>
 
                   {/* Amount */}
-                  <div className={`shrink-0 text-sm font-semibold tabular-nums w-24 text-right ${cfg.colorCls}`} style={{ fontFamily: 'var(--font-syne)' }}>
+                  <div className={`shrink-0 text-sm font-semibold tabular-nums w-24 text-right ${m.settled ? 'text-[#7a4a4a]/40' : cfg.colorCls}`} style={{ fontFamily: 'var(--font-syne)' }}>
                     {sign}{fmtEur(m.amount)}
+                  </div>
+
+                  {/* Status badge */}
+                  <div className="shrink-0 w-20 flex justify-center">
+                    {m.settled ? (
+                      <span className="text-[9px] tracking-[0.1em] px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200" style={{ fontFamily: 'var(--font-nunito)' }}>
+                        SALDATO
+                      </span>
+                    ) : (
+                      <span className="text-[9px] tracking-[0.1em] px-2.5 py-1 rounded-full bg-orange-50 text-orange-600 border border-orange-200" style={{ fontFamily: 'var(--font-nunito)' }}>
+                        APERTO
+                      </span>
+                    )}
                   </div>
 
                   {/* Actions */}
                   <div className="flex items-center gap-1 shrink-0">
                     {m.receipt_url && (
-                      <a href={m.receipt_url} target="_blank" rel="noopener noreferrer" title="Ricevuta" className="p-1.5 rounded-lg text-[#7a4a4a]/40 hover:text-[#731515] hover:bg-white transition-colors">
+                      <a href={m.receipt_url} target="_blank" rel="noopener noreferrer" title="Ricevuta"
+                        className="p-1.5 rounded-lg text-[#7a4a4a]/40 hover:text-[#731515] hover:bg-[#fdf6f6] transition-colors">
                         <Paperclip size={12} />
                       </a>
                     )}
@@ -570,6 +723,22 @@ export default function FounderAccounts() {
                         <Check size={13} />
                       </button>
                     )}
+                    {!m.settled && (
+                      <button
+                        onClick={() => setEditTarget(m)}
+                        title="Modifica"
+                        className="p-1.5 rounded-lg text-[#7a4a4a]/40 hover:text-[#731515] hover:bg-[#fdf6f6] transition-colors"
+                      >
+                        <Pencil size={12} />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setDeleteTarget(m)}
+                      title="Elimina"
+                      className="p-1.5 rounded-lg text-[#7a4a4a]/40 hover:text-red-600 hover:bg-red-50 transition-colors"
+                    >
+                      <Trash2 size={12} />
+                    </button>
                   </div>
                 </div>
               );

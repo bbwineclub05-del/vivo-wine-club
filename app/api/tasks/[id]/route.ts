@@ -70,15 +70,30 @@ export async function PATCH(
 ) {
   const { id } = await params;
   const body = await request.json();
-  const { status } = body;
+  const { status, title, description, assignee_emails, due_date, priority, team_id } = body;
 
+  const db = getSupabaseAdmin();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const dbAny = db as any;
+
+  // ── Full edit (title present) ──
+  if (title !== undefined) {
+    const patch: Record<string, unknown> = { title, description: description ?? null, due_date: due_date ?? null, priority: priority ?? 'medium', team_id: team_id ?? null };
+    if (Array.isArray(assignee_emails) && assignee_emails.length > 0) {
+      patch.assignee_emails = assignee_emails;
+      patch.assignee_email  = assignee_emails[0];
+    }
+    const { data, error } = await dbAny.from('tasks').update(patch).eq('id', id).select().single();
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ task: data });
+  }
+
+  // ── Status-only update ──
   if (!status || !VALID_STATUSES.includes(status)) {
     return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
   }
 
-  const db = getSupabaseAdmin();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (db as any)
+  const { data, error } = await dbAny
     .from('tasks')
     .update({ status })
     .eq('id', id)
