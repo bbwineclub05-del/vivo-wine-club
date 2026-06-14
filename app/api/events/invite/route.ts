@@ -83,10 +83,15 @@ export async function POST(request: Request) {
         .replace(/\[Name\]/g, firstName)
         .replace(/\[Prénom\]/g, firstName);
       return resend.emails.send({
-        from: 'Vivo Wine Club <info@vivowineclub.com>',
-        to:   `${name} <${email}>`,
+        from:     'Vivo Wine Club <noreply@vivowineclub.com>',
+        replyTo: 'info@vivowineclub.com',
+        to:       `${name} <${email}>`,
         subject,
-        html: buildInviteHtml(personalised, eventSlug),
+        html:     buildInviteHtml(personalised, eventSlug),
+        headers: {
+          'List-Unsubscribe': '<mailto:info@vivowineclub.com?subject=Unsubscribe>',
+          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        },
       });
     }),
   );

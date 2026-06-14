@@ -16,9 +16,10 @@ export async function POST(request: Request) {
     const pdfBase64 = Buffer.from(pdfBytes).toString('base64');
 
     const result = await resend.emails.send({
-      from:    'Vivo Wine Club <noreply@vivowineclub.com>',
-      to:      [to],
-      subject: subject || `Proposta Evento — Vivo Wine Club`,
+      from:     'Vivo Wine Club <noreply@vivowineclub.com>',
+      replyTo: 'info@vivowineclub.com',
+      to:       [to],
+      subject:  subject || `Proposta Evento — Vivo Wine Club`,
       html: `
 <div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1a0505;">
   <div style="text-align:center;background-color:#731515;padding:28px;margin-bottom:32px;border-radius:4px;">

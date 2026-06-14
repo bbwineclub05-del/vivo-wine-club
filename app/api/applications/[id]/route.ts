@@ -123,9 +123,10 @@ export async function PATCH(
 
       try {
         const emailResult = await resend.emails.send({
-          from:    'noreply@vivowineclub.com',
-          to:      app.email,
-          subject: `Welcome to Vivo Wine Club, ${app.name.split(' ')[0]}!`,
+          from:     'Vivo Wine Club <noreply@vivowineclub.com>',
+          replyTo: 'info@vivowineclub.com',
+          to:       app.email,
+          subject:  `Welcome to Vivo Wine Club, ${app.name.split(' ')[0]}!`,
           html:    welcomeHtml(app.name, inviteLink),
         });
 
@@ -140,9 +141,10 @@ export async function PATCH(
     } else if (status === 'rejected') {
       try {
         const emailResult = await resend.emails.send({
-          from:    'noreply@vivowineclub.com',
-          to:      app.email,
-          subject: 'Your Vivo Wine Club application',
+          from:     'Vivo Wine Club <noreply@vivowineclub.com>',
+          replyTo: 'info@vivowineclub.com',
+          to:       app.email,
+          subject:  'Your Vivo Wine Club application',
           html:    rejectionHtml(app.name),
         });
 

@@ -38,10 +38,15 @@ export async function POST(request: Request) {
 
   // Send welcome email (fire and don't fail the request on email error)
   await resend.emails.send({
-    from: 'noreply@vivowineclub.com',
-    to: email,
-    subject: 'Welcome to Vivo Wine Club Newsletter',
-    html: WELCOME_HTML,
+    from:     'Vivo Wine Club <noreply@vivowineclub.com>',
+    replyTo: 'info@vivowineclub.com',
+    to:       email,
+    subject:  'Welcome to Vivo Wine Club Newsletter',
+    html:     WELCOME_HTML,
+    headers: {
+      'List-Unsubscribe': '<mailto:info@vivowineclub.com?subject=Unsubscribe>',
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+    },
   });
 
   return NextResponse.json({ ok: true });

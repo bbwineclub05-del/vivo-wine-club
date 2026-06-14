@@ -108,9 +108,10 @@ export async function PATCH(
     const assigneeName = memberName(data.assignee_email, members);
     try {
       const emailResult = await resend.emails.send({
-        from:    'noreply@vivowineclub.com',
-        to:      data.assigner_email,
-        subject: `✓ Task completed by ${assigneeName}: ${data.title}`,
+        from:     'Vivo Wine Club <noreply@vivowineclub.com>',
+        replyTo: 'info@vivowineclub.com',
+        to:       data.assigner_email,
+        subject:  `✓ Task completed by ${assigneeName}: ${data.title}`,
         html:    taskDoneHtml({
           assigneeName,
           title:       data.title,

@@ -257,9 +257,10 @@ export async function sendEventConfirmationEmails(params: {
     // 4. Buyer email with all PDF attachments
     console.log(`${tag} sending buyer email to ${email}…`);
     const buyerResult = await resend.emails.send({
-      from:    'Vivo Wine Club <noreply@vivowineclub.com>',
-      to:      email,
-      subject: `Your ticket${qty > 1 ? 's' : ''} for ${event.title} — Vivo Wine Club`,
+      from:     'Vivo Wine Club <noreply@vivowineclub.com>',
+      replyTo: 'info@vivowineclub.com',
+      to:       email,
+      subject:  `Your ticket${qty > 1 ? 's' : ''} for ${event.title} — Vivo Wine Club`,
       html:    buyerEmailHtml({ firstName, event, qty, total, orderId }),
       attachments,
     });
@@ -275,6 +276,7 @@ export async function sendEventConfirmationEmails(params: {
       from:    'Vivo Wine Club <noreply@vivowineclub.com>',
       to:      'info@vivowineclub.com',
       subject: `New ticket — ${event.title} (${qty} ticket${qty > 1 ? 's' : ''})`,
+
       html:    adminEmailHtml({ firstName, lastName, email, phone, event, qty, total, orderId }),
     });
     if (adminResult.error) {

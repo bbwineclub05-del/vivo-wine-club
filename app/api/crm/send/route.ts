@@ -112,10 +112,15 @@ export async function POST(request: Request) {
     const results = await Promise.allSettled(
       recipients.map(({ email, name }) =>
         resend.emails.send({
-          from:    'noreply@vivowineclub.com',
-          to:      email,
+          from:     'Vivo Wine Club <noreply@vivowineclub.com>',
+          replyTo: 'info@vivowineclub.com',
+          to:       email,
           subject,
-          html:    html.replace('{{name}}', name.split(' ')[0]),
+          html:     html.replace('{{name}}', name.split(' ')[0]),
+          headers: {
+            'List-Unsubscribe': '<mailto:info@vivowineclub.com?subject=Unsubscribe>',
+            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+          },
         }),
       ),
     );

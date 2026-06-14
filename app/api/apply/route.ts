@@ -60,14 +60,15 @@ export async function POST(request: Request) {
   // Send confirmation to applicant and notification to team (in parallel)
   await Promise.allSettled([
     resend.emails.send({
-      from: 'noreply@vivowineclub.com',
-      to: email,
-      subject: 'We received your application — Vivo Wine Club',
-      html: confirmationHtml(),
+      from:     'Vivo Wine Club <noreply@vivowineclub.com>',
+      replyTo: 'info@vivowineclub.com',
+      to:       email,
+      subject:  'We received your application — Vivo Wine Club',
+      html:     confirmationHtml(),
     }),
     resend.emails.send({
-      from: 'noreply@vivowineclub.com',
-      to: 'info@vivowineclub.com',
+      from:    'Vivo Wine Club <noreply@vivowineclub.com>',
+      to:      'info@vivowineclub.com',
       subject: 'New membership application',
       html: notificationHtml({ name, email, phone, city, date_of_birth, source, experience, motivation }),
     }),

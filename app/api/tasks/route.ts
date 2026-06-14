@@ -143,9 +143,10 @@ export async function POST(request: Request) {
     for (const email of assignee_emails) {
       try {
         const result = await resend.emails.send({
-          from:    'noreply@vivowineclub.com',
-          to:      email,
-          subject: `New task from ${assignerName}: ${title}`,
+          from:     'Vivo Wine Club <noreply@vivowineclub.com>',
+          replyTo: 'info@vivowineclub.com',
+          to:       email,
+          subject:  `New task from ${assignerName}: ${title}`,
           html:    taskNotificationHtml({
             assignerName,
             title,

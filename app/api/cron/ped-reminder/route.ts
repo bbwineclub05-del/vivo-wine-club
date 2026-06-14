@@ -109,10 +109,11 @@ export async function GET(request: Request) {
     const dateLabel = formatDateIT(today);
 
     const { error: sendError } = await resend.emails.send({
-      from:    FROM,
-      to:      RECIPIENTS,
-      subject: `Vivo Wine Club — Contenuti da pubblicare oggi ${dateLabel}`,
-      html:    buildHtml(entries, today),
+      from:     FROM,
+      replyTo: 'info@vivowineclub.com',
+      to:       RECIPIENTS,
+      subject:  `Vivo Wine Club — Contenuti da pubblicare oggi ${dateLabel}`,
+      html:     buildHtml(entries, today),
     });
 
     if (sendError) {

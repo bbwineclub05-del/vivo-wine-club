@@ -71,8 +71,9 @@ export async function POST(request: Request) {
     }
 
     const payload = {
-      from:    'Vivo Wine Club <info@vivowineclub.com>',
-      to:      `${toName} <${to}>`,
+      from:     'Vivo Wine Club <noreply@vivowineclub.com>',
+      replyTo: 'info@vivowineclub.com',
+      to:       `${toName} <${to}>`,
       subject,
       html,
       ...(attachments.length > 0 ? { attachments } : {}),
