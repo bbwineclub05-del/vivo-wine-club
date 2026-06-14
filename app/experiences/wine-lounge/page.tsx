@@ -107,7 +107,36 @@ export default function WineLoungeePage() {
         </motion.div>
       </section>
 
-      {/* ── 2. CONCEPT ── */}
+      {/* ── 2. UPCOMING LOUNGE EVENTS ── */}
+      <section className="py-16 md:py-22 bg-[#2e0c0c]">
+        <div className="max-w-4xl mx-auto px-8 md:px-16">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="mb-10"
+          >
+            <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-3">{t('upcoming')}</div>
+            <h2
+              className="text-[clamp(2rem,5vw,4rem)] font-light text-[#F5EEE6] leading-none mb-8"
+              style={{ fontFamily: 'var(--font-syne)' }}
+            >
+              {t('nextEvenings')}
+            </h2>
+            <div className="h-px bg-white/10 mb-8" />
+            <ExperienceUpcoming
+              section="wine_lounge"
+              accentColor="#C9A84C"
+              mutedColor="light"
+              btnBg="#731515"
+              btnText="#F5EEE6"
+            />
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ── 3. CONCEPT ── */}
       <section className="py-16 md:py-22 bg-[#2e0c0c]">
         <div className="max-w-4xl mx-auto px-8 md:px-16">
           <motion.div
@@ -142,7 +171,7 @@ export default function WineLoungeePage() {
         </div>
       </section>
 
-      {/* ── 3. GALLERY ── */}
+      {/* ── 4. GALLERY ── */}
       <section className="py-10 bg-[#2e0c0c]">
         <div className="max-w-4xl mx-auto px-8 md:px-16">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -165,35 +194,6 @@ export default function WineLoungeePage() {
               </motion.div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* ── 4. NEXT EVENINGS ── */}
-      <section className="py-16 md:py-22 bg-[#2e0c0c]">
-        <div className="max-w-4xl mx-auto px-8 md:px-16">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-            className="mb-10"
-          >
-            <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-3">{t('upcoming')}</div>
-            <h2
-              className="text-[clamp(2rem,5vw,4rem)] font-light text-[#F5EEE6] leading-none mb-8"
-              style={{ fontFamily: 'var(--font-syne)' }}
-            >
-              {t('nextEvenings')}
-            </h2>
-            <div className="h-px bg-white/10 mb-8" />
-            <ExperienceUpcoming
-              section="wine_lounge"
-              accentColor="#C9A84C"
-              mutedColor="light"
-              btnBg="#731515"
-              btnText="#F5EEE6"
-            />
-          </motion.div>
         </div>
       </section>
 

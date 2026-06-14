@@ -4,6 +4,14 @@ import { requireAdminOrStaff } from '@/lib/auth-guard';
 
 const BUCKET = 'documents';
 
+const ALLOWED_TYPES = new Set([
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+]);
+
 /* ── GET /api/documents — list all ── */
 export async function GET(request: Request) {
   const auth = await requireAdminOrStaff(request);
@@ -41,8 +49,8 @@ export async function POST(request: Request) {
     if (!file || !title?.trim()) {
       return NextResponse.json({ error: 'file e titolo sono obbligatori' }, { status: 400 });
     }
-    if (file.type !== 'application/pdf') {
-      return NextResponse.json({ error: 'Solo file PDF sono accettati' }, { status: 400 });
+    if (!ALLOWED_TYPES.has(file.type)) {
+      return NextResponse.json({ error: 'Formato non supportato. Usa PDF, Word o PowerPoint.' }, { status: 400 });
     }
     if (file.size > 20 * 1024 * 1024) {
       return NextResponse.json({ error: 'File troppo grande (max 20 MB)' }, { status: 400 });
@@ -56,7 +64,7 @@ export async function POST(request: Request) {
 
     const { error: uploadErr } = await supabase.storage
       .from(BUCKET)
-      .upload(storagePath, buffer, { contentType: 'application/pdf', upsert: false });
+      .upload(storagePath, buffer, { contentType: file.type, upsert: false });
 
     if (uploadErr) return NextResponse.json({ error: uploadErr.message }, { status: 500 });
 

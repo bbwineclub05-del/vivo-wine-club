@@ -9,7 +9,7 @@ import {
   Mail, LogOut, KeyRound, ScanLine, Menu, X,
   Wine, Shield, ArrowUpRight, CreditCard, User, CalendarDays, GlassWater, MapPin, Images,
   Database, ChevronDown, UsersRound, Lock, ShoppingBag, Tag, FolderOpen, Layers,
-  Camera, Loader2, Building2, Wallet, Receipt,
+  Camera, Loader2, Building2, Wallet, Receipt, BookOpen,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -32,12 +32,13 @@ import MemberPortal from '@/components/MemberPortal';
 import MembershipCard from '@/components/MembershipCard';
 import FinanceManager from '@/components/FinanceManager';
 import QuoteGenerator from '@/components/QuoteGenerator';
+import PedManager from '@/components/PedManager';
 import { isSuperAdmin, isFinanceUser } from '@/lib/admins';
 
 /* ─────────────────────────────────────────────
    Types
 ───────────────────────────────────────────── */
-type Section = 'overview' | 'settings' | 'card' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm' | 'crm-wine' | 'crm-bordeaux' | 'crm-clienti' | 'crm-sponsors' | 'media' | 'team' | 'merch' | 'discounts' | 'documents' | 'finance' | 'quotes';
+type Section = 'overview' | 'settings' | 'card' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm' | 'crm-wine' | 'crm-bordeaux' | 'crm-clienti' | 'crm-sponsors' | 'media' | 'team' | 'merch' | 'discounts' | 'documents' | 'finance' | 'quotes' | 'ped';
 
 // Maps section IDs to the permission key in team_members.permissions
 const SECTION_PERM: Partial<Record<Section, string>> = {
@@ -81,6 +82,7 @@ const GESTIONE_ITEMS: NavItem[] = [
 // Visible to both admin and staff
 const NAV_SHARED: NavItem[] = [
   { id: 'tasks',     label: 'Task Board', icon: CheckSquare },
+  { id: 'ped',       label: 'PED',        icon: BookOpen    },
   { id: 'documents', label: 'Documenti',  icon: FolderOpen  },
   { id: 'quotes',    label: 'Preventivi', icon: Receipt     },
 ];
@@ -1218,6 +1220,13 @@ function MembersPageInner() {
                 {(admin || isStaff) && activeSection === 'quotes' && (
                   <>
                     <QuoteGenerator />
+                  </>
+                )}
+
+                {(admin || isStaff) && activeSection === 'ped' && (
+                  <>
+                    <SectionHeader title="Piano Editoriale" subtitle="Pianificazione e tracciamento dei contenuti social e digitali." />
+                    <PedManager />
                   </>
                 )}
 

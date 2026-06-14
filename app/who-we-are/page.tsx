@@ -24,7 +24,6 @@ function LinkedInIcon() {
 ───────────────────────────────────────────── */
 const TEAM_MEMBERS = [
   { name: 'Carolina Maria Carra', initials: 'CC', role: 'Team Media',             linkedin: 'https://www.linkedin.com/in/carolina-maria-carra/' },
-  { name: 'Giulia Zalum',         initials: 'GZ', role: 'Team Media',             linkedin: 'https://www.linkedin.com/in/giulia-zalum-391a83255/' },
   { name: 'Elena Catellani',      initials: 'EC', role: 'Team Media',             linkedin: 'https://www.linkedin.com/in/elena-catellani-a70aa72b0/' },
   { name: 'Gabriele Lisanti',     initials: 'GL', role: 'Team Events',            linkedin: 'https://www.linkedin.com/in/gabrielelisanti/' },
   { name: 'Marcello Abbadati',    initials: 'MA', role: 'Team Events · Sommelier',linkedin: 'https://www.linkedin.com/in/marcelloabbadati/' },
@@ -36,7 +35,6 @@ const FOUNDERS_DATA = [
   { name: 'Giacomo Gallo',       city: 'Turin',    role: 'Co-Founder', image: '/giacomo2.png',  bioKey: 'bioGiacomo'    as const, taglineKey: 'taglineGiacomo'   as const, linkedin: 'https://www.linkedin.com/in/giacomo-gallo-520a85286/' },
   { name: 'Filippo Lombardi',    city: 'Brescia',  role: 'Co-Founder', image: '/filippo.png',   bioKey: 'bioFilippo'    as const, taglineKey: 'taglineFilippo'   as const, linkedin: 'https://www.linkedin.com/in/filippolombardiofficial/' },
   { name: 'Cristiano Michelotti',city: 'Florence', role: 'Co-Founder', image: '/cristiano.png', bioKey: 'bioCristiano'  as const, taglineKey: 'taglineCristiano' as const, linkedin: 'https://www.linkedin.com/in/cristiano-michelotti-799a49299/' },
-  { name: 'Riccardo Consalvo',   city: 'Milan',    role: 'Co-Founder', image: '/riccardo.png',  bioKey: 'bioRiccardo'   as const, taglineKey: 'taglineRiccardo'  as const, linkedin: 'https://www.linkedin.com/in/riccardo-consalvo-76aba124b/' },
 ];
 
 const STATS = [
@@ -376,7 +374,7 @@ export default function WhoWeArePage() {
               </h2>
             </motion.div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 lg:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 lg:gap-8 max-w-3xl mx-auto">
               {FOUNDERS.map((founder, i) => (
                 <FounderCard key={founder.name} {...founder} index={i} />
               ))}
@@ -419,7 +417,7 @@ export default function WhoWeArePage() {
               </h2>
             </motion.div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {TEAM_MEMBERS.map((member, i) => (
                 <motion.div
                   key={member.name}
@@ -427,7 +425,7 @@ export default function WhoWeArePage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: '-30px' }}
                   transition={{ duration: 0.5, delay: i * 0.07, ease: [0.16, 1, 0.3, 1] }}
-                  className="flex flex-col items-center text-center gap-2 p-3 bg-[#731515] hover:bg-[#8f2020] transition-colors duration-300"
+                  className="flex items-center gap-4 p-4 bg-[#731515] hover:bg-[#8f2020] transition-colors duration-300"
                 >
                   {/* Avatar */}
                   <div className="w-10 h-10 rounded-full border border-white/25 flex items-center justify-center shrink-0">
@@ -437,9 +435,9 @@ export default function WhoWeArePage() {
                     </svg>
                   </div>
 
-                  <div className="flex flex-col gap-0.5">
+                  <div className="flex flex-col gap-0.5 flex-1 min-w-0">
                     <h3
-                      className="text-xs font-medium text-white leading-snug"
+                      className="text-xs font-medium text-white leading-snug truncate"
                       style={{ fontFamily: 'var(--font-syne)' }}
                     >
                       {member.name}
@@ -458,7 +456,7 @@ export default function WhoWeArePage() {
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label={`${member.name} on LinkedIn`}
-                      className="w-6 h-6 border border-white/25 flex items-center justify-center text-white/60 hover:border-white hover:text-white transition-all duration-300"
+                      className="w-7 h-7 border border-white/25 flex items-center justify-center text-white/60 hover:border-white hover:text-white transition-all duration-300 shrink-0"
                     >
                       <LinkedInIcon />
                     </a>

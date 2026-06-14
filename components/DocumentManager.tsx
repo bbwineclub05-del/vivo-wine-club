@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Upload, FileText, Trash2, Download,
   Loader2, FolderOpen, Plus, X, CheckCircle2,
+  FileType2, Presentation,
 } from 'lucide-react';
 
 /* ── Types ── */
@@ -21,6 +22,22 @@ interface Document {
 
 /* ── Constants ── */
 const CATEGORIES = ['Pitch', 'Statuto', 'Preventivi', 'Contratti', 'Verbali', 'Altro'];
+
+const ACCEPTED_MIME =
+  'application/pdf,' +
+  'application/msword,' +
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document,' +
+  'application/vnd.ms-powerpoint,' +
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation,' +
+  '.pdf,.doc,.docx,.ppt,.pptx';
+
+const ALLOWED_MIME_SET = new Set([
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+]);
 
 const CATEGORY_COLORS: Record<string, string> = {
   Pitch:      'bg-blue-50 text-blue-700 border-blue-200',
@@ -43,6 +60,15 @@ function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString('it-IT', {
     day: '2-digit', month: 'short', year: 'numeric',
   });
+}
+
+function DocIcon({ fileName, size = 13 }: { fileName: string; size?: number }) {
+  const ext = fileName.split('.').pop()?.toLowerCase() ?? '';
+  if (ext === 'doc' || ext === 'docx')
+    return <FileType2 size={size} className="shrink-0" style={{ color: '#1e40af' }} />;
+  if (ext === 'ppt' || ext === 'pptx')
+    return <Presentation size={size} className="shrink-0" style={{ color: '#b45309' }} />;
+  return <FileText size={size} className="shrink-0 text-[#731515]" />;
 }
 
 function CategoryBadge({ category }: { category: string }) {
@@ -107,7 +133,11 @@ export default function DocumentManager({
   /* ── Upload ── */
   async function handleUpload(e: React.FormEvent) {
     e.preventDefault();
-    if (!file) { setUploadError('Seleziona un file PDF.'); return; }
+    if (!file) { setUploadError('Seleziona un file.'); return; }
+    if (!ALLOWED_MIME_SET.has(file.type)) {
+      setUploadError('Formato non supportato. Usa PDF, Word (.doc/.docx) o PowerPoint (.ppt/.pptx).');
+      return;
+    }
     setUploadError(''); setUploading(true);
     try {
       const fd = new FormData();
@@ -285,7 +315,7 @@ export default function DocumentManager({
 
                   <div>
                     <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-2">
-                      FILE PDF *
+                      FILE *
                     </label>
                     <div
                       className="border-2 border-dashed border-[#eddada] rounded-lg p-6 text-center cursor-pointer hover:border-[#731515]/40 transition-colors duration-200"
@@ -293,7 +323,7 @@ export default function DocumentManager({
                     >
                       <input
                         ref={fileRef}
-                        type="file" accept="application/pdf" className="hidden"
+                        type="file" accept={ACCEPTED_MIME} className="hidden"
                         onChange={e => setFile(e.target.files?.[0] ?? null)}
                       />
                       {file ? (
@@ -301,7 +331,7 @@ export default function DocumentManager({
                           className="flex items-center justify-center gap-2 text-sm text-[#1a0505]"
                           style={{ fontFamily: 'var(--font-nunito)' }}
                         >
-                          <FileText size={15} className="text-[#731515] shrink-0" />
+                          <DocIcon fileName={file.name} size={15} />
                           <span className="truncate max-w-xs">{file.name}</span>
                           <span className="text-[#7a4a4a]/40 text-xs shrink-0">
                             ({fmtSize(file.size)})
@@ -311,10 +341,10 @@ export default function DocumentManager({
                         <div style={{ fontFamily: 'var(--font-nunito)' }}>
                           <Upload size={20} className="text-[#7a4a4a]/25 mx-auto mb-2" />
                           <p className="text-sm text-[#7a4a4a]/45">
-                            Clicca per selezionare un PDF
+                            Clicca per selezionare un file
                           </p>
                           <p className="text-xs text-[#7a4a4a]/30 mt-1">
-                            Solo .pdf · Max 20 MB
+                            PDF · Word · PowerPoint · Max 20 MB
                           </p>
                         </div>
                       )}
@@ -393,7 +423,7 @@ export default function DocumentManager({
                   {/* Title block */}
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <FileText size={13} className="text-[#731515] shrink-0" />
+                      <DocIcon fileName={doc.file_name} size={13} />
                       <span
                         className="text-sm font-medium text-[#1a0505] truncate"
                         style={{ fontFamily: 'var(--font-syne)' }}
@@ -462,7 +492,7 @@ export default function DocumentManager({
                 <div className="sm:hidden px-4 py-4 hover:bg-[#fdf9f9] transition-colors duration-150">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-2 min-w-0">
-                      <FileText size={14} className="text-[#731515] shrink-0 mt-0.5" />
+                      <div className="mt-0.5"><DocIcon fileName={doc.file_name} size={14} /></div>
                       <div className="min-w-0">
                         <p
                           className="text-sm font-medium text-[#1a0505] leading-snug"

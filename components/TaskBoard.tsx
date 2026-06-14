@@ -51,6 +51,21 @@ interface CalEvent {
   slug: string | null;
 }
 
+interface PedEntry {
+  id: string;
+  date: string;
+  title: string;
+  platform: string;
+  content_type: string;
+  status: string;
+  assigned_to: string | null;
+}
+
+// Single uniform colour for all PED entries in the Task Board calendar
+// (per-platform colours live only inside PedManager's own calendar)
+const PED_BG    = '#e9d5ff'; // light violet / lavender
+const PED_COLOR = '#6b21a8'; // deep purple text
+
 /* ─────────────────────────────────────────────
    Static fallbacks
 ───────────────────────────────────────────── */
@@ -663,13 +678,15 @@ function QuarterSection({
 function CalendarView({
   tasks,
   events,
+  pedEntries,
   teams,
   members,
 }: {
-  tasks:   Task[];
-  events:  CalEvent[];
-  teams:   Team[];
-  members: TeamMember[];
+  tasks:      Task[];
+  events:     CalEvent[];
+  pedEntries: PedEntry[];
+  teams:      Team[];
+  members:    TeamMember[];
 }) {
   const [month, setMonth] = useState(() => {
     const n = new Date();
@@ -689,27 +706,32 @@ function CalendarView({
 
   // Build day → items map
   const dayMap = useMemo(() => {
-    const map: Record<string, { tasks: Task[]; events: CalEvent[] }> = {};
+    const map: Record<string, { tasks: Task[]; events: CalEvent[]; ped: PedEntry[] }> = {};
     for (const t of tasks) {
       if (!t.due_date) continue;
       const key = t.due_date.slice(0, 10);
-      if (!map[key]) map[key] = { tasks: [], events: [] };
+      if (!map[key]) map[key] = { tasks: [], events: [], ped: [] };
       map[key].tasks.push(t);
     }
     for (const ev of events) {
       if (!ev.date) continue;
       const key = ev.date.slice(0, 10);
-      if (!map[key]) map[key] = { tasks: [], events: [] };
+      if (!map[key]) map[key] = { tasks: [], events: [], ped: [] };
       map[key].events.push(ev);
     }
+    for (const pe of pedEntries) {
+      const key = pe.date.slice(0, 10);
+      if (!map[key]) map[key] = { tasks: [], events: [], ped: [] };
+      map[key].ped.push(pe);
+    }
     return map;
-  }, [tasks, events]);
+  }, [tasks, events, pedEntries]);
 
   function prevMonth() { setMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1)); }
   function nextMonth() { setMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1)); }
 
   // Selected day popup
-  const selectedItems = selectedDay ? (dayMap[selectedDay] ?? { tasks: [], events: [] }) : null;
+  const selectedItems = selectedDay ? (dayMap[selectedDay] ?? { tasks: [], events: [], ped: [] }) : null;
 
   const cells: (number | null)[] = [
     ...Array(firstDayOfWeek).fill(null),
@@ -788,6 +810,14 @@ function CalendarView({
                     {ev.title}
                   </div>
                 ))}
+
+                {/* PED dots */}
+                {items?.ped.map(pe => (
+                  <div key={pe.id} className="w-full px-1.5 py-0.5 rounded text-[9px] truncate leading-tight"
+                    style={{ backgroundColor: PED_BG, color: PED_COLOR }}>
+                    {pe.title}
+                  </div>
+                ))}
               </button>
             );
           })}
@@ -796,7 +826,7 @@ function CalendarView({
 
       {/* Day popup */}
       <AnimatePresence>
-        {selectedDay && selectedItems && (selectedItems.tasks.length > 0 || selectedItems.events.length > 0) && (
+        {selectedDay && selectedItems && (selectedItems.tasks.length > 0 || selectedItems.events.length > 0 || selectedItems.ped.length > 0) && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -856,6 +886,21 @@ function CalendarView({
                   </div>
                 );
               })}
+              {selectedItems.ped.map(pe => (
+                <div key={pe.id} className="flex items-start gap-3 px-5 py-3">
+                  <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: PED_COLOR }} />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[12px] font-medium text-[#1a0505]" style={{ fontFamily: 'var(--font-nunito)' }}>{pe.title}</div>
+                    <div className="text-[10px] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
+                      PED · {pe.platform} · {pe.content_type}
+                      {pe.assigned_to && ` · ${pe.assigned_to}`}
+                    </div>
+                  </div>
+                  <span className="shrink-0 text-[8px] tracking-[0.15em] px-1.5 py-0.5 rounded-full border bg-purple-50 text-purple-700 border-purple-200" style={{ fontFamily: 'var(--font-nunito)' }}>
+                    PED
+                  </span>
+                </div>
+              ))}
             </div>
           </motion.div>
         )}
@@ -874,6 +919,10 @@ function CalendarView({
           <span className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#f5e6e6', border: '1px solid #73151530' }} />
           Eventi
         </div>
+        <div className="flex items-center gap-1.5 text-[9px] text-[#7a4a4a]">
+          <span className="w-2 h-2 rounded-sm" style={{ backgroundColor: PED_BG, border: `1px solid ${PED_COLOR}40` }} />
+          PED
+        </div>
       </div>
     </div>
   );
@@ -885,6 +934,7 @@ function CalendarView({
 export default function TaskBoard({ currentEmail }: { currentEmail: string }) {
   const [tasks,         setTasks]         = useState<Task[]>([]);
   const [events,        setEvents]        = useState<CalEvent[]>([]);
+  const [pedEntries,    setPedEntries]    = useState<PedEntry[]>([]);
   const [teams,         setTeams]         = useState<Team[]>([]);
   const [members,       setMembers]       = useState<TeamMember[]>(STATIC_ADMINS);
   const [loading,       setLoading]       = useState(true);
@@ -907,7 +957,7 @@ export default function TaskBoard({ currentEmail }: { currentEmail: string }) {
 
   async function loadAll() {
     setLoading(true);
-    await Promise.all([loadTasks(), loadMembers(), loadTeams(), loadEvents()]);
+    await Promise.all([loadTasks(), loadMembers(), loadTeams(), loadEvents(), loadPedEntries()]);
     setLoading(false);
   }
 
@@ -947,6 +997,15 @@ export default function TaskBoard({ currentEmail }: { currentEmail: string }) {
       if (!res.ok) return;
       const json = await res.json();
       if (Array.isArray(json.events)) setEvents(json.events as CalEvent[]);
+    } catch { /* silent */ }
+  }
+
+  async function loadPedEntries() {
+    try {
+      const res = await fetch('/api/ped/all');
+      if (!res.ok) return;
+      const json = await res.json();
+      if (Array.isArray(json.entries)) setPedEntries(json.entries as PedEntry[]);
     } catch { /* silent */ }
   }
 
@@ -1238,6 +1297,7 @@ export default function TaskBoard({ currentEmail }: { currentEmail: string }) {
         <CalendarView
           tasks={filtered}
           events={events}
+          pedEntries={pedEntries}
           teams={teams}
           members={members}
         />

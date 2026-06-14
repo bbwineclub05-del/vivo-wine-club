@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { X, ChevronDown } from 'lucide-react';
 import BackButton from '@/components/BackButton';
@@ -97,11 +96,8 @@ export default function WinePartyPage() {
             className="object-contain"
             priority
           />
-          {/* Vignette: sfuma verso il nero su tutti i bordi */}
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_62%_52%_at_50%_46%,transparent_45%,rgba(10,2,4,0.55)_68%,rgba(10,2,4,0.92)_88%,#0a0204_100%)]" />
-          {/* Gradiente basso per leggibilità testo */}
           <div className="absolute inset-0 bg-gradient-to-t from-[#0a0204] via-[#0a0204]/20 to-transparent" />
-          {/* Gradiente alto */}
           <div className="absolute inset-0 bg-gradient-to-b from-[#0a0204]/70 via-transparent to-transparent" />
 
           <motion.div
@@ -163,7 +159,36 @@ export default function WinePartyPage() {
           </motion.div>
         </section>
 
-        {/* ── 2. CONCEPT ── */}
+        {/* ── 2. UPCOMING EVENTS ── */}
+        <section className="py-16 md:py-22 bg-[#0d0203]">
+          <div className="max-w-4xl mx-auto px-8 md:px-16">
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+              className="mb-10"
+            >
+              <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-3">{t('upcoming')}</div>
+              <h2
+                className="text-[clamp(2rem,5vw,4rem)] font-light text-[#F5EEE6] leading-none"
+                style={{ fontFamily: 'var(--font-syne)' }}
+              >
+                {t('nextParties')}
+              </h2>
+            </motion.div>
+
+            <ExperienceUpcoming
+              section="wine_party"
+              accentColor="#731515"
+              mutedColor="light"
+              btnBg="#731515"
+              btnText="#F5EEE6"
+            />
+          </div>
+        </section>
+
+        {/* ── 3. CONCEPT ── */}
         <section className="py-16 md:py-22 bg-[#0d0203]">
           <div className="max-w-4xl mx-auto px-8 md:px-16">
             <motion.div
@@ -198,7 +223,7 @@ export default function WinePartyPage() {
           </div>
         </section>
 
-        {/* ── 3. GALLERY ── */}
+        {/* ── 4. GALLERY ── */}
         <section className="py-14 bg-[#090103]">
           <div className="max-w-7xl mx-auto px-8 md:px-10">
             <motion.div
@@ -242,35 +267,6 @@ export default function WinePartyPage() {
                 </motion.button>
               ))}
             </div>
-          </div>
-        </section>
-
-        {/* ── 4. UPCOMING EVENTS ── */}
-        <section className="py-16 md:py-22 bg-[#0d0203]">
-          <div className="max-w-4xl mx-auto px-8 md:px-16">
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
-              className="mb-10"
-            >
-              <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-3">{t('upcoming')}</div>
-              <h2
-                className="text-[clamp(2rem,5vw,4rem)] font-light text-[#F5EEE6] leading-none"
-                style={{ fontFamily: 'var(--font-syne)' }}
-              >
-                {t('nextParties')}
-              </h2>
-            </motion.div>
-
-            <ExperienceUpcoming
-              section="wine_party"
-              accentColor="#731515"
-              mutedColor="light"
-              btnBg="#731515"
-              btnText="#F5EEE6"
-            />
           </div>
         </section>
 

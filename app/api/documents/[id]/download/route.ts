@@ -4,6 +4,18 @@ import { requireAdminOrStaff } from '@/lib/auth-guard';
 
 const BUCKET = 'documents';
 
+function mimeFromFileName(fileName: string): string {
+  const ext = fileName.split('.').pop()?.toLowerCase() ?? '';
+  const map: Record<string, string> = {
+    pdf:  'application/pdf',
+    doc:  'application/msword',
+    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ppt:  'application/vnd.ms-powerpoint',
+    pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  };
+  return map[ext] ?? 'application/octet-stream';
+}
+
 /* ── GET /api/documents/[id]/download — streams PDF to client ── */
 export async function GET(
   request: Request,
@@ -39,7 +51,7 @@ export async function GET(
 
   return new NextResponse(buffer, {
     headers: {
-      'Content-Type':        'application/pdf',
+      'Content-Type':        mimeFromFileName(doc.file_name),
       'Content-Disposition': `attachment; filename="${safeName}"`,
       'Content-Length':      String(buffer.byteLength),
     },

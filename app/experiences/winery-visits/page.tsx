@@ -92,42 +92,7 @@ export default function WineryVisitsPage() {
         </motion.div>
       </section>
 
-      {/* ── 2. CONCEPT ── */}
-      <section className="py-16 md:py-22 bg-[#162549]">
-        <div className="max-w-4xl mx-auto px-8 md:px-16">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-          >
-            <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-5">{t('theConcept')}</div>
-            <p
-              className="text-xl md:text-2xl text-[#C4B5A0] font-light leading-relaxed"
-              style={{ fontFamily: 'var(--font-nunito)' }}
-            >
-              {t('conceptBody')}
-            </p>
-          </motion.div>
-
-          <div className="flex flex-wrap gap-4 mt-10">
-            {PILL_KEYS.map((key, i) => (
-              <motion.div
-                key={key}
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: i * 0.12, ease: [0.16, 1, 0.3, 1] }}
-                className="px-6 py-3 border border-[#731515]/40 text-[#731515] text-[11px] tracking-[0.35em] rounded-full"
-              >
-                {t(key)}
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── 3. UPCOMING VISITS ── */}
+      {/* ── 2. UPCOMING VISITS ── */}
       <section className="py-16 md:py-22 bg-[#101D3A]">
         <div className="max-w-4xl mx-auto px-8 md:px-16">
           <motion.div
@@ -174,6 +139,41 @@ export default function WineryVisitsPage() {
         </div>
       </section>
 
+      {/* ── 3. CONCEPT ── */}
+      <section className="py-16 md:py-22 bg-[#162549]">
+        <div className="max-w-4xl mx-auto px-8 md:px-16">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+          >
+            <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-5">{t('theConcept')}</div>
+            <p
+              className="text-xl md:text-2xl text-[#C4B5A0] font-light leading-relaxed"
+              style={{ fontFamily: 'var(--font-nunito)' }}
+            >
+              {t('conceptBody')}
+            </p>
+          </motion.div>
+
+          <div className="flex flex-wrap gap-4 mt-10">
+            {PILL_KEYS.map((key, i) => (
+              <motion.div
+                key={key}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: i * 0.12, ease: [0.16, 1, 0.3, 1] }}
+                className="px-6 py-3 border border-[#731515]/40 text-[#731515] text-[11px] tracking-[0.35em] rounded-full"
+              >
+                {t(key)}
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── 4. PAST VISITS ── */}
       <section className="py-16 md:py-22 bg-[#162549]">
         <div className="max-w-7xl mx-auto px-8 md:px-10">
@@ -204,21 +204,21 @@ export default function WineryVisitsPage() {
               >
                 <Link
                   href={`/wineries/${winery.slug}`}
-                  className="group flex flex-col bg-[#0F1C3F] border border-white/8 rounded-xl overflow-hidden hover:border-[#C9A84C]/40 hover:bg-[#132248] transition-all duration-300"
+                  className="group flex flex-col bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:border-[#C9A84C]/50 transition-all duration-300"
                 >
                   {/* Logo area */}
-                  <div className="flex items-center justify-center h-28 px-6 bg-white/5 group-hover:bg-white/8 transition-colors duration-300">
+                  <div className="flex items-center justify-center h-28 px-6 bg-gray-50 group-hover:bg-white transition-colors duration-300">
                     {winery.logo ? (
                       <Image
                         src={winery.logo}
                         alt={winery.name}
                         width={160}
                         height={80}
-                        className="w-full h-20 object-contain filter brightness-90 group-hover:brightness-100 transition-all duration-300"
+                        className="w-full h-20 object-contain transition-all duration-300"
                         sizes="(max-width: 768px) 45vw, 200px"
                       />
                     ) : (
-                      <div className="text-[#C9A84C] text-2xl font-light tracking-widest opacity-60 group-hover:opacity-90 transition-opacity"
+                      <div className="text-[#731515] text-2xl font-light tracking-widest opacity-50 group-hover:opacity-80 transition-opacity"
                         style={{ fontFamily: 'var(--font-syne)' }}
                       >
                         {winery.name.slice(0, 2).toUpperCase()}
@@ -229,16 +229,16 @@ export default function WineryVisitsPage() {
                   {/* Info area */}
                   <div className="flex flex-col gap-1 px-4 py-4">
                     <p
-                      className="text-[#F5EEE6] text-sm font-light leading-tight group-hover:text-white transition-colors"
+                      className="text-[#1a0505] text-sm font-medium leading-tight group-hover:text-[#731515] transition-colors"
                       style={{ fontFamily: 'var(--font-syne)' }}
                     >
                       {winery.name}
                     </p>
-                    <p className="text-[#C4B5A0] text-[11px] tracking-wide">
+                    <p className="text-[#7a4a4a] text-[11px] tracking-wide">
                       {winery.region} · {winery.country}
                     </p>
                     {winery.classification && (
-                      <p className="text-[#C9A84C]/60 text-[10px] tracking-wide mt-0.5 leading-tight line-clamp-1">
+                      <p className="text-[#731515]/60 text-[10px] tracking-wide mt-0.5 leading-tight line-clamp-1">
                         {winery.classification}
                       </p>
                     )}
