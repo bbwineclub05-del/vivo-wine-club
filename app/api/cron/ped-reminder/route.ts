@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { emailShell, heading, para, divider, ctaButton } from '@/lib/email-shell';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,15 +13,8 @@ const RECIPIENTS = [
 
 const FROM = 'Vivo Wine Club <noreply@vivowineclub.com>';
 
-const PLATFORM_EMOJI: Record<string, string> = {
-  Instagram: '📸',
-  LinkedIn:  '💼',
-  TikTok:    '🎵',
-  Facebook:  '📘',
-};
-
 function todayUTC(): string {
-  return new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+  return new Date().toISOString().slice(0, 10);
 }
 
 function formatDateIT(dateStr: string): string {
@@ -36,93 +30,42 @@ function buildHtml(entries: Record<string, string>[], dateStr: string): string {
   const dateLabel = formatDateIT(dateStr);
 
   const rows = entries.map((e, i) => {
-    const emoji = PLATFORM_EMOJI[e.platform] ?? '📌';
-    const desc  = e.description ? `<p style="margin:6px 0 0;color:#555;font-size:14px;">${e.description}</p>` : '';
-    const notes = e.notes       ? `<p style="margin:4px 0 0;color:#888;font-size:13px;font-style:italic;">Note: ${e.notes}</p>` : '';
+    const desc  = e.description
+      ? `<p style="margin:4px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#7a4a4a;line-height:1.6;" class="em-p">${e.description}</p>`
+      : '';
+    const notes = e.notes
+      ? `<p style="margin:3px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#a07070;font-style:italic;" class="em-muted">Note: ${e.notes}</p>`
+      : '';
     return `
-      <tr>
-        <td style="padding:16px 20px;border-bottom:1px solid #f0e8e0;vertical-align:top;">
-          <div style="display:flex;align-items:flex-start;gap:12px;">
-            <span style="font-size:22px;line-height:1;">${emoji}</span>
-            <div style="flex:1;">
-              <p style="margin:0;font-size:16px;font-weight:600;color:#5c1a1a;">
-                ${i + 1}. ${e.title}
-              </p>
-              <p style="margin:4px 0 0;font-size:13px;color:#8b4513;">
-                <strong>${e.platform}</strong> &nbsp;·&nbsp; ${e.content_type}
-              </p>
-              ${desc}
-              ${notes}
-            </div>
-          </div>
-        </td>
-      </tr>`;
+    <tr>
+      <td style="padding:14px 0;border-bottom:1px solid #eddada;vertical-align:top;">
+        <p style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:14px;font-weight:700;color:#1a0505;" class="em-h1">
+          ${i + 1}. ${e.title}
+        </p>
+        <p style="margin:3px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#7a4a4a;" class="em-label">
+          ${e.platform} &nbsp;&middot;&nbsp; ${e.content_type}
+        </p>
+        ${desc}
+        ${notes}
+      </td>
+    </tr>`;
   }).join('');
 
-  return `<!DOCTYPE html>
-<html lang="it">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-</head>
-<body style="margin:0;padding:0;background:#f7f0e8;font-family:'Georgia',serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f7f0e8;padding:32px 16px;">
-    <tr>
-      <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(92,26,26,0.10);">
+  const body = `
+${heading('Piano Editoriale', dateLabel)}
+${para('Ecco i contenuti pianificati per oggi. Assicuratevi di pubblicare tutto entro la giornata.')}
+${divider()}
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+  ${rows}
+</table>
+${divider('16px 0 0')}
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+  <tr><td align="center">
+    ${ctaButton('VAI AL PIANO EDITORIALE →', 'https://vivowineclub.com/members#ped')}
+  </td></tr>
+</table>`;
 
-          <!-- Header -->
-          <tr>
-            <td style="background:#5c1a1a;padding:32px 40px;text-align:center;">
-              <p style="margin:0;font-size:11px;letter-spacing:3px;color:#e8c9a0;text-transform:uppercase;">Piano Editoriale</p>
-              <h1 style="margin:8px 0 0;font-size:26px;color:#fff;font-weight:400;letter-spacing:1px;">Contenuti di oggi</h1>
-              <p style="margin:8px 0 0;font-size:15px;color:#e8c9a0;">${dateLabel}</p>
-            </td>
-          </tr>
-
-          <!-- Intro -->
-          <tr>
-            <td style="padding:28px 40px 8px;color:#3a2a1a;font-size:15px;line-height:1.7;">
-              Ciao team! 👋<br/>
-              Ecco i contenuti pianificati per oggi. Assicuratevi di pubblicare tutto entro la giornata.
-            </td>
-          </tr>
-
-          <!-- Entries -->
-          <tr>
-            <td style="padding:16px 24px;">
-              <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #f0e8e0;border-radius:8px;overflow:hidden;">
-                ${rows}
-              </table>
-            </td>
-          </tr>
-
-          <!-- CTA -->
-          <tr>
-            <td style="padding:24px 40px;text-align:center;">
-              <a href="https://vivowineclub.com/members#ped"
-                 style="display:inline-block;background:#5c1a1a;color:#fff;text-decoration:none;padding:14px 32px;border-radius:6px;font-size:14px;letter-spacing:1px;text-transform:uppercase;">
-                Vai al Piano Editoriale
-              </a>
-            </td>
-          </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td style="background:#f7f0e8;padding:20px 40px;text-align:center;border-top:1px solid #e8d5c0;">
-              <p style="margin:0;font-size:12px;color:#a08060;line-height:1.6;">
-                Vivo Wine Club · Reminder automatico<br/>
-                Questo messaggio è stato generato automaticamente, non rispondere a questa email.
-              </p>
-            </td>
-          </tr>
-
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`;
+  return emailShell(body);
 }
 
 export async function GET(request: Request) {
