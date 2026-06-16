@@ -693,6 +693,16 @@ function CalendarView({
     return new Date(n.getFullYear(), n.getMonth(), 1);
   });
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [calView,   setCalView]   = useState<'month' | 'week'>('month');
+  const [weekStart, setWeekStart] = useState<Date>(() => {
+    const n = new Date();
+    const day = n.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    const mon = new Date(n);
+    mon.setDate(n.getDate() + diff);
+    mon.setHours(0, 0, 0, 0);
+    return mon;
+  });
 
   const year = month.getFullYear();
   const mon  = month.getMonth();
@@ -730,6 +740,21 @@ function CalendarView({
   function prevMonth() { setMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1)); }
   function nextMonth() { setMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1)); }
 
+  const weekDays = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + i);
+    return d;
+  });
+
+  function weekRangeLabel(): string {
+    const end = new Date(weekStart);
+    end.setDate(weekStart.getDate() + 6);
+    if (weekStart.getMonth() === end.getMonth()) {
+      return `${weekStart.getDate()} - ${end.getDate()} ${MONTHS_IT[weekStart.getMonth()]} ${weekStart.getFullYear()}`;
+    }
+    return `${weekStart.getDate()} ${MONTHS_IT[weekStart.getMonth()]} - ${end.getDate()} ${MONTHS_IT[end.getMonth()]} ${end.getFullYear()}`;
+  }
+
   // Selected day popup
   const selectedItems = selectedDay ? (dayMap[selectedDay] ?? { tasks: [], events: [], ped: [] }) : null;
 
@@ -742,87 +767,171 @@ function CalendarView({
 
   return (
     <div className="space-y-4">
-      {/* Month nav */}
+      {/* Nav + view toggle */}
       <div className="flex items-center justify-between bg-white border border-[#eddada] rounded-xl px-5 py-3">
-        <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-[#fdf6f6] transition-colors text-[#7a4a4a] hover:text-[#731515]">
-          <ChevronLeft size={15} />
-        </button>
-        <span className="text-sm font-light tracking-[0.1em] text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>
-          {MONTHS_IT[mon]} {year}
-        </span>
-        <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-[#fdf6f6] transition-colors text-[#7a4a4a] hover:text-[#731515]">
-          <ChevronRight size={15} />
-        </button>
-      </div>
-
-      {/* Calendar grid */}
-      <div className="bg-white border border-[#eddada] rounded-xl overflow-hidden">
-        {/* Day headers */}
-        <div className="grid grid-cols-7 border-b border-[#eddada]">
-          {DAYS_SHORT.map(d => (
-            <div key={d} className="px-2 py-2.5 text-center text-[9px] tracking-[0.25em] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
-              {d}
-            </div>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => calView === 'month'
+              ? prevMonth()
+              : setWeekStart(w => { const d = new Date(w); d.setDate(d.getDate() - 7); return d; })
+            }
+            className="p-1.5 rounded-lg hover:bg-[#fdf6f6] transition-colors text-[#7a4a4a] hover:text-[#731515]"
+          >
+            <ChevronLeft size={15} />
+          </button>
+          <span className="text-sm font-light tracking-[0.1em] text-[#1a0505] min-w-[180px] text-center" style={{ fontFamily: 'var(--font-syne)' }}>
+            {calView === 'month' ? `${MONTHS_IT[mon]} ${year}` : weekRangeLabel()}
+          </span>
+          <button
+            onClick={() => calView === 'month'
+              ? nextMonth()
+              : setWeekStart(w => { const d = new Date(w); d.setDate(d.getDate() + 7); return d; })
+            }
+            className="p-1.5 rounded-lg hover:bg-[#fdf6f6] transition-colors text-[#7a4a4a] hover:text-[#731515]"
+          >
+            <ChevronRight size={15} />
+          </button>
+        </div>
+        {/* Month / Week toggle */}
+        <div className="flex gap-0.5 bg-[#fdf6f6] border border-[#eddada] rounded-lg p-0.5">
+          {(['month', 'week'] as const).map(v => (
+            <button
+              key={v}
+              onClick={() => setCalView(v)}
+              className={`px-3 py-1.5 text-[9px] tracking-[0.2em] rounded-md transition-all duration-150 ${
+                calView === v ? 'bg-[#731515] text-white shadow-sm' : 'text-[#7a4a4a] hover:text-[#731515]'
+              }`}
+              style={{ fontFamily: 'var(--font-nunito)' }}
+            >
+              {v === 'month' ? 'MESE' : 'SETTIMANA'}
+            </button>
           ))}
         </div>
-
-        {/* Cells */}
-        <div className="grid grid-cols-7 divide-x divide-y divide-[#eddada]">
-          {cells.map((day, i) => {
-            if (!day) return <div key={i} className="min-h-[80px] bg-[#fdf6f6]/30" />;
-            const dayStr = `${year}-${String(mon + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            const items  = dayMap[dayStr];
-            const isToday   = dayStr === todayStr;
-            const isSelected = dayStr === selectedDay;
-
-            return (
-              <button
-                key={i}
-                onClick={() => setSelectedDay(isSelected ? null : dayStr)}
-                className={`min-h-[80px] p-2 text-left flex flex-col gap-1 transition-colors hover:bg-[#fdf6f6] ${
-                  isSelected ? 'bg-[#fdf6f6] ring-1 ring-inset ring-[#731515]/30' : ''
-                }`}
-              >
-                {/* Day number */}
-                <div className={`text-xs w-6 h-6 flex items-center justify-center rounded-full transition-colors ${
-                  isToday
-                    ? 'bg-[#731515] text-white font-semibold'
-                    : 'text-[#7a4a4a]'
-                }`} style={{ fontFamily: 'var(--font-nunito)' }}>
-                  {day}
-                </div>
-
-                {/* Task dots */}
-                {items?.tasks.map(t => {
-                  const team = teams.find(te => te.id === t.team_id);
-                  return (
-                    <div key={t.id} className="w-full px-1.5 py-0.5 rounded text-[9px] truncate text-white leading-tight"
-                      style={{ backgroundColor: team?.color ?? '#731515' }}>
-                      {t.title}
-                    </div>
-                  );
-                })}
-
-                {/* Event dots */}
-                {items?.events.map(ev => (
-                  <div key={ev.id} className="w-full px-1.5 py-0.5 rounded text-[9px] truncate leading-tight"
-                    style={{ backgroundColor: EVENT_BG, color: '#fff', opacity: 0.92 }}>
-                    {ev.title}
-                  </div>
-                ))}
-
-                {/* PED dots */}
-                {items?.ped.map(pe => (
-                  <div key={pe.id} className="w-full px-1.5 py-0.5 rounded text-[9px] truncate leading-tight"
-                    style={{ backgroundColor: PED_BG, color: PED_COLOR }}>
-                    {pe.title}
-                  </div>
-                ))}
-              </button>
-            );
-          })}
-        </div>
       </div>
+
+      {/* Month grid */}
+      {calView === 'month' && (
+        <div className="bg-white border border-[#eddada] rounded-xl overflow-hidden">
+          <div className="grid grid-cols-7 border-b border-[#eddada]">
+            {DAYS_SHORT.map(d => (
+              <div key={d} className="px-2 py-2.5 text-center text-[9px] tracking-[0.25em] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
+                {d}
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-7 divide-x divide-y divide-[#eddada]">
+            {cells.map((day, i) => {
+              if (!day) return <div key={i} className="min-h-[80px] bg-[#fdf6f6]/30" />;
+              const dayStr = `${year}-${String(mon + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+              const items  = dayMap[dayStr];
+              const isToday    = dayStr === todayStr;
+              const isSelected = dayStr === selectedDay;
+              return (
+                <button
+                  key={i}
+                  onClick={() => setSelectedDay(isSelected ? null : dayStr)}
+                  className={`min-h-[80px] p-2 text-left flex flex-col gap-1 transition-colors hover:bg-[#fdf6f6] ${
+                    isSelected ? 'bg-[#fdf6f6] ring-1 ring-inset ring-[#731515]/30' : ''
+                  }`}
+                >
+                  <div className={`text-xs w-6 h-6 flex items-center justify-center rounded-full transition-colors ${
+                    isToday ? 'bg-[#731515] text-white font-semibold' : 'text-[#7a4a4a]'
+                  }`} style={{ fontFamily: 'var(--font-nunito)' }}>
+                    {day}
+                  </div>
+                  {items?.tasks.map(t => {
+                    const team = teams.find(te => te.id === t.team_id);
+                    return (
+                      <div key={t.id} className="w-full px-1.5 py-0.5 rounded text-[9px] truncate text-white leading-tight"
+                        style={{ backgroundColor: team?.color ?? '#731515' }}>
+                        {t.title}
+                      </div>
+                    );
+                  })}
+                  {items?.events.map(ev => (
+                    <div key={ev.id} className="w-full px-1.5 py-0.5 rounded text-[9px] truncate leading-tight"
+                      style={{ backgroundColor: EVENT_BG, color: '#fff', opacity: 0.92 }}>
+                      {ev.title}
+                    </div>
+                  ))}
+                  {items?.ped.map(pe => (
+                    <div key={pe.id} className="w-full px-1.5 py-0.5 rounded text-[9px] truncate leading-tight"
+                      style={{ backgroundColor: PED_BG, color: PED_COLOR }}>
+                      {pe.title}
+                    </div>
+                  ))}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Week grid */}
+      {calView === 'week' && (
+        <div className="bg-white border border-[#eddada] rounded-xl overflow-hidden">
+          {/* Day headers */}
+          <div className="grid grid-cols-7 border-b border-[#eddada]">
+            {weekDays.map((d, i) => {
+              const dayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+              const isToday = dayStr === todayStr;
+              return (
+                <div key={i} className={`px-2 py-3 text-center border-r border-[#eddada] last:border-r-0 ${isToday ? 'bg-[#fdf6f6]' : ''}`}>
+                  <div className="text-[9px] tracking-[0.2em] text-[#7a4a4a]/50 mb-1.5" style={{ fontFamily: 'var(--font-nunito)' }}>
+                    {DAYS_SHORT[i]}
+                  </div>
+                  <div className={`text-sm w-7 h-7 mx-auto flex items-center justify-center rounded-full font-light ${isToday ? 'bg-[#731515] text-white' : 'text-[#1a0505]'}`} style={{ fontFamily: 'var(--font-syne)' }}>
+                    {d.getDate()}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {/* Day columns */}
+          <div className="grid grid-cols-7 divide-x divide-[#eddada]">
+            {weekDays.map((d, i) => {
+              const dayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+              const items  = dayMap[dayStr];
+              const isToday    = dayStr === todayStr;
+              const isSelected = dayStr === selectedDay;
+              return (
+                <button
+                  key={i}
+                  onClick={() => setSelectedDay(isSelected ? null : dayStr)}
+                  className={`min-h-[160px] p-2.5 text-left flex flex-col gap-1.5 transition-colors hover:bg-[#fdf6f6] ${
+                    isSelected ? 'bg-[#fdf6f6] ring-1 ring-inset ring-[#731515]/30' : isToday ? 'bg-[#fdf6f6]/40' : ''
+                  }`}
+                >
+                  {items?.tasks.map(t => {
+                    const team = teams.find(te => te.id === t.team_id);
+                    return (
+                      <div key={t.id} className="w-full px-2 py-1 rounded text-white leading-tight"
+                        style={{ backgroundColor: team?.color ?? '#731515' }}>
+                        <div className="text-[10px] font-medium truncate">{t.title}</div>
+                        <div className="text-[8px] opacity-75 mt-0.5">{memberName(t.assignee_email, members)}</div>
+                      </div>
+                    );
+                  })}
+                  {items?.events.map(ev => (
+                    <div key={ev.id} className="w-full px-2 py-1 rounded leading-tight"
+                      style={{ backgroundColor: EVENT_BG, color: '#fff' }}>
+                      <div className="text-[10px] font-medium truncate">{ev.title}</div>
+                      {ev.location && <div className="text-[8px] opacity-75 mt-0.5 truncate">📍 {ev.location}</div>}
+                    </div>
+                  ))}
+                  {items?.ped.map(pe => (
+                    <div key={pe.id} className="w-full px-2 py-1 rounded leading-tight"
+                      style={{ backgroundColor: PED_BG, color: PED_COLOR }}>
+                      <div className="text-[10px] font-medium truncate">{pe.title}</div>
+                      <div className="text-[8px] opacity-75 mt-0.5">{pe.platform} · {pe.content_type}</div>
+                    </div>
+                  ))}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Day popup */}
       <AnimatePresence>

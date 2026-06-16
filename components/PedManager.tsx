@@ -321,6 +321,16 @@ function PedCalendar({
     return new Date(n.getFullYear(), n.getMonth(), 1);
   });
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [calView,    setCalView]    = useState<'month' | 'week'>('month');
+  const [weekStart,  setWeekStart]  = useState<Date>(() => {
+    const n = new Date();
+    const day = n.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    const mon = new Date(n);
+    mon.setDate(n.getDate() + diff);
+    mon.setHours(0, 0, 0, 0);
+    return mon;
+  });
 
   const year = month.getFullYear();
   const mon  = month.getMonth();
@@ -351,69 +361,174 @@ function PedCalendar({
     setSelectedDay(prev => prev === dayStr ? null : dayStr);
   }
 
+  const weekDays = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + i);
+    return d;
+  });
+
+  function weekRangeLabel(): string {
+    const end = new Date(weekStart);
+    end.setDate(weekStart.getDate() + 6);
+    if (weekStart.getMonth() === end.getMonth()) {
+      return `${weekStart.getDate()} - ${end.getDate()} ${MONTHS_IT[weekStart.getMonth()]} ${weekStart.getFullYear()}`;
+    }
+    return `${weekStart.getDate()} ${MONTHS_IT[weekStart.getMonth()]} - ${end.getDate()} ${MONTHS_IT[end.getMonth()]} ${end.getFullYear()}`;
+  }
+
   return (
     <div className="space-y-4">
-      {/* Month nav */}
+      {/* Nav + view toggle */}
       <div className="flex items-center justify-between bg-white border border-[#eddada] rounded-xl px-5 py-3">
-        <button onClick={() => setMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1))} className="p-1.5 rounded-lg hover:bg-[#fdf6f6] transition-colors text-[#7a4a4a] hover:text-[#731515]">
-          <ChevronLeft size={15} />
-        </button>
-        <span className="text-sm font-light tracking-[0.1em] text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>
-          {MONTHS_IT[mon]} {year}
-        </span>
-        <button onClick={() => setMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1))} className="p-1.5 rounded-lg hover:bg-[#fdf6f6] transition-colors text-[#7a4a4a] hover:text-[#731515]">
-          <ChevronRight size={15} />
-        </button>
-      </div>
-
-      {/* Grid */}
-      <div className="bg-white border border-[#eddada] rounded-xl overflow-hidden">
-        <div className="grid grid-cols-7 border-b border-[#eddada]">
-          {DAYS_SHORT.map(d => (
-            <div key={d} className="px-2 py-2.5 text-center text-[9px] tracking-[0.25em] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
-              {d}
-            </div>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => calView === 'month'
+              ? setMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1))
+              : setWeekStart(w => { const d = new Date(w); d.setDate(d.getDate() - 7); return d; })
+            }
+            className="p-1.5 rounded-lg hover:bg-[#fdf6f6] transition-colors text-[#7a4a4a] hover:text-[#731515]"
+          >
+            <ChevronLeft size={15} />
+          </button>
+          <span className="text-sm font-light tracking-[0.1em] text-[#1a0505] min-w-[180px] text-center" style={{ fontFamily: 'var(--font-syne)' }}>
+            {calView === 'month' ? `${MONTHS_IT[mon]} ${year}` : weekRangeLabel()}
+          </span>
+          <button
+            onClick={() => calView === 'month'
+              ? setMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1))
+              : setWeekStart(w => { const d = new Date(w); d.setDate(d.getDate() + 7); return d; })
+            }
+            className="p-1.5 rounded-lg hover:bg-[#fdf6f6] transition-colors text-[#7a4a4a] hover:text-[#731515]"
+          >
+            <ChevronRight size={15} />
+          </button>
+        </div>
+        {/* Month / Week toggle */}
+        <div className="flex gap-0.5 bg-[#fdf6f6] border border-[#eddada] rounded-lg p-0.5">
+          {(['month', 'week'] as const).map(v => (
+            <button
+              key={v}
+              onClick={() => setCalView(v)}
+              className={`px-3 py-1.5 text-[9px] tracking-[0.2em] rounded-md transition-all duration-150 ${
+                calView === v ? 'bg-[#731515] text-white shadow-sm' : 'text-[#7a4a4a] hover:text-[#731515]'
+              }`}
+              style={{ fontFamily: 'var(--font-nunito)' }}
+            >
+              {v === 'month' ? 'MESE' : 'SETTIMANA'}
+            </button>
           ))}
         </div>
-        <div className="grid grid-cols-7 divide-x divide-y divide-[#eddada]">
-          {cells.map((day, i) => {
-            if (!day) return <div key={i} className="min-h-[80px] bg-[#fdf6f6]/30" />;
-            const dayStr = `${year}-${String(mon + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            const items  = dayMap[dayStr] ?? [];
-            const isToday    = dayStr === todayStr;
-            const isSelected = dayStr === selectedDay;
-            return (
-              <button
-                key={i}
-                onClick={() => handleDayClick(dayStr)}
-                className={`min-h-[80px] p-2 text-left flex flex-col gap-1 transition-colors hover:bg-[#fdf6f6] ${isSelected ? 'bg-[#fdf6f6] ring-1 ring-inset ring-[#731515]/30' : ''}`}
-              >
-                <div className={`text-xs w-6 h-6 flex items-center justify-center rounded-full ${isToday ? 'bg-[#731515] text-white font-semibold' : 'text-[#7a4a4a]'}`} style={{ fontFamily: 'var(--font-nunito)' }}>
-                  {day}
-                </div>
-                {items.map(e => (
-                  <div
-                    key={e.id}
-                    className={`w-full px-1.5 py-0.5 rounded text-[9px] truncate text-white leading-tight ${e.status === 'published' ? 'opacity-50' : ''}`}
-                    style={{ backgroundColor: PLATFORM_COLOR[e.platform] ?? '#7a4a4a' }}
-                    onClick={ev => { ev.stopPropagation(); onEntryClick(e); }}
-                  >
-                    {e.status === 'published' && '✓ '}{e.title}
+      </div>
+
+      {/* Month grid */}
+      {calView === 'month' && (
+        <div className="bg-white border border-[#eddada] rounded-xl overflow-hidden">
+          <div className="grid grid-cols-7 border-b border-[#eddada]">
+            {DAYS_SHORT.map(d => (
+              <div key={d} className="px-2 py-2.5 text-center text-[9px] tracking-[0.25em] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
+                {d}
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-7 divide-x divide-y divide-[#eddada]">
+            {cells.map((day, i) => {
+              if (!day) return <div key={i} className="min-h-[80px] bg-[#fdf6f6]/30" />;
+              const dayStr = `${year}-${String(mon + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+              const items  = dayMap[dayStr] ?? [];
+              const isToday    = dayStr === todayStr;
+              const isSelected = dayStr === selectedDay;
+              return (
+                <button
+                  key={i}
+                  onClick={() => handleDayClick(dayStr)}
+                  className={`min-h-[80px] p-2 text-left flex flex-col gap-1 transition-colors hover:bg-[#fdf6f6] ${isSelected ? 'bg-[#fdf6f6] ring-1 ring-inset ring-[#731515]/30' : ''}`}
+                >
+                  <div className={`text-xs w-6 h-6 flex items-center justify-center rounded-full ${isToday ? 'bg-[#731515] text-white font-semibold' : 'text-[#7a4a4a]'}`} style={{ fontFamily: 'var(--font-nunito)' }}>
+                    {day}
                   </div>
-                ))}
-                {items.length === 0 && isSelected && (
+                  {items.map(e => (
+                    <div
+                      key={e.id}
+                      className={`w-full px-1.5 py-0.5 rounded text-[9px] truncate text-white leading-tight ${e.status === 'published' ? 'opacity-50' : ''}`}
+                      style={{ backgroundColor: PLATFORM_COLOR[e.platform] ?? '#7a4a4a' }}
+                      onClick={ev => { ev.stopPropagation(); onEntryClick(e); }}
+                    >
+                      {e.status === 'published' && '✓ '}{e.title}
+                    </div>
+                  ))}
+                  {items.length === 0 && isSelected && (
+                    <div
+                      className="w-full mt-auto text-[8px] tracking-[0.15em] text-[#731515]/50 flex items-center gap-1"
+                      onClick={ev => { ev.stopPropagation(); onDayClick(dayStr); }}
+                    >
+                      <Plus size={9} /> NUOVO
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Week grid */}
+      {calView === 'week' && (
+        <div className="bg-white border border-[#eddada] rounded-xl overflow-hidden">
+          {/* Day headers */}
+          <div className="grid grid-cols-7 border-b border-[#eddada]">
+            {weekDays.map((d, i) => {
+              const dayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+              const isToday = dayStr === todayStr;
+              return (
+                <div key={i} className={`px-2 py-3 text-center border-r border-[#eddada] last:border-r-0 ${isToday ? 'bg-[#fdf6f6]' : ''}`}>
+                  <div className="text-[9px] tracking-[0.2em] text-[#7a4a4a]/50 mb-1.5" style={{ fontFamily: 'var(--font-nunito)' }}>
+                    {DAYS_SHORT[i]}
+                  </div>
+                  <div className={`text-sm w-7 h-7 mx-auto flex items-center justify-center rounded-full font-light ${isToday ? 'bg-[#731515] text-white' : 'text-[#1a0505]'}`} style={{ fontFamily: 'var(--font-syne)' }}>
+                    {d.getDate()}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {/* Day columns */}
+          <div className="grid grid-cols-7 divide-x divide-[#eddada]">
+            {weekDays.map((d, i) => {
+              const dayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+              const items  = dayMap[dayStr] ?? [];
+              const isToday    = dayStr === todayStr;
+              const isSelected = dayStr === selectedDay;
+              return (
+                <button
+                  key={i}
+                  onClick={() => handleDayClick(dayStr)}
+                  className={`min-h-[160px] p-2.5 text-left flex flex-col gap-1.5 transition-colors hover:bg-[#fdf6f6] ${
+                    isSelected ? 'bg-[#fdf6f6] ring-1 ring-inset ring-[#731515]/30' : isToday ? 'bg-[#fdf6f6]/40' : ''
+                  }`}
+                >
+                  {items.map(e => (
+                    <div
+                      key={e.id}
+                      className={`w-full px-2 py-1 rounded text-white leading-tight ${e.status === 'published' ? 'opacity-50' : ''}`}
+                      style={{ backgroundColor: PLATFORM_COLOR[e.platform] ?? '#7a4a4a' }}
+                      onClick={ev => { ev.stopPropagation(); onEntryClick(e); }}
+                    >
+                      <div className="text-[10px] font-medium truncate">{e.status === 'published' && '✓ '}{e.title}</div>
+                      <div className="text-[8px] opacity-80 mt-0.5">{e.platform} · {e.content_type}</div>
+                    </div>
+                  ))}
                   <div
-                    className="w-full mt-auto text-[8px] tracking-[0.15em] text-[#731515]/50 flex items-center gap-1"
+                    className="mt-auto text-[8px] tracking-[0.15em] text-[#731515]/30 flex items-center gap-1"
                     onClick={ev => { ev.stopPropagation(); onDayClick(dayStr); }}
                   >
-                    <Plus size={9} /> NUOVO
+                    <Plus size={8} /> NUOVO
                   </div>
-                )}
-              </button>
-            );
-          })}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Day popup */}
       <AnimatePresence>
