@@ -34,12 +34,13 @@ import FinanceManager from '@/components/FinanceManager';
 import BilancioManager from '@/components/BilancioManager';
 import QuoteGenerator from '@/components/QuoteGenerator';
 import PedManager from '@/components/PedManager';
+import WineAssistant from '@/components/WineAssistant';
 import { isSuperAdmin, isFinanceUser } from '@/lib/admins';
 
 /* ─────────────────────────────────────────────
    Types
 ───────────────────────────────────────────── */
-type Section = 'overview' | 'settings' | 'card' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm' | 'crm-wine' | 'crm-bordeaux' | 'crm-clienti' | 'crm-sponsors' | 'media' | 'team' | 'merch' | 'discounts' | 'documents' | 'finance' | 'bilancio' | 'quotes' | 'ped';
+type Section = 'overview' | 'settings' | 'card' | 'wine-assistant' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm' | 'crm-wine' | 'crm-bordeaux' | 'crm-clienti' | 'crm-sponsors' | 'media' | 'team' | 'merch' | 'discounts' | 'documents' | 'finance' | 'bilancio' | 'quotes' | 'ped';
 
 // Maps section IDs to the permission key in team_members.permissions
 const SECTION_PERM: Partial<Record<Section, string>> = {
@@ -66,9 +67,10 @@ interface NavItem {
 }
 
 const NAV_MAIN: NavItem[] = [
-  { id: 'overview', label: 'Overview',        icon: Home       },
-  { id: 'card',     label: 'Membership Card', icon: CreditCard },
-  { id: 'settings', label: 'Impostazioni',    icon: KeyRound   },
+  { id: 'overview',       label: 'Overview',        icon: Home       },
+  { id: 'card',           label: 'Membership Card', icon: CreditCard },
+  { id: 'wine-assistant', label: 'Wine Assistant',  icon: Wine       },
+  { id: 'settings',       label: 'Impostazioni',    icon: KeyRound   },
 ];
 
 // Sub-items for the collapsible Gestione group
@@ -1150,6 +1152,8 @@ function MembersPageInner() {
                 {activeSection === 'settings' && <SettingsSection />}
 
                 {activeSection === 'card' && <CardSection token={token} />}
+
+                {activeSection === 'wine-assistant' && <WineAssistant />}
 
                 {(admin || isStaff) && activeSection === 'tasks' && (
                   canAccess('tasks') ? (

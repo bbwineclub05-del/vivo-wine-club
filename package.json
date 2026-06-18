@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.105.0",
     "@google-analytics/data": "^6.0.0",
     "@next/third-parties": "^16.2.6",
     "@stripe/stripe-js": "^9.4.0",
@@ -25,6 +26,7 @@
     "qrcode": "^1.5.4",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "react-markdown": "^10.1.0",
     "react-simple-maps": "^3.0.0",
     "resend": "^6.12.2",
     "stripe": "^22.1.0"
