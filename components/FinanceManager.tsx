@@ -19,25 +19,28 @@ type Category =
   | 'Evento' | 'Membership' | 'Sponsorship'
   | 'Merchandise' | 'Affitto' | 'Marketing' | 'Altro';
 
+interface BudgetCategory {
+  id:   string;
+  name: string;
+  type: 'revenue' | 'cost' | 'both';
+}
+
 interface Transaction {
-  id:             string;
-  date:           string; // "YYYY-MM-DD" from Supabase
-  description:    string;
-  category:       Category;
-  type:           TxType;
-  amount:         number;
-  notes:          string | null;
-  receipt_url:    string | null;
-  reimbursed_to:  string | null;
-  created_by:     string | null;
-  created_at:     string;
+  id:              string;
+  date:            string; // "YYYY-MM-DD" from Supabase
+  description:     string;
+  category:        Category;
+  type:            TxType;
+  amount:          number;
+  notes:           string | null;
+  receipt_url:     string | null;
+  reimbursed_to:   string | null;
+  budget_category: string | null;
+  created_by:      string | null;
+  created_at:      string;
 }
 
 type FormData = Omit<Transaction, 'id' | 'created_by' | 'created_at'>;
-
-const CATEGORIES: Category[] = [
-  'Evento', 'Membership', 'Sponsorship', 'Merchandise', 'Affitto', 'Marketing', 'Altro',
-];
 
 const MONTHS_IT = [
   'Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno',
@@ -131,33 +134,158 @@ const TYPE_CONFIG: Record<TxType, { label: string; prefix: string; activeCls: st
 };
 
 /* ─────────────────────────────────────────────
+   Add Category Mini-Modal
+───────────────────────────────────────────── */
+function AddCategoryModal({
+  txType,
+  onSave,
+  onClose,
+}: {
+  txType:  TxType;
+  onSave:  (cat: BudgetCategory) => void;
+  onClose: () => void;
+}) {
+  const [name,    setName]    = useState('');
+  const [catType, setCatType] = useState<'revenue' | 'cost' | 'both'>(
+    txType === 'revenue' ? 'revenue' : 'cost'
+  );
+  const [saving,  setSaving]  = useState(false);
+  const [error,   setError]   = useState<string | null>(null);
+
+  async function handleSave() {
+    if (!name.trim()) { setError('Il nome è obbligatorio.'); return; }
+    setSaving(true); setError(null);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error: dbErr } = await (supabase as any)
+        .from('budget_categories')
+        .insert({ name: name.trim(), type: catType })
+        .select()
+        .single();
+      if (dbErr) throw new Error(dbErr.message);
+      onSave(data as BudgetCategory);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Errore nel salvataggio.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const inputCls2 =
+    'w-full bg-[#fdf6f6] border border-[#eddada] text-[#1a0505] px-3 py-2 text-sm ' +
+    'placeholder:text-[#7a4a4a]/35 focus:outline-none focus:border-[#731515]/50 transition-colors rounded-lg';
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <motion.div
+        className="absolute inset-0 bg-black/40"
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        onClick={onClose}
+      />
+      <motion.div
+        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm"
+        initial={{ opacity: 0, scale: 0.95, y: 12 }}
+        animate={{ opacity: 1, scale: 1,    y: 0  }}
+        exit={{    opacity: 0, scale: 0.95, y: 12 }}
+        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+      >
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#eddada]">
+          <div className="text-[9px] tracking-[0.4em] text-[#731515]">NUOVA VOCE DI BILANCIO</div>
+          <button onClick={onClose} className="text-[#7a4a4a]/50 hover:text-[#731515] transition-colors"><X size={15} /></button>
+        </div>
+        <div className="px-5 py-4 space-y-3">
+          <div>
+            <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">NOME VOCE</div>
+            <input
+              className={inputCls2}
+              placeholder="Es. Contributi eventi speciali…"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleSave()}
+              autoFocus
+              style={{ fontFamily: 'var(--font-nunito)' }}
+            />
+          </div>
+          <div>
+            <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">TIPO</div>
+            <div className="grid grid-cols-3 gap-2">
+              {(['revenue', 'cost', 'both'] as const).map(t => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setCatType(t)}
+                  className={`py-2 rounded-lg text-[10px] tracking-[0.1em] font-medium transition-all border ${
+                    catType === t
+                      ? 'bg-[#731515] text-white border-[#731515]'
+                      : 'bg-white text-[#7a4a4a] border-[#eddada] hover:border-[#731515]/30'
+                  }`}
+                >
+                  {t === 'revenue' ? 'Entrata' : t === 'cost' ? 'Uscita' : 'Entrambi'}
+                </button>
+              ))}
+            </div>
+          </div>
+          {error && <p className="text-xs text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>{error}</p>}
+          <div className="flex gap-2 pt-1">
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="flex-1 py-2.5 bg-[#731515] text-white text-[10px] tracking-[0.25em] rounded-lg hover:bg-[#9b2323] disabled:opacity-50 transition-colors"
+            >
+              {saving ? 'SALVATAGGIO…' : 'AGGIUNGI'}
+            </button>
+            <button
+              onClick={onClose}
+              className="px-4 py-2.5 border border-[#eddada] text-[#7a4a4a] text-[10px] tracking-[0.25em] rounded-lg hover:border-[#731515]/40 transition-colors"
+            >
+              ANNULLA
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
    Add / Edit Modal
 ───────────────────────────────────────────── */
 const EMPTY_FORM: FormData = {
-  date:           localToday(),
-  description:    '',
-  category:       'Evento',
-  type:           'revenue',
-  amount:         0,
-  notes:          null,
-  receipt_url:    null,
-  reimbursed_to:  null,
+  date:            localToday(),
+  description:     '',
+  category:        'Evento',
+  type:            'revenue',
+  amount:          0,
+  notes:           null,
+  receipt_url:     null,
+  reimbursed_to:   null,
+  budget_category: null,
 };
 
 function TxModal({
   initial,
   onSave,
   onClose,
+  budgetCategories,
+  onCategoryAdded,
 }: {
-  initial:  FormData | null;
-  onSave:   (data: FormData) => Promise<void>;
-  onClose:  () => void;
+  initial:          FormData | null;
+  onSave:           (data: FormData) => Promise<void>;
+  onClose:          () => void;
+  budgetCategories: BudgetCategory[];
+  onCategoryAdded:  (cat: BudgetCategory) => void;
 }) {
-  const [form,        setForm]        = useState<FormData>(initial ?? { ...EMPTY_FORM, date: localToday() });
+  const [form,         setForm]         = useState<FormData>(initial ?? { ...EMPTY_FORM, date: localToday() });
   const [fileToUpload, setFileToUpload] = useState<File | null>(null);
-  const [saving,      setSaving]      = useState(false);
-  const [uploadPct,   setUploadPct]   = useState<number | null>(null);
-  const [error,       setError]       = useState<string | null>(null);
+  const [saving,       setSaving]       = useState(false);
+  const [uploadPct,    setUploadPct]    = useState<number | null>(null);
+  const [error,        setError]        = useState<string | null>(null);
+  const [showAddCat,   setShowAddCat]   = useState(false);
+
+  const filteredCats = budgetCategories.filter(c =>
+    form.type === 'revenue' ? c.type === 'revenue' || c.type === 'both'
+                            : c.type === 'cost'    || c.type === 'both'
+  );
 
   function set<K extends keyof FormData>(k: K, v: FormData[K]) {
     setForm(prev => ({ ...prev, [k]: v }));
@@ -233,14 +361,14 @@ function TxModal({
         </div>
 
         <div className="px-6 py-5 space-y-4">
-          {/* Tipo — 3 buttons */}
+          {/* Tipo — 2 buttons (rimborso is set automatically by Conti Founder) */}
           <div>
             <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-2">TIPO</div>
-            <div className="grid grid-cols-3 gap-2">
-              {(['revenue', 'cost', 'rimborso'] as TxType[]).map(t => (
+            <div className="grid grid-cols-2 gap-2">
+              {(['revenue', 'cost'] as TxType[]).map(t => (
                 <button
                   key={t}
-                  onClick={() => set('type', t)}
+                  onClick={() => { set('type', t); set('budget_category', null); }}
                   className={`py-2.5 rounded-lg text-[10px] tracking-[0.15em] font-medium transition-all border ${
                     form.type === t
                       ? TYPE_CONFIG[t].activeCls
@@ -292,16 +420,21 @@ function TxModal({
             />
           </div>
 
-          {/* Categoria */}
+          {/* Voce di Bilancio */}
           <div>
-            <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">CATEGORIA</div>
+            <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">VOCE DI BILANCIO</div>
             <select
               className={inputCls}
-              value={form.category}
-              onChange={e => set('category', e.target.value as Category)}
+              value={form.budget_category ?? ''}
+              onChange={e => {
+                if (e.target.value === '__add__') { setShowAddCat(true); return; }
+                set('budget_category', e.target.value || null);
+              }}
               style={{ fontFamily: 'var(--font-nunito)' }}
             >
-              {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              <option value="">— Seleziona voce —</option>
+              {filteredCats.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+              <option value="__add__">+ Aggiungi nuova voce…</option>
             </select>
           </div>
 
@@ -407,6 +540,21 @@ function TxModal({
             )}
           </AnimatePresence>
 
+          {/* Add Category Mini-Modal */}
+          <AnimatePresence>
+            {showAddCat && (
+              <AddCategoryModal
+                txType={form.type}
+                onSave={(cat) => {
+                  onCategoryAdded(cat);
+                  set('budget_category', cat.name);
+                  setShowAddCat(false);
+                }}
+                onClose={() => setShowAddCat(false)}
+              />
+            )}
+          </AnimatePresence>
+
           {error && (
             <p className="text-xs text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>{error}</p>
           )}
@@ -494,9 +642,10 @@ function CategoryBreakdown({ transactions }: { transactions: Transaction[] }) {
   const data = useMemo(() => {
     const map: Record<string, { revenue: number; cost: number }> = {};
     for (const tx of transactions) {
-      if (!map[tx.category]) map[tx.category] = { revenue: 0, cost: 0 };
-      if (tx.type === 'revenue') map[tx.category].revenue += tx.amount;
-      else                       map[tx.category].cost    += tx.amount; // cost + rimborso
+      const key = tx.budget_category ?? tx.category;
+      if (!map[key]) map[key] = { revenue: 0, cost: 0 };
+      if (tx.type === 'revenue') map[key].revenue += tx.amount;
+      else                       map[key].cost    += tx.amount; // cost + rimborso
     }
     return Object.entries(map)
       .map(([cat, v]) => ({ cat, ...v, total: v.revenue + v.cost }))
@@ -569,12 +718,13 @@ function CategoryBreakdown({ transactions }: { transactions: Transaction[] }) {
 type FinanceTab = 'transazioni' | 'conti_founder';
 
 export default function FinanceManager() {
-  const [financeTab,    setFinanceTab]    = useState<FinanceTab>('transazioni');
-  const [transactions,  setTransactions]  = useState<Transaction[]>([]);
-  const [loading,       setLoading]       = useState(true);
-  const [addModal,      setAddModal]      = useState(false);
-  const [editTarget,    setEditTarget]    = useState<Transaction | null>(null);
-  const [deleteTarget,  setDeleteTarget]  = useState<Transaction | null>(null);
+  const [financeTab,       setFinanceTab]       = useState<FinanceTab>('transazioni');
+  const [transactions,     setTransactions]     = useState<Transaction[]>([]);
+  const [budgetCategories, setBudgetCategories] = useState<BudgetCategory[]>([]);
+  const [loading,          setLoading]          = useState(true);
+  const [addModal,         setAddModal]         = useState(false);
+  const [editTarget,       setEditTarget]       = useState<Transaction | null>(null);
+  const [deleteTarget,     setDeleteTarget]     = useState<Transaction | null>(null);
 
   const MONTHS = useMemo(() => generateMonths(24), []);
   const now = new Date();
@@ -603,7 +753,16 @@ export default function FinanceManager() {
     setLoading(false);
   }
 
-  useEffect(() => { load(); }, []);
+  async function loadBudgetCategories() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data } = await (supabase as any)
+      .from('budget_categories')
+      .select('id, name, type')
+      .order('name', { ascending: true });
+    if (data) setBudgetCategories(data as BudgetCategory[]);
+  }
+
+  useEffect(() => { load(); loadBudgetCategories(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // After data loads: if the current month has no transactions, jump to the
   // most recent month that does. Fixes the case where data is all in a past
@@ -695,23 +854,29 @@ export default function FinanceManager() {
       {/* Modals */}
       <AnimatePresence>
         {addModal && (
-          <TxModal key="add" initial={null} onSave={handleAdd} onClose={() => setAddModal(false)} />
+          <TxModal key="add" initial={null} onSave={handleAdd} onClose={() => setAddModal(false)}
+            budgetCategories={budgetCategories}
+            onCategoryAdded={(cat) => setBudgetCategories(prev => [...prev, cat].sort((a,b) => a.name.localeCompare(b.name)))}
+          />
         )}
         {editTarget && (
           <TxModal
             key="edit"
             initial={{
-              date:          editTarget.date,
-              description:   editTarget.description,
-              category:      editTarget.category,
-              type:          editTarget.type,
-              amount:        editTarget.amount,
-              notes:         editTarget.notes,
-              receipt_url:   editTarget.receipt_url,
-              reimbursed_to: editTarget.reimbursed_to,
+              date:            editTarget.date,
+              description:     editTarget.description,
+              category:        editTarget.category,
+              type:            editTarget.type,
+              amount:          editTarget.amount,
+              notes:           editTarget.notes,
+              receipt_url:     editTarget.receipt_url,
+              reimbursed_to:   editTarget.reimbursed_to,
+              budget_category: editTarget.budget_category,
             }}
             onSave={handleEdit}
             onClose={() => setEditTarget(null)}
+            budgetCategories={budgetCategories}
+            onCategoryAdded={(cat) => setBudgetCategories(prev => [...prev, cat].sort((a,b) => a.name.localeCompare(b.name)))}
           />
         )}
         {deleteTarget && (
@@ -906,7 +1071,7 @@ export default function FinanceManager() {
         <div className="bg-white border border-[#eddada] rounded-xl overflow-hidden shadow-[0_1px_4px_rgba(107,26,26,0.04)]">
           {/* Header row */}
           <div className="grid grid-cols-[90px_1fr_110px_100px_110px_72px] gap-3 px-4 py-2.5 bg-[#fdf6f6] border-b border-[#eddada]">
-            {['DATA','DESCRIZIONE','CATEGORIA','TIPO','IMPORTO',''].map((h, i) => (
+            {['DATA','DESCRIZIONE','VOCE','TIPO','IMPORTO',''].map((h, i) => (
               <div key={i} className="text-[9px] tracking-[0.3em] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
                 {h}
               </div>
@@ -948,7 +1113,7 @@ export default function FinanceManager() {
                       {/* Categoria */}
                       <div>
                         <span className={`inline-block text-[10px] px-2 py-0.5 rounded-full border ${c.badgeCls}`} style={{ fontFamily: 'var(--font-nunito)' }}>
-                          {tx.category}
+                          {tx.budget_category ?? tx.category}
                         </span>
                       </div>
 

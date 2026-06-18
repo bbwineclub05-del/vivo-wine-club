@@ -1207,7 +1207,7 @@ export default function TaskBoard({ currentEmail }: { currentEmail: string }) {
         <div>
           <div className="text-[9px] tracking-[0.42em] text-[#731515] mb-1">ADMIN · TASKS</div>
           <div className="flex items-center gap-3">
-            <h2 className="text-xl font-light text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>Task Board</h2>
+            <h2 className="text-xl font-light text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>Task</h2>
             {liveConnected && (
               <span className="flex items-center gap-1 text-[8px] tracking-[0.2em] text-emerald-600">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />

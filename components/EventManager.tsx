@@ -633,6 +633,7 @@ function EventRow({
   onTogglePublished,
   onScan,
   onInvite,
+  isPast = false,
 }: {
   event: DbEvent;
   onEdit: () => void;
@@ -640,6 +641,7 @@ function EventRow({
   onTogglePublished: () => void;
   onScan: () => void;
   onInvite: () => void;
+  isPast?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [delConfirm, setDelConfirm] = useState(false);
@@ -650,24 +652,30 @@ function EventRow({
     const cls = compact ? 'p-2.5' : 'p-2';
     return (
       <>
-        <button onClick={onScan} title="Event Scanner"
-          className={`${cls} rounded-lg text-[#7a4a4a]/60 hover:text-[#731515] hover:bg-[#fdf6f6] transition-colors`}>
-          <ScanLine size={sz} />
-        </button>
-        <button onClick={onInvite} title="Invita clienti CRM"
-          className={`${cls} rounded-lg text-[#7a4a4a]/60 hover:text-[#731515] hover:bg-[#fdf6f6] transition-colors`}>
-          <Send size={sz} />
-        </button>
+        {!isPast && (
+          <button onClick={onScan} title="Event Scanner"
+            className={`${cls} rounded-lg text-[#7a4a4a]/60 hover:text-[#731515] hover:bg-[#fdf6f6] transition-colors`}>
+            <ScanLine size={sz} />
+          </button>
+        )}
+        {!isPast && (
+          <button onClick={onInvite} title="Invita clienti CRM"
+            className={`${cls} rounded-lg text-[#7a4a4a]/60 hover:text-[#731515] hover:bg-[#fdf6f6] transition-colors`}>
+            <Send size={sz} />
+          </button>
+        )}
         <button onClick={onTogglePublished} title={event.published ? 'Nascondi' : 'Pubblica'}
           className={`${cls} rounded-lg transition-colors ${
             event.published ? 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100'
                             : 'text-slate-400 bg-slate-50 hover:bg-slate-100'}`}>
           {event.published ? <Eye size={sz} /> : <EyeOff size={sz} />}
         </button>
-        <button onClick={onEdit}
-          className={`${cls} rounded-lg text-[#7a4a4a] hover:text-[#731515] hover:bg-[#fdf6f6] transition-colors`}>
-          <Pencil size={sz} />
-        </button>
+        {!isPast && (
+          <button onClick={onEdit}
+            className={`${cls} rounded-lg text-[#7a4a4a] hover:text-[#731515] hover:bg-[#fdf6f6] transition-colors`}>
+            <Pencil size={sz} />
+          </button>
+        )}
         {delConfirm ? (
           <div className="flex items-center gap-1">
             <button onClick={onDelete}
@@ -694,7 +702,11 @@ function EventRow({
   };
 
   return (
-    <div className="bg-white border border-[#eddada] rounded-xl shadow-[0_1px_4px_rgba(107,26,26,0.05)] overflow-hidden">
+    <div className={`border rounded-xl overflow-hidden ${
+      isPast
+        ? 'bg-[#f8f5f5] border-[#e8dada] shadow-none'
+        : 'bg-white border-[#eddada] shadow-[0_1px_4px_rgba(107,26,26,0.05)]'
+    }`}>
       {/* Main row — date + info + desktop actions */}
       <div className="flex items-center gap-3 p-4">
 
@@ -721,8 +733,11 @@ function EventRow({
         {/* Main info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[8px] tracking-[0.35em] text-[#7a4a4a]/60">{event.type}</span>
-            <StatusPill status={event.status} />
+            <span className={`text-[8px] tracking-[0.35em] ${isPast ? 'text-[#7a4a4a]/40' : 'text-[#7a4a4a]/60'}`}>{event.type}</span>
+            {isPast
+              ? <span className="inline-block text-[8px] tracking-[0.3em] border px-2 py-0.5 rounded-full bg-[#f5f0f0] text-[#9a7070] border-[#e8d5d5]">PASSATO</span>
+              : <StatusPill status={event.status} />
+            }
             {event.price > 0 && (
               <span className="inline-flex items-center gap-1 text-[8px] tracking-[0.2em] bg-[#fde8e8] text-[#731515] px-2 py-0.5 rounded-full border border-[#731515]/15">
                 <Tag size={8} /> €{event.price}
@@ -735,13 +750,13 @@ function EventRow({
             )}
           </div>
           <div
-            className={`text-[15px] font-medium text-[#1a0505] mt-0.5 truncate ${event.title_strikethrough ? 'line-through decoration-[#731515]/50' : ''}`}
+            className={`text-[15px] font-medium mt-0.5 truncate ${isPast ? 'text-[#7a4a4a]' : 'text-[#1a0505]'} ${event.title_strikethrough ? 'line-through decoration-[#731515]/50' : ''}`}
             style={{ fontFamily: 'var(--font-syne)' }}
           >
             {event.title}
           </div>
-          <div className="flex items-center gap-1 mt-0.5 text-[11px] text-[#7a4a4a]/60">
-            <MapPin size={9} className="text-[#731515]/50 shrink-0" />
+          <div className={`flex items-center gap-1 mt-0.5 text-[11px] ${isPast ? 'text-[#7a4a4a]/40' : 'text-[#7a4a4a]/60'}`}>
+            <MapPin size={9} className={`${isPast ? 'text-[#7a4a4a]/30' : 'text-[#731515]/50'} shrink-0`} />
             <span className="truncate" style={{ fontFamily: 'var(--font-nunito)' }}>{event.location}</span>
           </div>
         </div>
@@ -803,6 +818,7 @@ export default function EventManager() {
   const [mode,        setMode]        = useState<'list' | 'create' | { edit: DbEvent }>('list');
   const [saving,      setSaving]      = useState(false);
   const [formErr,     setFormErr]     = useState('');
+  const [tab,         setTab]         = useState<'active' | 'past'>('active');
   const [scannerEvent,  setScannerEvent]  = useState<DbEvent | null>(null);
   const [inviteEvent,   setInviteEvent]   = useState<DbEvent | null>(null);
   const [accessToken,   setAccessToken]   = useState<string | null>(null);
@@ -840,6 +856,12 @@ export default function EventManager() {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [accessToken]);
+
+  /* ── Active / Past split ── */
+  const today      = new Date().toISOString().slice(0, 10);
+  const activeEvts = events.filter(e => e.date >= today).sort((a, b) => a.date.localeCompare(b.date));
+  const pastEvts   = events.filter(e => e.date < today).sort((a, b) => b.date.localeCompare(a.date));
+  const tabEvents  = tab === 'active' ? activeEvts : pastEvts;
 
   /* ── KPIs ── */
   const total     = events.length;
@@ -938,7 +960,7 @@ export default function EventManager() {
           </h2>
         </div>
 
-        {mode === 'list' && (
+        {mode === 'list' && tab === 'active' && (
           <button
             onClick={() => { setFormErr(''); setMode('create'); }}
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#731515] text-white text-[10px] tracking-[0.3em] hover:bg-[#9b2323] transition-colors rounded-lg"
@@ -947,6 +969,28 @@ export default function EventManager() {
             NUOVO EVENTO
           </button>
         )}
+      </div>
+
+      {/* Tab switcher */}
+      <div className="flex gap-1 mb-6 p-1 bg-[#fdf6f6] border border-[#eddada] rounded-xl w-fit">
+        {([['active', 'Eventi Attivi', activeEvts.length], ['past', 'Past Events', pastEvts.length]] as const).map(([id, label, count]) => (
+          <button
+            key={id}
+            onClick={() => { setTab(id); if (mode !== 'list') setMode('list'); }}
+            className={`flex items-center gap-2 px-5 py-2 rounded-lg text-[10px] tracking-[0.3em] transition-all duration-200 ${
+              tab === id
+                ? 'bg-[#731515] text-white shadow-sm'
+                : 'text-[#7a4a4a] hover:bg-[#eddada]/60'
+            }`}
+          >
+            {label}
+            <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${
+              tab === id ? 'bg-white/20 text-white' : 'bg-[#eddada] text-[#7a4a4a]'
+            }`}>
+              {count}
+            </span>
+          </button>
+        ))}
       </div>
 
       {/* KPI strip */}
@@ -968,9 +1012,9 @@ export default function EventManager() {
         ))}
       </div>
 
-      {/* Form (create / edit) */}
+      {/* Form (create / edit) — only for active tab */}
       <AnimatePresence>
-        {mode !== 'list' && (
+        {mode !== 'list' && tab === 'active' && (
           <EventForm
             key="form"
             initial={typeof mode === 'object' && 'edit' in mode
@@ -1007,22 +1051,25 @@ export default function EventManager() {
         <div className="flex justify-center py-16">
           <div className="w-6 h-6 rounded-full border-2 border-[#731515] border-t-transparent animate-spin" />
         </div>
-      ) : events.length === 0 ? (
+      ) : tabEvents.length === 0 ? (
         <div className="text-center py-16 text-[#7a4a4a]/50 text-sm" style={{ fontFamily: 'var(--font-nunito)' }}>
           <CalendarDays size={32} className="mx-auto mb-3 text-[#eddada]" />
-          Nessun evento trovato. Crea il primo evento con il pulsante qui sopra.
+          {tab === 'active'
+            ? 'Nessun evento attivo. Crea il primo evento con il pulsante qui sopra.'
+            : 'Nessun evento passato.'}
         </div>
       ) : (
-        <div className="space-y-3">
-          {events.map(event => (
+        <div className={`space-y-3 ${tab === 'past' ? 'opacity-80' : ''}`}>
+          {tabEvents.map(event => (
             <EventRow
               key={event.id || event.slug}
               event={event}
-              onEdit={() => { setFormErr(''); setMode({ edit: event }); }}
+              onEdit={tab === 'past' ? () => {} : () => { setFormErr(''); setMode({ edit: event }); }}
               onDelete={() => handleDelete(event.slug)}
               onTogglePublished={() => handleToggle(event)}
-              onScan={() => setScannerEvent(event)}
-              onInvite={() => setInviteEvent(event)}
+              onScan={tab === 'past' ? () => {} : () => setScannerEvent(event)}
+              onInvite={tab === 'past' ? () => {} : () => setInviteEvent(event)}
+              isPast={tab === 'past'}
             />
           ))}
         </div>

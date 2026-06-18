@@ -132,6 +132,7 @@ function EventRow({ event, isLast }: { event: EventData; isLast: boolean }) {
 /* ── Page ── */
 export default async function EventsPage() {
   let dbEvents: EventData[] = [];
+  const today = new Date().toISOString().slice(0, 10);
 
   try {
     const supabase = getSupabaseAdmin();
@@ -140,6 +141,7 @@ export default async function EventsPage() {
       .from('events')
       .select('*')
       .eq('published', true)
+      .gte('date', today)
       .order('date', { ascending: true });
 
     if (!error && data) {

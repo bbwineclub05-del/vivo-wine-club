@@ -27,17 +27,27 @@ function generateSlug(title: string, date: string): string {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const section = searchParams.get('section') as EventSection | null;
+  const past    = searchParams.get('past') === 'true';
+  const today   = new Date().toISOString().slice(0, 10);
 
   let dbEvents: ReturnType<typeof dbEventToEventData>[] = [];
 
   try {
     const supabase = getSupabaseAdmin();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    let query = (supabase as any)
       .from('events')
       .select('*')
       .eq('published', true)
-      .order('date', { ascending: true });
+      .order('date', { ascending: !past });
+
+    if (past) {
+      query = query.lt('date', today);
+    } else {
+      query = query.gte('date', today);
+    }
+
+    const { data, error } = await query;
 
     if (!error && data) {
       dbEvents = (data as DbEvent[]).map(dbEventToEventData);

@@ -31,6 +31,7 @@ import DocumentManager from '@/components/DocumentManager';
 import MemberPortal from '@/components/MemberPortal';
 import MembershipCard from '@/components/MembershipCard';
 import FinanceManager from '@/components/FinanceManager';
+import BilancioManager from '@/components/BilancioManager';
 import QuoteGenerator from '@/components/QuoteGenerator';
 import PedManager from '@/components/PedManager';
 import { isSuperAdmin, isFinanceUser } from '@/lib/admins';
@@ -38,7 +39,7 @@ import { isSuperAdmin, isFinanceUser } from '@/lib/admins';
 /* ─────────────────────────────────────────────
    Types
 ───────────────────────────────────────────── */
-type Section = 'overview' | 'settings' | 'card' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm' | 'crm-wine' | 'crm-bordeaux' | 'crm-clienti' | 'crm-sponsors' | 'media' | 'team' | 'merch' | 'discounts' | 'documents' | 'finance' | 'quotes' | 'ped';
+type Section = 'overview' | 'settings' | 'card' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm' | 'crm-wine' | 'crm-bordeaux' | 'crm-clienti' | 'crm-sponsors' | 'media' | 'team' | 'merch' | 'discounts' | 'documents' | 'finance' | 'bilancio' | 'quotes' | 'ped';
 
 // Maps section IDs to the permission key in team_members.permissions
 const SECTION_PERM: Partial<Record<Section, string>> = {
@@ -81,7 +82,7 @@ const GESTIONE_ITEMS: NavItem[] = [
 
 // Visible to both admin and staff
 const NAV_SHARED: NavItem[] = [
-  { id: 'tasks',     label: 'Task Board', icon: CheckSquare },
+  { id: 'tasks',     label: 'Task', icon: CheckSquare },
   { id: 'ped',       label: 'PED',        icon: BookOpen    },
   { id: 'documents', label: 'Documenti',  icon: FolderOpen  },
   { id: 'quotes',    label: 'Preventivi', icon: Receipt     },
@@ -271,6 +272,65 @@ function GestioneGroupNav({ activeSection, navigate }: { activeSection: Section;
   );
 }
 
+const FINANCE_ITEMS: NavItem[] = [
+  { id: 'finance',  label: 'Transazioni', icon: Receipt  },
+  { id: 'bilancio', label: 'Bilancio',    icon: BarChart3 },
+];
+
+/** Collapsible Finance group (Transazioni, Bilancio) in the sidebar */
+function FinanceGroupNav({ activeSection, navigate }: { activeSection: Section; navigate: (s: Section) => void }) {
+  const isActive = FINANCE_ITEMS.some((item) => item.id === activeSection);
+  const [open, setOpen] = useState(isActive);
+
+  useEffect(() => {
+    if (isActive) setOpen(true);
+  }, [isActive]);
+
+  return (
+    <div>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className={`w-full flex items-center gap-2.5 px-3 py-[7px] rounded-md text-left transition-all duration-150 text-[12.5px] ${
+          isActive
+            ? 'text-white/75 bg-white/[0.04]'
+            : 'text-white/45 hover:text-white/75 hover:bg-white/[0.06]'
+        }`}
+        style={{ fontFamily: 'var(--font-nunito)' }}
+      >
+        <Wallet size={14} className={isActive ? 'text-[#c84040]' : 'text-white/35'} />
+        Finance
+        <ChevronDown
+          size={11}
+          className={`ml-auto text-white/25 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+        />
+      </button>
+
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="ml-3 pl-2.5 border-l border-white/[0.07] mt-0.5 mb-0.5 space-y-0.5">
+              {FINANCE_ITEMS.map((item) => (
+                <NavBtn
+                  key={item.id}
+                  item={item}
+                  active={activeSection === item.id}
+                  onClick={() => navigate(item.id)}
+                />
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 /** Sidebar shell — rendered both in desktop aside and mobile drawer */
 function SidebarContent({
   displayName,
@@ -399,11 +459,7 @@ function SidebarContent({
               <Wallet size={8} className="text-white/20" />
               <span className="text-[8px] tracking-[0.55em] text-white/20 uppercase">Finance</span>
             </div>
-            <NavBtn
-              item={{ id: 'finance', label: 'Finance', icon: Wallet }}
-              active={activeSection === 'finance'}
-              onClick={() => navigate('finance')}
-            />
+            <FinanceGroupNav activeSection={activeSection} navigate={navigate} />
           </>
         )}
       </nav>
@@ -1098,10 +1154,10 @@ function MembersPageInner() {
                 {(admin || isStaff) && activeSection === 'tasks' && (
                   canAccess('tasks') ? (
                     <>
-                      <SectionHeader title="Task Board" subtitle="Assegna e gestisci task tra i founder." />
+                      <SectionHeader title="Task" subtitle="Assegna e gestisci task tra i founder." />
                       <TaskBoard currentEmail={user.email ?? ''} />
                     </>
-                  ) : <UnauthorisedSection title="Task Board" />
+                  ) : <UnauthorisedSection title="Task" />
                 )}
 
                 {(admin || isStaff) && activeSection === 'analytics' && (
@@ -1182,8 +1238,15 @@ function MembersPageInner() {
 
                 {financeUser && activeSection === 'finance' && (
                   <>
-                    <SectionHeader title="Finance" subtitle="Gestione contabile — revenues, costi e saldo di cassa." />
+                    <SectionHeader title="Transazioni" subtitle="Gestione contabile — revenues, costi e saldo di cassa." />
                     <FinanceManager />
+                  </>
+                )}
+
+                {financeUser && activeSection === 'bilancio' && (
+                  <>
+                    <SectionHeader title="Bilancio" subtitle="Analisi dei flussi finanziari per periodo — mensile, trimestrale, annuale." />
+                    <BilancioManager />
                   </>
                 )}
 

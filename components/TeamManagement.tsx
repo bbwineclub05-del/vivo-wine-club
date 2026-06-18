@@ -38,7 +38,7 @@ interface TeamMember {
 }
 
 const PERMISSION_LABELS: { key: keyof Permissions; label: string }[] = [
-  { key: 'tasks',     label: 'Task Board'              },
+  { key: 'tasks',     label: 'Task'                    },
   { key: 'events',    label: 'Gestione Eventi'         },
   { key: 'news',      label: 'Gestione News'           },
   { key: 'crm',       label: 'CRM'                     },
