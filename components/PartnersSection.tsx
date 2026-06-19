@@ -6,11 +6,13 @@ import { useTranslations } from 'next-intl';
 const PARTNERS = [
   { name: 'Atelier Vini',          src: '/sponsors/atelier-vini.png',            href: 'https://www.atelierviniecultura.com/'                    },
   { name: 'Canto del Gallo',       src: '/sponsors/canto-del-gallo.jpg',         href: 'https://ilcantodelgallowinebar.it/'                      },
-  { name: 'Bertani',                src: '/wineries/bertani logo .png',           href: 'https://www.bertani.net/'                               },
+  { name: 'Bertani',               src: '/wineries/bertani logo .png',            href: 'https://www.bertani.net/'                               },
   { name: 'Sandrone',              src: '/sponsors/sandrone.avif',                href: 'https://sandroneluciano.com/it/web/?lev1=99&age=over18' },
+  { name: 'Monterossa',            src: '/sponsors/Monterossa.png',               href: 'https://www.monterossa.com/'                           },
   { name: 'Beneperora',            src: '/sponsors/beneperora.webp',              href: 'https://beneperora.it/'                                 },
-  { name: 'Alata Investment Club', src: '/sponsors/alata.png',                  href: 'https://www.alatainvestmentclub.com/'                   },
-  { name: 'Cassa Rurale',          src: '/sponsors/cassarurale.png',             href: 'https://www.lacassarurale.it/privati-e-famiglie/'       },
+  { name: 'Bersi Serlini',         src: '/sponsors/Bersi Serlini.webp',           href: 'https://www.bersiserlini.it/'                          },
+  { name: 'Alata Investment Club', src: '/sponsors/alata.png',                    href: 'https://www.alatainvestmentclub.com/'                  },
+  { name: 'Cassa Rurale',          src: '/sponsors/cassarurale.png',              href: 'https://www.lacassarurale.it/privati-e-famiglie/'      },
 ];
 
 // Logo item width + gap in px — must match the CSS values below

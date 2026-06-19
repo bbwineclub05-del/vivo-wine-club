@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import FounderAccounts from './FounderAccounts';
+import { FINANCE_EMAILS } from '@/lib/admins';
 
 /* ─────────────────────────────────────────────
    Types
@@ -26,21 +27,37 @@ interface BudgetCategory {
 }
 
 interface Transaction {
-  id:              string;
-  date:            string; // "YYYY-MM-DD" from Supabase
-  description:     string;
-  category:        Category;
-  type:            TxType;
-  amount:          number;
-  notes:           string | null;
-  receipt_url:     string | null;
-  reimbursed_to:   string | null;
-  budget_category: string | null;
-  created_by:      string | null;
-  created_at:      string;
+  id:                  string;
+  date:                string; // "YYYY-MM-DD" from Supabase
+  description:         string;
+  category:            Category;
+  type:                TxType;
+  amount:              number;
+  notes:               string | null;
+  receipt_url:         string | null;
+  reimbursed_to:       string | null;
+  budget_category:     string | null;
+  registered_by_name:  string | null;
+  created_by:          string | null;
+  created_at:          string;
 }
 
 type FormData = Omit<Transaction, 'id' | 'created_by' | 'created_at'>;
+
+/* ─────────────────────────────────────────────
+   Founder list for "Registrato da" dropdown
+───────────────────────────────────────────── */
+const FINANCE_FOUNDERS: { name: string; email: string }[] = [
+  { name: 'Giacomo Gallo',        email: 'giacomogallo1310@gmail.com'   },
+  { name: 'Filippo Lombardi',     email: 'filippo.lombardi890@gmail.com' },
+  { name: 'Cristiano Michelotti', email: 'cristianomichelotti@gmail.com' },
+  { name: 'Marcello Abbadati',    email: 'marcelloabbadati02@gmail.com'  },
+  { name: 'Riccardo Consalvo',    email: 'riccardo.consalvo@icloud.com'  },
+].filter(f => (FINANCE_EMAILS as readonly string[]).includes(f.email));
+
+function nameFromEmail(email: string): string | null {
+  return FINANCE_FOUNDERS.find(f => f.email === email)?.name ?? null;
+}
 
 const MONTHS_IT = [
   'Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno',
@@ -251,15 +268,16 @@ function AddCategoryModal({
    Add / Edit Modal
 ───────────────────────────────────────────── */
 const EMPTY_FORM: FormData = {
-  date:            localToday(),
-  description:     '',
-  category:        'Evento',
-  type:            'revenue',
-  amount:          0,
-  notes:           null,
-  receipt_url:     null,
-  reimbursed_to:   null,
-  budget_category: null,
+  date:                localToday(),
+  description:         '',
+  category:            'Evento',
+  type:                'revenue',
+  amount:              0,
+  notes:               null,
+  receipt_url:         null,
+  reimbursed_to:       null,
+  budget_category:     null,
+  registered_by_name:  null,
 };
 
 function TxModal({
@@ -268,14 +286,21 @@ function TxModal({
   onClose,
   budgetCategories,
   onCategoryAdded,
+  currentUserName,
 }: {
   initial:          FormData | null;
   onSave:           (data: FormData) => Promise<void>;
   onClose:          () => void;
   budgetCategories: BudgetCategory[];
   onCategoryAdded:  (cat: BudgetCategory) => void;
+  currentUserName:  string | null;
 }) {
-  const [form,         setForm]         = useState<FormData>(initial ?? { ...EMPTY_FORM, date: localToday() });
+  const defaultForm: FormData = initial ?? {
+    ...EMPTY_FORM,
+    date:               localToday(),
+    registered_by_name: currentUserName,
+  };
+  const [form,         setForm]         = useState<FormData>(defaultForm);
   const [fileToUpload, setFileToUpload] = useState<File | null>(null);
   const [saving,       setSaving]       = useState(false);
   const [uploadPct,    setUploadPct]    = useState<number | null>(null);
@@ -435,6 +460,22 @@ function TxModal({
               <option value="">— Seleziona voce —</option>
               {filteredCats.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
               <option value="__add__">+ Aggiungi nuova voce…</option>
+            </select>
+          </div>
+
+          {/* Registrato da */}
+          <div>
+            <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">REGISTRATO DA</div>
+            <select
+              className={inputCls}
+              value={form.registered_by_name ?? ''}
+              onChange={e => set('registered_by_name', e.target.value || null)}
+              style={{ fontFamily: 'var(--font-nunito)' }}
+            >
+              <option value="">— Seleziona founder —</option>
+              {FINANCE_FOUNDERS.map(f => (
+                <option key={f.email} value={f.name}>{f.name}</option>
+              ))}
             </select>
           </div>
 
@@ -725,6 +766,7 @@ export default function FinanceManager() {
   const [addModal,         setAddModal]         = useState(false);
   const [editTarget,       setEditTarget]       = useState<Transaction | null>(null);
   const [deleteTarget,     setDeleteTarget]     = useState<Transaction | null>(null);
+  const [currentUserName,  setCurrentUserName]  = useState<string | null>(null);
 
   const MONTHS = useMemo(() => generateMonths(24), []);
   const now = new Date();
@@ -762,7 +804,14 @@ export default function FinanceManager() {
     if (data) setBudgetCategories(data as BudgetCategory[]);
   }
 
-  useEffect(() => { load(); loadBudgetCategories(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    load();
+    loadBudgetCategories();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const email = session?.user.email ?? '';
+      setCurrentUserName(nameFromEmail(email));
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // After data loads: if the current month has no transactions, jump to the
   // most recent month that does. Fixes the case where data is all in a past
@@ -857,26 +906,29 @@ export default function FinanceManager() {
           <TxModal key="add" initial={null} onSave={handleAdd} onClose={() => setAddModal(false)}
             budgetCategories={budgetCategories}
             onCategoryAdded={(cat) => setBudgetCategories(prev => [...prev, cat].sort((a,b) => a.name.localeCompare(b.name)))}
+            currentUserName={currentUserName}
           />
         )}
         {editTarget && (
           <TxModal
             key="edit"
             initial={{
-              date:            editTarget.date,
-              description:     editTarget.description,
-              category:        editTarget.category,
-              type:            editTarget.type,
-              amount:          editTarget.amount,
-              notes:           editTarget.notes,
-              receipt_url:     editTarget.receipt_url,
-              reimbursed_to:   editTarget.reimbursed_to,
-              budget_category: editTarget.budget_category,
+              date:                editTarget.date,
+              description:         editTarget.description,
+              category:            editTarget.category,
+              type:                editTarget.type,
+              amount:              editTarget.amount,
+              notes:               editTarget.notes,
+              receipt_url:         editTarget.receipt_url,
+              reimbursed_to:       editTarget.reimbursed_to,
+              budget_category:     editTarget.budget_category,
+              registered_by_name:  editTarget.registered_by_name,
             }}
             onSave={handleEdit}
             onClose={() => setEditTarget(null)}
             budgetCategories={budgetCategories}
             onCategoryAdded={(cat) => setBudgetCategories(prev => [...prev, cat].sort((a,b) => a.name.localeCompare(b.name)))}
+            currentUserName={currentUserName}
           />
         )}
         {deleteTarget && (
@@ -1097,7 +1149,7 @@ export default function FinanceManager() {
                         {fmtDate(tx.date)}
                       </div>
 
-                      {/* Descrizione + note + rimborsato a */}
+                      {/* Descrizione + note + rimborsato a + registrato da */}
                       <div className="min-w-0">
                         <div className="text-[13px] font-medium text-[#1a0505] truncate" style={{ fontFamily: 'var(--font-nunito)' }}>
                           {tx.description}
@@ -1107,6 +1159,13 @@ export default function FinanceManager() {
                         )}
                         {tx.notes && (
                           <div className="text-[10px] text-[#7a4a4a]/50 truncate mt-0.5">{tx.notes}</div>
+                        )}
+                        {tx.registered_by_name && (
+                          <div className="mt-1">
+                            <span className="inline-block text-[9px] tracking-[0.15em] text-[#7a4a4a]/50 bg-[#f5f0f0] border border-[#eddada] px-1.5 py-0.5 rounded" style={{ fontFamily: 'var(--font-nunito)' }}>
+                              {tx.registered_by_name}
+                            </span>
+                          </div>
                         )}
                       </div>
 
