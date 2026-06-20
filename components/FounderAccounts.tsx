@@ -170,14 +170,15 @@ function MovModal({
 
     try {
       await onSave({
-        date:          form.date,
-        founder_email: form.founder_email,
-        type:          form.type,
-        description:   form.description.trim(),
-        amount:        amt,
-        category:      form.category || null,
-        notes:         form.notes.trim() || null,
+        date:           form.date,
+        founder_email:  form.founder_email,
+        type:           form.type,
+        description:    form.description.trim(),
+        amount:         amt,
+        category:       form.category || null,
+        notes:          form.notes.trim() || null,
         receipt_url,
+        transaction_id: null,
       });
       onClose();
     } catch (e) {
