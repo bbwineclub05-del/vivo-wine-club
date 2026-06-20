@@ -180,7 +180,9 @@
     "buyTickets": "BUY TICKETS",
     "soldOut": "SOLD OUT",
     "comingSoon": "COMING SOON",
-    "completed": "COMPLETED"
+    "completed": "COMPLETED",
+    "allEvents": "ALL EVENTS",
+    "bookYourSpot": "BOOK YOUR SPOT"
   },
   "collaborate": {
     "getInTouch": "GET IN TOUCH",

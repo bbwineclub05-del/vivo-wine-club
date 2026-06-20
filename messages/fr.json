@@ -180,7 +180,9 @@
     "buyTickets": "ACHETER DES BILLETS",
     "soldOut": "COMPLET",
     "comingSoon": "BIENTÔT",
-    "completed": "TERMINÉ"
+    "completed": "TERMINÉ",
+    "allEvents": "TOUS LES ÉVÉNEMENTS",
+    "bookYourSpot": "RÉSERVEZ VOTRE PLACE"
   },
   "collaborate": {
     "getInTouch": "TRAVAILLONS ENSEMBLE",

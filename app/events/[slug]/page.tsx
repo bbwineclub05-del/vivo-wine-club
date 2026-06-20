@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft, MapPin, CalendarDays, Clock, Users, Ticket } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
@@ -79,7 +80,17 @@ function InfoCard({
 }
 
 /* ── CTA button ── */
-function CtaButton({ event, isPast, full }: { event: EventData; isPast: boolean; full?: boolean }) {
+function CtaButton({
+  event,
+  isPast,
+  full,
+  bookLabel,
+}: {
+  event: EventData;
+  isPast: boolean;
+  full?: boolean;
+  bookLabel: string;
+}) {
   const cls = full ? 'w-full justify-center' : 'sm:inline-flex';
 
   if (isPast || event.status === 'completed') {
@@ -116,7 +127,7 @@ function CtaButton({ event, isPast, full }: { event: EventData; isPast: boolean;
       style={{ fontFamily: 'var(--font-nunito)' }}
     >
       <Ticket size={14} />
-      PRENOTA IL TUO POSTO
+      {bookLabel}
       {event.price > 0 && (
         <span className="opacity-60 normal-case tracking-normal text-[12px] font-medium">
           · €{event.price}
@@ -133,6 +144,7 @@ export default async function EventDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const t = await getTranslations('events');
 
   let event: EventData | undefined;
   let rawDate: string | undefined;
@@ -166,18 +178,18 @@ export default async function EventDetailPage({
       <main>
 
         {/* ── Hero ── */}
-        <section className="relative h-[65vh] sm:h-[75vh] min-h-[380px] overflow-hidden">
+        <section className="relative h-[65vh] sm:h-[75vh] min-h-[380px] overflow-hidden bg-[#2a0808]">
           {event.image_url ? (
             <Image
               src={event.image_url}
               alt={event.title}
               fill
               priority
-              className="object-cover"
+              className="object-contain object-center"
               sizes="100vw"
             />
           ) : (
-            <div className="absolute inset-0 bg-[#2a0808]" />
+            <div className="absolute inset-0" />
           )}
 
           {/* Gradient */}
@@ -190,7 +202,7 @@ export default async function EventDetailPage({
               className="inline-flex items-center gap-2 text-white/70 hover:text-white text-[9px] tracking-[0.35em] transition-colors duration-200"
             >
               <ArrowLeft size={13} />
-              TUTTI GLI EVENTI
+              {t('allEvents')}
             </Link>
           </div>
 
@@ -306,7 +318,7 @@ export default async function EventDetailPage({
 
             {/* CTA — desktop */}
             <div className="hidden sm:flex items-center gap-4 pt-2">
-              <CtaButton event={event} isPast={isPast} />
+              <CtaButton event={event} isPast={isPast} bookLabel={t('bookYourSpot')} />
               {event.status === 'open' && !isPast && (
                 <span
                   className="text-[11px] text-[#7a4a4a]/50"
@@ -325,7 +337,7 @@ export default async function EventDetailPage({
           className="sm:hidden fixed bottom-0 left-0 right-0 z-40 px-4 py-3"
           style={{ background: 'rgba(253,249,249,0.96)', backdropFilter: 'blur(8px)', borderTop: '1px solid #eddada' }}
         >
-          <CtaButton event={event} isPast={isPast} full />
+          <CtaButton event={event} isPast={isPast} full bookLabel={t('bookYourSpot')} />
         </div>
 
       </main>
