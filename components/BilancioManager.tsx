@@ -312,7 +312,7 @@ export default function BilancioManager() {
             <button
               key={pt}
               onClick={() => changePeriodType(pt)}
-              className={`px-4 py-1.5 rounded-md text-[10.5px] tracking-[0.12em] uppercase transition-all duration-150 ${
+              className={`px-4 py-1.5 rounded-lg text-[10.5px] tracking-[0.12em] uppercase transition-all duration-150 ${
                 periodType === pt
                   ? 'bg-[#731515] text-white shadow-sm'
                   : 'text-[#7a4a4a]/55 hover:text-[#731515]'

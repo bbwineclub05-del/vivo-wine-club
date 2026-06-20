@@ -638,7 +638,7 @@ export default function AnalyticsDashboard() {
                         <div key={i} className="flex-1 flex flex-col items-center gap-1 group relative">
                           {/* Tooltip */}
                           <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center pointer-events-none z-10">
-                            <div className="bg-[#1a0505] text-white text-[9px] px-2 py-1 whitespace-nowrap rounded-sm" style={{ fontFamily: 'var(--font-nunito)' }}>
+                            <div className="bg-[#1a0505] text-white text-[9px] px-2 py-1 whitespace-nowrap rounded-lg" style={{ fontFamily: 'var(--font-nunito)' }}>
                               {w.visitors.toLocaleString('it-IT')} utenti
                             </div>
                             <div className="w-1.5 h-1.5 bg-[#1a0505] rotate-45 -mt-[3px]" />

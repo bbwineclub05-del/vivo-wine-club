@@ -425,7 +425,7 @@ export default function WhoWeArePage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: '-30px' }}
                   transition={{ duration: 0.5, delay: i * 0.07, ease: [0.16, 1, 0.3, 1] }}
-                  className="flex items-center gap-4 p-4 bg-[#731515] hover:bg-[#8f2020] transition-colors duration-300"
+                  className="flex items-center gap-4 p-4 bg-[#731515] hover:bg-[#8f2020] transition-colors duration-300 rounded-lg"
                 >
                   {/* Avatar */}
                   <div className="w-10 h-10 rounded-full border border-white/25 flex items-center justify-center shrink-0">
@@ -456,7 +456,7 @@ export default function WhoWeArePage() {
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label={`${member.name} on LinkedIn`}
-                      className="w-7 h-7 border border-white/25 flex items-center justify-center text-white/60 hover:border-white hover:text-white transition-all duration-300 shrink-0"
+                      className="w-7 h-7 border border-white/25 flex items-center justify-center text-white/60 hover:border-white hover:text-white transition-all duration-300 shrink-0 rounded-lg"
                     >
                       <LinkedInIcon />
                     </a>
@@ -527,7 +527,7 @@ export default function WhoWeArePage() {
             </p>
             <Link
               href="/membership"
-              className="mt-2 inline-flex items-center gap-3 px-8 py-3.5 bg-[#731515] text-white text-[11px] tracking-[0.4em] hover:bg-[#8f2020] transition-colors duration-300"
+              className="mt-2 inline-flex items-center gap-3 px-8 py-3.5 bg-[#731515] text-white text-[11px] tracking-[0.4em] hover:bg-[#8f2020] transition-colors duration-300 rounded-lg"
               style={{ fontFamily: 'var(--font-nunito)' }}
             >
               {t('ctaButton').toUpperCase()}

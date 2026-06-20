@@ -422,7 +422,7 @@ export default function QuoteGenerator() {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-1.5 rounded-md text-[10px] tracking-[0.3em] font-bold border transition-colors duration-150 ${
+            className={`px-4 py-1.5 rounded-lg text-[10px] tracking-[0.3em] font-bold border transition-colors duration-150 ${
               activeTab === tab
                 ? 'bg-[#5b1a14] text-white border-[#5b1a14]'
                 : 'bg-white text-[#5b1a14] border-[#5b1a14] hover:bg-[#5b1a14]/5'

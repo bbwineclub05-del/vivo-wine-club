@@ -91,7 +91,7 @@ function NavBtn({
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center gap-2.5 px-3 py-[7px] rounded-md text-left transition-all duration-150 text-[12.5px] relative ${
+      className={`w-full flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-left transition-all duration-150 text-[12.5px] relative ${
         active
           ? 'bg-[#731515]/25 text-white'
           : 'text-white/45 hover:text-white/75 hover:bg-white/[0.06]'
@@ -1063,7 +1063,7 @@ function SidebarContent({
       <div className="px-3 py-3 shrink-0 space-y-0.5">
         <Link
           href="/"
-          className="flex items-center gap-2.5 px-3 py-[7px] rounded-md text-white/30 hover:text-white/55 hover:bg-white/[0.06] transition-all duration-150 text-[12px]"
+          className="flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-white/30 hover:text-white/55 hover:bg-white/[0.06] transition-all duration-150 text-[12px]"
           style={{ fontFamily: 'var(--font-nunito)' }}
         >
           <ArrowUpRight size={12} />
@@ -1071,7 +1071,7 @@ function SidebarContent({
         </Link>
         <button
           onClick={onLogout}
-          className="w-full flex items-center gap-2.5 px-3 py-[7px] rounded-md text-white/30 hover:text-[#e88a8a] hover:bg-white/[0.06] transition-all duration-150 text-[12px] text-left"
+          className="w-full flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-white/30 hover:text-[#e88a8a] hover:bg-white/[0.06] transition-all duration-150 text-[12px] text-left"
           style={{ fontFamily: 'var(--font-nunito)' }}
         >
           <LogOut size={12} />

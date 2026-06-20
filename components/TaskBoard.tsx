@@ -798,7 +798,7 @@ function CalendarView({
             <button
               key={v}
               onClick={() => setCalView(v)}
-              className={`px-3 py-1.5 text-[9px] tracking-[0.2em] rounded-md transition-all duration-150 ${
+              className={`px-3 py-1.5 text-[9px] tracking-[0.2em] rounded-lg transition-all duration-150 ${
                 calView === v ? 'bg-[#731515] text-white shadow-sm' : 'text-[#7a4a4a] hover:text-[#731515]'
               }`}
               style={{ fontFamily: 'var(--font-nunito)' }}

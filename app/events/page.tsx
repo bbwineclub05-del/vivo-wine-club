@@ -20,7 +20,7 @@ function EventRow({ event, isLast }: { event: EventData; isLast: boolean }) {
   const detailHref = `/events/${event.slug}`;
   const hasDetail  = event.status !== 'completed';
 
-  const thumbnailClass = `relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 shrink-0 overflow-hidden border ${
+  const thumbnailClass = `relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 shrink-0 overflow-hidden border rounded-lg ${
     faded ? 'border-[#e8d5d5]' : 'border-[#d4b0b0]/40'
   }${hasDetail ? ' cursor-pointer' : ''}`;
 

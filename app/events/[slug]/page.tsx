@@ -85,11 +85,13 @@ function CtaButton({
   isPast,
   full,
   bookLabel,
+  endedLabel,
 }: {
   event: EventData;
   isPast: boolean;
   full?: boolean;
   bookLabel: string;
+  endedLabel: string;
 }) {
   const cls = full ? 'w-full justify-center' : 'sm:inline-flex';
 
@@ -98,7 +100,7 @@ function CtaButton({
       <span
         className={`${cls} inline-flex items-center gap-3 px-8 py-4 bg-[#e8e8e8] text-[#aaa] text-[9px] tracking-[0.4em] rounded-lg cursor-not-allowed`}
       >
-        EVENTO CONCLUSO
+        {endedLabel}
       </span>
     );
   }
@@ -239,13 +241,13 @@ export default async function EventDetailPage({
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 pb-10 mb-10 border-b border-[#eddada]">
               <InfoCard
                 icon={<CalendarDays size={14} className="text-[#731515] shrink-0" />}
-                label="DATA"
+                label={t('labelDate')}
                 value={`${event.day} ${event.month} ${event.year}`}
               />
               {event.time && (
                 <InfoCard
                   icon={<Clock size={14} className="text-[#731515] shrink-0" />}
-                  label="ORARIO"
+                  label={t('labelTime')}
                   value={event.time}
                 />
               )}
@@ -257,16 +259,16 @@ export default async function EventDetailPage({
               />
               <InfoCard
                 icon={<Ticket size={14} className="text-[#731515] shrink-0" />}
-                label="PREZZO"
-                value={event.price === 0 ? 'Gratuito' : `€${event.price} / persona`}
+                label={t('labelPrice')}
+                value={event.price === 0 ? t('free') : `€${event.price} / ${t('perPerson')}`}
               />
               {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
               {(event as any).capacity != null && (
                 <InfoCard
                   icon={<Users size={14} className="text-[#731515] shrink-0" />}
-                  label="CAPACITÀ"
+                  label={t('labelCapacity')}
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  value={`${(event as any).capacity} posti`}
+                  value={`${(event as any).capacity} ${t('spots')}`}
                 />
               )}
             </div>
@@ -279,10 +281,10 @@ export default async function EventDetailPage({
                   : 'bg-[#f5f5f0] border-[#e0e0d5] text-[#6b6b55]'
               }`} style={{ fontFamily: 'var(--font-nunito)' }}>
                 {isPast
-                  ? 'Questo evento si è già concluso. Le iscrizioni non sono più disponibili.'
+                  ? t('bannerPast')
                   : event.status === 'soldout'
-                    ? 'Tutti i posti sono esauriti. Seguici sui social per i prossimi eventi.'
-                    : 'Le iscrizioni apriranno presto. Seguici per non perdere l\'opportunità.'}
+                    ? t('bannerSoldOut')
+                    : t('bannerSoon')}
               </div>
             )}
 
@@ -290,7 +292,7 @@ export default async function EventDetailPage({
             {event.description && (
               <div className="mb-12">
                 <div className="text-[9px] tracking-[0.5em] text-[#731515] mb-5">
-                  L&apos;EVENTO
+                  {t('theEvent')}
                 </div>
                 <p
                   className="text-[15px] text-[#4a2a2a] leading-[1.85] whitespace-pre-line"
@@ -305,7 +307,7 @@ export default async function EventDetailPage({
             {rawNotes && (
               <div className="mb-12 bg-white border border-[#eddada] rounded-xl p-6 sm:p-8">
                 <div className="text-[9px] tracking-[0.5em] text-[#731515] mb-5">
-                  INFO PRATICHE
+                  {t('practicalInfo')}
                 </div>
                 <p
                   className="text-sm text-[#7a4a4a] leading-[1.8] whitespace-pre-line"
@@ -318,13 +320,13 @@ export default async function EventDetailPage({
 
             {/* CTA — desktop */}
             <div className="hidden sm:flex items-center gap-4 pt-2">
-              <CtaButton event={event} isPast={isPast} bookLabel={t('bookYourSpot')} />
+              <CtaButton event={event} isPast={isPast} bookLabel={t('bookYourSpot')} endedLabel={t('eventEnded')} />
               {event.status === 'open' && !isPast && (
                 <span
                   className="text-[11px] text-[#7a4a4a]/50"
                   style={{ fontFamily: 'var(--font-nunito)' }}
                 >
-                  Verrai reindirizzato al checkout sicuro.
+                  {t('secureCheckout')}
                 </span>
               )}
             </div>
@@ -337,7 +339,7 @@ export default async function EventDetailPage({
           className="sm:hidden fixed bottom-0 left-0 right-0 z-40 px-4 py-3"
           style={{ background: 'rgba(253,249,249,0.96)', backdropFilter: 'blur(8px)', borderTop: '1px solid #eddada' }}
         >
-          <CtaButton event={event} isPast={isPast} full bookLabel={t('bookYourSpot')} />
+          <CtaButton event={event} isPast={isPast} full bookLabel={t('bookYourSpot')} endedLabel={t('eventEnded')} />
         </div>
 
       </main>

@@ -94,19 +94,19 @@ function UpcomingRow({
         {event.status === 'open' && (
           <Link
             href={`/checkout/${event.slug}`}
-            className="shrink-0 hidden sm:inline-flex text-[9px] tracking-[0.28em] px-5 py-2.5 transition-all duration-300 hover:opacity-80"
+            className="shrink-0 hidden sm:inline-flex text-[9px] tracking-[0.28em] px-5 py-2.5 transition-all duration-300 hover:opacity-80 rounded-lg"
             style={{ background: btnBg, color: btnText }}
           >
             {event.price > 0 ? tCommon('buyTickets') : tCommon('register')}
           </Link>
         )}
         {event.status === 'soldout' && (
-          <span className="shrink-0 hidden sm:inline-block text-[9px] tracking-[0.28em] px-5 py-2.5 bg-[#3a3a3a] text-white">
+          <span className="shrink-0 hidden sm:inline-block text-[9px] tracking-[0.28em] px-5 py-2.5 bg-[#3a3a3a] text-white rounded-lg">
             {tCommon('soldOut')}
           </span>
         )}
         {event.status === 'soon' && (
-          <span className="shrink-0 hidden sm:inline-block text-[9px] tracking-[0.28em] px-5 py-2.5 border border-white/20 text-white/50">
+          <span className="shrink-0 hidden sm:inline-block text-[9px] tracking-[0.28em] px-5 py-2.5 border border-white/20 text-white/50 rounded-lg">
             {tCommon('comingSoon')}
           </span>
         )}
@@ -117,7 +117,7 @@ function UpcomingRow({
         <div className="sm:hidden pb-4 pl-20">
           <Link
             href={`/checkout/${event.slug}`}
-            className="text-[9px] tracking-[0.28em] px-5 py-3 min-h-[44px] inline-flex items-center transition-all duration-300 hover:opacity-80"
+            className="text-[9px] tracking-[0.28em] px-5 py-3 min-h-[44px] inline-flex items-center transition-all duration-300 hover:opacity-80 rounded-lg"
             style={{ background: btnBg, color: btnText }}
           >
             {event.price > 0 ? tCommon('buyTickets') : tCommon('register')}

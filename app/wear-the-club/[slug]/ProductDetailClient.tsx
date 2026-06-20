@@ -473,7 +473,7 @@ export default function ProductDetailClient({ product }: { product: ProductFull 
                         disabled={soldOut}
                         onClick={() => { if (!soldOut) { setSize(s); setSizeErr(false); } }}
                         title={soldOut ? 'Sold out' : undefined}
-                        className={`relative w-12 h-12 text-[11px] tracking-widest border transition-all duration-150 ${
+                        className={`relative w-12 h-12 text-[11px] tracking-widest border transition-all duration-150 rounded-lg ${
                           soldOut
                             ? 'border-[#e8d5d5] text-[#c0a0a0]/40 cursor-not-allowed line-through'
                             : size === s
@@ -501,7 +501,7 @@ export default function ProductDetailClient({ product }: { product: ProductFull 
               <motion.button
                 onClick={handleAddToCart}
                 whileTap={{ scale: 0.98 }}
-                className={`w-full flex items-center justify-center gap-2.5 py-4 border text-[11px] tracking-[0.3em] transition-all duration-300 ${
+                className={`w-full flex items-center justify-center gap-2.5 py-4 border text-[11px] tracking-[0.3em] transition-all duration-300 rounded-lg ${
                   added
                     ? 'border-[#2d6e2d] bg-[#2d6e2d] text-white'
                     : 'border-[#731515] text-[#731515] hover:bg-[#731515] hover:text-white'
@@ -524,7 +524,7 @@ export default function ProductDetailClient({ product }: { product: ProductFull 
               <motion.button
                 onClick={handleBuyNow}
                 whileTap={{ scale: 0.98 }}
-                className="w-full flex items-center justify-center gap-2.5 py-4 bg-[#731515] text-white text-[11px] tracking-[0.3em] hover:bg-[#5a1010] transition-colors duration-300"
+                className="w-full flex items-center justify-center gap-2.5 py-4 bg-[#731515] text-white text-[11px] tracking-[0.3em] hover:bg-[#5a1010] transition-colors duration-300 rounded-lg"
               >
                 <Zap size={13} />
                 BUY NOW

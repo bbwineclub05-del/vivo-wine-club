@@ -59,7 +59,7 @@ export default function MembershipSection() {
               transition={{ duration: d(0.7), delay: d(i * 0.1), ease: [0.16, 1, 0.3, 1] }}
               whileHover={reducedMotion ? {} : { scale: 1.03 }}
               style={{ transition: 'transform 0.3s ease' }}
-              className="bg-[#fdf6f6] p-7 flex flex-col gap-4 cursor-default"
+              className="bg-[#fdf6f6] p-7 flex flex-col gap-4 cursor-default rounded-lg"
             >
               <span
                 className="text-[2.6rem] font-light leading-none tabular-nums text-[#731515]"
@@ -100,7 +100,7 @@ export default function MembershipSection() {
           </p>
           <Link
             href="/membership"
-            className="group inline-flex items-center gap-3 px-10 py-4 bg-[#731515] text-white text-[11px] tracking-[0.35em] hover:bg-[#aa4848] hover:shadow-[0_0_40px_rgba(115,21,21,0.25)] transition-all duration-300 border border-[#731515] whitespace-nowrap"
+            className="group inline-flex items-center gap-3 px-10 py-4 bg-[#731515] text-white text-[11px] tracking-[0.35em] hover:bg-[#aa4848] hover:shadow-[0_0_40px_rgba(115,21,21,0.25)] transition-all duration-300 border border-[#731515] whitespace-nowrap rounded-lg"
           >
             {t('applyForMembership')}
             <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform duration-300" />

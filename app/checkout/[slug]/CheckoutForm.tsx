@@ -40,7 +40,7 @@ function Field({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         autoComplete={autoComplete}
-        className={`w-full border bg-white px-4 py-3 text-sm text-[#1a0505] placeholder-[#c0a0a0] focus:outline-none transition-colors duration-200 ${error ? 'border-[#731515]' : 'border-[#e8d5d5] focus:border-[#731515]'}`}
+        className={`w-full border bg-white px-4 py-3 text-sm text-[#1a0505] placeholder-[#c0a0a0] focus:outline-none transition-colors duration-200 rounded-lg ${error ? 'border-[#731515]' : 'border-[#e8d5d5] focus:border-[#731515]'}`}
         style={{ fontFamily: 'var(--font-nunito)' }}
       />
       {error && (
@@ -113,7 +113,7 @@ export default function CheckoutForm({ event }: { event: EventData }) {
             >
               {/* ── Event image — same width as cards below, sharp edges ── */}
             {event.image_url && (
-              <div className="relative w-full aspect-[16/7] overflow-hidden mb-8">
+              <div className="relative w-full aspect-[16/7] overflow-hidden mb-8 rounded-lg">
                 <Image
                   src={event.image_url}
                   alt={event.title}
@@ -182,7 +182,7 @@ export default function CheckoutForm({ event }: { event: EventData }) {
                         type="button"
                         onClick={dec}
                         disabled={qty <= 1}
-                        className="w-11 h-11 flex items-center justify-center border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515] hover:text-[#731515] disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
+                        className="w-11 h-11 flex items-center justify-center border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515] hover:text-[#731515] disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 rounded-lg"
                         aria-label="Remove ticket"
                       >
                         <Minus size={13} />
@@ -199,7 +199,7 @@ export default function CheckoutForm({ event }: { event: EventData }) {
                         type="button"
                         onClick={inc}
                         disabled={qty >= MAX_TICKETS}
-                        className="w-11 h-11 flex items-center justify-center border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515] hover:text-[#731515] disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
+                        className="w-11 h-11 flex items-center justify-center border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515] hover:text-[#731515] disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 rounded-lg"
                         aria-label="Add ticket"
                       >
                         <Plus size={13} />
@@ -298,7 +298,7 @@ export default function CheckoutForm({ event }: { event: EventData }) {
                     type="submit"
                     disabled={loading || !emailsMatch}
                     whileTap={{ scale: 0.99 }}
-                    className="w-full py-4 bg-[#731515] text-white text-[11px] tracking-[0.4em] hover:bg-[#aa4848] disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-300"
+                    className="w-full py-4 bg-[#731515] text-white text-[11px] tracking-[0.4em] hover:bg-[#aa4848] disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-300 rounded-lg"
                   >
                     {loading ? 'PROCESSING…' : event.price > 0 ? 'PROCEED TO PAYMENT' : 'GET YOUR FREE TICKET'}
                   </motion.button>

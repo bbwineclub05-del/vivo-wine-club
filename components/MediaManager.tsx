@@ -72,7 +72,7 @@ function GalleryTile({
       <button
         onClick={handleDelete}
         disabled={deleting}
-        className="absolute top-2 right-2 w-7 h-7 bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-[#731515] disabled:opacity-40 transition-all duration-200 rounded-sm"
+        className="absolute top-2 right-2 w-7 h-7 bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-[#731515] disabled:opacity-40 transition-all duration-200 rounded-lg"
         aria-label="Delete"
       >
         {deleting ? <RefreshCw size={11} className="animate-spin" /> : <Trash2 size={11} />}
@@ -301,7 +301,7 @@ export default function MediaManager() {
                     <img src={p.preview} alt={p.file.name} className="w-full h-full object-cover" />
                     <button
                       onClick={(e) => { e.stopPropagation(); removePreview(i); }}
-                      className="absolute top-1 right-1 w-5 h-5 bg-black/60 text-white flex items-center justify-center rounded-sm opacity-0 group-hover:opacity-100 hover:bg-[#731515] transition-all duration-150"
+                      className="absolute top-1 right-1 w-5 h-5 bg-black/60 text-white flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 hover:bg-[#731515] transition-all duration-150"
                     >
                       <X size={9} />
                     </button>

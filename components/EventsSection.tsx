@@ -12,27 +12,27 @@ const StatusBadge = memo(function StatusBadge({ status, slug }: { status: EventS
   const t = useTranslations('common');
   if (status === 'open') {
     return (
-      <Link href={`/checkout/${slug}`} className="text-[9px] tracking-[0.28em] px-4 lg:px-5 py-3 min-h-[44px] inline-flex items-center bg-[#731515] text-[#F5EEE6] border border-[#731515] hover:bg-[#aa4848] hover:border-[#aa4848] transition-all duration-300 whitespace-nowrap">
+      <Link href={`/checkout/${slug}`} className="text-[9px] tracking-[0.28em] px-4 lg:px-5 py-3 min-h-[44px] inline-flex items-center bg-[#731515] text-[#F5EEE6] border border-[#731515] hover:bg-[#aa4848] hover:border-[#aa4848] transition-all duration-300 whitespace-nowrap rounded-lg">
         {t('buyTickets')}
       </Link>
     );
   }
   if (status === 'soldout') {
     return (
-      <span className="text-[9px] tracking-[0.28em] px-4 lg:px-5 py-2.5 bg-[#3a3a3a] text-white whitespace-nowrap">
+      <span className="text-[9px] tracking-[0.28em] px-4 lg:px-5 py-2.5 bg-[#3a3a3a] text-white whitespace-nowrap rounded-lg">
         {t('soldOut')}
       </span>
     );
   }
   if (status === 'soon') {
     return (
-      <span className="text-[9px] tracking-[0.28em] px-4 lg:px-5 py-2.5 border border-[#ccc] text-[#aaa] whitespace-nowrap">
+      <span className="text-[9px] tracking-[0.28em] px-4 lg:px-5 py-2.5 border border-[#ccc] text-[#aaa] whitespace-nowrap rounded-lg">
         {t('comingSoon')}
       </span>
     );
   }
   return (
-    <span className="text-[9px] tracking-[0.28em] px-4 lg:px-5 py-2.5 border border-[#ddd] text-[#bbb] whitespace-nowrap">
+    <span className="text-[9px] tracking-[0.28em] px-4 lg:px-5 py-2.5 border border-[#ddd] text-[#bbb] whitespace-nowrap rounded-lg">
       {t('completed')}
     </span>
   );
@@ -60,7 +60,7 @@ function EventRow({
 
         {/* Thumbnail */}
         {event.image_url && (
-          <div className={`relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 shrink-0 overflow-hidden border z-[1] ${faded ? 'border-[#e8d5d5]' : 'border-[#d4b0b0]/40'}`}>
+          <div className={`relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 shrink-0 overflow-hidden border z-[1] rounded-lg ${faded ? 'border-[#e8d5d5]' : 'border-[#d4b0b0]/40'}`}>
             <Image
               src={event.image_url}
               alt={event.title}

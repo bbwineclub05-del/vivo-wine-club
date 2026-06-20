@@ -139,7 +139,7 @@ export default function CartDrawer() {
                     </p>
                     <button
                       onClick={handleBoutique}
-                      className="mt-2 text-[10px] tracking-[0.3em] text-[#731515] border border-[#731515]/40 px-6 py-3 hover:bg-[#731515]/8 transition-colors"
+                      className="mt-2 text-[10px] tracking-[0.3em] text-[#731515] border border-[#731515]/40 px-6 py-3 hover:bg-[#731515]/8 transition-colors rounded-lg"
                     >
                       VISIT THE BOUTIQUE
                     </button>
@@ -182,14 +182,14 @@ export default function CartDrawer() {
                             <div className="flex items-center gap-2">
                               <button
                                 onClick={() => updateQuantity(item.cartKey, item.quantity - 1)}
-                                className="w-6 h-6 flex items-center justify-center border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515] hover:text-[#731515] transition-colors"
+                                className="w-6 h-6 flex items-center justify-center border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515] hover:text-[#731515] transition-colors rounded"
                               >
                                 <Minus size={10} />
                               </button>
                               <span className="text-sm text-[#1a0505] w-5 text-center">{item.quantity}</span>
                               <button
                                 onClick={() => updateQuantity(item.cartKey, item.quantity + 1)}
-                                className="w-6 h-6 flex items-center justify-center border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515] hover:text-[#731515] transition-colors"
+                                className="w-6 h-6 flex items-center justify-center border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515] hover:text-[#731515] transition-colors rounded"
                               >
                                 <Plus size={10} />
                               </button>
@@ -247,7 +247,7 @@ export default function CartDrawer() {
                       onChange={e => setEmail(e.target.value)}
                       placeholder="your@email.com"
                       autoComplete="email"
-                      className="w-full bg-white border border-[#e8d5d5] px-3 py-2 text-xs text-[#1a0505] placeholder-[#b09090] focus:outline-none focus:border-[#731515] transition-colors"
+                      className="w-full bg-white border border-[#e8d5d5] px-3 py-2 text-xs text-[#1a0505] placeholder-[#b09090] focus:outline-none focus:border-[#731515] transition-colors rounded-lg"
                       style={{ fontFamily: 'var(--font-nunito)' }}
                     />
                   </div>
@@ -259,7 +259,7 @@ export default function CartDrawer() {
                       onChange={e => setConfirmEmail(e.target.value)}
                       placeholder="your@email.com"
                       autoComplete="off"
-                      className={`w-full bg-white border px-3 py-2 text-xs text-[#1a0505] placeholder-[#b09090] focus:outline-none transition-colors ${confirmEmail.length > 0 && email !== confirmEmail ? 'border-[#731515]' : 'border-[#e8d5d5] focus:border-[#731515]'}`}
+                      className={`w-full bg-white border px-3 py-2 text-xs text-[#1a0505] placeholder-[#b09090] focus:outline-none transition-colors rounded-lg ${confirmEmail.length > 0 && email !== confirmEmail ? 'border-[#731515]' : 'border-[#e8d5d5] focus:border-[#731515]'}`}
                       style={{ fontFamily: 'var(--font-nunito)' }}
                     />
                     {confirmEmail.length > 0 && email !== confirmEmail && (
@@ -282,14 +282,14 @@ export default function CartDrawer() {
                         setDiscountError('');
                       }}
                       placeholder="Discount code"
-                      className="flex-1 bg-white border border-[#e8d5d5] px-3 py-2 text-xs text-[#1a0505] placeholder-[#b09090] focus:outline-none focus:border-[#731515] transition-colors uppercase"
+                      className="flex-1 bg-white border border-[#e8d5d5] px-3 py-2 text-xs text-[#1a0505] placeholder-[#b09090] focus:outline-none focus:border-[#731515] transition-colors uppercase rounded-lg"
                       style={{ fontFamily: 'var(--font-nunito)' }}
                     />
                     <button
                       type="button"
                       onClick={handleApplyCode}
                       disabled={discountLoading || !discountCode.trim()}
-                      className="px-3 py-2 border border-[#731515] text-[#731515] text-[10px] tracking-[0.2em] hover:bg-[#731515] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors duration-200"
+                      className="px-3 py-2 border border-[#731515] text-[#731515] text-[10px] tracking-[0.2em] hover:bg-[#731515] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors duration-200 rounded-lg"
                     >
                       {discountLoading ? '…' : 'APPLY'}
                     </button>
@@ -314,7 +314,7 @@ export default function CartDrawer() {
                 <button
                   onClick={handleCheckout}
                   disabled={checkoutLoading || !emailsMatch}
-                  className="w-full py-4 bg-[#731515] text-white text-[11px] tracking-[0.35em] hover:bg-[#aa4848] disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-300"
+                  className="w-full py-4 bg-[#731515] text-white text-[11px] tracking-[0.35em] hover:bg-[#aa4848] disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-300 rounded-lg"
                 >
                   {checkoutLoading ? 'REDIRECTING…' : 'CHECKOUT'}
                 </button>

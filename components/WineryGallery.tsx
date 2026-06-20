@@ -53,7 +53,7 @@ function Lightbox({ src, onClose }: { src: string; onClose: () => void }) {
 /* ── Placeholder cell ── */
 function PhotoPlaceholder({ index }: { index: number }) {
   return (
-    <div className="aspect-square border border-dashed border-[#e8d5d5] bg-[#fdf8f8] flex flex-col items-center justify-center gap-3 text-[#9a6060]/50">
+    <div className="aspect-square border border-dashed border-[#e8d5d5] bg-[#fdf8f8] flex flex-col items-center justify-center gap-3 text-[#9a6060]/50 rounded-lg">
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="3" width="18" height="18" rx="2" />
         <circle cx="8.5" cy="8.5" r="1.5" />
@@ -83,7 +83,7 @@ export default function WineryGallery({ slug }: { slug: string }) {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
         {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="aspect-square bg-[#f5f0f0] border border-[#e8d5d5] animate-pulse" />
+          <div key={i} className="aspect-square bg-[#f5f0f0] border border-[#e8d5d5] animate-pulse rounded-lg" />
         ))}
       </div>
     );
@@ -117,7 +117,7 @@ export default function WineryGallery({ slug }: { slug: string }) {
             transition={{ duration: 0.5, delay: i * 0.04, ease: [0.16, 1, 0.3, 1] }}
             whileHover={{ scale: 1.02 }}
             onClick={() => setLightbox(img.url)}
-            className="relative aspect-square overflow-hidden cursor-zoom-in border border-[#e8d5d5]"
+            className="relative aspect-square overflow-hidden cursor-zoom-in border border-[#e8d5d5] rounded-lg"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img

@@ -77,7 +77,7 @@ export default function CardShareView({ card }: { card: MembershipCardData }) {
             padding:       '12px 32px',
             background:    'rgba(255,255,255,0.06)',
             border:        '1px solid rgba(255,255,255,0.12)',
-            borderRadius:  '8px',
+            borderRadius:  '10px',
             color:         'rgba(255,255,255,0.6)',
             fontFamily:    'var(--font-nunito), Arial, sans-serif',
             fontSize:      '10px',

@@ -151,7 +151,7 @@ const ProductCard = memo(function ProductCard({ product, index, reducedMotion }:
             <button
               key={i}
               onClick={() => setActiveImg(i)}
-              className={`relative w-10 h-10 rounded-md overflow-hidden border-2 shrink-0 transition-colors ${
+              className={`relative w-10 h-10 rounded-lg overflow-hidden border-2 shrink-0 transition-colors ${
                 i === activeImg ? 'border-[#731515]' : 'border-transparent hover:border-[#731515]/40'
               }`}
             >
@@ -159,7 +159,7 @@ const ProductCard = memo(function ProductCard({ product, index, reducedMotion }:
             </button>
           ))}
           {displayImages.length > 5 && (
-            <div className="w-10 h-10 rounded-md bg-[#f5eded] flex items-center justify-center text-[10px] text-[#7a4a4a]/50">
+            <div className="w-10 h-10 rounded-lg bg-[#f5eded] flex items-center justify-center text-[10px] text-[#7a4a4a]/50">
               +{displayImages.length - 5}
             </div>
           )}

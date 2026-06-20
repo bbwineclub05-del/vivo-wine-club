@@ -10,7 +10,7 @@ import Footer from '@/components/Footer';
 import { useTranslations } from 'next-intl';
 
 const INPUT_CLASS =
-  'w-full bg-white border border-[#e8d5d5] px-4 py-3 text-sm text-[#1a0505] placeholder-[#b09090] focus:outline-none focus:border-[#731515] transition-colors duration-200';
+  'w-full bg-white border border-[#e8d5d5] px-4 py-3 text-sm text-[#1a0505] placeholder-[#b09090] focus:outline-none focus:border-[#731515] transition-colors duration-200 rounded-lg';
 const LABEL_CLASS =
   'block text-[10px] tracking-[0.35em] text-[#7a4a4a] mb-2';
 
@@ -300,7 +300,7 @@ export default function MembershipPage() {
                 <button
                   type="submit"
                   disabled={loading || !emailsMatch}
-                  className="w-full py-4 bg-[#731515] text-white text-[11px] tracking-[0.35em] hover:bg-[#aa4848] disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-300"
+                  className="w-full py-4 bg-[#731515] text-white text-[11px] tracking-[0.35em] hover:bg-[#aa4848] disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-300 rounded-lg"
                   style={{ fontFamily: 'var(--font-nunito)' }}
                 >
                   {loading ? t('sending') : t('sendApplication')}

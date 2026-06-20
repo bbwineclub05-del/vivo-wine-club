@@ -415,7 +415,7 @@ function DiscountCard({
       {/* Code chip */}
       {discount.code && (
         <div className="flex items-center gap-2">
-          <span className="px-3 py-1 bg-[#f8f0f0] border border-[#eddada] text-[#731515] text-[11px] font-mono rounded-md">
+          <span className="px-3 py-1 bg-[#f8f0f0] border border-[#eddada] text-[#731515] text-[11px] font-mono rounded-lg">
             {discount.code}
           </span>
         </div>
@@ -432,14 +432,14 @@ function DiscountCard({
       <div className="flex items-center gap-2 pt-1 border-t border-[#eddada] mt-auto">
         <button
           onClick={onEdit}
-          className="flex items-center gap-1.5 text-[10px] tracking-[0.2em] text-[#7a4a4a]/60 hover:text-[#731515] transition-colors px-2.5 py-1.5 rounded-md hover:bg-[#fdf6f6]"
+          className="flex items-center gap-1.5 text-[10px] tracking-[0.2em] text-[#7a4a4a]/60 hover:text-[#731515] transition-colors px-2.5 py-1.5 rounded-lg hover:bg-[#fdf6f6]"
         >
           <Pencil size={11} />
           MODIFICA
         </button>
         <button
           onClick={onToggleVisible}
-          className="flex items-center gap-1.5 text-[10px] tracking-[0.2em] text-[#7a4a4a]/60 hover:text-[#731515] transition-colors px-2.5 py-1.5 rounded-md hover:bg-[#fdf6f6]"
+          className="flex items-center gap-1.5 text-[10px] tracking-[0.2em] text-[#7a4a4a]/60 hover:text-[#731515] transition-colors px-2.5 py-1.5 rounded-lg hover:bg-[#fdf6f6]"
           title={discount.visible ? 'Nascondi' : 'Mostra'}
         >
           {discount.visible ? <EyeOff size={11} /> : <Eye size={11} />}
@@ -448,7 +448,7 @@ function DiscountCard({
         <button
           onClick={handleDelete}
           disabled={deleting}
-          className={`ml-auto flex items-center gap-1.5 text-[10px] tracking-[0.2em] transition-colors px-2.5 py-1.5 rounded-md ${
+          className={`ml-auto flex items-center gap-1.5 text-[10px] tracking-[0.2em] transition-colors px-2.5 py-1.5 rounded-lg ${
             confirmDelete
               ? 'text-white bg-[#731515] hover:bg-[#9b2323]'
               : 'text-[#7a4a4a]/60 hover:text-[#731515] hover:bg-[#fdf6f6]'

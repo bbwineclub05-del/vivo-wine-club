@@ -207,7 +207,7 @@ export default function ResetPasswordPage() {
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
                         disabled={!tokenReady && !error}
-                        className="w-full bg-white border border-[#e8d5d5] text-[#1a0505] px-4 py-3 pr-11 text-sm placeholder:text-[#7a4a4a]/40 focus:outline-none focus:border-[#731515]/50 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full bg-white border border-[#e8d5d5] text-[#1a0505] px-4 py-3 pr-11 text-sm placeholder:text-[#7a4a4a]/40 focus:outline-none focus:border-[#731515]/50 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
                         style={{ fontFamily: 'var(--font-nunito)' }}
                       />
                       <button
@@ -235,7 +235,7 @@ export default function ResetPasswordPage() {
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="••••••••"
                         disabled={!tokenReady && !error}
-                        className="w-full bg-white border border-[#e8d5d5] text-[#1a0505] px-4 py-3 pr-11 text-sm placeholder:text-[#7a4a4a]/40 focus:outline-none focus:border-[#731515]/50 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full bg-white border border-[#e8d5d5] text-[#1a0505] px-4 py-3 pr-11 text-sm placeholder:text-[#7a4a4a]/40 focus:outline-none focus:border-[#731515]/50 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
                         style={{ fontFamily: 'var(--font-nunito)' }}
                       />
                       <button
@@ -253,7 +253,7 @@ export default function ResetPasswordPage() {
                     <motion.p
                       initial={{ opacity: 0, y: -6 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="text-xs text-[#731515] bg-[#731515]/8 border border-[#731515]/20 px-4 py-3"
+                      className="text-xs text-[#731515] bg-[#731515]/8 border border-[#731515]/20 px-4 py-3 rounded-lg"
                       style={{ fontFamily: 'var(--font-nunito)' }}
                     >
                       {error}
@@ -263,7 +263,7 @@ export default function ResetPasswordPage() {
                   <button
                     type="submit"
                     disabled={loading || (!tokenReady && !error)}
-                    className="w-full py-4 bg-[#731515] text-white text-[11px] tracking-[0.35em] hover:bg-[#aa4848] disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-300 mt-1"
+                    className="w-full py-4 bg-[#731515] text-white text-[11px] tracking-[0.35em] hover:bg-[#aa4848] disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-300 mt-1 rounded-lg"
                   >
                     {loading ? 'UPDATING…' : 'UPDATE PASSWORD'}
                   </button>

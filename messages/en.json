@@ -182,7 +182,21 @@
     "comingSoon": "COMING SOON",
     "completed": "COMPLETED",
     "allEvents": "ALL EVENTS",
-    "bookYourSpot": "BOOK YOUR SPOT"
+    "bookYourSpot": "BOOK YOUR SPOT",
+    "labelDate": "DATE",
+    "labelTime": "TIME",
+    "labelPrice": "PRICE",
+    "labelCapacity": "CAPACITY",
+    "free": "Free",
+    "perPerson": "person",
+    "spots": "spots",
+    "theEvent": "THE EVENT",
+    "practicalInfo": "PRACTICAL INFO",
+    "eventEnded": "EVENT ENDED",
+    "bannerPast": "This event has already taken place. Registrations are no longer available.",
+    "bannerSoldOut": "All spots are sold out. Follow us on social media for upcoming events.",
+    "bannerSoon": "Registrations will open soon. Follow us so you don't miss out.",
+    "secureCheckout": "You'll be redirected to the secure checkout."
   },
   "collaborate": {
     "getInTouch": "GET IN TOUCH",

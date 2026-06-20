@@ -217,118 +217,124 @@ export default function WineryVisitsPage() {
             </h2>
           </motion.div>
 
-          {/* DB past events (dynamic) — fall back to static WINERIES if empty */}
-          {pastVisits.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {pastVisits.map((visit, i) => (
-                <motion.div
-                  key={visit.slug}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: '-20px' }}
-                  transition={{ duration: 0.55, delay: (i % 8) * 0.06, ease: [0.16, 1, 0.3, 1] }}
-                >
-                  <Link
-                    href={`/checkout/${visit.slug}`}
-                    className="group flex flex-col bg-[#1A2E5C] border border-[#C9A84C]/20 rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:border-[#C9A84C]/50 transition-all duration-300"
+          {/* DB past events — shown when available (alongside the static estates below) */}
+          {pastVisits.length > 0 && (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-12">
+                {pastVisits.map((visit, i) => (
+                  <motion.div
+                    key={visit.slug}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: '-20px' }}
+                    transition={{ duration: 0.55, delay: (i % 8) * 0.06, ease: [0.16, 1, 0.3, 1] }}
                   >
-                    {/* Image area */}
-                    <div className="relative h-28 bg-[#101D3A] overflow-hidden">
-                      {visit.image_url ? (
-                        <Image
-                          src={visit.image_url}
-                          alt={visit.title}
-                          fill
-                          className="object-cover opacity-70 group-hover:opacity-85 transition-opacity duration-300"
-                          sizes="(max-width: 768px) 45vw, 200px"
-                        />
-                      ) : (
-                        <div className="flex items-center justify-center h-full text-[#C9A84C]/40 text-3xl font-light"
+                    <Link
+                      href={`/events/${visit.slug}`}
+                      className="group flex flex-col bg-[#1A2E5C] border border-[#C9A84C]/20 rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:border-[#C9A84C]/50 transition-all duration-300"
+                    >
+                      {/* Image area */}
+                      <div className="relative h-28 bg-[#101D3A] overflow-hidden">
+                        {visit.image_url ? (
+                          <Image
+                            src={visit.image_url}
+                            alt={visit.title}
+                            fill
+                            className="object-cover opacity-70 group-hover:opacity-85 transition-opacity duration-300"
+                            sizes="(max-width: 768px) 45vw, 200px"
+                          />
+                        ) : (
+                          <div className="flex items-center justify-center h-full text-[#C9A84C]/40 text-3xl font-light"
+                            style={{ fontFamily: 'var(--font-syne)' }}
+                          >
+                            {visit.title.slice(0, 2).toUpperCase()}
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#1A2E5C]/60 to-transparent" />
+                      </div>
+
+                      {/* Info area */}
+                      <div className="flex flex-col gap-1 px-4 py-3">
+                        <p
+                          className="text-[#F5EEE6] text-sm font-medium leading-tight group-hover:text-[#C9A84C] transition-colors"
                           style={{ fontFamily: 'var(--font-syne)' }}
                         >
-                          {visit.title.slice(0, 2).toUpperCase()}
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#1A2E5C]/60 to-transparent" />
-                    </div>
-
-                    {/* Info area */}
-                    <div className="flex flex-col gap-1 px-4 py-3">
-                      <p
-                        className="text-[#F5EEE6] text-sm font-medium leading-tight group-hover:text-[#C9A84C] transition-colors"
-                        style={{ fontFamily: 'var(--font-syne)' }}
-                      >
-                        {visit.title}
-                      </p>
-                      <p className="flex items-center gap-1 text-[#C4B5A0] text-[11px] tracking-wide">
-                        <MapPin size={9} className="text-[#C9A84C] shrink-0" />
-                        {visit.location}
-                      </p>
-                      <p className="flex items-center gap-1 text-[#C9A84C]/70 text-[10px] tracking-wide mt-0.5">
-                        <CalendarDays size={9} className="shrink-0" />
-                        {visit.day} {visit.month} {visit.year}
-                      </p>
-                    </div>
-                  </Link>
-                </motion.div>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {WINERIES.map((winery, i) => (
-                <motion.div
-                  key={winery.slug}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: '-20px' }}
-                  transition={{ duration: 0.55, delay: (i % 8) * 0.06, ease: [0.16, 1, 0.3, 1] }}
-                >
-                  <Link
-                    href={`/wineries/${winery.slug}`}
-                    className="group flex flex-col bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:border-[#C9A84C]/50 transition-all duration-300"
-                  >
-                    {/* Logo area */}
-                    <div className="flex items-center justify-center h-28 px-6 bg-gray-50 group-hover:bg-white transition-colors duration-300">
-                      {winery.logo ? (
-                        <Image
-                          src={winery.logo}
-                          alt={winery.name}
-                          width={160}
-                          height={80}
-                          className="w-full h-20 object-contain transition-all duration-300"
-                          sizes="(max-width: 768px) 45vw, 200px"
-                        />
-                      ) : (
-                        <div className="text-[#731515] text-2xl font-light tracking-widest opacity-50 group-hover:opacity-80 transition-opacity"
-                          style={{ fontFamily: 'var(--font-syne)' }}
-                        >
-                          {winery.name.slice(0, 2).toUpperCase()}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Info area */}
-                    <div className="flex flex-col gap-1 px-4 py-4">
-                      <p
-                        className="text-[#1a0505] text-sm font-medium leading-tight group-hover:text-[#731515] transition-colors"
-                        style={{ fontFamily: 'var(--font-syne)' }}
-                      >
-                        {winery.name}
-                      </p>
-                      <p className="text-[#7a4a4a] text-[11px] tracking-wide">
-                        {winery.region} · {winery.country}
-                      </p>
-                      {winery.classification && (
-                        <p className="text-[#731515]/60 text-[10px] tracking-wide mt-0.5 leading-tight line-clamp-1">
-                          {winery.classification}
+                          {visit.title}
                         </p>
-                      )}
-                    </div>
-                  </Link>
-                </motion.div>
-              ))}
-            </div>
+                        <p className="flex items-center gap-1 text-[#C4B5A0] text-[11px] tracking-wide">
+                          <MapPin size={9} className="text-[#C9A84C] shrink-0" />
+                          {visit.location}
+                        </p>
+                        <p className="flex items-center gap-1 text-[#C9A84C]/70 text-[10px] tracking-wide mt-0.5">
+                          <CalendarDays size={9} className="shrink-0" />
+                          {visit.day} {visit.month} {visit.year}
+                        </p>
+                      </div>
+                    </Link>
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Divider between event cards and estates grid */}
+              <div className="h-px bg-[#C9A84C]/10 mb-12" />
+            </>
           )}
+
+          {/* Static estates — always visible */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {WINERIES.map((winery, i) => (
+              <motion.div
+                key={winery.slug}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-20px' }}
+                transition={{ duration: 0.55, delay: (i % 8) * 0.06, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <Link
+                  href={`/wineries/${winery.slug}`}
+                  className="group flex flex-col bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:border-[#C9A84C]/50 transition-all duration-300"
+                >
+                  {/* Logo area */}
+                  <div className="flex items-center justify-center h-28 px-6 bg-gray-50 group-hover:bg-white transition-colors duration-300">
+                    {winery.logo ? (
+                      <Image
+                        src={winery.logo}
+                        alt={winery.name}
+                        width={160}
+                        height={80}
+                        className="w-full h-20 object-contain transition-all duration-300"
+                        sizes="(max-width: 768px) 45vw, 200px"
+                      />
+                    ) : (
+                      <div className="text-[#731515] text-2xl font-light tracking-widest opacity-50 group-hover:opacity-80 transition-opacity"
+                        style={{ fontFamily: 'var(--font-syne)' }}
+                      >
+                        {winery.name.slice(0, 2).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Info area */}
+                  <div className="flex flex-col gap-1 px-4 py-4">
+                    <p
+                      className="text-[#1a0505] text-sm font-medium leading-tight group-hover:text-[#731515] transition-colors"
+                      style={{ fontFamily: 'var(--font-syne)' }}
+                    >
+                      {winery.name}
+                    </p>
+                    <p className="text-[#7a4a4a] text-[11px] tracking-wide">
+                      {winery.region} · {winery.country}
+                    </p>
+                    {winery.classification && (
+                      <p className="text-[#731515]/60 text-[10px] tracking-wide mt-0.5 leading-tight line-clamp-1">
+                        {winery.classification}
+                      </p>
+                    )}
+                  </div>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -352,7 +358,7 @@ export default function WineryVisitsPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.15 }}
-            className="shrink-0 inline-flex items-center gap-2 px-7 py-3.5 min-h-[44px] bg-[#731515] text-[#F5EEE6] text-[11px] tracking-[0.35em] hover:bg-[#9b2323] transition-colors"
+            className="shrink-0 inline-flex items-center gap-2 px-7 py-3.5 min-h-[44px] bg-[#731515] text-[#F5EEE6] text-[11px] tracking-[0.35em] hover:bg-[#9b2323] transition-colors rounded-lg"
             style={{ fontFamily: 'var(--font-nunito)' }}
           >
             {t('becomeAMember')}

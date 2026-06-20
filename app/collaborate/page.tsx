@@ -56,7 +56,7 @@ export default function CollaboratePage() {
   };
 
   const inputBase =
-    'w-full bg-white/70 border border-[#e8d5d5] text-[#1a0505] placeholder-[#7a4a4a]/50 px-5 py-4 text-sm focus:outline-none focus:border-[#731515]/50 transition-colors duration-300';
+    'w-full bg-white/70 border border-[#e8d5d5] text-[#1a0505] placeholder-[#7a4a4a]/50 px-5 py-4 text-sm focus:outline-none focus:border-[#731515]/50 transition-colors duration-300 rounded-lg';
 
   return (
     <>
@@ -103,7 +103,7 @@ export default function CollaboratePage() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
-                className="p-8 border border-[#731515]/30 bg-[#731515]/5 text-center"
+                className="p-8 border border-[#731515]/30 bg-[#731515]/5 text-center rounded-lg"
               >
                 <div className="text-[10px] tracking-[0.4em] text-[#731515] mb-3">{t('proposalSent')}</div>
                 <p className="text-base text-[#1a0505] font-light" style={{ fontFamily: 'var(--font-nunito)' }}>
@@ -192,7 +192,7 @@ export default function CollaboratePage() {
                 type="submit"
                 disabled={loading}
                 whileTap={{ scale: 0.99 }}
-                className="w-full py-4 bg-[#731515] text-white text-[11px] tracking-[0.4em] flex items-center justify-center gap-3 hover:bg-[#aa4848] disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-300 mt-2"
+                className="w-full py-4 bg-[#731515] text-white text-[11px] tracking-[0.4em] flex items-center justify-center gap-3 hover:bg-[#aa4848] disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-300 mt-2 rounded-lg"
               >
                 <Send size={13} />
                 {loading ? t('sending') : t('sendProposal')}

@@ -193,7 +193,7 @@ export default function HeroSection() {
         >
           <Link
             href="/membership"
-            className="px-14 py-5 bg-[#731515] text-white text-[13px] tracking-[0.35em] hover:bg-[#aa4848] hover:shadow-[0_0_40px_rgba(115,21,21,0.3)] transition-all duration-300 border border-[#731515]"
+            className="px-14 py-5 bg-[#731515] text-white text-[13px] tracking-[0.35em] hover:bg-[#aa4848] hover:shadow-[0_0_40px_rgba(115,21,21,0.3)] transition-all duration-300 border border-[#731515] rounded-lg"
           >
             {t('cta')}
           </Link>

@@ -38,7 +38,7 @@ export default function CollaborateSection() {
   };
 
   const inputBase =
-    'w-full bg-white/70 border border-[#e8d5d5] text-[#1a0505] placeholder-[#7a4a4a]/50 px-5 py-4 text-sm focus:outline-none focus:border-[#731515]/50 transition-colors duration-300';
+    'w-full bg-white/70 border border-[#e8d5d5] text-[#1a0505] placeholder-[#7a4a4a]/50 px-5 py-4 text-sm focus:outline-none focus:border-[#731515]/50 transition-colors duration-300 rounded-lg';
 
   return (
     <section id="collaborate" className="py-28 md:py-32 relative overflow-hidden">
@@ -142,7 +142,7 @@ export default function CollaborateSection() {
           <motion.button
             type="submit"
             whileTap={{ scale: 0.99 }}
-            className="w-full py-4 bg-[#731515] text-[#F5EEE6] text-[11px] tracking-[0.4em] flex items-center justify-center gap-3 hover:bg-[#aa4848] transition-colors duration-300 mt-2"
+            className="w-full py-4 bg-[#731515] text-[#F5EEE6] text-[11px] tracking-[0.4em] flex items-center justify-center gap-3 hover:bg-[#aa4848] transition-colors duration-300 mt-2 rounded-lg"
           >
             <Send size={13} />
             SEND PROPOSAL

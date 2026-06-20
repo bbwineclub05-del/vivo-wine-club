@@ -77,7 +77,7 @@ export default function ExperiencesSection() {
           transition={{ duration: reducedMotion ? 0 : 0.9, delay: reducedMotion ? 0 : 0.15, ease: [0.16, 1, 0.3, 1] }}
         >
           {/* Card frame */}
-          <div className="relative overflow-hidden h-[340px] sm:h-[420px] md:h-[520px] lg:h-[560px] cursor-pointer">
+          <div className="relative overflow-hidden h-[340px] sm:h-[420px] md:h-[520px] lg:h-[560px] cursor-pointer rounded-lg">
             <AnimatePresence initial={false} custom={dir}>
               <motion.div
                 key={idx}
@@ -125,7 +125,7 @@ export default function ExperiencesSection() {
 
                   <Link
                     href={exp.href}
-                    className="pointer-events-auto self-start sm:self-auto shrink-0 flex items-center gap-2 text-[10px] tracking-[0.3em] text-white border border-white/30 px-5 py-2.5 sm:px-6 sm:py-3 hover:bg-white/10 hover:border-white/60 transition-all duration-300 whitespace-nowrap"
+                    className="pointer-events-auto self-start sm:self-auto shrink-0 flex items-center gap-2 text-[10px] tracking-[0.3em] text-white border border-white/30 px-5 py-2.5 sm:px-6 sm:py-3 hover:bg-white/10 hover:border-white/60 transition-all duration-300 whitespace-nowrap rounded-lg"
                   >
                     {tCommon('discover')}
                     <ArrowRight size={12} />

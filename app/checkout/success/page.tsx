@@ -127,7 +127,7 @@ function SuccessContent() {
                 </p>
 
                 {/* Event detail card */}
-                <div className="w-full border border-[#e8d5d5] bg-white rounded-sm p-6 text-left space-y-4 mt-2">
+                <div className="w-full border border-[#e8d5d5] bg-white rounded-lg p-6 text-left space-y-4 mt-2">
                   <div className="text-[9px] tracking-[0.4em] text-[#731515] font-medium">
                     {eventInfo.title.toUpperCase()}
                   </div>

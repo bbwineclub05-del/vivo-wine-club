@@ -86,7 +86,7 @@ function EmailModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white w-full max-w-2xl rounded-sm shadow-2xl flex flex-col max-h-[90vh]">
+      <div className="bg-white w-full max-w-2xl rounded-lg shadow-2xl flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#e8d5d5]">
           <div>
@@ -347,7 +347,7 @@ export default function CrmWine() {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto bg-white border border-[#e8d5d5] rounded-sm">
+      <div className="overflow-x-auto bg-white border border-[#e8d5d5] rounded-lg">
         <table className="w-full min-w-[900px] text-sm border-collapse">
           <thead className="bg-[#fdf6f6] border-b border-[#e8d5d5]">
             <tr>

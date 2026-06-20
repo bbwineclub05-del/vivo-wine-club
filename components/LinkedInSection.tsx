@@ -93,7 +93,7 @@ export function NewsCard({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-20px' }}
       transition={{ duration: d(0.65), delay: d(index * 0.12), ease: [0.16, 1, 0.3, 1] }}
-      className="group flex flex-col bg-white border border-[#e8d5d5] hover:border-[#731515]/40 transition-colors duration-300 overflow-hidden"
+      className="group flex flex-col bg-white border border-[#e8d5d5] hover:border-[#731515]/40 transition-colors duration-300 overflow-hidden rounded-lg"
     >
       {/* Image */}
       <div className="relative w-full shrink-0 bg-[#f5f0f0] border-b border-[#e8d5d5]" style={{ height: 160 }}>
@@ -234,7 +234,7 @@ export default function LinkedInSection() {
         {!ready ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {[0, 1, 2].map((i) => (
-              <div key={i} className="bg-white border border-[#e8d5d5] overflow-hidden animate-pulse">
+              <div key={i} className="bg-white border border-[#e8d5d5] overflow-hidden animate-pulse rounded-lg">
                 <div className="w-full bg-[#f5f0f0]" style={{ height: 160 }} />
                 <div className="p-5 flex flex-col gap-3">
                   <div className="h-2 w-20 bg-[#e8d5d5] rounded" />
@@ -272,7 +272,7 @@ export default function LinkedInSection() {
               >
                 <Link
                   href="/news"
-                  className="group inline-flex items-center gap-2 border border-[#731515]/30 hover:border-[#731515] px-8 py-3 text-[11px] tracking-[0.35em] text-[#731515] hover:bg-[#731515] hover:text-white transition-all duration-300"
+                  className="group inline-flex items-center gap-2 border border-[#731515]/30 hover:border-[#731515] px-8 py-3 text-[11px] tracking-[0.35em] text-[#731515] hover:bg-[#731515] hover:text-white transition-all duration-300 rounded-lg"
                 >
                   {tCommon('exploreMore')}
                   <ArrowUpRight size={13} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-300" />

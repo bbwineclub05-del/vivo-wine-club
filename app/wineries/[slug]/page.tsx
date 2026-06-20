@@ -77,7 +77,7 @@ export default async function WineryPage({
                   </div>
                 )}
 
-                <span className="inline-flex items-center gap-2 text-[9px] tracking-[0.3em] px-4 py-2 border border-[#731515]/30 text-[#731515]">
+                <span className="inline-flex items-center gap-2 text-[9px] tracking-[0.3em] px-4 py-2 border border-[#731515]/30 text-[#731515] rounded-lg">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#731515] inline-block" />
                   VISITED BY VIVO WINE CLUB
                 </span>
@@ -86,7 +86,7 @@ export default async function WineryPage({
               {/* Logo side */}
               {winery.logo && (
                 <div className="shrink-0 w-full lg:w-56 xl:w-64">
-                  <div className="relative bg-white border border-[#e8d5d5] p-6 flex items-center justify-center" style={{ height: '180px' }}>
+                  <div className="relative bg-white border border-[#e8d5d5] p-6 flex items-center justify-center rounded-lg" style={{ height: '180px' }}>
                     <Image
                       src={winery.logo}
                       alt={winery.name}
@@ -102,7 +102,7 @@ export default async function WineryPage({
               {/* Fallback icon when no logo */}
               {!winery.logo && (
                 <div className="shrink-0 w-full lg:w-56 xl:w-64">
-                  <div className="bg-white border border-[#e8d5d5] flex items-center justify-center text-[#731515]/30" style={{ height: '180px' }}>
+                  <div className="bg-white border border-[#e8d5d5] flex items-center justify-center text-[#731515]/30 rounded-lg" style={{ height: '180px' }}>
                     <BottleIcon />
                   </div>
                 </div>
