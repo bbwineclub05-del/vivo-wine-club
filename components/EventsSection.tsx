@@ -55,8 +55,8 @@ function EventRow({
     >
       <div className="relative flex items-center gap-4 sm:gap-5 md:gap-8 py-5 md:py-7 group cursor-pointer">
 
-        {/* Full-row link overlay — sits behind everything, leads to events list */}
-        <Link href="/events" className="absolute inset-0 z-0" aria-label={event.title} />
+        {/* Full-row link overlay — leads to event detail page */}
+        <Link href={`/events/${event.slug}`} className="absolute inset-0 z-0" aria-label={event.title} />
 
         {/* Thumbnail */}
         {event.image_url && (

@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Plus, X, Check, Upload, Paperclip,
+  X, Check, Upload, Paperclip,
   RefreshCw, TrendingUp, TrendingDown, Wallet, Trash2, Pencil,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
@@ -36,11 +36,12 @@ interface Movement {
   amount:        number;
   category:      string | null;
   receipt_url:   string | null;
-  settled:       boolean;
-  settled_date:  string | null;
-  notes:         string | null;
-  created_by:    string | null;
-  created_at:    string;
+  settled:        boolean;
+  settled_date:   string | null;
+  notes:          string | null;
+  transaction_id: string | null;
+  created_by:     string | null;
+  created_at:     string;
 }
 
 /* ─────────────────────────────────────────────
@@ -372,7 +373,6 @@ function DeleteModal({ mov, onConfirm, onClose }: { mov: Movement; onConfirm: ()
 export default function FounderAccounts() {
   const [movements,    setMovements]    = useState<Movement[]>([]);
   const [loading,      setLoading]      = useState(true);
-  const [showAdd,      setShowAdd]      = useState(false);
   const [editTarget,   setEditTarget]   = useState<Movement | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Movement | null>(null);
   const [filterEmail,  setFilterEmail]  = useState<string>('');
@@ -384,23 +384,35 @@ export default function FounderAccounts() {
       .from('founder_accounts')
       .select('*')
       .order('date', { ascending: false });
-    if (!error && data) setMovements(data as Movement[]);
+    if (error) {
+      console.error('[FounderAccounts] fetch error:', error);
+    } else {
+      console.log('[FounderAccounts] loaded', data?.length ?? 0, 'movements:', data);
+      setMovements((data ?? []) as Movement[]);
+    }
     setLoading(false);
   }
 
-  useEffect(() => { load(); }, []);
-
-  /* ── Add ── */
-  async function handleAdd(payload: Omit<Movement, 'id' | 'created_by' | 'created_at' | 'settled' | 'settled_date'>) {
-    const { data: { session } } = await supabase.auth.getSession();
-    const { data, error } = await supabase
-      .from('founder_accounts')
-      .insert({ ...payload, settled: false, settled_date: null, created_by: session?.user.id ?? null })
-      .select()
-      .single();
-    if (error) throw new Error(error.message);
-    setMovements(prev => [data as Movement, ...prev]);
-  }
+  /* Realtime: aggiorna la lista ogni volta che founder_accounts cambia
+     (incluse le insert fatte da FinanceManager con assigned_to != Club) */
+  useEffect(() => {
+    load();
+    const channel = supabase
+      .channel('founder_accounts_realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'founder_accounts' },
+        (payload) => {
+          console.log('[FounderAccounts] realtime event:', payload.eventType, payload);
+          load();
+        },
+      )
+      .subscribe((status) => {
+        console.log('[FounderAccounts] realtime status:', status);
+      });
+    return () => { supabase.removeChannel(channel); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /* ── Edit ── */
   async function handleEdit(payload: Omit<Movement, 'id' | 'created_by' | 'created_at' | 'settled' | 'settled_date'>) {
@@ -424,14 +436,11 @@ export default function FounderAccounts() {
     setDeleteTarget(null);
   }
 
-  /* ── Settle (+ auto-create transactions in Saldo di Cassa) ── */
+  /* ── Settle ── */
   async function handleSettle(mov: Movement) {
     setSettlingId(mov.id);
-    const today   = localToday();
-    const fName   = founderName(mov.founder_email);
-    const cat     = (mov.category ?? 'Altro') as string;
+    const today = localToday();
 
-    // 1. Mark settled in founder_accounts
     const { data, error } = await supabase
       .from('founder_accounts')
       .update({ settled: true, settled_date: today })
@@ -439,59 +448,29 @@ export default function FounderAccounts() {
       .select()
       .single();
 
-    if (!error && data) {
+    if (error) {
+      console.error('[FounderAccounts] settle error:', error);
+    } else if (data) {
+      console.log('[FounderAccounts] settled movement:', data);
       setMovements(prev => prev.map(m => m.id === mov.id ? data as Movement : m));
-    }
-
-    // 2. Mirror into transactions table
-    if (mov.type === 'spesa_personale') {
-      // a) The actual expense (cost)
-      await supabase.from('transactions').insert({
-        date:         mov.date,
-        description:  mov.description,
-        category:     cat,
-        type:         'cost',
-        amount:       mov.amount,
-        notes:        mov.notes ?? null,
-        receipt_url:  mov.receipt_url ?? null,
-        reimbursed_to: null,
-      });
-      // b) The reimbursement (rimborso)
-      await supabase.from('transactions').insert({
-        date:         today,
-        description:  `Rimborso a ${fName} - ${mov.description}`,
-        category:     cat,
-        type:         'rimborso',
-        amount:       mov.amount,
-        notes:        null,
-        receipt_url:  null,
-        reimbursed_to: mov.founder_email,
-      });
-    } else if (mov.type === 'incasso_personale') {
-      // Revenue transferred to Club
-      await supabase.from('transactions').insert({
-        date:         today,
-        description:  mov.description,
-        category:     cat,
-        type:         'revenue',
-        amount:       mov.amount,
-        notes:        mov.notes ?? null,
-        receipt_url:  null,
-        reimbursed_to: null,
-      });
     }
 
     setSettlingId(null);
   }
 
   /* ── Computed stats (only unsettled movements) ── */
-  const founderStats = useMemo(() =>
-    FOUNDERS.map(f => {
+  const founderStats = useMemo(() => {
+    const stats = FOUNDERS.map(f => {
       const open    = movements.filter(m => m.founder_email === f.email && !m.settled);
-      const balance = open.reduce((sum, m) => sum + m.amount * TYPE_CFG[m.type].amountSign, 0);
+      const balance = open.reduce((sum, m) => {
+        const sign = TYPE_CFG[m.type]?.amountSign ?? 0;
+        return sum + m.amount * sign;
+      }, 0);
+      console.log(`[FounderAccounts] ${f.name}: ${open.length} open movements, balance=${balance}`, open);
       return { ...f, balance, openCount: open.length };
-    }),
-  [movements]);
+    });
+    return stats;
+  }, [movements]);
 
   const totalClubOwes    = founderStats.filter(f => f.balance > 0).reduce((s, f) => s + f.balance, 0);
   const totalFounderOwes = founderStats.filter(f => f.balance < 0).reduce((s, f) => s + Math.abs(f.balance), 0);
@@ -505,9 +484,6 @@ export default function FounderAccounts() {
     <div className="space-y-6">
       {/* Modals */}
       <AnimatePresence>
-        {showAdd && (
-          <MovModal key="add" initial={null} onSave={handleAdd} onClose={() => setShowAdd(false)} />
-        )}
         {editTarget && (
           <MovModal
             key="edit"
@@ -535,16 +511,10 @@ export default function FounderAccounts() {
           <div className="text-[9px] tracking-[0.42em] text-[#731515] mb-1">FINANCE · CONTI FOUNDER</div>
           <h2 className="text-xl font-light text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>Conti Founder</h2>
         </div>
-        <div className="flex gap-2">
-          <button onClick={load} disabled={loading} className="inline-flex items-center gap-2 px-4 py-2 border border-[#eddada] bg-white text-[#7a4a4a] text-[10px] tracking-[0.25em] rounded-lg hover:border-[#731515]/40 transition-colors disabled:opacity-50">
-            <RefreshCw size={11} className={loading ? 'animate-spin' : ''} />
-            AGGIORNA
-          </button>
-          <button onClick={() => setShowAdd(true)} className="inline-flex items-center gap-2 px-4 py-2 bg-[#731515] text-white text-[10px] tracking-[0.25em] rounded-lg hover:bg-[#9b2323] transition-colors">
-            <Plus size={11} />
-            REGISTRA
-          </button>
-        </div>
+        <button onClick={load} disabled={loading} className="inline-flex items-center gap-2 px-4 py-2 border border-[#eddada] bg-white text-[#7a4a4a] text-[10px] tracking-[0.25em] rounded-lg hover:border-[#731515]/40 transition-colors disabled:opacity-50">
+          <RefreshCw size={11} className={loading ? 'animate-spin' : ''} />
+          AGGIORNA
+        </button>
       </div>
 
       {/* ── KPI strip ── */}

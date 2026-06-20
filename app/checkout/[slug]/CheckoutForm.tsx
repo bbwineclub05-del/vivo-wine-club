@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { MapPin, Minus, Plus, Calendar, Tag, User } from 'lucide-react';
-import BackButton from '@/components/BackButton';
+import { ArrowLeft } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import { type EventData } from '@/lib/events';
 

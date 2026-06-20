@@ -16,28 +16,30 @@ export const dynamic = 'force-dynamic';
 
 /* ── Event row ── */
 function EventRow({ event, isLast }: { event: EventData; isLast: boolean }) {
-  const faded = event.status === 'completed';
-  const isClickable = event.status === 'open';
-  const href = `/checkout/${event.slug}`;
+  const faded      = event.status === 'completed';
+  const detailHref = `/events/${event.slug}`;
+  const hasDetail  = event.status !== 'completed';
 
   const thumbnailClass = `relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 shrink-0 overflow-hidden border ${
     faded ? 'border-[#e8d5d5]' : 'border-[#d4b0b0]/40'
-  }${isClickable ? ' cursor-pointer' : ''}`;
+  }${hasDetail ? ' cursor-pointer' : ''}`;
 
   const titleClass = `text-lg md:text-xl font-medium leading-snug mb-2 ${
-    faded ? 'text-[#ccc]' : isClickable
-      ? 'text-[#1a0505] hover:text-[#731515] transition-colors duration-300 cursor-pointer'
-      : 'text-[#1a0505]'
+    faded
+      ? 'text-[#ccc]'
+      : hasDetail
+        ? 'text-[#1a0505] hover:text-[#731515] transition-colors duration-300 cursor-pointer'
+        : 'text-[#1a0505]'
   } ${event.titleStrikethrough ? 'line-through decoration-[#731515]/60' : ''}`;
 
   return (
     <div>
       <div className="flex items-center gap-4 sm:gap-5 md:gap-8 py-6 sm:py-8 md:py-10 group">
 
-        {/* Thumbnail — linked only when tickets available */}
+        {/* Thumbnail — links to detail page */}
         {event.image_url && (
-          isClickable ? (
-            <Link href={href} className={thumbnailClass}>
+          hasDetail ? (
+            <Link href={detailHref} className={thumbnailClass}>
               <Image
                 src={event.image_url}
                 alt={event.title}
@@ -86,10 +88,10 @@ function EventRow({ event, isLast }: { event: EventData; isLast: boolean }) {
             {event.type}
           </div>
 
-          {/* Title — linked only when tickets available */}
-          {isClickable ? (
+          {/* Title — links to detail page */}
+          {hasDetail ? (
             <Link
-              href={href}
+              href={detailHref}
               className={titleClass}
               style={{ fontFamily: 'var(--font-syne)', display: 'block' }}
             >
@@ -112,13 +114,13 @@ function EventRow({ event, isLast }: { event: EventData; isLast: boolean }) {
             {event.description}
           </p>
 
-          {/* Mobile badge */}
+          {/* Mobile badge — Buy Tickets still goes directly to checkout */}
           <div className="mt-4 sm:hidden">
             <EventStatusBadge status={event.status} slug={event.slug} />
           </div>
         </div>
 
-        {/* Desktop badge */}
+        {/* Desktop badge — Buy Tickets still goes directly to checkout */}
         <div className="shrink-0 self-center hidden sm:block">
           <EventStatusBadge status={event.status} slug={event.slug} />
         </div>

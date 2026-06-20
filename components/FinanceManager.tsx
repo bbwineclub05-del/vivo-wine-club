@@ -38,6 +38,7 @@ interface Transaction {
   reimbursed_to:       string | null;
   budget_category:     string | null;
   registered_by_name:  string | null;
+  assigned_to:         string;
   created_by:          string | null;
   created_at:          string;
 }
@@ -278,6 +279,7 @@ const EMPTY_FORM: FormData = {
   reimbursed_to:       null,
   budget_category:     null,
   registered_by_name:  null,
+  assigned_to:         'Club',
 };
 
 function TxModal({
@@ -473,6 +475,22 @@ function TxModal({
               style={{ fontFamily: 'var(--font-nunito)' }}
             >
               <option value="">— Seleziona founder —</option>
+              {FINANCE_FOUNDERS.map(f => (
+                <option key={f.email} value={f.name}>{f.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Assegnato a */}
+          <div>
+            <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">ASSEGNATO A</div>
+            <select
+              className={inputCls}
+              value={form.assigned_to}
+              onChange={e => set('assigned_to', e.target.value)}
+              style={{ fontFamily: 'var(--font-nunito)' }}
+            >
+              <option value="Club">Club</option>
               {FINANCE_FOUNDERS.map(f => (
                 <option key={f.email} value={f.name}>{f.name}</option>
               ))}
@@ -839,6 +857,56 @@ export default function FinanceManager() {
     const { data, error } = await supabase.from('transactions').insert(payload).select().single();
     if (error) throw new Error(error.message);
     setTransactions(prev => [data as Transaction, ...prev]);
+
+    // Auto-create founder_accounts entry when assigned to a specific founder
+    console.log('[FinanceManager] assigned_to:', form.assigned_to, '| type:', form.type);
+
+    if (form.assigned_to && form.assigned_to !== 'Club' && (form.type === 'cost' || form.type === 'revenue')) {
+      // Mappatura diretta nome → email (non dipende da filtri esterni)
+      const FOUNDER_EMAIL_MAP: Record<string, string> = {
+        'Giacomo Gallo':        'giacomogallo1310@gmail.com',
+        'Filippo Lombardi':     'filippo.lombardi890@gmail.com',
+        'Cristiano Michelotti': 'cristianomichelotti@gmail.com',
+        'Marcello Abbadati':    'marcelloabbadati02@gmail.com',
+        'Riccardo Consalvo':    'riccardo.consalvo@icloud.com',
+      };
+
+      const founderEmail = FOUNDER_EMAIL_MAP[form.assigned_to];
+      console.log('[FinanceManager] founder lookup → email:', founderEmail ?? 'NOT FOUND');
+
+      if (founderEmail) {
+        const movType  = form.type === 'cost' ? 'spesa_personale' : 'incasso_personale';
+        const newTxId  = (data as Transaction).id;
+        const faPayload = {
+          date:           form.date,
+          founder_email:  founderEmail,
+          type:           movType,
+          description:    form.description,
+          amount:         form.amount,
+          category:       form.budget_category ?? form.category,
+          notes:          form.notes ?? null,
+          receipt_url:    form.receipt_url ?? null,
+          settled:        false,
+          transaction_id: newTxId,
+          created_by:     session?.user.id ?? null,
+        };
+        console.log('[FinanceManager] inserting founder_accounts:', faPayload);
+
+        const { data: faData, error: faError } = await supabase
+          .from('founder_accounts')
+          .insert(faPayload)
+          .select()
+          .single();
+
+        if (faError) {
+          console.error('[FinanceManager] founder_accounts insert FAILED:', faError);
+        } else {
+          console.log('[FinanceManager] founder_accounts insert OK:', faData);
+        }
+      } else {
+        console.warn('[FinanceManager] no email found for assigned_to:', form.assigned_to);
+      }
+    }
   }
 
   async function handleEdit(form: FormData) {
@@ -923,6 +991,7 @@ export default function FinanceManager() {
               reimbursed_to:       editTarget.reimbursed_to,
               budget_category:     editTarget.budget_category,
               registered_by_name:  editTarget.registered_by_name,
+              assigned_to:         editTarget.assigned_to ?? 'Club',
             }}
             onSave={handleEdit}
             onClose={() => setEditTarget(null)}
