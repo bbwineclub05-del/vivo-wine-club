@@ -56,7 +56,7 @@ export default function CollaboratePage() {
   };
 
   const inputBase =
-    'w-full bg-white/70 border border-[#e8d5d5] text-[#1a0505] placeholder-[#7a4a4a]/50 px-5 py-4 text-sm focus:outline-none focus:border-[#731515]/50 transition-colors duration-300 rounded-lg';
+    'w-full bg-white/70 border border-[#e8d5d5] text-[#1a0505] placeholder-[#7a4a4a]/50 px-5 py-4 focus:outline-none focus:border-[#731515]/50 transition-colors duration-300 rounded-lg [font-size:16px]';
 
   return (
     <>

@@ -28,13 +28,13 @@ export default function CookieBanner() {
     <AnimatePresence>
       {visible && (
         <motion.div
-          initial={{ y: 24, opacity: 0 }}
+          initial={{ y: -24, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 24, opacity: 0 }}
+          exit={{ y: -24, opacity: 0 }}
           transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          className="fixed bottom-0 left-0 right-0 sm:bottom-6 sm:left-auto sm:right-6 z-[300] w-full sm:w-auto sm:max-w-sm"
+          className="fixed top-16 left-0 right-0 sm:top-auto sm:bottom-6 sm:left-auto sm:right-6 z-[185] w-full sm:w-auto sm:max-w-sm"
         >
-          <div className="bg-[#1a0505] border border-[#731515]/30 rounded-lg sm:rounded-2xl px-6 sm:px-7 py-5 sm:py-6 flex flex-col gap-5 shadow-[0_8px_40px_rgba(0,0,0,0.5)]">
+          <div className="bg-[#1a0505] border-b border-[#731515]/30 sm:border sm:rounded-2xl px-6 sm:px-7 py-5 sm:py-6 flex flex-col gap-5 shadow-[0_8px_40px_rgba(0,0,0,0.5)]">
             <div>
               <p
                 className="text-[11px] tracking-[0.3em] text-[#731515] mb-3"

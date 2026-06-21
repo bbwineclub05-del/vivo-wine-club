@@ -41,7 +41,7 @@ function Field({
         placeholder={placeholder}
         autoComplete={autoComplete}
         className={`w-full border bg-white px-4 py-3 text-sm text-[#1a0505] placeholder-[#c0a0a0] focus:outline-none transition-colors duration-200 rounded-lg ${error ? 'border-[#731515]' : 'border-[#e8d5d5] focus:border-[#731515]'}`}
-        style={{ fontFamily: 'var(--font-nunito)' }}
+        style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
       />
       {error && (
         <span className="text-[10px] text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>{error}</span>

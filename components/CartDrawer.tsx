@@ -182,14 +182,14 @@ export default function CartDrawer() {
                             <div className="flex items-center gap-2">
                               <button
                                 onClick={() => updateQuantity(item.cartKey, item.quantity - 1)}
-                                className="w-6 h-6 flex items-center justify-center border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515] hover:text-[#731515] transition-colors rounded"
+                                className="w-8 h-8 flex items-center justify-center border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515] hover:text-[#731515] transition-colors rounded"
                               >
                                 <Minus size={10} />
                               </button>
                               <span className="text-sm text-[#1a0505] w-5 text-center">{item.quantity}</span>
                               <button
                                 onClick={() => updateQuantity(item.cartKey, item.quantity + 1)}
-                                className="w-6 h-6 flex items-center justify-center border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515] hover:text-[#731515] transition-colors rounded"
+                                className="w-8 h-8 flex items-center justify-center border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515] hover:text-[#731515] transition-colors rounded"
                               >
                                 <Plus size={10} />
                               </button>
@@ -247,8 +247,8 @@ export default function CartDrawer() {
                       onChange={e => setEmail(e.target.value)}
                       placeholder="your@email.com"
                       autoComplete="email"
-                      className="w-full bg-white border border-[#e8d5d5] px-3 py-2 text-xs text-[#1a0505] placeholder-[#b09090] focus:outline-none focus:border-[#731515] transition-colors rounded-lg"
-                      style={{ fontFamily: 'var(--font-nunito)' }}
+                      className="w-full bg-white border border-[#e8d5d5] px-3 py-2.5 text-xs text-[#1a0505] placeholder-[#b09090] focus:outline-none focus:border-[#731515] transition-colors rounded-lg"
+                      style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
                     />
                   </div>
                   <div>
@@ -259,8 +259,8 @@ export default function CartDrawer() {
                       onChange={e => setConfirmEmail(e.target.value)}
                       placeholder="your@email.com"
                       autoComplete="off"
-                      className={`w-full bg-white border px-3 py-2 text-xs text-[#1a0505] placeholder-[#b09090] focus:outline-none transition-colors rounded-lg ${confirmEmail.length > 0 && email !== confirmEmail ? 'border-[#731515]' : 'border-[#e8d5d5] focus:border-[#731515]'}`}
-                      style={{ fontFamily: 'var(--font-nunito)' }}
+                      className={`w-full bg-white border px-3 py-2.5 text-xs text-[#1a0505] placeholder-[#b09090] focus:outline-none transition-colors rounded-lg ${confirmEmail.length > 0 && email !== confirmEmail ? 'border-[#731515]' : 'border-[#e8d5d5] focus:border-[#731515]'}`}
+                      style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
                     />
                     {confirmEmail.length > 0 && email !== confirmEmail && (
                       <p className="mt-1 text-[10px] text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>
@@ -282,8 +282,8 @@ export default function CartDrawer() {
                         setDiscountError('');
                       }}
                       placeholder="Discount code"
-                      className="flex-1 bg-white border border-[#e8d5d5] px-3 py-2 text-xs text-[#1a0505] placeholder-[#b09090] focus:outline-none focus:border-[#731515] transition-colors uppercase rounded-lg"
-                      style={{ fontFamily: 'var(--font-nunito)' }}
+                      className="flex-1 bg-white border border-[#e8d5d5] px-3 py-2.5 text-xs text-[#1a0505] placeholder-[#b09090] focus:outline-none focus:border-[#731515] transition-colors uppercase rounded-lg"
+                      style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
                     />
                     <button
                       type="button"

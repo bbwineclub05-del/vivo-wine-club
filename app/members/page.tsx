@@ -1107,7 +1107,7 @@ function MembersPageInner() {
             >
               <button
                 onClick={() => setSidebarOpen(false)}
-                className="absolute top-4 right-4 text-white/35 hover:text-white/65 p-1 transition-colors"
+                className="absolute top-2 right-2 text-white/35 hover:text-white/65 min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors"
               >
                 <X size={17} />
               </button>
@@ -1124,7 +1124,7 @@ function MembersPageInner() {
         <div className="lg:hidden flex items-center justify-between px-4 py-3 bg-[#0e0202] border-b border-white/[0.06] shrink-0">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="text-white/50 hover:text-white p-1 transition-colors"
+            className="text-white/50 hover:text-white min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors"
           >
             <Menu size={20} />
           </button>

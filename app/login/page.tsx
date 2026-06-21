@@ -131,7 +131,7 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your@email.com"
                   className="w-full bg-white border border-[#e8d5d5] text-[#1a0505] px-4 py-3 text-sm placeholder:text-[#7a4a4a]/40 focus:outline-none focus:border-[#731515]/50 transition-colors duration-200 rounded-lg"
-                  style={{ fontFamily: 'var(--font-nunito)' }}
+                  style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
                 />
               </div>
 
@@ -147,7 +147,7 @@ export default function LoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
                     className="w-full bg-white border border-[#e8d5d5] text-[#1a0505] px-4 py-3 pr-11 text-sm placeholder:text-[#7a4a4a]/40 focus:outline-none focus:border-[#731515]/50 transition-colors duration-200 rounded-lg"
-                    style={{ fontFamily: 'var(--font-nunito)' }}
+                    style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
                   />
                   <button
                     type="button"

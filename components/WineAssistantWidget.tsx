@@ -257,10 +257,10 @@ function WidgetInner() {
             className={`
               fixed z-[9998] shadow-2xl rounded-2xl overflow-hidden flex flex-col
               bg-[#fdf9f9] border border-[#eddada]
-              bottom-[84px] left-4
-              w-[calc(100vw-2rem)] max-w-[380px]
-              h-[min(500px,calc(100dvh-120px))]
-              sm:w-[380px] sm:h-[500px]
+              bottom-[76px] left-3 right-3
+              w-auto max-w-[380px]
+              h-[min(440px,calc(100dvh-140px))]
+              sm:left-6 sm:right-auto sm:bottom-[88px] sm:w-[380px] sm:h-[500px]
             `}
             style={{ transformOrigin: 'bottom left' }}
           >
@@ -341,8 +341,8 @@ function WidgetInner() {
                     : locale === 'fr' ? 'Posez votre question…'
                     : 'Ask me anything about wine…'
                   }
-                  className="flex-1 bg-transparent text-[#1a0505] text-[13px] placeholder:text-[#7a4a4a]/35 focus:outline-none"
-                  style={{ fontFamily: 'var(--font-nunito)' }}
+                  className="flex-1 bg-transparent text-[#1a0505] placeholder:text-[#7a4a4a]/35 focus:outline-none"
+                  style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
                 />
                 <button
                   onClick={() => sendMessage(input)}

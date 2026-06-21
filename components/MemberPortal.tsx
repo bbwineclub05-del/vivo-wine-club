@@ -157,7 +157,7 @@ function SettingsSection() {
   const [error,  setError]  = useState('');
 
   const inputClass =
-    'w-full bg-[#fdf6f6] border border-[#eddada] text-[#1a0505] px-4 py-2.5 text-sm placeholder:text-[#7a4a4a]/35 focus:outline-none focus:border-[#731515]/50 transition-colors duration-200 rounded-lg';
+    'w-full bg-[#fdf6f6] border border-[#eddada] text-[#1a0505] px-4 py-2.5 placeholder:text-[#7a4a4a]/35 focus:outline-none focus:border-[#731515]/50 transition-colors duration-200 rounded-lg [font-size:16px]';
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -662,7 +662,7 @@ function ProfileSection({ user, token }: { user: MemberPortalProps['user']; toke
   const displayName = name || user.name || user.email?.split('@')[0] || 'Member';
 
   const inputClass =
-    'w-full bg-[#fdf6f6] border border-[#eddada] text-[#1a0505] px-4 py-2.5 text-sm placeholder:text-[#7a4a4a]/35 focus:outline-none focus:border-[#731515]/50 transition-colors duration-200 rounded-lg';
+    'w-full bg-[#fdf6f6] border border-[#eddada] text-[#1a0505] px-4 py-2.5 placeholder:text-[#7a4a4a]/35 focus:outline-none focus:border-[#731515]/50 transition-colors duration-200 rounded-lg [font-size:16px]';
 
   if (loading) {
     return (
