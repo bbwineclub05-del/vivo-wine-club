@@ -8,6 +8,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { dbEventToEventData, type EventData, type DbEvent } from '@/lib/events';
+import EventGuestForm from '@/components/EventGuestForm';
 
 export const dynamic = 'force-dynamic';
 
@@ -152,6 +153,7 @@ export default async function EventDetailPage({
   let rawDate: string | undefined;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let rawNotes: string | null = null;
+  let guestListEnabled = false;
 
   try {
     const supabase = getSupabaseAdmin();
@@ -162,10 +164,12 @@ export default async function EventDetailPage({
       .eq('slug', slug)
       .single();
     if (data) {
-      event    = dbEventToEventData(data as DbEvent);
-      rawDate  = (data as DbEvent).date;
+      event            = dbEventToEventData(data as DbEvent);
+      rawDate          = (data as DbEvent).date;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      rawNotes = (data as any).notes ?? null;
+      rawNotes         = (data as any).notes ?? null;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      guestListEnabled = (data as any).guest_list_enabled ?? false;
     }
   } catch {/* fall through */}
 
@@ -318,8 +322,18 @@ export default async function EventDetailPage({
               </div>
             )}
 
+            {/* Guest list registration form */}
+            {guestListEnabled && !isPast && (
+              <EventGuestForm
+                eventSlug={event.slug}
+                eventTitle={event.title}
+                eventDate={`${event.day} ${event.month} ${event.year}`}
+                eventLocation={event.locationFull || event.location}
+              />
+            )}
+
             {/* CTA — desktop */}
-            <div className="hidden sm:flex items-center gap-4 pt-2">
+            <div className="hidden sm:flex items-center gap-4 pt-2 mt-8">
               <CtaButton event={event} isPast={isPast} bookLabel={t('bookYourSpot')} endedLabel={t('eventEnded')} />
               {event.status === 'open' && !isPast && (
                 <span

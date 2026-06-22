@@ -6,10 +6,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, Pencil, Trash2, Eye, EyeOff, ChevronDown, ChevronUp,
   CalendarDays, MapPin, Tag, Users, CheckCircle2, Clock, XCircle, Globe, ScanLine,
-  Send, X, Check, Languages, ImagePlus, Loader2,
+  Send, X, Check, Languages, ImagePlus, Loader2, ClipboardList,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import EventScanner from '@/components/EventScanner';
+import EventGuestPanel from '@/components/EventGuestPanel';
 
 /* ─────────────────────────────────────────────
    Types
@@ -30,6 +31,7 @@ interface DbEvent {
   status: 'open' | 'soldout' | 'soon' | 'completed';
   published: boolean;
   title_strikethrough: boolean;
+  guest_list_enabled: boolean;
   image_url: string | null;
   stripe_product_id: string | null;
   stripe_price_id: string | null;
@@ -43,7 +45,7 @@ const BLANK: FormData = {
   title: '', type: 'WINERY VISIT', section: 'winery_visit', date: '', time: '',
   location: '', location_full: '', description: '',
   price: 0, capacity: null, status: 'open',
-  published: false, title_strikethrough: false,
+  published: false, title_strikethrough: false, guest_list_enabled: false,
   image_url: null, sort_order: 0,
 };
 
@@ -321,6 +323,7 @@ function EventForm({
         <div className="flex flex-col gap-3 justify-center">
           <Toggle label="Pubblicato (visibile sul sito)" checked={f.published} onChange={v => set('published', v)} />
           <Toggle label="Titolo barrato" checked={f.title_strikethrough} onChange={v => set('title_strikethrough', v)} />
+          <Toggle label="Lista invitati attiva" checked={f.guest_list_enabled ?? false} onChange={v => set('guest_list_enabled', v)} />
         </div>
 
       </div>
@@ -633,6 +636,8 @@ function EventRow({
   onTogglePublished,
   onScan,
   onInvite,
+  accessToken,
+  onGuestEnabled,
   isPast = false,
 }: {
   event: DbEvent;
@@ -641,10 +646,13 @@ function EventRow({
   onTogglePublished: () => void;
   onScan: () => void;
   onInvite: () => void;
+  accessToken: string | null;
+  onGuestEnabled: () => void;
   isPast?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [delConfirm, setDelConfirm] = useState(false);
+  const [guestListOpen, setGuestListOpen] = useState(false);
 
   // Shared action buttons — rendered once on desktop (inline), once on mobile (bottom bar)
   const actionButtons = (compact = false) => {
@@ -664,6 +672,19 @@ function EventRow({
             <Send size={sz} />
           </button>
         )}
+        <button
+          onClick={() => setGuestListOpen(x => !x)}
+          title="Lista invitati"
+          className={`${cls} rounded-lg transition-colors ${
+            guestListOpen
+              ? 'text-[#731515] bg-[#f5e8e8]'
+              : event.guest_list_enabled
+                ? 'text-[#731515] bg-[#fdf6f6] hover:bg-[#f5e8e8]'
+                : 'text-[#7a4a4a]/40 hover:text-[#731515] hover:bg-[#fdf6f6]'
+          }`}
+        >
+          <ClipboardList size={sz} />
+        </button>
         <button onClick={onTogglePublished} title={event.published ? 'Nascondi' : 'Pubblica'}
           className={`${cls} rounded-lg transition-colors ${
             event.published ? 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100'
@@ -805,6 +826,31 @@ function EventRow({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Inline guest list panel */}
+      <AnimatePresence>
+        {guestListOpen && accessToken && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden border-t border-[#eddada]"
+          >
+            <div className="text-[9px] tracking-[0.4em] text-[#731515] px-5 pt-4">LISTA INVITATI</div>
+            <EventGuestPanel
+              event={{
+                id:                 event.id,
+                slug:               event.slug,
+                title:              event.title,
+                guest_list_enabled: event.guest_list_enabled,
+              }}
+              accessToken={accessToken}
+              onGuestEnabled={onGuestEnabled}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -819,9 +865,9 @@ export default function EventManager() {
   const [saving,      setSaving]      = useState(false);
   const [formErr,     setFormErr]     = useState('');
   const [tab,         setTab]         = useState<'active' | 'past'>('active');
-  const [scannerEvent,  setScannerEvent]  = useState<DbEvent | null>(null);
-  const [inviteEvent,   setInviteEvent]   = useState<DbEvent | null>(null);
-  const [accessToken,   setAccessToken]   = useState<string | null>(null);
+  const [scannerEvent,    setScannerEvent]    = useState<DbEvent | null>(null);
+  const [inviteEvent,     setInviteEvent]     = useState<DbEvent | null>(null);
+  const [accessToken,     setAccessToken]     = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -1031,6 +1077,7 @@ export default function EventManager() {
                   status:             mode.edit.status,
                   published:          mode.edit.published,
                   title_strikethrough: mode.edit.title_strikethrough,
+                  guest_list_enabled:  mode.edit.guest_list_enabled ?? false,
                   image_url:          mode.edit.image_url,
                   sort_order:         mode.edit.sort_order,
                   section:            mode.edit.section ?? 'general',
@@ -1069,6 +1116,8 @@ export default function EventManager() {
               onTogglePublished={() => handleToggle(event)}
               onScan={tab === 'past' ? () => {} : () => setScannerEvent(event)}
               onInvite={tab === 'past' ? () => {} : () => setInviteEvent(event)}
+              accessToken={accessToken}
+              onGuestEnabled={load}
               isPast={tab === 'past'}
             />
           ))}

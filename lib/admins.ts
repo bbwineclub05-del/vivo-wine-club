@@ -3,6 +3,7 @@ export const ADMIN_EMAILS = [
   'filippo.lombardi890@gmail.com',
   'giacomogallo1310@gmail.com',
   'riccardo.consalvo@icloud.com',
+  'lorenzofioretti2001@gmail.com',
 ];
 
 export const SUPER_ADMIN_EMAIL = 'giacomogallo1310@gmail.com';
@@ -29,6 +30,7 @@ export const FINANCE_EMAILS = [
   'cristianomichelotti@gmail.com',
   'riccardo.consalvo@icloud.com',
   'marcelloabbadati02@gmail.com',
+  'lorenzofioretti2001@gmail.com',
 ] as const;
 
 export function isFinanceUser(email: string): boolean {
