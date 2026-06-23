@@ -86,13 +86,17 @@ function CtaButton({
   isPast,
   full,
   bookLabel,
+  listLabel,
   endedLabel,
+  isListOnly,
 }: {
   event: EventData;
   isPast: boolean;
   full?: boolean;
   bookLabel: string;
+  listLabel: string;
   endedLabel: string;
+  isListOnly?: boolean;
 }) {
   const cls = full ? 'w-full justify-center' : 'sm:inline-flex';
 
@@ -121,6 +125,18 @@ function CtaButton({
       >
         COMING SOON
       </span>
+    );
+  }
+  if (isListOnly) {
+    return (
+      <a
+        href="#guest-form"
+        className={`${cls} inline-flex items-center gap-3 px-8 py-4 bg-[#731515] text-white text-[9px] tracking-[0.4em] hover:bg-[#9b2323] active:bg-[#5a1010] transition-colors rounded-lg`}
+        style={{ fontFamily: 'var(--font-nunito)' }}
+      >
+        <Ticket size={14} />
+        {listLabel}
+      </a>
     );
   }
   return (
@@ -154,6 +170,7 @@ export default async function EventDetailPage({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let rawNotes: string | null = null;
   let guestListEnabled = false;
+  let isListOnly = false;
 
   try {
     const supabase = getSupabaseAdmin();
@@ -170,6 +187,10 @@ export default async function EventDetailPage({
       rawNotes         = (data as any).notes ?? null;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       guestListEnabled = (data as any).guest_list_enabled ?? false;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      isListOnly       = (data as any).is_list_only ?? false;
+      // list-only events always show the registration form
+      if (isListOnly) guestListEnabled = true;
     }
   } catch {/* fall through */}
 
@@ -261,11 +282,13 @@ export default async function EventDetailPage({
                 value={event.location}
                 sub={event.locationFull !== event.location ? event.locationFull : undefined}
               />
-              <InfoCard
-                icon={<Ticket size={14} className="text-[#731515] shrink-0" />}
-                label={t('labelPrice')}
-                value={event.price === 0 ? t('free') : `€${event.price} / ${t('perPerson')}`}
-              />
+              {!isListOnly && (
+                <InfoCard
+                  icon={<Ticket size={14} className="text-[#731515] shrink-0" />}
+                  label={t('labelPrice')}
+                  value={event.price === 0 ? t('free') : `€${event.price} / ${t('perPerson')}`}
+                />
+              )}
               {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
               {(event as any).capacity != null && (
                 <InfoCard
@@ -334,13 +357,20 @@ export default async function EventDetailPage({
 
             {/* CTA — desktop */}
             <div className="hidden sm:flex items-center gap-4 pt-2 mt-8">
-              <CtaButton event={event} isPast={isPast} bookLabel={t('bookYourSpot')} endedLabel={t('eventEnded')} />
+              <CtaButton
+                event={event}
+                isPast={isPast}
+                bookLabel={t('bookYourSpot')}
+                listLabel={t('joinTheList')}
+                endedLabel={t('eventEnded')}
+                isListOnly={isListOnly}
+              />
               {event.status === 'open' && !isPast && (
                 <span
                   className="text-[11px] text-[#7a4a4a]/50"
                   style={{ fontFamily: 'var(--font-nunito)' }}
                 >
-                  {t('secureCheckout')}
+                  {isListOnly ? t('listOnlyCta') : t('secureCheckout')}
                 </span>
               )}
             </div>
@@ -353,7 +383,15 @@ export default async function EventDetailPage({
           className="sm:hidden fixed bottom-0 left-0 right-0 z-40 px-4 py-3"
           style={{ background: 'rgba(253,249,249,0.96)', backdropFilter: 'blur(8px)', borderTop: '1px solid #eddada' }}
         >
-          <CtaButton event={event} isPast={isPast} full bookLabel={t('bookYourSpot')} endedLabel={t('eventEnded')} />
+          <CtaButton
+            event={event}
+            isPast={isPast}
+            full
+            bookLabel={t('bookYourSpot')}
+            listLabel={t('joinTheList')}
+            endedLabel={t('eventEnded')}
+            isListOnly={isListOnly}
+          />
         </div>
 
       </main>

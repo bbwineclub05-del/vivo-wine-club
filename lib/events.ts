@@ -22,6 +22,8 @@ export interface DbEvent {
   stripe_product_id: string | null;
   stripe_price_id: string | null;
   sort_order: number;
+  guest_list_enabled?: boolean;
+  is_list_only?: boolean;    // true = no checkout, show guest registration form
   created_at: string;
   updated_at?: string;
 }
@@ -54,6 +56,7 @@ export function dbEventToEventData(e: DbEvent): EventData {
     status:            e.status,
     titleStrikethrough: e.title_strikethrough,
     image_url:         e.image_url,
+    isListOnly:        e.is_list_only ?? false,
   };
 }
 
@@ -73,6 +76,7 @@ export interface EventData {
   status: EventStatus;
   titleStrikethrough?: boolean;
   image_url?: string | null;
+  isListOnly?: boolean;
 }
 
 /**

@@ -8,9 +8,25 @@ import { MapPin } from 'lucide-react';
 import { type EventData, type EventStatus } from '@/lib/events';
 import { useTranslations } from 'next-intl';
 
-const StatusBadge = memo(function StatusBadge({ status, slug }: { status: EventStatus; slug: string }) {
+const StatusBadge = memo(function StatusBadge({
+  status,
+  slug,
+  isListOnly = false,
+}: {
+  status: EventStatus;
+  slug: string;
+  isListOnly?: boolean;
+}) {
   const t = useTranslations('common');
+  const tEvents = useTranslations('events');
   if (status === 'open') {
+    if (isListOnly) {
+      return (
+        <Link href={`/events/${slug}#guest-form`} className="text-[9px] tracking-[0.28em] px-4 lg:px-5 py-3 min-h-[44px] inline-flex items-center bg-[#731515] text-[#F5EEE6] border border-[#731515] hover:bg-[#aa4848] hover:border-[#aa4848] transition-all duration-300 whitespace-nowrap rounded-lg">
+          {tEvents('joinTheList')}
+        </Link>
+      );
+    }
     return (
       <Link href={`/checkout/${slug}`} className="text-[9px] tracking-[0.28em] px-4 lg:px-5 py-3 min-h-[44px] inline-flex items-center bg-[#731515] text-[#F5EEE6] border border-[#731515] hover:bg-[#aa4848] hover:border-[#aa4848] transition-all duration-300 whitespace-nowrap rounded-lg">
         {t('buyTickets')}
@@ -43,7 +59,7 @@ function EventRow({
   index,
   isLast,
   reducedMotion,
-}: { event: EventData; index: number; isLast: boolean; reducedMotion: boolean | null }) {
+}: { event: EventData & { isListOnly?: boolean }; index: number; isLast: boolean; reducedMotion: boolean | null }) {
   const faded = event.status === 'completed';
 
   return (
@@ -110,13 +126,13 @@ function EventRow({
 
         {/* Status badge — desktop (z-[2] so it stays above the row overlay) */}
         <div className="shrink-0 self-center hidden sm:block z-[2]">
-          <StatusBadge status={event.status} slug={event.slug} />
+          <StatusBadge status={event.status} slug={event.slug} isListOnly={event.isListOnly} />
         </div>
       </div>
 
       {/* Mobile badge — indent accounts for optional thumbnail + date column */}
       <div className={`relative sm:hidden pb-5 z-[2] ${event.image_url ? 'pl-[calc(64px+1.5rem)]' : 'pl-14'}`}>
-        <StatusBadge status={event.status} slug={event.slug} />
+        <StatusBadge status={event.status} slug={event.slug} isListOnly={event.isListOnly} />
       </div>
 
       {!isLast && <div className={`h-px ${faded ? 'bg-[#e8d5d5]' : 'bg-[#731515]/8'}`} />}

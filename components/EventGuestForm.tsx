@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, User, Mail, Phone, Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface Props {
   eventSlug:     string;
@@ -15,7 +16,8 @@ const INPUT_CLS =
   'w-full bg-white border border-[#e8d5d5] text-[#1a0505] px-4 py-3 placeholder:text-[#7a4a4a]/35 focus:outline-none focus:border-[#731515]/50 transition-colors duration-200 rounded-lg';
 
 export default function EventGuestForm({ eventSlug, eventTitle, eventDate, eventLocation }: Props) {
-  const [form, setForm]     = useState({ first_name: '', last_name: '', email: '', phone: '' });
+  const t = useTranslations('events');
+  const [form, setForm]       = useState({ first_name: '', last_name: '', email: '', phone: '' });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error,   setError]   = useState('');
@@ -51,21 +53,21 @@ export default function EventGuestForm({ eventSlug, eventTitle, eventDate, event
   }
 
   return (
-    <div className="mt-12 bg-white border border-[#eddada] rounded-xl p-6 sm:p-8">
+    <div id="guest-form" className="mt-12 bg-white border border-[#eddada] rounded-xl p-6 sm:p-8">
       {/* Header */}
       <div className="mb-6">
-        <div className="text-[9px] tracking-[0.5em] text-[#731515] mb-2">LISTA INVITATI</div>
+        <div className="text-[9px] tracking-[0.5em] text-[#731515] mb-2">{t('guestListLabel')}</div>
         <h2
           className="text-2xl font-light text-[#1a0505] leading-tight"
           style={{ fontFamily: 'var(--font-syne)' }}
         >
-          Iscriviti all&apos;evento
+          {t('guestListHeading')}
         </h2>
         <p
           className="text-sm text-[#7a4a4a]/70 mt-2 leading-relaxed"
           style={{ fontFamily: 'var(--font-nunito)' }}
         >
-          Registrati per essere nella lista invitati. Riceverai una conferma via email.
+          {t('guestListSubtitle')}
         </p>
       </div>
 
@@ -87,18 +89,17 @@ export default function EventGuestForm({ eventSlug, eventTitle, eventDate, event
                 className="text-base font-medium text-[#1a0505] mb-1"
                 style={{ fontFamily: 'var(--font-syne)' }}
               >
-                Iscrizione confermata!
+                {t('registrationSuccessTitle')}
               </p>
               <p
                 className="text-sm text-[#7a4a4a]/70 leading-relaxed"
                 style={{ fontFamily: 'var(--font-nunito)' }}
               >
-                Sei nella lista per <strong className="text-[#1a0505]">{eventTitle}</strong>.
-                <br />Controlla la tua email per la conferma.
+                {t('registrationSuccessMsg', { title: eventTitle })}
               </p>
             </div>
             <div className="mt-2 px-5 py-3 bg-[#fdf6f6] border border-[#eddada] rounded-lg text-sm text-[#7a4a4a] w-full max-w-xs text-left space-y-1">
-              <p className="text-[10px] tracking-[0.3em] text-[#731515] mb-2">RIEPILOGO</p>
+              <p className="text-[10px] tracking-[0.3em] text-[#731515] mb-2">{t('registrationSummary')}</p>
               <p style={{ fontFamily: 'var(--font-nunito)' }}>{eventDate} · {eventLocation}</p>
             </div>
           </motion.div>
@@ -116,7 +117,7 @@ export default function EventGuestForm({ eventSlug, eventTitle, eventDate, event
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] tracking-[0.3em] text-[#731515] flex items-center gap-1.5">
                   <User size={10} />
-                  NOME *
+                  {t('fieldFirstName')} *
                 </label>
                 <input
                   type="text"
@@ -134,7 +135,7 @@ export default function EventGuestForm({ eventSlug, eventTitle, eventDate, event
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] tracking-[0.3em] text-[#731515] flex items-center gap-1.5">
                   <User size={10} />
-                  COGNOME *
+                  {t('fieldLastName')} *
                 </label>
                 <input
                   type="text"
@@ -170,7 +171,7 @@ export default function EventGuestForm({ eventSlug, eventTitle, eventDate, event
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] tracking-[0.3em] text-[#731515] flex items-center gap-1.5">
                   <Phone size={10} />
-                  TELEFONO
+                  {t('fieldPhone')}
                 </label>
                 <input
                   type="tel"
@@ -204,16 +205,16 @@ export default function EventGuestForm({ eventSlug, eventTitle, eventDate, event
               {loading ? (
                 <>
                   <Loader2 size={13} className="animate-spin" />
-                  ISCRIZIONE IN CORSO…
+                  {t('submittingRegistration')}
                 </>
-              ) : 'ISCRIVIMI ALLA LISTA'}
+              ) : t('submitRegistration')}
             </button>
 
             <p
               className="text-[11px] text-[#7a4a4a]/50"
               style={{ fontFamily: 'var(--font-nunito)' }}
             >
-              Riceverai una conferma via email. Gratuito, nessun acquisto richiesto.
+              {t('registrationNote')}
             </p>
           </motion.form>
         )}

@@ -77,12 +77,14 @@ export async function POST(request: Request) {
     const {
       title, type, date, time, location, location_full, description,
       price, capacity, status, published, title_strikethrough, image_url, sort_order,
+      is_list_only, guest_list_enabled,
     } = body as {
       title: string; type?: string; date: string; time?: string;
       location: string; location_full?: string; description: string;
       price?: number; capacity?: number; status?: string;
       published?: boolean; title_strikethrough?: boolean;
       image_url?: string; sort_order?: number;
+      is_list_only?: boolean; guest_list_enabled?: boolean;
     };
 
     if (!title || !date || !location || !description) {
@@ -137,6 +139,8 @@ export async function POST(request: Request) {
         title_strikethrough: title_strikethrough ?? false,
         image_url:          image_url || null,
         sort_order:         sort_order ?? 0,
+        is_list_only:       is_list_only ?? false,
+        guest_list_enabled: guest_list_enabled ?? (is_list_only ? true : false),
         stripe_product_id,
         stripe_price_id,
       })

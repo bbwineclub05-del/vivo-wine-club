@@ -196,7 +196,22 @@
     "bannerPast": "Questo evento si è già concluso. Le iscrizioni non sono più disponibili.",
     "bannerSoldOut": "Tutti i posti sono esauriti. Seguici sui social per i prossimi eventi.",
     "bannerSoon": "Le iscrizioni apriranno presto. Seguici per non perdere l'opportunità.",
-    "secureCheckout": "Verrai reindirizzato al checkout sicuro."
+    "secureCheckout": "Verrai reindirizzato al checkout sicuro.",
+    "joinTheList": "ISCRIVITI ALLA LISTA",
+    "registrationComplete": "ISCRIZIONE COMPLETATA",
+    "listOnlyCta": "Registrazione gratuita — nessun acquisto richiesto.",
+    "guestListLabel": "LISTA INVITATI",
+    "guestListHeading": "Iscriviti all'evento",
+    "guestListSubtitle": "Registrati per essere nella lista invitati. Riceverai una conferma via email.",
+    "fieldFirstName": "NOME",
+    "fieldLastName": "COGNOME",
+    "fieldPhone": "TELEFONO",
+    "registrationSuccessTitle": "Iscrizione confermata!",
+    "registrationSuccessMsg": "Sei nella lista per {title}. Controlla la tua email per la conferma.",
+    "submitRegistration": "ISCRIVIMI ALLA LISTA",
+    "submittingRegistration": "ISCRIZIONE IN CORSO…",
+    "registrationNote": "Riceverai una conferma via email. Gratuito, nessun acquisto richiesto.",
+    "registrationSummary": "RIEPILOGO"
   },
   "collaborate": {
     "getInTouch": "COLLABORA CON NOI",

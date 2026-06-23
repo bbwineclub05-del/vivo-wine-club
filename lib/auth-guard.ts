@@ -8,6 +8,7 @@ interface AuthOk {
   email: string;
   isAdmin: boolean;
   isStaff: boolean;
+  isCollaborator: boolean;
 }
 
 interface AuthFail {
@@ -32,11 +33,12 @@ export async function getAuthUser(request: Request): Promise<AuthResult> {
     return { ok: false, response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
   }
 
-  const email   = user.email ?? '';
-  const isAdmin = isAdminEmail(email);
-  const isStaff = user.app_metadata?.role === 'staff';
+  const email          = user.email ?? '';
+  const isAdmin        = isAdminEmail(email);
+  const isStaff        = user.app_metadata?.role === 'staff';
+  const isCollaborator = user.app_metadata?.role === 'collaborator';
 
-  return { ok: true, userId: user.id, email, isAdmin, isStaff };
+  return { ok: true, userId: user.id, email, isAdmin, isStaff, isCollaborator };
 }
 
 /** Requires admin role (email in ADMIN_EMAILS). Returns 401/403 or the user. */

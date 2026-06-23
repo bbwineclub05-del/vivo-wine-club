@@ -196,7 +196,22 @@
     "bannerPast": "This event has already taken place. Registrations are no longer available.",
     "bannerSoldOut": "All spots are sold out. Follow us on social media for upcoming events.",
     "bannerSoon": "Registrations will open soon. Follow us so you don't miss out.",
-    "secureCheckout": "You'll be redirected to the secure checkout."
+    "secureCheckout": "You'll be redirected to the secure checkout.",
+    "joinTheList": "JOIN THE LIST",
+    "registrationComplete": "REGISTRATION COMPLETE",
+    "listOnlyCta": "Free registration — no purchase required.",
+    "guestListLabel": "GUEST LIST",
+    "guestListHeading": "Join the event",
+    "guestListSubtitle": "Register to be added to the guest list. You'll receive a confirmation email.",
+    "fieldFirstName": "FIRST NAME",
+    "fieldLastName": "LAST NAME",
+    "fieldPhone": "PHONE",
+    "registrationSuccessTitle": "Registration confirmed!",
+    "registrationSuccessMsg": "You're on the list for {title}. Check your email for confirmation.",
+    "submitRegistration": "JOIN THE LIST",
+    "submittingRegistration": "REGISTERING…",
+    "registrationNote": "You'll receive a confirmation email. Free, no purchase required.",
+    "registrationSummary": "SUMMARY"
   },
   "collaborate": {
     "getInTouch": "GET IN TOUCH",

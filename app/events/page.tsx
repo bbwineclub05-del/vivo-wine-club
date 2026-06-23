@@ -114,15 +114,15 @@ function EventRow({ event, isLast }: { event: EventData; isLast: boolean }) {
             {event.description}
           </p>
 
-          {/* Mobile badge — Buy Tickets still goes directly to checkout */}
+          {/* Mobile badge */}
           <div className="mt-4 sm:hidden">
-            <EventStatusBadge status={event.status} slug={event.slug} />
+            <EventStatusBadge status={event.status} slug={event.slug} isListOnly={event.isListOnly} />
           </div>
         </div>
 
-        {/* Desktop badge — Buy Tickets still goes directly to checkout */}
+        {/* Desktop badge */}
         <div className="shrink-0 self-center hidden sm:block">
-          <EventStatusBadge status={event.status} slug={event.slug} />
+          <EventStatusBadge status={event.status} slug={event.slug} isListOnly={event.isListOnly} />
         </div>
       </div>
 

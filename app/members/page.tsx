@@ -30,6 +30,7 @@ import DiscountManager from '@/components/DiscountManager';
 import DocumentManager from '@/components/DocumentManager';
 import MemberPortal from '@/components/MemberPortal';
 import MembershipCard from '@/components/MembershipCard';
+import CollaboratorView from '@/components/CollaboratorView';
 import FinanceManager from '@/components/FinanceManager';
 import BilancioManager from '@/components/BilancioManager';
 import QuoteGenerator from '@/components/QuoteGenerator';
@@ -956,6 +957,7 @@ function MembersPageInner() {
   const [sidebarOpen,       setSidebarOpen]        = useState(false);
   const [isStaff,           setIsStaff]            = useState(false);
   const [isMember,          setIsMember]           = useState(false);
+  const [isCollaborator,    setIsCollaborator]     = useState(false);
   const [token,             setToken]              = useState('');
   const [staffPermissions,  setStaffPermissions]   = useState<Record<string, boolean> | null>(null);
 
@@ -969,6 +971,7 @@ function MembersPageInner() {
       // founders list, so isAdmin() = false. Without this, they see nothing.
       setIsStaff(role === 'staff' || role === 'admin');
       setIsMember(role === 'member' && !isAdmin(session.user.email ?? ''));
+      setIsCollaborator(role === 'collaborator');
 
       // Fetch granular permissions for all authenticated users (admins get full set)
       try {
@@ -1036,13 +1039,25 @@ function MembersPageInner() {
     );
   }
 
+  // Collaborators get a minimal check-in view
+  if (isCollaborator && !admin && !isStaff) {
+    return (
+      <CollaboratorView
+        token={token}
+        onLogout={handleLogout}
+        name={displayName}
+      />
+    );
+  }
+
   /** Returns true if the current user can access this section. */
   function canAccess(section: Section): boolean {
     if (admin) return true; // admins always have full access
     if (!isStaff) return false;
+    if (staffPermissions === null) return true; // still loading — optimistic to avoid false UnauthorisedSection flash
     const permKey = SECTION_PERM[section];
     if (!permKey) return true; // overview, settings, etc. — always accessible
-    return staffPermissions?.[permKey] ?? false;
+    return staffPermissions[permKey] ?? false;
   }
 
   function navigate(s: Section) {

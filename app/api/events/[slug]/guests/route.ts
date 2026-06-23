@@ -100,14 +100,14 @@ export async function POST(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: eventRow, error: evtErr } = await (db as any)
     .from('events')
-    .select('id, title, date, time, location, location_full, guest_list_enabled')
+    .select('id, title, date, time, location, location_full, guest_list_enabled, is_list_only')
     .eq('slug', slug)
     .single();
 
   if (evtErr || !eventRow) {
     return NextResponse.json({ error: 'Evento non trovato.' }, { status: 404 });
   }
-  if (!eventRow.guest_list_enabled) {
+  if (!eventRow.guest_list_enabled && !eventRow.is_list_only) {
     return NextResponse.json({ error: 'Lista invitati non attiva per questo evento.' }, { status: 403 });
   }
 

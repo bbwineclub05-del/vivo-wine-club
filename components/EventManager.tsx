@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, Pencil, Trash2, Eye, EyeOff, ChevronDown, ChevronUp,
   CalendarDays, MapPin, Tag, Users, CheckCircle2, Clock, XCircle, Globe, ScanLine,
-  Send, X, Check, Languages, ImagePlus, Loader2, ClipboardList,
+  Send, X, Check, Languages, ImagePlus, Loader2, ClipboardList, UserCheck,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import EventScanner from '@/components/EventScanner';
@@ -32,6 +32,7 @@ interface DbEvent {
   published: boolean;
   title_strikethrough: boolean;
   guest_list_enabled: boolean;
+  is_list_only: boolean;
   image_url: string | null;
   stripe_product_id: string | null;
   stripe_price_id: string | null;
@@ -46,6 +47,7 @@ const BLANK: FormData = {
   location: '', location_full: '', description: '',
   price: 0, capacity: null, status: 'open',
   published: false, title_strikethrough: false, guest_list_enabled: false,
+  is_list_only: false,
   image_url: null, sort_order: 0,
 };
 
@@ -257,7 +259,48 @@ function EventForm({
             placeholder="Descrizione dell'evento per la pagina pubblica..." required />
         </div>
 
-        {/* Price */}
+        {/* Event mode — ticket vs list-only */}
+        <div className="md:col-span-2">
+          <Label>Tipo evento</Label>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                set('is_list_only', false);
+              }}
+              className={`flex-1 py-3 px-4 rounded-lg border text-[11px] tracking-[0.2em] transition-colors ${
+                !f.is_list_only
+                  ? 'bg-[#731515] text-white border-[#731515]'
+                  : 'bg-[#fdf6f6] text-[#7a4a4a] border-[#eddada] hover:border-[#731515]/40'
+              }`}
+            >
+              🎟 VENDITA BIGLIETTI
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                set('is_list_only', true);
+                set('guest_list_enabled', true);
+                set('price', 0);
+              }}
+              className={`flex-1 py-3 px-4 rounded-lg border text-[11px] tracking-[0.2em] transition-colors ${
+                f.is_list_only
+                  ? 'bg-[#731515] text-white border-[#731515]'
+                  : 'bg-[#fdf6f6] text-[#7a4a4a] border-[#eddada] hover:border-[#731515]/40'
+              }`}
+            >
+              📋 SOLO LISTA
+            </button>
+          </div>
+          <p className="mt-1.5 text-[10px] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
+            {f.is_list_only
+              ? 'Nessun checkout — gli utenti si iscrivono direttamente alla lista. La lista invitati viene attivata automaticamente.'
+              : 'Checkout con Stripe. Prezzo obbligatorio per eventi a pagamento.'}
+          </p>
+        </div>
+
+        {/* Price — hidden for list-only events */}
+        {!f.is_list_only && (
         <div>
           <Label>Prezzo (€) — 0 = gratuito</Label>
           <input className={inputCls} type="number" min={0} step={1} value={f.price}
@@ -268,6 +311,7 @@ function EventForm({
             </p>
           )}
         </div>
+        )}
 
         {/* Capacity */}
         <div>
@@ -323,7 +367,14 @@ function EventForm({
         <div className="flex flex-col gap-3 justify-center">
           <Toggle label="Pubblicato (visibile sul sito)" checked={f.published} onChange={v => set('published', v)} />
           <Toggle label="Titolo barrato" checked={f.title_strikethrough} onChange={v => set('title_strikethrough', v)} />
-          <Toggle label="Lista invitati attiva" checked={f.guest_list_enabled ?? false} onChange={v => set('guest_list_enabled', v)} />
+          {!f.is_list_only && (
+            <Toggle label="Lista invitati attiva" checked={f.guest_list_enabled ?? false} onChange={v => set('guest_list_enabled', v)} />
+          )}
+          {f.is_list_only && (
+            <div className="flex items-center gap-2 text-[11px] text-[#731515]/60" style={{ fontFamily: 'var(--font-nunito)' }}>
+              <span className="text-[#731515]">✓</span> Lista invitati attiva automaticamente (Solo lista)
+            </div>
+          )}
         </div>
 
       </div>
@@ -627,6 +678,229 @@ function EventInviteModal({
 }
 
 /* ─────────────────────────────────────────────
+   Collaborator assignment panel
+───────────────────────────────────────────── */
+interface Collaborator { id: string; email: string; name: string; assigned: boolean; }
+
+function CollaboratorAssignPanel({ event, accessToken }: { event: DbEvent; accessToken: string }) {
+  const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
+  const [loading,  setLoading]  = useState(true);
+  const [toggling, setToggling] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    setLoading(true);
+    fetch(`/api/collaborator/assign?eventSlug=${event.slug}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+      .then(r => r.json())
+      .then(j => setCollaborators(Array.isArray(j.collaborators) ? j.collaborators : []))
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [event.slug, accessToken]);
+
+  async function toggle(c: Collaborator) {
+    if (toggling.has(c.id)) return;
+    const next = !c.assigned;
+    setToggling(p => new Set(p).add(c.id));
+    setCollaborators(prev => prev.map(x => x.id === c.id ? { ...x, assigned: next } : x));
+
+    try {
+      const res = await fetch('/api/collaborator/assign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({ eventSlug: event.slug, userId: c.id, assigned: next }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      setCollaborators(prev => prev.map(x => x.id === c.id ? { ...x, assigned: c.assigned } : x));
+    } finally {
+      setToggling(p => { const n = new Set(p); n.delete(c.id); return n; });
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Loader2 size={20} className="text-[#731515]/40 animate-spin" />
+      </div>
+    );
+  }
+
+  if (collaborators.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center px-6">
+        <div className="w-12 h-12 rounded-full bg-[#7a4a4a]/6 flex items-center justify-center mb-3">
+          <UserCheck size={20} className="text-[#7a4a4a]/30" strokeWidth={1.5} />
+        </div>
+        <p className="text-xs text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
+          Nessun account collaboratore trovato.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="py-2">
+      {collaborators.map(c => {
+        const isBusy = toggling.has(c.id);
+        return (
+          <div key={c.id} className="flex items-center gap-3 px-6 py-3.5 border-b border-[#eddada]/50 last:border-0 hover:bg-[#fdf6f6] transition-colors">
+            <div className="flex-1 min-w-0">
+              <div className="text-[13px] font-medium text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>
+                {c.name}
+              </div>
+              <div className="text-[11px] text-[#7a4a4a]/50 mt-0.5" style={{ fontFamily: 'var(--font-nunito)' }}>
+                {c.email}
+              </div>
+            </div>
+            <button
+              onClick={() => toggle(c)}
+              disabled={isBusy}
+              className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] tracking-[0.25em] transition-all duration-200 ${
+                c.assigned
+                  ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/30 hover:bg-emerald-500/20'
+                  : 'bg-[#7a4a4a]/6 text-[#7a4a4a]/60 border border-[#eddada] hover:bg-[#731515]/8 hover:text-[#731515]'
+              } ${isBusy ? 'opacity-50' : ''}`}
+              style={{ fontFamily: 'var(--font-nunito)' }}
+            >
+              {isBusy
+                ? <Loader2 size={11} className="animate-spin" />
+                : c.assigned
+                  ? <><Check size={11} strokeWidth={2.5} /> ASSEGNATO</>
+                  : <>ASSEGNA</>
+              }
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   Guest List Modal (centrata)
+───────────────────────────────────────────── */
+function GuestListDrawer({
+  event,
+  accessToken,
+  onClose,
+  onGuestEnabled,
+}: {
+  event:          DbEvent;
+  accessToken:    string;
+  onClose:        () => void;
+  onGuestEnabled: () => void;
+}) {
+  const [tab, setTab] = useState<'guests' | 'collaborators'>('guests');
+
+  // Close on Escape
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <motion.div
+        className="absolute inset-0 bg-black/50 backdrop-blur-[3px]"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
+        onClick={onClose}
+      />
+
+      {/* Modal */}
+      <motion.div
+        className="relative w-full max-w-[780px] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+        style={{ maxHeight: '85vh' }}
+        initial={{ opacity: 0, scale: 0.96, y: 12 }}
+        animate={{ opacity: 1, scale: 1,    y: 0  }}
+        exit={{    opacity: 0, scale: 0.96, y: 12 }}
+        transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+      >
+        {/* Header — fixed */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#eddada] shrink-0">
+          <div className="min-w-0">
+            <div className="text-[9px] tracking-[0.45em] text-[#731515] mb-0.5">LISTA INVITATI</div>
+            <h3
+              className="text-lg font-light text-[#1a0505] truncate max-w-lg"
+              style={{ fontFamily: 'var(--font-syne)' }}
+              title={event.title}
+            >
+              {event.title}
+            </h3>
+            <p className="text-[11px] text-[#7a4a4a]/50 mt-0.5" style={{ fontFamily: 'var(--font-nunito)' }}>
+              {event.date ? fmtDate(event.date) : ''}{event.location ? ` · ${event.location}` : ''}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="shrink-0 ml-4 w-9 h-9 flex items-center justify-center rounded-lg text-[#7a4a4a]/50 hover:text-[#731515] hover:bg-[#fdf6f6] transition-colors"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex border-b border-[#eddada] shrink-0 px-6">
+          <button
+            onClick={() => setTab('guests')}
+            className={`py-2.5 mr-6 text-[10px] tracking-[0.35em] border-b-2 transition-colors ${
+              tab === 'guests'
+                ? 'border-[#731515] text-[#731515]'
+                : 'border-transparent text-[#7a4a4a]/40 hover:text-[#7a4a4a]'
+            }`}
+            style={{ fontFamily: 'var(--font-nunito)' }}
+          >
+            <span className="flex items-center gap-1.5">
+              <ClipboardList size={11} />
+              INVITATI
+            </span>
+          </button>
+          <button
+            onClick={() => setTab('collaborators')}
+            className={`py-2.5 text-[10px] tracking-[0.35em] border-b-2 transition-colors ${
+              tab === 'collaborators'
+                ? 'border-[#731515] text-[#731515]'
+                : 'border-transparent text-[#7a4a4a]/40 hover:text-[#7a4a4a]'
+            }`}
+            style={{ fontFamily: 'var(--font-nunito)' }}
+          >
+            <span className="flex items-center gap-1.5">
+              <UserCheck size={11} />
+              COLLABORATORI
+            </span>
+          </button>
+        </div>
+
+        {/* Content — fills remaining height */}
+        <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+          {tab === 'guests' ? (
+            <EventGuestPanel
+              event={{
+                id:                 event.id,
+                slug:               event.slug,
+                title:              event.title,
+                guest_list_enabled: event.guest_list_enabled,
+              }}
+              accessToken={accessToken}
+              onGuestEnabled={onGuestEnabled}
+            />
+          ) : (
+            <div className="flex-1 overflow-y-auto">
+              <CollaboratorAssignPanel event={event} accessToken={accessToken} />
+            </div>
+          )}
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
    Single event row
 ───────────────────────────────────────────── */
 function EventRow({
@@ -636,8 +910,8 @@ function EventRow({
   onTogglePublished,
   onScan,
   onInvite,
-  accessToken,
-  onGuestEnabled,
+  onGuestList,
+  guestListActive,
   isPast = false,
 }: {
   event: DbEvent;
@@ -646,13 +920,12 @@ function EventRow({
   onTogglePublished: () => void;
   onScan: () => void;
   onInvite: () => void;
-  accessToken: string | null;
-  onGuestEnabled: () => void;
+  onGuestList: () => void;
+  guestListActive: boolean;
   isPast?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [delConfirm, setDelConfirm] = useState(false);
-  const [guestListOpen, setGuestListOpen] = useState(false);
 
   // Shared action buttons — rendered once on desktop (inline), once on mobile (bottom bar)
   const actionButtons = (compact = false) => {
@@ -673,10 +946,10 @@ function EventRow({
           </button>
         )}
         <button
-          onClick={() => setGuestListOpen(x => !x)}
+          onClick={onGuestList}
           title="Lista invitati"
           className={`${cls} rounded-lg transition-colors ${
-            guestListOpen
+            guestListActive
               ? 'text-[#731515] bg-[#f5e8e8]'
               : event.guest_list_enabled
                 ? 'text-[#731515] bg-[#fdf6f6] hover:bg-[#f5e8e8]'
@@ -827,30 +1100,6 @@ function EventRow({
         )}
       </AnimatePresence>
 
-      {/* Inline guest list panel */}
-      <AnimatePresence>
-        {guestListOpen && accessToken && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden border-t border-[#eddada]"
-          >
-            <div className="text-[9px] tracking-[0.4em] text-[#731515] px-5 pt-4">LISTA INVITATI</div>
-            <EventGuestPanel
-              event={{
-                id:                 event.id,
-                slug:               event.slug,
-                title:              event.title,
-                guest_list_enabled: event.guest_list_enabled,
-              }}
-              accessToken={accessToken}
-              onGuestEnabled={onGuestEnabled}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
@@ -867,6 +1116,7 @@ export default function EventManager() {
   const [tab,         setTab]         = useState<'active' | 'past'>('active');
   const [scannerEvent,    setScannerEvent]    = useState<DbEvent | null>(null);
   const [inviteEvent,     setInviteEvent]     = useState<DbEvent | null>(null);
+  const [guestListEventId, setGuestListEventId] = useState<string | null>(null);
   const [accessToken,     setAccessToken]     = useState<string | null>(null);
 
   useEffect(() => {
@@ -908,6 +1158,11 @@ export default function EventManager() {
   const activeEvts = events.filter(e => e.date >= today).sort((a, b) => a.date.localeCompare(b.date));
   const pastEvts   = events.filter(e => e.date < today).sort((a, b) => b.date.localeCompare(a.date));
   const tabEvents  = tab === 'active' ? activeEvts : pastEvts;
+
+  /* ── Guest list drawer — derive from events so it auto-updates on reload ── */
+  const guestListEvent = guestListEventId
+    ? (events.find(e => e.id === guestListEventId) ?? null)
+    : null;
 
   /* ── KPIs ── */
   const total     = events.length;
@@ -997,6 +1252,19 @@ export default function EventManager() {
         )}
       </AnimatePresence>
 
+      {/* Guest list drawer */}
+      <AnimatePresence>
+        {guestListEvent && accessToken && (
+          <GuestListDrawer
+            key={guestListEvent.id}
+            event={guestListEvent}
+            accessToken={accessToken}
+            onClose={() => setGuestListEventId(null)}
+            onGuestEnabled={load}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Header row */}
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div>
@@ -1078,6 +1346,7 @@ export default function EventManager() {
                   published:          mode.edit.published,
                   title_strikethrough: mode.edit.title_strikethrough,
                   guest_list_enabled:  mode.edit.guest_list_enabled ?? false,
+                  is_list_only:        mode.edit.is_list_only ?? false,
                   image_url:          mode.edit.image_url,
                   sort_order:         mode.edit.sort_order,
                   section:            mode.edit.section ?? 'general',
@@ -1116,8 +1385,8 @@ export default function EventManager() {
               onTogglePublished={() => handleToggle(event)}
               onScan={tab === 'past' ? () => {} : () => setScannerEvent(event)}
               onInvite={tab === 'past' ? () => {} : () => setInviteEvent(event)}
-              accessToken={accessToken}
-              onGuestEnabled={load}
+              onGuestList={() => setGuestListEventId(id => id === event.id ? null : event.id)}
+              guestListActive={guestListEvent?.id === event.id}
               isPast={tab === 'past'}
             />
           ))}

@@ -4,10 +4,28 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { type EventStatus } from '@/lib/events';
 
-export default function EventStatusBadge({ status, slug }: { status: EventStatus; slug: string }) {
+export default function EventStatusBadge({
+  status,
+  slug,
+  isListOnly = false,
+}: {
+  status: EventStatus;
+  slug: string;
+  isListOnly?: boolean;
+}) {
   const t = useTranslations('events');
 
   if (status === 'open') {
+    if (isListOnly) {
+      return (
+        <Link
+          href={`/events/${slug}#guest-form`}
+          className="inline-flex items-center text-[9px] tracking-[0.28em] px-5 py-3 min-h-[44px] bg-[#731515] text-white hover:bg-[#aa4848] transition-colors duration-300 whitespace-nowrap rounded-lg"
+        >
+          {t('joinTheList')}
+        </Link>
+      );
+    }
     return (
       <Link
         href={`/checkout/${slug}`}

@@ -42,6 +42,7 @@ function UpcomingRow({
   btnText: string;
 }) {
   const tCommon = useTranslations('common');
+  const tEvents = useTranslations('events');
   return (
     <motion.div
       key={event.slug}
@@ -93,11 +94,11 @@ function UpcomingRow({
         {/* CTA */}
         {event.status === 'open' && (
           <Link
-            href={`/checkout/${event.slug}`}
+            href={event.isListOnly ? `/events/${event.slug}#guest-form` : `/checkout/${event.slug}`}
             className="shrink-0 hidden sm:inline-flex text-[9px] tracking-[0.28em] px-5 py-2.5 transition-all duration-300 hover:opacity-80 rounded-lg"
             style={{ background: btnBg, color: btnText }}
           >
-            {event.price > 0 ? tCommon('buyTickets') : tCommon('register')}
+            {event.isListOnly ? tEvents('joinTheList') : event.price > 0 ? tCommon('buyTickets') : tCommon('register')}
           </Link>
         )}
         {event.status === 'soldout' && (
@@ -116,11 +117,11 @@ function UpcomingRow({
       {event.status === 'open' && (
         <div className="sm:hidden pb-4 pl-20">
           <Link
-            href={`/checkout/${event.slug}`}
+            href={event.isListOnly ? `/events/${event.slug}#guest-form` : `/checkout/${event.slug}`}
             className="text-[9px] tracking-[0.28em] px-5 py-3 min-h-[44px] inline-flex items-center transition-all duration-300 hover:opacity-80 rounded-lg"
             style={{ background: btnBg, color: btnText }}
           >
-            {event.price > 0 ? tCommon('buyTickets') : tCommon('register')}
+            {event.isListOnly ? tEvents('joinTheList') : event.price > 0 ? tCommon('buyTickets') : tCommon('register')}
           </Link>
         </div>
       )}
