@@ -28,12 +28,13 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 const resend = new Resend(process.env.RESEND_API_KEY!);
 
 interface Body {
-  slug: string;
-  qty: number;
+  slug:     string;
+  qty:      number;
   firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
+  lastName:  string;
+  email:    string;
+  phone:    string;
+  refCode?: string;
 }
 
 // ── Email helpers ─────────────────────────────────────────────────────────────
@@ -306,7 +307,7 @@ export async function sendEventConfirmationEmails(params: {
 export async function POST(request: Request) {
   try {
   const body: Body = await request.json();
-  const { slug, qty, firstName, lastName, email, phone } = body;
+  const { slug, qty, firstName, lastName, email, phone, refCode } = body;
 
   if (!slug || !qty || !firstName || !lastName || !email || !phone) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -326,7 +327,21 @@ export async function POST(request: Request) {
   // user is redirected to the success page. The error is logged server-side.
   if (total === 0) {
     await sendEventConfirmationEmails({ orderId, event, firstName, lastName, email, phone, qty, total });
-    return NextResponse.json({ url: `/checkout/success?order_id=${encodeURIComponent(orderId)}` });
+
+    // Referral attribution for free events (non-blocking)
+    if (refCode) {
+      fetch(`${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vivowineclub.com'}/api/referral/use`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          ref_code:      refCode,
+          used_by_email: email.toLowerCase(),
+          event_slug:    slug,
+        }),
+      }).catch(() => {/* non-fatal */});
+    }
+
+    return NextResponse.json({ url: `/checkout/success?order_id=${encodeURIComponent(orderId)}&email=${encodeURIComponent(email)}&slug=${encodeURIComponent(slug)}` });
   }
 
   // Stripe session; confirmation emails sent in /api/checkout/confirm
@@ -356,6 +371,7 @@ export async function POST(request: Request) {
       buyer_email:      email,
       buyer_phone:      phone,
       ticket_count:     String(qty),
+      ref_code:         refCode ?? '',
     },
     locale: 'auto',
   });

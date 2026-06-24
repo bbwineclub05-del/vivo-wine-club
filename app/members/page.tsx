@@ -7,9 +7,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Home, CheckSquare, BarChart3, Users, FileText,
   Mail, LogOut, KeyRound, ScanLine, Menu, X,
-  Wine, Shield, ArrowUpRight, CreditCard, User, CalendarDays, GlassWater, MapPin, Images,
+  Wine, Shield, ArrowUpRight, CreditCard, User, CalendarDays, Images,
   Database, ChevronDown, UsersRound, Lock, ShoppingBag, Tag, FolderOpen, Layers,
-  Camera, Loader2, Building2, Wallet, Receipt, BookOpen,
+  Camera, Loader2, Wallet, Receipt, BookOpen,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -17,12 +17,8 @@ import TaskBoard, { isAdmin } from '@/components/TaskBoard';
 import AnalyticsDashboard from '@/components/AnalyticsDashboard';
 import MembershipPipeline from '@/components/MembershipPipeline';
 import NewsManager from '@/components/NewsManager';
-import MemberCRM from '@/components/MemberCRM';
+import CrmHub from '@/components/CrmHub';
 import EventManager from '@/components/EventManager';
-import CrmWine from '@/components/CrmWine';
-import CrmBordeaux from '@/components/CrmBordeaux';
-import CrmClienti from '@/components/CrmClienti';
-import CrmSponsors from '@/components/CrmSponsors';
 import MediaManager from '@/components/MediaManager';
 import TeamManagement from '@/components/TeamManagement';
 import MerchManager from '@/components/MerchManager';
@@ -41,24 +37,20 @@ import { isSuperAdmin, isFinanceUser } from '@/lib/admins';
 /* ─────────────────────────────────────────────
    Types
 ───────────────────────────────────────────── */
-type Section = 'overview' | 'settings' | 'card' | 'wine-assistant' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm' | 'crm-wine' | 'crm-bordeaux' | 'crm-clienti' | 'crm-sponsors' | 'media' | 'team' | 'merch' | 'discounts' | 'documents' | 'finance' | 'bilancio' | 'quotes' | 'ped';
+type Section = 'overview' | 'settings' | 'card' | 'wine-assistant' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm' | 'media' | 'team' | 'merch' | 'discounts' | 'documents' | 'finance' | 'bilancio' | 'quotes' | 'ped';
 
 // Maps section IDs to the permission key in team_members.permissions
 const SECTION_PERM: Partial<Record<Section, string>> = {
-  tasks:         'tasks',
-  events:        'events',
-  news:          'news',
-  crm:           'crm',
-  'crm-wine':    'crm',
-  'crm-bordeaux':'crm',
-  'crm-clienti':  'crm',
-  'crm-sponsors': 'crm',
-  media:         'media',
-  analytics:     'analytics',
-  pipeline:      'pipeline',
-  merch:         'merch',
-  discounts:     'merch',
-  documents:     'documents',
+  tasks:     'tasks',
+  events:    'events',
+  news:      'news',
+  crm:       'crm',
+  media:     'media',
+  analytics: 'analytics',
+  pipeline:  'pipeline',
+  merch:     'merch',
+  discounts: 'merch',
+  documents: 'documents',
 };
 
 interface NavItem {
@@ -97,13 +89,6 @@ const NAV_ADMIN_ONLY: NavItem[] = [
   { id: 'pipeline',  label: 'Pipeline Membership', icon: Users     },
 ];
 
-const CRM_ITEMS: NavItem[] = [
-  { id: 'crm',           label: 'CRM Membri',        icon: Mail      },
-  { id: 'crm-clienti',   label: 'CRM Clienti',       icon: Users     },
-  { id: 'crm-sponsors',  label: 'CRM Sponsors',      icon: Building2 },
-  { id: 'crm-wine',      label: 'CRM Contatti Vino', icon: GlassWater },
-  { id: 'crm-bordeaux',  label: 'CRM Produttori BDX',icon: MapPin    },
-];
 
 // Visible to both admin and staff
 const NAV_SHARED_BOTTOM: NavItem[] = [];
@@ -166,60 +151,6 @@ function NavBtn({
   );
 }
 
-/** Collapsible CRM group in the sidebar */
-function CrmGroupNav({ activeSection, navigate }: { activeSection: Section; navigate: (s: Section) => void }) {
-  const isCrmActive = (CRM_ITEMS as NavItem[]).some((item) => item.id === activeSection);
-  const [open, setOpen] = useState(isCrmActive);
-
-  // Auto-open when a CRM sub-section becomes active (e.g. via external navigation)
-  useEffect(() => {
-    if (isCrmActive) setOpen(true);
-  }, [isCrmActive]);
-
-  return (
-    <div>
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className={`w-full flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-left transition-all duration-150 text-[12.5px] ${
-          isCrmActive
-            ? 'text-white/75 bg-white/[0.04]'
-            : 'text-white/45 hover:text-white/75 hover:bg-white/[0.06]'
-        }`}
-        style={{ fontFamily: 'var(--font-nunito)' }}
-      >
-        <Database size={14} className={isCrmActive ? 'text-[#c84040]' : 'text-white/35'} />
-        CRM
-        <ChevronDown
-          size={11}
-          className={`ml-auto text-white/25 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
-        />
-      </button>
-
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="overflow-hidden"
-          >
-            <div className="ml-3 pl-2.5 border-l border-white/[0.07] mt-0.5 mb-0.5 space-y-0.5">
-              {CRM_ITEMS.map((item) => (
-                <NavBtn
-                  key={item.id}
-                  item={item}
-                  active={activeSection === item.id}
-                  onClick={() => navigate(item.id)}
-                />
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
 
 /** Collapsible Gestione group (Events, News, Merch) in the sidebar */
 function GestioneGroupNav({ activeSection, navigate }: { activeSection: Section; navigate: (s: Section) => void }) {
@@ -435,7 +366,11 @@ function SidebarContent({
             {NAV_ADMIN_ONLY.map(item => (
               <NavBtn key={item.id} item={item} active={activeSection === item.id} onClick={() => navigate(item.id)} />
             ))}
-            <CrmGroupNav activeSection={activeSection} navigate={navigate} />
+            <NavBtn
+              item={{ id: 'crm', label: 'CRM', icon: Database }}
+              active={activeSection === 'crm'}
+              onClick={() => navigate('crm')}
+            />
             {NAV_SHARED_BOTTOM.map(item => (
               <NavBtn key={item.id} item={item} active={activeSection === item.id} onClick={() => navigate(item.id)} />
             ))}
@@ -1211,48 +1146,7 @@ function MembersPageInner() {
                 )}
 
                 {(admin || isStaff) && activeSection === 'crm' && (
-                  canAccess('crm') ? (
-                    <>
-                      <SectionHeader title="CRM Membri" subtitle="Lista membri e invio comunicazioni." />
-                      <MemberCRM />
-                    </>
-                  ) : <UnauthorisedSection title="CRM Membri" />
-                )}
-
-                {(admin || isStaff) && activeSection === 'crm-wine' && (
-                  canAccess('crm-wine') ? (
-                    <>
-                      <SectionHeader title="CRM Contatti Vino" subtitle="Contatti del settore vitivinicolo — produttori, hospitality, industry." />
-                      <CrmWine />
-                    </>
-                  ) : <UnauthorisedSection title="CRM Contatti Vino" />
-                )}
-
-                {(admin || isStaff) && activeSection === 'crm-bordeaux' && (
-                  canAccess('crm-bordeaux') ? (
-                    <>
-                      <SectionHeader title="CRM Produttori Bordeaux" subtitle="Châteaux e produttori di Bordeaux — richieste visita e follow-up." />
-                      <CrmBordeaux />
-                    </>
-                  ) : <UnauthorisedSection title="CRM Produttori Bordeaux" />
-                )}
-
-                {(admin || isStaff) && activeSection === 'crm-clienti' && (
-                  canAccess('crm-clienti') ? (
-                    <>
-                      <SectionHeader title="CRM Clienti" subtitle="Banca dati automatica dei clienti che hanno acquistato biglietti — invio email e storico eventi." />
-                      <CrmClienti />
-                    </>
-                  ) : <UnauthorisedSection title="CRM Clienti" />
-                )}
-
-                {(admin || isStaff) && activeSection === 'crm-sponsors' && (
-                  canAccess('crm-sponsors') ? (
-                    <>
-                      <SectionHeader title="CRM Sponsors" subtitle="Gestione degli sponsor del club — contatti, siti web e note." />
-                      <CrmSponsors />
-                    </>
-                  ) : <UnauthorisedSection title="CRM Sponsors" />
+                  canAccess('crm') ? <CrmHub /> : <UnauthorisedSection title="CRM" />
                 )}
 
                 {financeUser && activeSection === 'finance' && (

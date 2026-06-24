@@ -54,6 +54,7 @@ const FINANCE_FOUNDERS: { name: string; email: string }[] = [
   { name: 'Cristiano Michelotti', email: 'cristianomichelotti@gmail.com' },
   { name: 'Marcello Abbadati',    email: 'marcelloabbadati02@gmail.com'  },
   { name: 'Riccardo Consalvo',    email: 'riccardo.consalvo@icloud.com'  },
+  { name: 'Lorenzo Fioretti',     email: 'lorenzofioretti2001@gmail.com' },
 ].filter(f => (FINANCE_EMAILS as readonly string[]).includes(f.email));
 
 function nameFromEmail(email: string): string | null {

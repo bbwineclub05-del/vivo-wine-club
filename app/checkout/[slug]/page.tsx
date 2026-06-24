@@ -62,10 +62,14 @@ export async function generateMetadata(
 
 export default async function CheckoutPage({
   params,
+  searchParams,
 }: {
-  params: Promise<{ slug: string }>;
+  params:       Promise<{ slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { slug } = await params;
+  const sp       = await searchParams;
+  const refCode  = typeof sp.ref === 'string' ? sp.ref.toUpperCase() : undefined;
 
   let event: EventData | undefined;
   let rawDate: string | undefined;
@@ -95,7 +99,7 @@ export default async function CheckoutPage({
   }
 
   // Pass raw image_url from DB (dbEventToEventData already includes it)
-  return <CheckoutForm event={event} />;
+  return <CheckoutForm event={event} refCode={refCode} />;
 }
 
 /* ── Evento concluso ── */

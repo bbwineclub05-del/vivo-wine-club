@@ -5,18 +5,20 @@ import { motion } from 'framer-motion';
 import { CheckCircle, ArrowLeft, CalendarDays, MapPin, Clock, Mail } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import ReferralShare from '@/components/ReferralShare';
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useCart } from '@/contexts/CartContext';
 
 interface EventInfo {
-  title: string;
-  month: string;
-  day: string;
-  year: string;
-  time: string | null;
+  title:        string;
+  month:        string;
+  day:          string;
+  year:         string;
+  time:         string | null;
   locationFull: string;
-  qty: number;
+  slug:         string;
+  qty:          number;
 }
 
 type OrderType = 'event' | 'merch' | 'loading';
@@ -24,14 +26,23 @@ type OrderType = 'event' | 'merch' | 'loading';
 function SuccessContent() {
   const { clearCart }   = useCart();
   const searchParams    = useSearchParams();
-  const [orderType, setOrderType] = useState<OrderType>('loading');
-  const [eventInfo, setEventInfo] = useState<EventInfo | null>(null);
+  const [orderType,   setOrderType]   = useState<OrderType>('loading');
+  const [eventInfo,   setEventInfo]   = useState<EventInfo | null>(null);
+  const [buyerEmail,  setBuyerEmail]  = useState<string>('');
+  const [buyerName,   setBuyerName]   = useState<string>('');
+  const [myRefCode,   setMyRefCode]   = useState<string | null>(null);
+  const [refUses,     setRefUses]     = useState(0);
+  const [refReward,   setRefReward]   = useState(false);
+  const [refRewardCode, setRefRewardCode] = useState<string | null>(null);
 
   useEffect(() => {
     clearCart();
 
     const sessionId = searchParams.get('session_id');
     const orderId   = searchParams.get('order_id');
+    // Free event passes email + slug in query string for referral generation
+    const qEmail    = searchParams.get('email') ?? '';
+    const qSlug     = searchParams.get('slug')  ?? '';
 
     if (sessionId) {
       // Paid order — confirm triggers email sending and returns type + event info
@@ -41,6 +52,8 @@ function SuccessContent() {
           if (data.type === 'event') {
             setEventInfo(data.event);
             setOrderType('event');
+            if (data.buyer_email) setBuyerEmail(data.buyer_email);
+            if (data.buyer_name)  setBuyerName(data.buyer_name);
           } else {
             setOrderType('merch');
           }
@@ -54,6 +67,7 @@ function SuccessContent() {
           if (data.type === 'event') {
             setEventInfo(data.event);
             setOrderType('event');
+            if (qEmail) setBuyerEmail(qEmail);
           } else {
             setOrderType('merch');
           }
@@ -62,8 +76,37 @@ function SuccessContent() {
     } else {
       setOrderType('merch');
     }
+
+    // For free events, pre-seed email from query string
+    if (!sessionId && qEmail && qSlug) {
+      setBuyerEmail(qEmail);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Generate referral code once we know the buyer email + event slug
+  useEffect(() => {
+    if (!buyerEmail || !eventInfo?.slug) return;
+    fetch('/api/referral/generate', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        email:      buyerEmail,
+        event_slug: eventInfo.slug,
+        name:       buyerName,
+      }),
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.code) {
+          setMyRefCode(data.code);
+          setRefUses(data.uses ?? 0);
+          setRefReward(data.reward_unlocked ?? false);
+          setRefRewardCode(data.reward_code ?? null);
+        }
+      })
+      .catch(() => {/* non-fatal */});
+  }, [buyerEmail, buyerName, eventInfo?.slug]);
 
   return (
     <>
@@ -167,6 +210,20 @@ function SuccessContent() {
                       : "We've sent your ticket PDF with QR code to your email. Show the QR code at the entrance."}
                   </p>
                 </div>
+
+                {/* Referral share — shown once code is ready */}
+                {myRefCode && eventInfo && (
+                  <div className="w-full">
+                    <ReferralShare
+                      referralCode={myRefCode}
+                      eventSlug={eventInfo.slug}
+                      eventTitle={eventInfo.title}
+                      initialUses={refUses}
+                      initialRewardUnlocked={refReward}
+                      initialRewardCode={refRewardCode}
+                    />
+                  </div>
+                )}
 
                 <div className="w-16 h-px bg-[#731515]/30 my-2" />
 

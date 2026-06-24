@@ -58,10 +58,25 @@ export async function GET(request: Request) {
         total,
       });
 
+      // Referral attribution for paid events (non-blocking)
+      if (meta.ref_code) {
+        fetch(`${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vivowineclub.com'}/api/referral/use`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({
+            ref_code:      meta.ref_code,
+            used_by_email: meta.buyer_email.toLowerCase(),
+            event_slug:    meta.event_slug,
+          }),
+        }).catch(() => {/* non-fatal */});
+      }
+
       return NextResponse.json({
-        ok:       true,
-        type:     'event',
-        order_id: meta.order_id,
+        ok:          true,
+        type:        'event',
+        order_id:    meta.order_id,
+        buyer_email: meta.buyer_email,
+        buyer_name:  `${meta.buyer_first_name} ${meta.buyer_last_name}`.trim(),
         event: {
           title:        event.title,
           month:        event.month,
@@ -69,6 +84,7 @@ export async function GET(request: Request) {
           year:         event.year,
           time:         event.time ?? null,
           locationFull: event.locationFull,
+          slug:         event.slug,
           qty,
         },
       });

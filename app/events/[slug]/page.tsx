@@ -159,10 +159,14 @@ function CtaButton({
 /* ── Page ── */
 export default async function EventDetailPage({
   params,
+  searchParams,
 }: {
-  params: Promise<{ slug: string }>;
+  params:       Promise<{ slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { slug } = await params;
+  const sp       = await searchParams;
+  const refCode  = typeof sp.ref === 'string' ? sp.ref.toUpperCase() : undefined;
   const t = await getTranslations('events');
 
   let event: EventData | undefined;
@@ -282,13 +286,15 @@ export default async function EventDetailPage({
                 value={event.location}
                 sub={event.locationFull !== event.location ? event.locationFull : undefined}
               />
-              {!isListOnly && (
-                <InfoCard
-                  icon={<Ticket size={14} className="text-[#731515] shrink-0" />}
-                  label={t('labelPrice')}
-                  value={event.price === 0 ? t('free') : `€${event.price} / ${t('perPerson')}`}
-                />
-              )}
+              <InfoCard
+                icon={<Ticket size={14} className="text-[#731515] shrink-0" />}
+                label={t('labelPrice')}
+                value={
+                  isListOnly || !event.price
+                    ? t('freeEntry')
+                    : `€${event.price} / ${t('perPerson')}`
+                }
+              />
               {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
               {(event as any).capacity != null && (
                 <InfoCard
@@ -352,47 +358,52 @@ export default async function EventDetailPage({
                 eventTitle={event.title}
                 eventDate={`${event.day} ${event.month} ${event.year}`}
                 eventLocation={event.locationFull || event.location}
+                refCode={refCode}
               />
             )}
 
-            {/* CTA — desktop */}
-            <div className="hidden sm:flex items-center gap-4 pt-2 mt-8">
-              <CtaButton
-                event={event}
-                isPast={isPast}
-                bookLabel={t('bookYourSpot')}
-                listLabel={t('joinTheList')}
-                endedLabel={t('eventEnded')}
-                isListOnly={isListOnly}
-              />
-              {event.status === 'open' && !isPast && (
-                <span
-                  className="text-[11px] text-[#7a4a4a]/50"
-                  style={{ fontFamily: 'var(--font-nunito)' }}
-                >
-                  {isListOnly ? t('listOnlyCta') : t('secureCheckout')}
-                </span>
-              )}
-            </div>
+            {/* CTA — desktop (hidden for list-only events: the form already has a submit button) */}
+            {!isListOnly && (
+              <div className="hidden sm:flex items-center gap-4 pt-2 mt-8">
+                <CtaButton
+                  event={event}
+                  isPast={isPast}
+                  bookLabel={t('bookYourSpot')}
+                  listLabel={t('joinTheList')}
+                  endedLabel={t('eventEnded')}
+                  isListOnly={false}
+                />
+                {event.status === 'open' && !isPast && (
+                  <span
+                    className="text-[11px] text-[#7a4a4a]/50"
+                    style={{ fontFamily: 'var(--font-nunito)' }}
+                  >
+                    {t('secureCheckout')}
+                  </span>
+                )}
+              </div>
+            )}
 
           </div>
         </section>
 
-        {/* ── Sticky CTA — mobile only ── */}
-        <div
-          className="sm:hidden fixed bottom-0 left-0 right-0 z-40 px-4 py-3"
-          style={{ background: 'rgba(253,249,249,0.96)', backdropFilter: 'blur(8px)', borderTop: '1px solid #eddada' }}
-        >
-          <CtaButton
-            event={event}
-            isPast={isPast}
-            full
-            bookLabel={t('bookYourSpot')}
-            listLabel={t('joinTheList')}
-            endedLabel={t('eventEnded')}
-            isListOnly={isListOnly}
-          />
-        </div>
+        {/* ── Sticky CTA — mobile only (hidden for list-only events) ── */}
+        {!isListOnly && (
+          <div
+            className="sm:hidden fixed bottom-0 left-0 right-0 z-40 px-4 py-3"
+            style={{ background: 'rgba(253,249,249,0.96)', backdropFilter: 'blur(8px)', borderTop: '1px solid #eddada' }}
+          >
+            <CtaButton
+              event={event}
+              isPast={isPast}
+              full
+              bookLabel={t('bookYourSpot')}
+              listLabel={t('joinTheList')}
+              endedLabel={t('eventEnded')}
+              isListOnly={false}
+            />
+          </div>
+        )}
 
       </main>
       <Footer />

@@ -4,23 +4,29 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, User, Mail, Phone, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import ReferralShare from '@/components/ReferralShare';
 
 interface Props {
   eventSlug:     string;
   eventTitle:    string;
   eventDate:     string;   // e.g. "12 LUG 2026"
   eventLocation: string;
+  refCode?:      string;   // incoming ?ref= from URL
 }
 
 const INPUT_CLS =
   'w-full bg-white border border-[#e8d5d5] text-[#1a0505] px-4 py-3 placeholder:text-[#7a4a4a]/35 focus:outline-none focus:border-[#731515]/50 transition-colors duration-200 rounded-lg';
 
-export default function EventGuestForm({ eventSlug, eventTitle, eventDate, eventLocation }: Props) {
+export default function EventGuestForm({ eventSlug, eventTitle, eventDate, eventLocation, refCode }: Props) {
   const t = useTranslations('events');
-  const [form, setForm]       = useState({ first_name: '', last_name: '', email: '', phone: '' });
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error,   setError]   = useState('');
+  const [form, setForm]           = useState({ first_name: '', last_name: '', email: '', phone: '' });
+  const [loading, setLoading]     = useState(false);
+  const [success, setSuccess]     = useState(false);
+  const [error,   setError]       = useState('');
+  const [myRefCode,         setMyRefCode]         = useState<string | null>(null);
+  const [refUses,           setRefUses]           = useState(0);
+  const [refRewardUnlocked, setRefRewardUnlocked] = useState(false);
+  const [refRewardCode,     setRefRewardCode]     = useState<string | null>(null);
 
   function set(field: keyof typeof form) {
     return (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -42,8 +48,27 @@ export default function EventGuestForm({ eventSlug, eventTitle, eventDate, event
 
       if (!res.ok) {
         setError(json.error ?? 'Errore durante l\'iscrizione. Riprova.');
-      } else {
-        setSuccess(true);
+        return;
+      }
+
+      // Referral code arrives inline with the registration response
+      if (json.referral?.code) {
+        setMyRefCode(json.referral.code);
+        setRefUses(json.referral.uses ?? 0);
+        setRefRewardUnlocked(json.referral.reward_unlocked ?? false);
+        setRefRewardCode(json.referral.reward_code ?? null);
+      }
+
+      setSuccess(true);
+
+      // Attribute an incoming referral (if ?ref= was in the URL) — fire-and-forget
+      if (refCode) {
+        const email = form.email.trim().toLowerCase();
+        fetch('/api/referral/use', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ ref_code: refCode, used_by_email: email, event_slug: eventSlug }),
+        }).catch(() => {/* non-fatal */});
       }
     } catch {
       setError('Errore di connessione. Controlla la rete e riprova.');
@@ -102,6 +127,23 @@ export default function EventGuestForm({ eventSlug, eventTitle, eventDate, event
               <p className="text-[10px] tracking-[0.3em] text-[#731515] mb-2">{t('registrationSummary')}</p>
               <p style={{ fontFamily: 'var(--font-nunito)' }}>{eventDate} · {eventLocation}</p>
             </div>
+            <p
+              className="text-[11px] text-[#7a4a4a]/45 text-center"
+              style={{ fontFamily: 'var(--font-nunito)' }}
+            >
+              {t('spamNote')}
+            </p>
+            {/* Referral share widget — code arrives with the registration response */}
+            {myRefCode && (
+              <ReferralShare
+                referralCode={myRefCode}
+                eventSlug={eventSlug}
+                eventTitle={eventTitle}
+                initialUses={refUses}
+                initialRewardUnlocked={refRewardUnlocked}
+                initialRewardCode={refRewardCode}
+              />
+            )}
           </motion.div>
         ) : (
           /* ── Form ── */

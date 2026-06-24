@@ -16,6 +16,7 @@ const FOUNDERS = [
   { name: 'Filippo',   initials: 'FL', email: 'filippo.lombardi890@gmail.com' },
   { name: 'Cristiano', initials: 'CM', email: 'cristianomichelotti@gmail.com' },
   { name: 'Marcello',  initials: 'MA', email: 'marcelloabbadati02@gmail.com'  },
+  { name: 'Lorenzo',   initials: 'LF', email: 'lorenzofioretti2001@gmail.com' },
 ];
 
 const CATEGORIES = ['Evento', 'Membership', 'Marketing', 'Operativo', 'Merch', 'Altro'];

@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { requireAdminOrStaff, getAuthUser } from '@/lib/auth-guard';
+import { requireAdminOrStaff } from '@/lib/auth-guard';
 import { emailShell, heading, para, divider } from '@/lib/email-shell';
+import { generateReferralCode } from '@/lib/referral';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -59,16 +60,44 @@ export async function GET(
   if (!auth.ok) return auth.response;
 
   const { slug } = await params;
-  const db = getSupabaseAdmin();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (db as any)
+  const db = getSupabaseAdmin() as any;
+
+  const { data: guests, error } = await db
     .from('event_guests')
     .select('*')
     .eq('event_slug', slug)
     .order('created_at', { ascending: true });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ guests: data ?? [] });
+
+  // Enrich guests with referral reward info (join by email + event_slug)
+  const guestList = guests ?? [];
+  if (guestList.length > 0) {
+    const emails = [...new Set(guestList.map((g: { email: string }) => g.email))];
+    const { data: refCodes } = await db
+      .from('referral_codes')
+      .select('owner_email, reward_unlocked, reward_code')
+      .eq('event_slug', slug)
+      .in('owner_email', emails);
+
+    if (refCodes && refCodes.length > 0) {
+      type RefRow = { owner_email: string; reward_unlocked: boolean; reward_code: string | null };
+      const refMap = new Map((refCodes as RefRow[]).map((rc) =>
+        [rc.owner_email, { reward_unlocked: rc.reward_unlocked, reward_code: rc.reward_code }]
+      ));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      for (const g of guestList as any[]) {
+        const ref = refMap.get(g.email);
+        if (ref) {
+          g.referral_reward_unlocked = ref.reward_unlocked;
+          g.referral_reward_code     = ref.reward_code;
+        }
+      }
+    }
+  }
+
+  return NextResponse.json({ guests: guestList });
 }
 
 /* ── POST /api/events/[slug]/guests  (public — no auth required) ── */
@@ -148,6 +177,13 @@ export async function POST(
   const months = ['GEN','FEB','MAR','APR','MAG','GIU','LUG','AGO','SET','OTT','NOV','DIC'];
   const eventDate = `${parseInt(d)} ${months[parseInt(m) - 1]} ${y}`;
 
+  // Generate referral code inline — non-fatal if tables don't exist yet
+  const referral = await generateReferralCode({
+    email,
+    eventSlug: slug,
+    name:      `${firstName} ${lastName}`,
+  });
+
   // Send confirmation email (non-blocking — don't fail the request if email fails)
   try {
     await resend.emails.send({
@@ -171,7 +207,7 @@ export async function POST(
     console.error('[event guests] email error:', emailErr);
   }
 
-  return NextResponse.json({ guest }, { status: 201 });
+  return NextResponse.json({ guest, referral }, { status: 201 });
 }
 
 /* ── DELETE /api/events/[slug]/guests  (admin/staff only)

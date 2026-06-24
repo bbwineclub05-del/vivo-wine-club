@@ -778,7 +778,7 @@ function CollaboratorAssignPanel({ event, accessToken }: { event: DbEvent; acces
 }
 
 /* ─────────────────────────────────────────────
-   Guest List Modal (centrata)
+   Guest List — schermo intero
 ───────────────────────────────────────────── */
 function GuestListDrawer({
   event,
@@ -801,102 +801,89 @@ function GuestListDrawer({
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <motion.div
-        className="absolute inset-0 bg-black/50 backdrop-blur-[3px]"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.2 }}
-        onClick={onClose}
-      />
+    <motion.div
+      className="fixed inset-0 z-50 bg-white flex flex-col overflow-hidden"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{    opacity: 0, y: 16 }}
+      transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+    >
+      {/* ── Header ── */}
+      <div className="flex items-center justify-between px-6 py-4 border-b border-[#eddada] bg-white shrink-0">
+        <div className="min-w-0">
+          <div className="text-[9px] tracking-[0.45em] text-[#731515] mb-0.5">LISTA INVITATI</div>
+          <h2
+            className="text-xl font-light text-[#1a0505] truncate"
+            style={{ fontFamily: 'var(--font-syne)' }}
+            title={event.title}
+          >
+            {event.title}
+          </h2>
+          <p className="text-[11px] text-[#7a4a4a]/50 mt-0.5" style={{ fontFamily: 'var(--font-nunito)' }}>
+            {event.date ? fmtDate(event.date) : ''}{event.location ? ` · ${event.location}` : ''}
+          </p>
+        </div>
+        <button
+          onClick={onClose}
+          className="shrink-0 ml-4 w-10 h-10 flex items-center justify-center rounded-xl text-[#7a4a4a]/50 hover:text-[#731515] hover:bg-[#fdf6f6] transition-colors"
+          title="Chiudi (Esc)"
+        >
+          <X size={20} />
+        </button>
+      </div>
 
-      {/* Modal */}
-      <motion.div
-        className="relative w-full max-w-[780px] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden"
-        style={{ maxHeight: '85vh' }}
-        initial={{ opacity: 0, scale: 0.96, y: 12 }}
-        animate={{ opacity: 1, scale: 1,    y: 0  }}
-        exit={{    opacity: 0, scale: 0.96, y: 12 }}
-        transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-      >
-        {/* Header — fixed */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#eddada] shrink-0">
-          <div className="min-w-0">
-            <div className="text-[9px] tracking-[0.45em] text-[#731515] mb-0.5">LISTA INVITATI</div>
-            <h3
-              className="text-lg font-light text-[#1a0505] truncate max-w-lg"
-              style={{ fontFamily: 'var(--font-syne)' }}
-              title={event.title}
-            >
-              {event.title}
-            </h3>
-            <p className="text-[11px] text-[#7a4a4a]/50 mt-0.5" style={{ fontFamily: 'var(--font-nunito)' }}>
-              {event.date ? fmtDate(event.date) : ''}{event.location ? ` · ${event.location}` : ''}
-            </p>
+      {/* ── Tabs ── */}
+      <div className="flex border-b border-[#eddada] bg-white shrink-0 px-6">
+        <button
+          onClick={() => setTab('guests')}
+          className={`py-2.5 mr-6 text-[10px] tracking-[0.35em] border-b-2 transition-colors ${
+            tab === 'guests'
+              ? 'border-[#731515] text-[#731515]'
+              : 'border-transparent text-[#7a4a4a]/40 hover:text-[#7a4a4a]'
+          }`}
+          style={{ fontFamily: 'var(--font-nunito)' }}
+        >
+          <span className="flex items-center gap-1.5">
+            <ClipboardList size={11} />
+            INVITATI
+          </span>
+        </button>
+        <button
+          onClick={() => setTab('collaborators')}
+          className={`py-2.5 text-[10px] tracking-[0.35em] border-b-2 transition-colors ${
+            tab === 'collaborators'
+              ? 'border-[#731515] text-[#731515]'
+              : 'border-transparent text-[#7a4a4a]/40 hover:text-[#7a4a4a]'
+          }`}
+          style={{ fontFamily: 'var(--font-nunito)' }}
+        >
+          <span className="flex items-center gap-1.5">
+            <UserCheck size={11} />
+            COLLABORATORI
+          </span>
+        </button>
+      </div>
+
+      {/* ── Content — fills all remaining space ── */}
+      <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+        {tab === 'guests' ? (
+          <EventGuestPanel
+            event={{
+              id:                 event.id,
+              slug:               event.slug,
+              title:              event.title,
+              guest_list_enabled: event.guest_list_enabled,
+            }}
+            accessToken={accessToken}
+            onGuestEnabled={onGuestEnabled}
+          />
+        ) : (
+          <div className="flex-1 overflow-y-auto">
+            <CollaboratorAssignPanel event={event} accessToken={accessToken} />
           </div>
-          <button
-            onClick={onClose}
-            className="shrink-0 ml-4 w-9 h-9 flex items-center justify-center rounded-lg text-[#7a4a4a]/50 hover:text-[#731515] hover:bg-[#fdf6f6] transition-colors"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex border-b border-[#eddada] shrink-0 px-6">
-          <button
-            onClick={() => setTab('guests')}
-            className={`py-2.5 mr-6 text-[10px] tracking-[0.35em] border-b-2 transition-colors ${
-              tab === 'guests'
-                ? 'border-[#731515] text-[#731515]'
-                : 'border-transparent text-[#7a4a4a]/40 hover:text-[#7a4a4a]'
-            }`}
-            style={{ fontFamily: 'var(--font-nunito)' }}
-          >
-            <span className="flex items-center gap-1.5">
-              <ClipboardList size={11} />
-              INVITATI
-            </span>
-          </button>
-          <button
-            onClick={() => setTab('collaborators')}
-            className={`py-2.5 text-[10px] tracking-[0.35em] border-b-2 transition-colors ${
-              tab === 'collaborators'
-                ? 'border-[#731515] text-[#731515]'
-                : 'border-transparent text-[#7a4a4a]/40 hover:text-[#7a4a4a]'
-            }`}
-            style={{ fontFamily: 'var(--font-nunito)' }}
-          >
-            <span className="flex items-center gap-1.5">
-              <UserCheck size={11} />
-              COLLABORATORI
-            </span>
-          </button>
-        </div>
-
-        {/* Content — fills remaining height */}
-        <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-          {tab === 'guests' ? (
-            <EventGuestPanel
-              event={{
-                id:                 event.id,
-                slug:               event.slug,
-                title:              event.title,
-                guest_list_enabled: event.guest_list_enabled,
-              }}
-              accessToken={accessToken}
-              onGuestEnabled={onGuestEnabled}
-            />
-          ) : (
-            <div className="flex-1 overflow-y-auto">
-              <CollaboratorAssignPanel event={event} accessToken={accessToken} />
-            </div>
-          )}
-        </div>
-      </motion.div>
-    </div>
+        )}
+      </div>
+    </motion.div>
   );
 }
 

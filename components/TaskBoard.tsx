@@ -70,10 +70,11 @@ const PED_COLOR = '#6b21a8'; // deep purple text
    Static fallbacks
 ───────────────────────────────────────────── */
 const STATIC_ADMINS = [
-  { name: 'Cris',  email: 'cristianomichelotti@gmail.com' },
-  { name: 'Pippo', email: 'filippo.lombardi890@gmail.com' },
-  { name: 'Jack',  email: 'giacomogallo1310@gmail.com'    },
-  { name: 'Ricky', email: 'riccardo.consalvo@icloud.com'  },
+  { name: 'Cris',    email: 'cristianomichelotti@gmail.com'  },
+  { name: 'Pippo',   email: 'filippo.lombardi890@gmail.com'  },
+  { name: 'Jack',    email: 'giacomogallo1310@gmail.com'     },
+  { name: 'Ricky',   email: 'riccardo.consalvo@icloud.com'   },
+  { name: 'Lorenzo', email: 'lorenzofioretti2001@gmail.com'  },
 ];
 
 export const ADMINS = STATIC_ADMINS;

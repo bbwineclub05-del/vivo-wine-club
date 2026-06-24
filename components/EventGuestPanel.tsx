@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Search, Users, CheckCheck, Phone, Mail,
-  Check, Clock, Plus, X, Loader2, Trash2,
+  Check, Clock, Plus, X, Loader2, Trash2, Star,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
@@ -17,6 +17,8 @@ interface Guest {
   checked_in:   boolean;
   checked_in_at?: string | null;
   created_at:   string;
+  referral_reward_unlocked?: boolean;
+  referral_reward_code?:     string | null;
 }
 
 interface Props {
@@ -366,14 +368,24 @@ export default function EventGuestPanel({ event, accessToken, onGuestEnabled }: 
 
                   {/* Guest info */}
                   <div className="flex-1 min-w-0">
-                    <p
-                      className={`text-[15px] font-medium leading-tight truncate ${
-                        guest.checked_in ? 'text-emerald-800' : 'text-[#1a0505]'
-                      }`}
-                      style={{ fontFamily: 'var(--font-syne)' }}
-                    >
-                      {guest.last_name} {guest.first_name}
-                    </p>
+                    <div className="flex items-center gap-1.5">
+                      <p
+                        className={`text-[15px] font-medium leading-tight truncate ${
+                          guest.checked_in ? 'text-emerald-800' : 'text-[#1a0505]'
+                        }`}
+                        style={{ fontFamily: 'var(--font-syne)' }}
+                      >
+                        {guest.last_name} {guest.first_name}
+                      </p>
+                      {guest.referral_reward_unlocked && (
+                        <span
+                          title={`Reward sbloccato${guest.referral_reward_code ? ` — ${guest.referral_reward_code}` : ''}`}
+                          className="shrink-0"
+                        >
+                          <Star size={13} className="text-amber-500 fill-amber-400" />
+                        </span>
+                      )}
+                    </div>
                     <div className="flex flex-wrap items-center gap-x-3 mt-0.5">
                       <span className="flex items-center gap-1 text-[11px] text-[#7a4a4a]/55" style={{ fontFamily: 'var(--font-nunito)' }}>
                         <Mail size={9} className="shrink-0" />{guest.email}
