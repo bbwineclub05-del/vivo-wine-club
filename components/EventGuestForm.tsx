@@ -11,13 +11,14 @@ interface Props {
   eventTitle:    string;
   eventDate:     string;   // e.g. "12 LUG 2026"
   eventLocation: string;
-  refCode?:      string;   // incoming ?ref= from URL
+  refCode?:      string;   // incoming ?ref= from URL (user referral)
+  partnerCode?:  string;   // incoming ?partner= from URL (organisation tracking)
 }
 
 const INPUT_CLS =
   'w-full bg-white border border-[#e8d5d5] text-[#1a0505] px-4 py-3 placeholder:text-[#7a4a4a]/35 focus:outline-none focus:border-[#731515]/50 transition-colors duration-200 rounded-lg';
 
-export default function EventGuestForm({ eventSlug, eventTitle, eventDate, eventLocation, refCode }: Props) {
+export default function EventGuestForm({ eventSlug, eventTitle, eventDate, eventLocation, refCode, partnerCode }: Props) {
   const t = useTranslations('events');
   const [form, setForm]           = useState({ first_name: '', last_name: '', email: '', phone: '' });
   const [loading, setLoading]     = useState(false);
@@ -42,7 +43,7 @@ export default function EventGuestForm({ eventSlug, eventTitle, eventDate, event
       const res = await fetch(`/api/events/${eventSlug}/guests`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(form),
+        body:    JSON.stringify({ ...form, partner_code: partnerCode ?? null }),
       });
       const json = await res.json();
 

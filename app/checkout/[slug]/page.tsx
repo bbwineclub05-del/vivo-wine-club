@@ -68,8 +68,9 @@ export default async function CheckoutPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { slug } = await params;
-  const sp       = await searchParams;
-  const refCode  = typeof sp.ref === 'string' ? sp.ref.toUpperCase() : undefined;
+  const sp          = await searchParams;
+  const refCode     = typeof sp.ref     === 'string' ? sp.ref.toUpperCase()     : undefined;
+  const partnerCode = typeof sp.partner === 'string' ? sp.partner.toUpperCase() : undefined;
 
   let event: EventData | undefined;
   let rawDate: string | undefined;
@@ -99,7 +100,7 @@ export default async function CheckoutPage({
   }
 
   // Pass raw image_url from DB (dbEventToEventData already includes it)
-  return <CheckoutForm event={event} refCode={refCode} />;
+  return <CheckoutForm event={event} refCode={refCode} partnerCode={partnerCode} />;
 }
 
 /* ── Evento concluso ── */

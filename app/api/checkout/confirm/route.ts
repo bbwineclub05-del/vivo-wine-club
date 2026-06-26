@@ -48,14 +48,15 @@ export async function GET(request: Request) {
       const total = event.price * qty;
 
       await sendEventConfirmationEmails({
-        orderId:   meta.order_id,
+        orderId:     meta.order_id,
         event,
-        firstName: meta.buyer_first_name,
-        lastName:  meta.buyer_last_name,
-        email:     meta.buyer_email,
-        phone:     meta.buyer_phone,
+        firstName:   meta.buyer_first_name,
+        lastName:    meta.buyer_last_name,
+        email:       meta.buyer_email,
+        phone:       meta.buyer_phone,
         qty,
         total,
+        partnerCode: meta.partner_code || undefined,
       });
 
       // Referral attribution for paid events (non-blocking)

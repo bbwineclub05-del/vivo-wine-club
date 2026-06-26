@@ -28,13 +28,14 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 const resend = new Resend(process.env.RESEND_API_KEY!);
 
 interface Body {
-  slug:     string;
-  qty:      number;
-  firstName: string;
-  lastName:  string;
-  email:    string;
-  phone:    string;
-  refCode?: string;
+  slug:        string;
+  qty:         number;
+  firstName:   string;
+  lastName:    string;
+  email:       string;
+  phone:       string;
+  refCode?:    string;
+  partnerCode?: string;
 }
 
 // ── Email helpers ─────────────────────────────────────────────────────────────
@@ -177,16 +178,17 @@ async function upsertCustomer({
 // record is already persisted at that point.
 
 export async function sendEventConfirmationEmails(params: {
-  orderId:   string;
-  event:     EventData;
-  firstName: string;
-  lastName:  string;
-  email:     string;
-  phone:     string;
-  qty:       number;
-  total:     number;
+  orderId:      string;
+  event:        EventData;
+  firstName:    string;
+  lastName:     string;
+  email:        string;
+  phone:        string;
+  qty:          number;
+  total:        number;
+  partnerCode?: string;
 }) {
-  const { orderId, event, firstName, lastName, email, phone, qty, total } = params;
+  const { orderId, event, firstName, lastName, email, phone, qty, total, partnerCode } = params;
   const tag = `[ticket-email order=${orderId} event=${event.slug}]`;
 
   console.log(`${tag} start — buyer=${email} qty=${qty} total=${total}`);
@@ -204,6 +206,7 @@ export async function sendEventConfirmationEmails(params: {
     name:           `${firstName} ${lastName}`,
     checked_in:     false,
     payment_status: 'paid',
+    partner_code:   partnerCode ?? null,
     // email_sent intentionally omitted — upsert must not overwrite an existing true
   }));
 
@@ -307,7 +310,7 @@ export async function sendEventConfirmationEmails(params: {
 export async function POST(request: Request) {
   try {
   const body: Body = await request.json();
-  const { slug, qty, firstName, lastName, email, phone, refCode } = body;
+  const { slug, qty, firstName, lastName, email, phone, refCode, partnerCode } = body;
 
   if (!slug || !qty || !firstName || !lastName || !email || !phone) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -326,7 +329,7 @@ export async function POST(request: Request) {
   // Even if the email step fails internally, the ticket is in the DB and the
   // user is redirected to the success page. The error is logged server-side.
   if (total === 0) {
-    await sendEventConfirmationEmails({ orderId, event, firstName, lastName, email, phone, qty, total });
+    await sendEventConfirmationEmails({ orderId, event, firstName, lastName, email, phone, qty, total, partnerCode });
 
     // Referral attribution for free events (non-blocking)
     if (refCode) {
@@ -371,7 +374,8 @@ export async function POST(request: Request) {
       buyer_email:      email,
       buyer_phone:      phone,
       ticket_count:     String(qty),
-      ref_code:         refCode ?? '',
+      ref_code:         refCode     ?? '',
+      partner_code:     partnerCode ?? '',
     },
     locale: 'auto',
   });

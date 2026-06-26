@@ -111,10 +111,11 @@ export async function POST(
   try { body = await request.json(); }
   catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }
 
-  const firstName = String(body.first_name ?? '').trim();
-  const lastName  = String(body.last_name  ?? '').trim();
-  const email     = String(body.email      ?? '').trim().toLowerCase();
-  const phone     = String(body.phone      ?? '').trim() || null;
+  const firstName   = String(body.first_name   ?? '').trim();
+  const lastName    = String(body.last_name    ?? '').trim();
+  const email       = String(body.email        ?? '').trim().toLowerCase();
+  const phone       = String(body.phone        ?? '').trim() || null;
+  const partnerCode = body.partner_code ? String(body.partner_code).trim().toUpperCase() : null;
 
   if (!firstName || !lastName || !email) {
     return NextResponse.json({ error: 'Nome, cognome ed email sono obbligatori.' }, { status: 422 });
@@ -158,12 +159,13 @@ export async function POST(
   const { data: guest, error: insertErr } = await (db as any)
     .from('event_guests')
     .insert({
-      event_id:   eventRow.id,
-      event_slug: slug,
-      first_name: firstName,
-      last_name:  lastName,
+      event_id:     eventRow.id,
+      event_slug:   slug,
+      first_name:   firstName,
+      last_name:    lastName,
       email,
       phone,
+      partner_code: partnerCode,
     })
     .select()
     .single();
@@ -180,8 +182,9 @@ export async function POST(
   // Generate referral code inline — non-fatal if tables don't exist yet
   const referral = await generateReferralCode({
     email,
-    eventSlug: slug,
-    name:      `${firstName} ${lastName}`,
+    eventSlug:   slug,
+    name:        `${firstName} ${lastName}`,
+    partnerCode,
   });
 
   // Send confirmation email (non-blocking — don't fail the request if email fails)

@@ -89,6 +89,7 @@ function CtaButton({
   listLabel,
   endedLabel,
   isListOnly,
+  partnerCode,
 }: {
   event: EventData;
   isPast: boolean;
@@ -97,6 +98,7 @@ function CtaButton({
   listLabel: string;
   endedLabel: string;
   isListOnly?: boolean;
+  partnerCode?: string;
 }) {
   const cls = full ? 'w-full justify-center' : 'sm:inline-flex';
 
@@ -139,9 +141,12 @@ function CtaButton({
       </a>
     );
   }
+  const checkoutHref = partnerCode
+    ? `/checkout/${event.slug}?partner=${partnerCode}`
+    : `/checkout/${event.slug}`;
   return (
     <Link
-      href={`/checkout/${event.slug}`}
+      href={checkoutHref}
       className={`${cls} inline-flex items-center gap-3 px-8 py-4 bg-[#731515] text-white text-[9px] tracking-[0.4em] hover:bg-[#9b2323] active:bg-[#5a1010] transition-colors rounded-lg`}
       style={{ fontFamily: 'var(--font-nunito)' }}
     >
@@ -165,8 +170,9 @@ export default async function EventDetailPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { slug } = await params;
-  const sp       = await searchParams;
-  const refCode  = typeof sp.ref === 'string' ? sp.ref.toUpperCase() : undefined;
+  const sp          = await searchParams;
+  const refCode     = typeof sp.ref     === 'string' ? sp.ref.toUpperCase()     : undefined;
+  const partnerCode = typeof sp.partner === 'string' ? sp.partner.toUpperCase() : undefined;
   const t = await getTranslations('events');
 
   let event: EventData | undefined;
@@ -359,6 +365,7 @@ export default async function EventDetailPage({
                 eventDate={`${event.day} ${event.month} ${event.year}`}
                 eventLocation={event.locationFull || event.location}
                 refCode={refCode}
+                partnerCode={partnerCode}
               />
             )}
 
@@ -372,6 +379,7 @@ export default async function EventDetailPage({
                   listLabel={t('joinTheList')}
                   endedLabel={t('eventEnded')}
                   isListOnly={false}
+                  partnerCode={partnerCode}
                 />
                 {event.status === 'open' && !isPast && (
                   <span
@@ -401,6 +409,7 @@ export default async function EventDetailPage({
               listLabel={t('joinTheList')}
               endedLabel={t('eventEnded')}
               isListOnly={false}
+              partnerCode={partnerCode}
             />
           </div>
         )}

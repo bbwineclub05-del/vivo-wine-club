@@ -6,11 +6,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, Pencil, Trash2, Eye, EyeOff, ChevronDown, ChevronUp,
   CalendarDays, MapPin, Tag, Users, CheckCircle2, Clock, XCircle, Globe, ScanLine,
-  Send, X, Check, Languages, ImagePlus, Loader2, ClipboardList, UserCheck,
+  Send, X, Check, Languages, ImagePlus, Loader2, ClipboardList, UserCheck, Link2,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import EventScanner from '@/components/EventScanner';
 import EventGuestPanel from '@/components/EventGuestPanel';
+import EventPartnerPanel from '@/components/EventPartnerPanel';
 
 /* ─────────────────────────────────────────────
    Types
@@ -791,7 +792,7 @@ function GuestListDrawer({
   onClose:        () => void;
   onGuestEnabled: () => void;
 }) {
-  const [tab, setTab] = useState<'guests' | 'collaborators'>('guests');
+  const [tab, setTab] = useState<'guests' | 'collaborators' | 'partners'>('guests');
 
   // Close on Escape
   useEffect(() => {
@@ -850,7 +851,7 @@ function GuestListDrawer({
         </button>
         <button
           onClick={() => setTab('collaborators')}
-          className={`py-2.5 text-[10px] tracking-[0.35em] border-b-2 transition-colors ${
+          className={`py-2.5 mr-6 text-[10px] tracking-[0.35em] border-b-2 transition-colors ${
             tab === 'collaborators'
               ? 'border-[#731515] text-[#731515]'
               : 'border-transparent text-[#7a4a4a]/40 hover:text-[#7a4a4a]'
@@ -860,6 +861,20 @@ function GuestListDrawer({
           <span className="flex items-center gap-1.5">
             <UserCheck size={11} />
             COLLABORATORI
+          </span>
+        </button>
+        <button
+          onClick={() => setTab('partners')}
+          className={`py-2.5 text-[10px] tracking-[0.35em] border-b-2 transition-colors ${
+            tab === 'partners'
+              ? 'border-[#731515] text-[#731515]'
+              : 'border-transparent text-[#7a4a4a]/40 hover:text-[#7a4a4a]'
+          }`}
+          style={{ fontFamily: 'var(--font-nunito)' }}
+        >
+          <span className="flex items-center gap-1.5">
+            <Link2 size={11} />
+            PARTNER
           </span>
         </button>
       </div>
@@ -877,9 +892,16 @@ function GuestListDrawer({
             accessToken={accessToken}
             onGuestEnabled={onGuestEnabled}
           />
-        ) : (
+        ) : tab === 'collaborators' ? (
           <div className="flex-1 overflow-y-auto">
             <CollaboratorAssignPanel event={event} accessToken={accessToken} />
+          </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto">
+            <EventPartnerPanel
+              event={{ id: event.id, slug: event.slug, title: event.title }}
+              accessToken={accessToken}
+            />
           </div>
         )}
       </div>

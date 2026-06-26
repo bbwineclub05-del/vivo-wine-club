@@ -27,11 +27,12 @@ export interface ReferralResult {
  * Returns null if referral tables don't exist (migration not applied yet).
  */
 export async function generateReferralCode(opts: {
-  email:      string;
-  eventSlug:  string;
-  name:       string;
+  email:        string;
+  eventSlug:    string;
+  name:         string;
+  partnerCode?: string | null;
 }): Promise<ReferralResult | null> {
-  const { email, eventSlug, name } = opts;
+  const { email, eventSlug, name, partnerCode } = opts;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db = getSupabaseAdmin() as any;
 
@@ -71,7 +72,7 @@ export async function generateReferralCode(opts: {
 
     const { data: inserted, error: insertErr } = await db
       .from('referral_codes')
-      .insert({ code, event_slug: eventSlug, owner_email: email, owner_name: name })
+      .insert({ code, event_slug: eventSlug, owner_email: email, owner_name: name, partner_code: partnerCode ?? null })
       .select('code, uses, reward_unlocked, reward_code')
       .single();
 

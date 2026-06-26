@@ -59,7 +59,7 @@ export async function POST(request: Request) {
   // Look up the referral code
   const { data: rc, error: rcErr } = await db
     .from('referral_codes')
-    .select('id, code, event_slug, owner_email, owner_name, uses, reward_unlocked, reward_code')
+    .select('id, code, event_slug, owner_email, owner_name, uses, reward_unlocked, reward_code, partner_code')
     .eq('code', refCode)
     .maybeSingle();
 
@@ -115,6 +115,18 @@ export async function POST(request: Request) {
   }
 
   await db.from('referral_codes').update(updatePayload).eq('id', rc.id);
+
+  // Propagate partner_code to Person B's guest row (non-blocking, only if not already attributed)
+  if (rc.partner_code) {
+    db
+      .from('event_guests')
+      .update({ partner_code: rc.partner_code })
+      .eq('event_slug', eventSlug)
+      .eq('email', usedByEmail)
+      .is('partner_code', null)
+      .then(() => {/* non-fatal */})
+      .catch(() => {/* non-fatal */});
+  }
 
   // Send reward email (non-blocking)
   if (justUnlocked && rewardCode) {

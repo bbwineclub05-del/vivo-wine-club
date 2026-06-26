@@ -51,7 +51,7 @@ function Field({
 }
 
 /* ── Checkout form ── */
-export default function CheckoutForm({ event, refCode }: { event: EventData; refCode?: string }) {
+export default function CheckoutForm({ event, refCode, partnerCode }: { event: EventData; refCode?: string; partnerCode?: string }) {
   const [qty,          setQty]          = useState(1);
   const [firstName,    setFirstName]    = useState('');
   const [lastName,     setLastName]     = useState('');
@@ -77,7 +77,7 @@ export default function CheckoutForm({ event, refCode }: { event: EventData; ref
       const res  = await fetch('/api/checkout/event', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ slug: event.slug, qty, firstName, lastName, email, phone, refCode }),
+        body:    JSON.stringify({ slug: event.slug, qty, firstName, lastName, email, phone, refCode, partnerCode }),
       });
       const data = await res.json();
 
