@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, memo } from 'react';
+import { pixel } from '@/lib/pixel';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
@@ -240,6 +241,7 @@ export default function WearTheClubPage() {
   const [loading,  setLoading]  = useState(true);
 
   useEffect(() => {
+    pixel.viewContentGroup({ content_name: 'Wear The Club' });
     fetch('/api/merch/products/public')
       .then((r) => r.json())
       .then((d) => setProducts(d.products ?? []))

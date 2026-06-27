@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import { pixel } from '@/lib/pixel';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -77,6 +78,11 @@ export default function ProductDetailClient({ product }: { product: ProductFull 
     );
     return map;
   }, [product.product_variant_combinations]);
+
+  useEffect(() => {
+    pixel.viewProduct({ content_name: product.title, value: product.price });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [selectedVariant,     setSelectedVariant]     = useState<ProductVariant | null>(null);
   const [selectedTextVariant, setSelectedTextVariant] = useState<ProductTextVariant | null>(null);
@@ -198,6 +204,7 @@ export default function ProductDetailClient({ product }: { product: ProductFull 
     const sz  = hasSizes ? size : null;
     if (isSoldOut(vid, sz)) return;
     addItem(buildCartItem());
+    pixel.addToCart({ content_name: product.title, value: product.price });
     setAdded(true);
     setTimeout(() => setAdded(false), 1800);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -209,6 +216,7 @@ export default function ProductDetailClient({ product }: { product: ProductFull 
     const sz  = hasSizes ? size : null;
     if (isSoldOut(vid, sz)) return;
     addItem(buildCartItem());
+    pixel.initiateCheckout({ value: product.price, content_name: product.title });
     openCart(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [validate, buildCartItem, addItem, openCart, selectedVariant, size, hasSizes]);

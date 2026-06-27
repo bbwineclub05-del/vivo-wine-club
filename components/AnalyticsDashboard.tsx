@@ -353,6 +353,16 @@ export default function AnalyticsDashboard() {
           GA4
           <ExternalLink size={9} />
         </a>
+        <a
+          href="https://business.facebook.com/events_manager2/list/pixel/889556867506381/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1 text-[8px] tracking-[0.2em] text-[#7a4a4a]/50 hover:text-[#731515] border border-[#e8d5d5] bg-white hover:border-[#731515]/30 px-2 py-1 transition-all duration-200"
+          style={{ fontFamily: 'var(--font-nunito)' }}
+        >
+          META PIXEL
+          <ExternalLink size={9} />
+        </a>
         {liveConnected && (
           <span className="flex items-center gap-1 text-[8px] tracking-[0.2em] text-green-600">
             <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />

@@ -9,6 +9,7 @@ import Footer from '@/components/Footer';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { dbEventToEventData, type EventData, type DbEvent } from '@/lib/events';
 import EventGuestForm from '@/components/EventGuestForm';
+import EventViewTracker from '@/components/EventViewTracker';
 
 export const dynamic = 'force-dynamic';
 
@@ -211,6 +212,7 @@ export default async function EventDetailPage({
 
   return (
     <>
+      <EventViewTracker eventTitle={event.title} />
       <Navbar />
       <main>
 

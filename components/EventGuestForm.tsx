@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { pixel } from '@/lib/pixel';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, User, Mail, Phone, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -60,6 +61,7 @@ export default function EventGuestForm({ eventSlug, eventTitle, eventDate, event
         setRefRewardCode(json.referral.reward_code ?? null);
       }
 
+      pixel.lead({ content_name: eventTitle });
       setSuccess(true);
 
       // Attribute an incoming referral (if ?ref= was in the URL) — fire-and-forget

@@ -6,7 +6,8 @@ import { CheckCircle, ArrowLeft, CalendarDays, MapPin, Clock, Mail } from 'lucid
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ReferralShare from '@/components/ReferralShare';
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense, useRef } from 'react';
+import { pixel } from '@/lib/pixel';
 import { useSearchParams } from 'next/navigation';
 import { useCart } from '@/contexts/CartContext';
 
@@ -34,6 +35,7 @@ function SuccessContent() {
   const [refUses,     setRefUses]     = useState(0);
   const [refReward,   setRefReward]   = useState(false);
   const [refRewardCode, setRefRewardCode] = useState<string | null>(null);
+  const purchaseFired = useRef(false);
 
   useEffect(() => {
     clearCart();
@@ -83,6 +85,17 @@ function SuccessContent() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Fire purchase pixel once we know the order type
+  useEffect(() => {
+    if (purchaseFired.current || orderType === 'loading') return;
+    purchaseFired.current = true;
+    if (orderType === 'event' && eventInfo) {
+      pixel.purchase({ content_name: eventInfo.title });
+    } else if (orderType === 'merch') {
+      pixel.purchase({});
+    }
+  }, [orderType, eventInfo]);
 
   // Generate referral code once we know the buyer email + event slug
   useEffect(() => {

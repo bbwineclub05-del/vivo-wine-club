@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { pixel } from '@/lib/pixel';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { MapPin, Minus, Plus, Calendar, Tag, User } from 'lucide-react';
@@ -85,6 +86,7 @@ export default function CheckoutForm({ event, refCode, partnerCode }: { event: E
         throw new Error(data.error ?? 'Something went wrong. Please try again.');
       }
 
+      pixel.initiateCheckout({ value: total, content_name: event.title });
       window.location.href = data.url;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.');
