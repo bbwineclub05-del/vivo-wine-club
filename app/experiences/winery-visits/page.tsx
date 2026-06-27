@@ -20,22 +20,36 @@ interface PastVisitEvent {
   year: string;
 }
 
+interface DbWinery {
+  slug:     string;
+  name:     string;
+  logo_url: string | null;
+  region:   string;
+  country:  string;
+}
+
 const PILL_KEYS = ['pill1', 'pill2', 'pill3'] as const;
 
 export default function WineryVisitsPage() {
   const t = useTranslations('wineryVisits');
-  const [pastVisits, setPastVisits] = useState<PastVisitEvent[]>([]);
+  const [pastVisits,  setPastVisits]  = useState<PastVisitEvent[]>([]);
+  const [dbWineries,  setDbWineries]  = useState<DbWinery[]>([]);
 
   useEffect(() => {
     fetch('/api/events?section=winery_visit&past=true')
       .then(r => r.json())
-      .then(j => {
-        if (Array.isArray(j.events)) {
-          setPastVisits(j.events as PastVisitEvent[]);
-        }
-      })
-      .catch(() => {/* fall through — static WINERIES will show */});
+      .then(j => { if (Array.isArray(j.events)) setPastVisits(j.events as PastVisitEvent[]); })
+      .catch(() => {});
+
+    fetch('/api/wineries')
+      .then(r => r.json())
+      .then(j => { if (Array.isArray(j.wineries)) setDbWineries(j.wineries as DbWinery[]); })
+      .catch(() => {});
   }, []);
+
+  // DB wineries that are NOT already in the 48 hardcoded ones
+  const hardcodedSlugs = new Set(WINERIES.map(w => w.slug));
+  const extraDbWineries = dbWineries.filter(w => !hardcodedSlugs.has(w.slug));
   return (
     <div className="bg-[#1A2E5C] min-h-screen text-[#F5EEE6]">
 
@@ -280,7 +294,7 @@ export default function WineryVisitsPage() {
             </>
           )}
 
-          {/* Static estates — always visible */}
+          {/* Static estates + auto-created DB wineries — same grid */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {WINERIES.map((winery, i) => (
               <motion.div
@@ -294,7 +308,6 @@ export default function WineryVisitsPage() {
                   href={`/wineries/${winery.slug}`}
                   className="group flex flex-col bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:border-[#C9A84C]/50 transition-all duration-300"
                 >
-                  {/* Logo area */}
                   <div className="flex items-center justify-center h-28 px-6 bg-gray-50 group-hover:bg-white transition-colors duration-300">
                     {winery.logo ? (
                       <Image
@@ -313,13 +326,8 @@ export default function WineryVisitsPage() {
                       </div>
                     )}
                   </div>
-
-                  {/* Info area */}
                   <div className="flex flex-col gap-1 px-4 py-4">
-                    <p
-                      className="text-[#1a0505] text-sm font-medium leading-tight group-hover:text-[#731515] transition-colors"
-                      style={{ fontFamily: 'var(--font-syne)' }}
-                    >
+                    <p className="text-[#1a0505] text-sm font-medium leading-tight group-hover:text-[#731515] transition-colors" style={{ fontFamily: 'var(--font-syne)' }}>
                       {winery.name}
                     </p>
                     <p className="text-[#7a4a4a] text-[11px] tracking-wide">
@@ -328,6 +336,51 @@ export default function WineryVisitsPage() {
                     {winery.classification && (
                       <p className="text-[#731515]/60 text-[10px] tracking-wide mt-0.5 leading-tight line-clamp-1">
                         {winery.classification}
+                      </p>
+                    )}
+                  </div>
+                </Link>
+              </motion.div>
+            ))}
+
+            {/* Auto-created wineries from past winery_visit events */}
+            {extraDbWineries.map((winery, i) => (
+              <motion.div
+                key={winery.slug}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-20px' }}
+                transition={{ duration: 0.55, delay: (i % 8) * 0.06, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <Link
+                  href={`/wineries/${winery.slug}`}
+                  className="group flex flex-col bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:border-[#C9A84C]/50 transition-all duration-300"
+                >
+                  <div className="flex items-center justify-center h-28 px-6 bg-gray-50 group-hover:bg-white transition-colors duration-300">
+                    {winery.logo_url ? (
+                      <Image
+                        src={winery.logo_url}
+                        alt={winery.name}
+                        width={160}
+                        height={80}
+                        className="w-full h-20 object-contain transition-all duration-300"
+                        sizes="(max-width: 768px) 45vw, 200px"
+                      />
+                    ) : (
+                      <div className="text-[#731515] text-2xl font-light tracking-widest opacity-50 group-hover:opacity-80 transition-opacity"
+                        style={{ fontFamily: 'var(--font-syne)' }}
+                      >
+                        {winery.name.slice(0, 2).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1 px-4 py-4">
+                    <p className="text-[#1a0505] text-sm font-medium leading-tight group-hover:text-[#731515] transition-colors" style={{ fontFamily: 'var(--font-syne)' }}>
+                      {winery.name}
+                    </p>
+                    {(winery.region || winery.country) && (
+                      <p className="text-[#7a4a4a] text-[11px] tracking-wide">
+                        {[winery.region, winery.country].filter(Boolean).join(' · ')}
                       </p>
                     )}
                   </div>

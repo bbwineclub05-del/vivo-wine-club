@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/archive-events",
       "schedule": "30 22 * * *"
+    },
+    {
+      "path": "/api/cron/sync-wineries",
+      "schedule": "35 22 * * *"
     }
   ]
 }

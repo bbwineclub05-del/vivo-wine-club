@@ -43,60 +43,88 @@ function EditRow({
   onCancel,
 }: {
   contact: Partial<Influencer>;
-  onSave: (c: Partial<Influencer>) => void;
+  onSave: (c: Partial<Influencer>) => Promise<void>;
   onCancel: () => void;
 }) {
-  const [form, setForm] = useState({ ...contact });
+  const [form, setForm]   = useState({ ...contact });
+  const [saving, setSaving] = useState(false);
+  const [rowError, setRowError] = useState<string | null>(null);
   const set = (k: string, v: string | number) => setForm(f => ({ ...f, [k]: v }));
   const inputCls = "w-full border border-[#e8d5d5] bg-white px-2 py-1 text-xs text-[#1a0505] focus:outline-none focus:border-[#731515] transition-colors";
 
+  const handleClick = async () => {
+    setRowError(null);
+    setSaving(true);
+    try {
+      await onSave(form);
+    } catch (err) {
+      setRowError(err instanceof Error ? err.message : 'Errore nel salvataggio.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
-    <tr className="bg-[#fff8f8]">
-      <td className="px-3 py-2">
-        <div className="flex gap-1">
-          <input value={form.first_name ?? ''} onChange={e => set('first_name', e.target.value)} placeholder="Nome" className={inputCls} />
-          <input value={form.last_name ?? ''} onChange={e => set('last_name', e.target.value)} placeholder="Cognome" className={inputCls} />
-        </div>
-      </td>
-      <td className="px-3 py-2"><input value={form.email ?? ''} onChange={e => set('email', e.target.value)} type="email" placeholder="Email" className={inputCls} /></td>
-      <td className="px-3 py-2"><input value={form.phone ?? ''} onChange={e => set('phone', e.target.value)} placeholder="Telefono" className={inputCls} /></td>
-      <td className="px-3 py-2"><input value={form.instagram ?? ''} onChange={e => set('instagram', e.target.value)} placeholder="@username" className={inputCls} /></td>
-      <td className="px-3 py-2"><input value={form.tiktok ?? ''} onChange={e => set('tiktok', e.target.value)} placeholder="@username" className={inputCls} /></td>
-      <td className="px-3 py-2">
-        <input
-          value={form.followers ?? 0}
-          onChange={e => set('followers', parseInt(e.target.value) || 0)}
-          type="number"
-          min={0}
-          placeholder="0"
-          className={inputCls}
-        />
-      </td>
-      <td className="px-3 py-2">
-        <select
-          value={form.status ?? 'Contattato'}
-          onChange={e => set('status', e.target.value)}
-          className={inputCls}
-        >
-          {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-        </select>
-      </td>
-      <td className="px-3 py-2">
-        <input
-          value={form.last_contact_date ?? ''}
-          onChange={e => set('last_contact_date', e.target.value)}
-          type="date"
-          className={inputCls}
-        />
-      </td>
-      <td className="px-3 py-2"><input value={form.notes ?? ''} onChange={e => set('notes', e.target.value)} placeholder="Note…" className={inputCls} /></td>
-      <td className="px-3 py-2">
-        <div className="flex gap-1.5">
-          <button onClick={() => onSave(form)} className="text-green-700 hover:text-green-900 transition-colors"><Check size={14} /></button>
-          <button onClick={onCancel} className="text-[#7a4a4a]/50 hover:text-[#731515] transition-colors"><X size={14} /></button>
-        </div>
-      </td>
-    </tr>
+    <>
+      <tr className="bg-[#fff8f8]">
+        <td className="px-3 py-2">
+          <div className="flex gap-1">
+            <input value={form.first_name ?? ''} onChange={e => set('first_name', e.target.value)} placeholder="Nome" className={inputCls} />
+            <input value={form.last_name ?? ''} onChange={e => set('last_name', e.target.value)} placeholder="Cognome" className={inputCls} />
+          </div>
+        </td>
+        <td className="px-3 py-2"><input value={form.email ?? ''} onChange={e => set('email', e.target.value)} type="email" placeholder="Email" className={inputCls} /></td>
+        <td className="px-3 py-2"><input value={form.phone ?? ''} onChange={e => set('phone', e.target.value)} placeholder="Telefono" className={inputCls} /></td>
+        <td className="px-3 py-2"><input value={form.instagram ?? ''} onChange={e => set('instagram', e.target.value)} placeholder="@username" className={inputCls} /></td>
+        <td className="px-3 py-2"><input value={form.tiktok ?? ''} onChange={e => set('tiktok', e.target.value)} placeholder="@username" className={inputCls} /></td>
+        <td className="px-3 py-2">
+          <input
+            value={form.followers ?? 0}
+            onChange={e => set('followers', parseInt(e.target.value) || 0)}
+            type="number"
+            min={0}
+            placeholder="0"
+            className={inputCls}
+          />
+        </td>
+        <td className="px-3 py-2">
+          <select
+            value={form.status ?? 'Contattato'}
+            onChange={e => set('status', e.target.value)}
+            className={inputCls}
+          >
+            {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </td>
+        <td className="px-3 py-2">
+          <input
+            value={form.last_contact_date ?? ''}
+            onChange={e => set('last_contact_date', e.target.value)}
+            type="date"
+            className={inputCls}
+          />
+        </td>
+        <td className="px-3 py-2"><input value={form.notes ?? ''} onChange={e => set('notes', e.target.value)} placeholder="Note…" className={inputCls} /></td>
+        <td className="px-3 py-2">
+          <div className="flex gap-1.5">
+            <button
+              type="button"
+              onClick={handleClick}
+              disabled={saving}
+              className="text-green-700 hover:text-green-900 disabled:opacity-40 transition-colors"
+            >
+              {saving ? <span className="text-[10px]">…</span> : <Check size={14} />}
+            </button>
+            <button type="button" onClick={onCancel} disabled={saving} className="text-[#7a4a4a]/50 hover:text-[#731515] disabled:opacity-40 transition-colors"><X size={14} /></button>
+          </div>
+        </td>
+      </tr>
+      {rowError && (
+        <tr className="bg-red-50">
+          <td colSpan={10} className="px-3 py-1.5 text-[11px] text-red-600">{rowError}</td>
+        </tr>
+      )}
+    </>
   );
 }
 
@@ -169,18 +197,28 @@ export default function CrmInfluencer() {
   const handleSave = async (form: Partial<Influencer>) => {
     if (editingId === 'new') {
       const res = await fetch('/api/crm/influencers', {
-        method: 'POST',
+        method:  'POST',
         headers: { 'Content-Type': 'application/json', ...authHeader() },
-        body: JSON.stringify(form),
+        body:    JSON.stringify(form),
       });
-      if (res.ok) { await load(); setEditingId(null); }
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? `Errore ${res.status}`);
+      }
+      await load();
+      setEditingId(null);
     } else if (editingId) {
       const res = await fetch(`/api/crm/influencers/${editingId}`, {
-        method: 'PATCH',
+        method:  'PATCH',
         headers: { 'Content-Type': 'application/json', ...authHeader() },
-        body: JSON.stringify(form),
+        body:    JSON.stringify(form),
       });
-      if (res.ok) { await load(); setEditingId(null); }
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? `Errore ${res.status}`);
+      }
+      await load();
+      setEditingId(null);
     }
   };
 

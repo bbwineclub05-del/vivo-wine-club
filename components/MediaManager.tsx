@@ -10,6 +10,22 @@ import { WINERIES } from '@/lib/wineries';
 /* ── Types ── */
 type DestType = 'wine-party' | 'wine-lounge' | 'winery-visit' | 'winery';
 
+interface DbWinery {
+  slug:        string;
+  name:        string;
+  logo_url:    string | null;
+  region:      string;
+  country:     string;
+  description: string;
+}
+
+/* Entry in the combined dropdown */
+interface WineryOption {
+  slug:  string;
+  name:  string;
+  isDb:  boolean;  // true = from DB (auto-created), false = hardcoded
+}
+
 interface MediaImage {
   path: string;
   url:  string;
@@ -86,6 +102,47 @@ export default function MediaManager() {
   /* destination */
   const [destType,   setDestType]   = useState<DestType>('wine-party');
   const [winerySlug, setWinerySlug] = useState(WINERIES[0]?.slug ?? '');
+
+  /* DB wineries (auto-created from past visits) */
+  const [dbWineries, setDbWineries] = useState<DbWinery[]>([]);
+  useEffect(() => {
+    fetch('/api/wineries')
+      .then(r => r.json())
+      .then(j => { if (Array.isArray(j.wineries)) setDbWineries(j.wineries as DbWinery[]); })
+      .catch(() => {});
+  }, []);
+
+  // Combined list: hardcoded first, then DB-only ones not already in hardcoded list
+  const hardcodedSlugs = new Set(WINERIES.map(w => w.slug));
+  const wineryOptions: WineryOption[] = [
+    ...WINERIES.map(w => ({ slug: w.slug, name: w.name, isDb: false })),
+    ...dbWineries.filter(w => !hardcodedSlugs.has(w.slug)).map(w => ({ slug: w.slug, name: w.name, isDb: true })),
+  ];
+
+  // The currently selected DB winery (for editing description/logo)
+  const selectedDbWinery = dbWineries.find(w => w.slug === winerySlug);
+  const isDbWinery = destType === 'winery' && !!selectedDbWinery && !hardcodedSlugs.has(winerySlug);
+
+  /* DB winery editing state */
+  const [editName,   setEditName]   = useState('');
+  const [editRegion, setEditRegion] = useState('');
+  const [editCountry, setEditCountry] = useState('');
+  const [editDesc,   setEditDesc]   = useState('');
+  const [editLogo,   setEditLogo]   = useState('');
+  const [savingMeta, setSavingMeta] = useState(false);
+  const [metaSaved,  setMetaSaved]  = useState(false);
+
+  // When DB winery selection changes, populate edit fields
+  useEffect(() => {
+    if (selectedDbWinery) {
+      setEditName(selectedDbWinery.name);
+      setEditRegion(selectedDbWinery.region);
+      setEditCountry(selectedDbWinery.country);
+      setEditDesc(selectedDbWinery.description);
+      setEditLogo(selectedDbWinery.logo_url ?? '');
+      setMetaSaved(false);
+    }
+  }, [selectedDbWinery]);
 
   /* gallery */
   const [gallery,        setGallery]        = useState<MediaImage[]>([]);
@@ -183,6 +240,29 @@ export default function MediaManager() {
     }
   }
 
+  /* ── Save DB winery metadata (name, region, country, description, logo_url) ── */
+  async function saveMeta() {
+    if (!isDbWinery) return;
+    setSavingMeta(true);
+    try {
+      const res = await fetch(`/api/wineries/${winerySlug}`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+        body:    JSON.stringify({ name: editName, region: editRegion, country: editCountry, description: editDesc, logo_url: editLogo || null }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error ?? 'Errore nel salvataggio');
+      const updated = (await res.json()).winery as DbWinery;
+      setDbWineries(prev => prev.map(w => w.slug === winerySlug ? updated : w));
+      setEditLogo(updated.logo_url ?? '');
+      setMetaSaved(true);
+      setTimeout(() => setMetaSaved(false), 3000);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Errore');
+    } finally {
+      setSavingMeta(false);
+    }
+  }
+
   /* ── Delete from gallery ── */
   async function handleDelete(path: string) {
     try {
@@ -228,21 +308,108 @@ export default function MediaManager() {
 
         {/* Winery dropdown (only if type === 'winery') */}
         {destType === 'winery' && (
-          <div className="relative max-w-xs">
-            <label className="text-[9px] tracking-[0.3em] text-[#731515] mb-1.5 block">CANTINA</label>
-            <div className="relative">
-              <select
-                value={winerySlug}
-                onChange={(e) => setWinerySlug(e.target.value)}
-                className={`${inputClass} appearance-none cursor-pointer pr-10`}
-                style={{ fontFamily: 'var(--font-nunito)' }}
-              >
-                {WINERIES.map((w) => (
-                  <option key={w.slug} value={w.slug}>{w.name}</option>
-                ))}
-              </select>
-              <ChevronDown size={12} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#731515]" />
+          <div className="flex flex-col gap-5">
+            <div className="relative max-w-xs">
+              <label className="text-[9px] tracking-[0.3em] text-[#731515] mb-1.5 block">CANTINA</label>
+              <div className="relative">
+                <select
+                  value={winerySlug}
+                  onChange={(e) => setWinerySlug(e.target.value)}
+                  className={`${inputClass} appearance-none cursor-pointer pr-10`}
+                  style={{ fontFamily: 'var(--font-nunito)' }}
+                >
+                  {wineryOptions.map((w) => (
+                    <option key={w.slug} value={w.slug}>
+                      {w.name}{w.isDb ? ' ★' : ''}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={12} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#731515]" />
+              </div>
+              {wineryOptions.some(w => w.isDb) && (
+                <p className="mt-1.5 text-[9px] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
+                  ★ = cantina creata automaticamente da una visita passata
+                </p>
+              )}
             </div>
+
+            {/* Extra editing panel for auto-created DB wineries */}
+            {isDbWinery && (
+              <div className="border border-[#e8d5d5] bg-[#fdf9f9] p-5 flex flex-col gap-4">
+                <div className="text-[9px] tracking-[0.35em] text-[#731515]">DATI CANTINA</div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[9px] tracking-[0.25em] text-[#7a4a4a] mb-1 block">NOME</label>
+                    <input
+                      value={editName}
+                      onChange={e => setEditName(e.target.value)}
+                      className={inputClass}
+                      style={{ fontFamily: 'var(--font-nunito)' }}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] tracking-[0.25em] text-[#7a4a4a] mb-1 block">REGIONE</label>
+                    <input
+                      value={editRegion}
+                      onChange={e => setEditRegion(e.target.value)}
+                      placeholder="es. Franciacorta, Barolo…"
+                      className={inputClass}
+                      style={{ fontFamily: 'var(--font-nunito)' }}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] tracking-[0.25em] text-[#7a4a4a] mb-1 block">PAESE</label>
+                    <input
+                      value={editCountry}
+                      onChange={e => setEditCountry(e.target.value)}
+                      placeholder="es. Italy, France…"
+                      className={inputClass}
+                      style={{ fontFamily: 'var(--font-nunito)' }}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] tracking-[0.25em] text-[#7a4a4a] mb-1 block">URL LOGO</label>
+                    <input
+                      value={editLogo}
+                      onChange={e => setEditLogo(e.target.value)}
+                      placeholder="https://… o lascia vuoto"
+                      className={inputClass}
+                      style={{ fontFamily: 'var(--font-nunito)' }}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[9px] tracking-[0.25em] text-[#7a4a4a] mb-1 block">DESCRIZIONE (doppio a-capo = paragrafo)</label>
+                  <textarea
+                    value={editDesc}
+                    onChange={e => setEditDesc(e.target.value)}
+                    rows={5}
+                    placeholder="Scrivi una descrizione della cantina…"
+                    className={`${inputClass} resize-y`}
+                    style={{ fontFamily: 'var(--font-nunito)' }}
+                  />
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={saveMeta}
+                    disabled={savingMeta}
+                    className="text-[9px] tracking-[0.28em] px-5 py-2.5 bg-[#731515] text-white hover:bg-[#9b2323] disabled:opacity-50 transition-colors"
+                    style={{ fontFamily: 'var(--font-nunito)' }}
+                  >
+                    {savingMeta ? 'SALVATAGGIO…' : 'SALVA DATI'}
+                  </button>
+                  {metaSaved && (
+                    <span className="text-[11px] text-green-700" style={{ fontFamily: 'var(--font-nunito)' }}>
+                      ✓ Salvato
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
