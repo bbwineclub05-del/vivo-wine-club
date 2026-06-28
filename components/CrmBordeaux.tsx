@@ -78,6 +78,12 @@ function EmailModal({
   const [status, setStatus]   = useState<'idle' | 'sending' | 'ok' | 'err'>('idle');
   const [errMsg, setErrMsg]   = useState('');
 
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
   const switchMode = (m: EmailMode) => {
     setMode(m);
     const t = getTemplate(m, lang);
@@ -114,8 +120,8 @@ function EmailModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white w-full max-w-2xl rounded-lg shadow-2xl flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-white w-full max-w-2xl rounded-lg shadow-2xl flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#e8d5d5]">
           <div>
@@ -142,7 +148,7 @@ function EmailModal({
                 </button>
               ))}
             </div>
-            <button onClick={onClose} className="text-[#7a4a4a]/50 hover:text-[#731515] transition-colors">
+            <button onClick={onClose} aria-label="Chiudi" className="min-w-[48px] min-h-[48px] flex items-center justify-center text-[#7a4a4a]/50 hover:text-[#731515] transition-colors rounded-lg">
               <X size={18} />
             </button>
           </div>
@@ -182,7 +188,7 @@ function EmailModal({
               value={subject}
               onChange={e => setSubject(e.target.value)}
               className="w-full border border-[#e8d5d5] px-3 py-2 text-sm text-[#1a0505] focus:outline-none focus:border-[#731515] transition-colors"
-              style={{ fontFamily: 'var(--font-nunito)' }}
+              style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
             />
           </div>
           {/* Body */}

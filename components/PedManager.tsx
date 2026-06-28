@@ -143,6 +143,12 @@ function EntryModal({
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState('');
 
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
   function setField<K extends keyof FormState>(k: K, v: FormState[K]) {
     setForm(p => ({ ...p, [k]: v }));
   }
@@ -201,46 +207,47 @@ function EntryModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <motion.div className="absolute inset-0 bg-black/50" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} />
       <motion.div
-        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
+        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden"
         initial={{ opacity: 0, scale: 0.95, y: 16 }}
         animate={{ opacity: 1, scale: 1,    y: 0  }}
         exit={{    opacity: 0, scale: 0.95, y: 16 }}
         transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#eddada] sticky top-0 bg-white z-10">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#eddada] shrink-0 bg-white z-10">
           <div>
             <div className="text-[9px] tracking-[0.4em] text-[#731515] mb-0.5">PIANO EDITORIALE</div>
             <h3 className="text-base font-light text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>
               {isEdit ? 'Modifica entry' : 'Nuova entry'}
             </h3>
           </div>
-          <button onClick={onClose} className="text-[#7a4a4a]/50 hover:text-[#731515] transition-colors p-1"><X size={16} /></button>
+          <button onClick={onClose} aria-label="Chiudi" className="min-w-[48px] min-h-[48px] flex items-center justify-center text-[#7a4a4a]/50 hover:text-[#731515] transition-colors rounded-lg"><X size={16} /></button>
         </div>
 
+        <div className="flex-1 overflow-y-auto" style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
           {/* Date */}
           <div>
             <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">DATA *</div>
-            <input type="date" className={inputCls} value={form.date} onChange={e => setField('date', e.target.value)} style={{ fontFamily: 'var(--font-nunito)' }} />
+            <input type="date" className={inputCls} value={form.date} onChange={e => setField('date', e.target.value)} style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }} />
           </div>
 
           {/* Title */}
           <div>
             <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">TITOLO *</div>
-            <input className={inputCls} placeholder="Titolo del contenuto…" value={form.title} onChange={e => setField('title', e.target.value)} style={{ fontFamily: 'var(--font-nunito)' }} />
+            <input className={inputCls} placeholder="Titolo del contenuto…" value={form.title} onChange={e => setField('title', e.target.value)} style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }} />
           </div>
 
           {/* Platform + Content type */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">PIATTAFORMA *</div>
-              <select className={inputCls} value={form.platform} onChange={e => setField('platform', e.target.value)} style={{ fontFamily: 'var(--font-nunito)' }}>
+              <select className={inputCls} value={form.platform} onChange={e => setField('platform', e.target.value)} style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}>
                 {PLATFORMS.map(p => <option key={p} value={p}>{p}</option>)}
               </select>
             </div>
             <div>
               <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">TIPO CONTENUTO *</div>
-              <select className={inputCls} value={form.content_type} onChange={e => setField('content_type', e.target.value)} style={{ fontFamily: 'var(--font-nunito)' }}>
+              <select className={inputCls} value={form.content_type} onChange={e => setField('content_type', e.target.value)} style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}>
                 {CONTENT_TYPES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
@@ -249,19 +256,19 @@ function EntryModal({
           {/* Description */}
           <div>
             <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">DESCRIZIONE <span className="text-[#7a4a4a]/40 normal-case tracking-normal">— opzionale</span></div>
-            <textarea className={`${inputCls} resize-none`} rows={3} placeholder="Descrizione del contenuto…" value={form.description} onChange={e => setField('description', e.target.value)} style={{ fontFamily: 'var(--font-nunito)' }} />
+            <textarea className={`${inputCls} resize-none`} rows={3} placeholder="Descrizione del contenuto…" value={form.description} onChange={e => setField('description', e.target.value)} style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }} />
           </div>
 
           {/* Assigned to */}
           <div>
             <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">ASSEGNATO A <span className="text-[#7a4a4a]/40 normal-case tracking-normal">— opzionale</span></div>
-            <input className={inputCls} placeholder="Nome responsabile…" value={form.assigned_to} onChange={e => setField('assigned_to', e.target.value)} style={{ fontFamily: 'var(--font-nunito)' }} />
+            <input className={inputCls} placeholder="Nome responsabile…" value={form.assigned_to} onChange={e => setField('assigned_to', e.target.value)} style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }} />
           </div>
 
           {/* Notes */}
           <div>
             <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">NOTE <span className="text-[#7a4a4a]/40 normal-case tracking-normal">— opzionale</span></div>
-            <textarea className={`${inputCls} resize-none`} rows={2} placeholder="Note interne…" value={form.notes} onChange={e => setField('notes', e.target.value)} style={{ fontFamily: 'var(--font-nunito)' }} />
+            <textarea className={`${inputCls} resize-none`} rows={2} placeholder="Note interne…" value={form.notes} onChange={e => setField('notes', e.target.value)} style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }} />
           </div>
 
           {/* File upload (create only) */}
@@ -297,6 +304,7 @@ function EntryModal({
             </button>
           </div>
         </form>
+        </div>{/* end scrollable area */}
       </motion.div>
     </div>
   );

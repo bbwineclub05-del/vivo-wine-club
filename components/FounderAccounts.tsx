@@ -150,6 +150,12 @@ function MovModal({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
   function set<K extends keyof FormState>(k: K, v: FormState[K]) {
     setForm(p => ({ ...p, [k]: v }));
   }
@@ -195,23 +201,24 @@ function MovModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <motion.div className="absolute inset-0 bg-black/50" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} />
       <motion.div
-        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
+        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden"
         initial={{ opacity: 0, scale: 0.95, y: 16 }}
         animate={{ opacity: 1, scale: 1,    y: 0  }}
         exit={{    opacity: 0, scale: 0.95, y: 16 }}
         transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#eddada] sticky top-0 bg-white z-10">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#eddada] shrink-0 bg-white z-10">
           <div>
             <div className="text-[9px] tracking-[0.4em] text-[#731515] mb-0.5">CONTI FOUNDER</div>
             <h3 className="text-base font-light text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>
               {isEdit ? 'Modifica movimento' : 'Registra movimento'}
             </h3>
           </div>
-          <button onClick={onClose} className="text-[#7a4a4a]/50 hover:text-[#731515] transition-colors p-1"><X size={16} /></button>
+          <button onClick={onClose} aria-label="Chiudi" className="min-w-[48px] min-h-[48px] flex items-center justify-center text-[#7a4a4a]/50 hover:text-[#731515] transition-colors rounded-lg"><X size={16} /></button>
         </div>
 
+        <div className="flex-1 overflow-y-auto" style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
         <div className="px-6 py-5 space-y-4">
           {/* Founder */}
           <div>
@@ -262,24 +269,24 @@ function MovModal({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">DATA</div>
-              <input type="date" className={inputCls} value={form.date} onChange={e => set('date', e.target.value)} style={{ fontFamily: 'var(--font-nunito)' }} />
+              <input type="date" className={inputCls} value={form.date} onChange={e => set('date', e.target.value)} style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }} />
             </div>
             <div>
               <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">IMPORTO (€)</div>
-              <input type="number" min="0" step="0.01" className={inputCls} placeholder="0,00" value={form.amount} onChange={e => set('amount', e.target.value)} style={{ fontFamily: 'var(--font-nunito)' }} />
+              <input type="number" min="0" step="0.01" className={inputCls} placeholder="0,00" value={form.amount} onChange={e => set('amount', e.target.value)} style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }} />
             </div>
           </div>
 
           {/* Descrizione */}
           <div>
             <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">DESCRIZIONE</div>
-            <input className={inputCls} placeholder="Es. Acquisto materiale evento..." value={form.description} onChange={e => set('description', e.target.value)} style={{ fontFamily: 'var(--font-nunito)' }} />
+            <input className={inputCls} placeholder="Es. Acquisto materiale evento..." value={form.description} onChange={e => set('description', e.target.value)} style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }} />
           </div>
 
           {/* Categoria */}
           <div>
             <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">CATEGORIA</div>
-            <select className={inputCls} value={form.category} onChange={e => set('category', e.target.value)} style={{ fontFamily: 'var(--font-nunito)' }}>
+            <select className={inputCls} value={form.category} onChange={e => set('category', e.target.value)} style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}>
               {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
@@ -287,7 +294,7 @@ function MovModal({
           {/* Note */}
           <div>
             <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">NOTE <span className="text-[#7a4a4a]/40 normal-case tracking-normal">— opzionali</span></div>
-            <textarea className={`${inputCls} resize-none`} rows={2} placeholder="Note aggiuntive..." value={form.notes} onChange={e => set('notes', e.target.value)} style={{ fontFamily: 'var(--font-nunito)' }} />
+            <textarea className={`${inputCls} resize-none`} rows={2} placeholder="Note aggiuntive..." value={form.notes} onChange={e => set('notes', e.target.value)} style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }} />
           </div>
 
           {/* Ricevuta */}
@@ -318,6 +325,7 @@ function MovModal({
             </button>
           </div>
         </div>
+        </div>{/* end scrollable area */}
       </motion.div>
     </div>
   );

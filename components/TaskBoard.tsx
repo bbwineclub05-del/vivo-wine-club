@@ -219,6 +219,12 @@ function NewTaskModal({
     return () => document.removeEventListener('mousedown', onClickOutside);
   }, []);
 
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
   const toggleAssignee = useCallback((email: string) => {
     setForm(p => {
       const emails = p.assignee_emails.includes(email)
@@ -288,31 +294,32 @@ function NewTaskModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <motion.div className="absolute inset-0 bg-black/50" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} />
       <motion.div
-        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
+        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden"
         initial={{ opacity: 0, scale: 0.95, y: 16 }}
         animate={{ opacity: 1, scale: 1,    y: 0  }}
         exit={{    opacity: 0, scale: 0.95, y: 16 }}
         transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#eddada] sticky top-0 bg-white z-10">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#eddada] shrink-0 bg-white z-10">
           <div>
             <div className="text-[9px] tracking-[0.4em] text-[#731515] mb-0.5">TASK BOARD</div>
             <h3 className="text-base font-light text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>{isEdit ? 'Modifica task' : 'Nuova task'}</h3>
           </div>
-          <button onClick={onClose} className="text-[#7a4a4a]/50 hover:text-[#731515] transition-colors p-1"><X size={16} /></button>
+          <button onClick={onClose} aria-label="Chiudi" className="min-w-[48px] min-h-[48px] flex items-center justify-center text-[#7a4a4a]/50 hover:text-[#731515] transition-colors rounded-lg"><X size={16} /></button>
         </div>
 
+        <div className="flex-1 overflow-y-auto" style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
           {/* Title */}
           <div>
             <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">TITOLO *</div>
-            <input className={inputCls} placeholder="Titolo della task…" value={form.title} onChange={e => setField('title', e.target.value)} style={{ fontFamily: 'var(--font-nunito)' }} />
+            <input className={inputCls} placeholder="Titolo della task…" value={form.title} onChange={e => setField('title', e.target.value)} style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }} />
           </div>
 
           {/* Description */}
           <div>
             <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">DESCRIZIONE <span className="text-[#7a4a4a]/40 normal-case tracking-normal">— opzionale</span></div>
-            <textarea className={`${inputCls} resize-none`} rows={3} placeholder="Descrizione…" value={form.description} onChange={e => setField('description', e.target.value)} style={{ fontFamily: 'var(--font-nunito)' }} />
+            <textarea className={`${inputCls} resize-none`} rows={3} placeholder="Descrizione…" value={form.description} onChange={e => setField('description', e.target.value)} style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }} />
           </div>
 
           {/* Assignee */}
@@ -373,7 +380,7 @@ function NewTaskModal({
           {/* Due date */}
           <div>
             <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">SCADENZA <span className="text-[#7a4a4a]/40 normal-case tracking-normal">— opzionale</span></div>
-            <input type="date" className={inputCls} value={form.due_date} onChange={e => setField('due_date', e.target.value)} style={{ fontFamily: 'var(--font-nunito)' }} />
+            <input type="date" className={inputCls} value={form.due_date} onChange={e => setField('due_date', e.target.value)} style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }} />
           </div>
 
           {error && <p className="text-xs text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>{error}</p>}
@@ -387,6 +394,7 @@ function NewTaskModal({
             </button>
           </div>
         </form>
+        </div>{/* end scrollable area */}
       </motion.div>
     </div>
   );

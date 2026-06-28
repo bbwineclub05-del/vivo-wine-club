@@ -57,6 +57,12 @@ function ComposeModal({
     .join(', ');
   const extra = recipients.length > 3 ? ` e altri ${recipients.length - 3}` : '';
 
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
   async function handleSend() {
     if (!subject.trim() || !body.trim()) return;
     setStatus('sending');
@@ -104,7 +110,7 @@ function ComposeModal({
               {recipients.length === 1 ? recipients[0].name : `${recipients.length} destinatari`}
             </h3>
           </div>
-          <button onClick={onClose} className="text-[#7a4a4a]/50 hover:text-[#731515] transition-colors p-1">
+          <button onClick={onClose} aria-label="Chiudi" className="min-w-[48px] min-h-[48px] flex items-center justify-center text-[#7a4a4a]/50 hover:text-[#731515] transition-colors rounded-lg">
             <X size={16} />
           </button>
         </div>
@@ -145,7 +151,7 @@ function ComposeModal({
                 placeholder="Oggetto email..."
                 value={subject}
                 onChange={e => setSubject(e.target.value)}
-                style={{ fontFamily: 'var(--font-nunito)' }}
+                style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
               />
             </div>
 
@@ -161,7 +167,7 @@ function ComposeModal({
                 placeholder="Scrivi il messaggio..."
                 value={body}
                 onChange={e => setBody(e.target.value)}
-                style={{ fontFamily: 'var(--font-nunito)' }}
+                style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
               />
             </div>
 
@@ -432,7 +438,7 @@ export default function CrmClienti() {
             placeholder="Cerca per nome, email o evento…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            style={{ fontFamily: 'var(--font-nunito)' }}
+            style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
           />
         </div>
 

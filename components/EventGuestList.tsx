@@ -33,6 +33,13 @@ export default function EventGuestList({ event, accessToken, onClose }: Props) {
   const [toggling, setToggling] = useState<string | null>(null);
   const loadRef = useRef<() => void>(() => {});
 
+  /* ── Lock body scroll while modal is open ── */
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
   /* ── Load guests ── */
   function load() {
     setLoading(true);
@@ -119,7 +126,7 @@ export default function EventGuestList({ event, accessToken, onClose }: Props) {
         transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
       >
         {/* Header */}
-        <div className="flex items-start justify-between px-6 py-5 border-b border-[#eddada] shrink-0">
+        <div className="sticky top-0 z-10 flex items-start justify-between px-6 py-5 border-b border-[#eddada] shrink-0 bg-white">
           <div>
             <div className="text-[9px] tracking-[0.4em] text-[#731515] mb-0.5">LISTA INVITATI</div>
             <h2
@@ -154,14 +161,15 @@ export default function EventGuestList({ event, accessToken, onClose }: Props) {
           </div>
           <button
             onClick={onClose}
-            className="text-[#7a4a4a]/50 hover:text-[#731515] transition-colors p-1 rounded-lg hover:bg-[#fdf6f6] mt-0.5"
+            aria-label="Chiudi"
+            className="text-[#7a4a4a]/50 hover:text-[#731515] transition-colors rounded-lg hover:bg-[#fdf6f6] mt-0.5 min-w-[48px] min-h-[48px] flex items-center justify-center"
           >
             <X size={18} />
           </button>
         </div>
 
         {/* Search */}
-        <div className="px-6 py-3 border-b border-[#eddada] shrink-0">
+        <div className="sticky top-[88px] z-10 px-6 py-3 border-b border-[#eddada] shrink-0 bg-white">
           <div className="flex items-center gap-2.5 bg-[#fdf6f6] border border-[#eddada] rounded-lg px-3 py-2">
             <Search size={13} className="text-[#7a4a4a]/50 shrink-0" />
             <input
@@ -182,7 +190,10 @@ export default function EventGuestList({ event, accessToken, onClose }: Props) {
         </div>
 
         {/* List */}
-        <div className="flex-1 overflow-y-auto">
+        <div
+          className="flex-1 overflow-y-auto"
+          style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}
+        >
           {loading ? (
             <div className="flex justify-center items-center py-20">
               <div className="w-6 h-6 rounded-full border-2 border-[#731515] border-t-transparent animate-spin" />
@@ -248,7 +259,7 @@ export default function EventGuestList({ event, accessToken, onClose }: Props) {
                     onClick={() => toggleCheckIn(guest)}
                     disabled={toggling === guest.id}
                     title={guest.checked_in ? 'Rimuovi presenza' : 'Segna come presente'}
-                    className={`shrink-0 w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200 ${
+                    className={`shrink-0 w-12 h-12 rounded-lg flex items-center justify-center transition-all duration-200 ${
                       guest.checked_in
                         ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
                         : 'border border-[#e8d5d5] text-[#7a4a4a]/40 hover:border-emerald-400 hover:text-emerald-600 hover:bg-emerald-50'

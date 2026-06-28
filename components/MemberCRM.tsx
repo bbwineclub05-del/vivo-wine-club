@@ -46,6 +46,12 @@ function CommunicationModal({
   const [status,  setStatus]  = useState<'idle' | 'sending' | 'done' | 'error'>('idle');
   const [result,  setResult]  = useState<{ sent: number; failed: number } | null>(null);
 
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
     setStatus('sending');
@@ -70,26 +76,28 @@ function CommunicationModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
       <motion.div
         initial={{ opacity: 0, scale: 0.97, y: 12 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.97 }}
         transition={{ duration: 0.2 }}
-        className="bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+        className="bg-white w-full max-w-2xl max-h-[90vh] flex flex-col rounded-xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-6 border-b border-[#e8d5d5] flex items-center justify-between">
+        <div className="p-6 border-b border-[#e8d5d5] flex items-center justify-between shrink-0">
           <div>
             <div className="text-[10px] tracking-[0.4em] text-[#731515] mb-1">INVIA COMUNICAZIONE</div>
             <p className="text-xs text-[#7a4a4a]" style={{ fontFamily: 'var(--font-nunito)' }}>
               {recipients.length} destinatari selezionati
             </p>
           </div>
-          <button onClick={onClose} className="text-[#7a4a4a]/50 hover:text-[#731515] transition-colors">
+          <button onClick={onClose} aria-label="Chiudi" className="min-w-[48px] min-h-[48px] flex items-center justify-center text-[#7a4a4a]/50 hover:text-[#731515] transition-colors rounded-lg">
             <X size={18} />
           </button>
         </div>
 
+        <div className="flex-1 overflow-y-auto" style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
         {status === 'done' ? (
           <div className="p-10 text-center flex flex-col items-center gap-4">
             <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center">
@@ -142,7 +150,7 @@ function CommunicationModal({
                 onChange={(e) => setSubject(e.target.value)}
                 placeholder="Es. Nuovo evento: Wine Lounge — Milano"
                 className={inputClass}
-                style={{ fontFamily: 'var(--font-nunito)' }}
+                style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
               />
             </div>
 
@@ -155,7 +163,7 @@ function CommunicationModal({
                 onChange={(e) => setBody(e.target.value)}
                 placeholder={"Ciao,\n\nScriviamo per informarti di…\n\nA presto,\nIl team di Vivo Wine Club"}
                 className={`${inputClass} resize-none`}
-                style={{ fontFamily: 'var(--font-nunito)' }}
+                style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
               />
               <p className="text-[9px] text-[#7a4a4a]/40">Il testo viene convertito automaticamente in HTML con lo stile Vivo Wine Club.</p>
             </div>
@@ -173,6 +181,7 @@ function CommunicationModal({
             </div>
           </form>
         )}
+        </div>
       </motion.div>
     </div>
   );
@@ -200,6 +209,12 @@ function EventEmailModal({
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((p) => ({ ...p, [k]: e.target.value }));
 
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
     setStatus('sending');
@@ -224,26 +239,28 @@ function EventEmailModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
       <motion.div
         initial={{ opacity: 0, scale: 0.97, y: 12 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.97 }}
         transition={{ duration: 0.2 }}
-        className="bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+        className="bg-white w-full max-w-2xl max-h-[90vh] flex flex-col rounded-xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-6 border-b border-[#e8d5d5] flex items-center justify-between">
+        <div className="p-6 border-b border-[#e8d5d5] flex items-center justify-between shrink-0">
           <div>
             <div className="text-[10px] tracking-[0.4em] text-[#731515] mb-1">ANNUNCIO NUOVO EVENTO</div>
             <p className="text-xs text-[#7a4a4a]" style={{ fontFamily: 'var(--font-nunito)' }}>
               Verrà inviata a {recipients.length} membri con il template Vivo Wine Club
             </p>
           </div>
-          <button onClick={onClose} className="text-[#7a4a4a]/50 hover:text-[#731515] transition-colors">
+          <button onClick={onClose} aria-label="Chiudi" className="min-w-[48px] min-h-[48px] flex items-center justify-center text-[#7a4a4a]/50 hover:text-[#731515] transition-colors rounded-lg">
             <X size={18} />
           </button>
         </div>
 
+        <div className="flex-1 overflow-y-auto" style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
         {status === 'done' ? (
           <div className="p-10 text-center flex flex-col items-center gap-4">
             <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center">
@@ -275,17 +292,17 @@ function EventEmailModal({
               <div className="sm:col-span-2 flex flex-col gap-1.5">
                 <label className="text-[9px] tracking-[0.3em] text-[#731515]">NOME EVENTO *</label>
                 <input type="text" required value={form.eventTitle} onChange={set('eventTitle')}
-                  placeholder="Wine Lounge · Milano" className={inputClass} style={{ fontFamily: 'var(--font-nunito)' }} />
+                  placeholder="Wine Lounge · Milano" className={inputClass} style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }} />
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-[9px] tracking-[0.3em] text-[#731515]">DATA *</label>
                 <input type="text" required value={form.eventDate} onChange={set('eventDate')}
-                  placeholder="15 June 2026" className={inputClass} style={{ fontFamily: 'var(--font-nunito)' }} />
+                  placeholder="15 June 2026" className={inputClass} style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }} />
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-[9px] tracking-[0.3em] text-[#731515]">LOCATION *</label>
                 <input type="text" required value={form.eventLocation} onChange={set('eventLocation')}
-                  placeholder="Milano, Italy" className={inputClass} style={{ fontFamily: 'var(--font-nunito)' }} />
+                  placeholder="Milano, Italy" className={inputClass} style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }} />
               </div>
             </div>
 
@@ -293,19 +310,19 @@ function EventEmailModal({
               <label className="text-[9px] tracking-[0.3em] text-[#731515]">DESCRIZIONE *</label>
               <textarea required rows={5} value={form.eventDescription} onChange={set('eventDescription')}
                 placeholder={"Siamo felici di annunciare…\n\nSaranno presenti..."}
-                className={`${inputClass} resize-none`} style={{ fontFamily: 'var(--font-nunito)' }} />
+                className={`${inputClass} resize-none`} style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }} />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
                 <label className="text-[9px] tracking-[0.3em] text-[#731515]">TESTO PULSANTE</label>
                 <input type="text" value={form.ctaText} onChange={set('ctaText')}
-                  className={inputClass} style={{ fontFamily: 'var(--font-nunito)' }} />
+                  className={inputClass} style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }} />
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-[9px] tracking-[0.3em] text-[#731515]">LINK PULSANTE</label>
                 <input type="url" value={form.ctaLink} onChange={set('ctaLink')}
-                  className={inputClass} style={{ fontFamily: 'var(--font-nunito)' }} />
+                  className={inputClass} style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }} />
               </div>
             </div>
 
@@ -322,6 +339,7 @@ function EventEmailModal({
             </div>
           </form>
         )}
+        </div>
       </motion.div>
     </div>
   );
@@ -510,7 +528,7 @@ export default function MemberCRM() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full bg-white border border-[#e8d5d5] text-[#1a0505] pl-10 pr-4 py-2.5 text-sm placeholder-[#7a4a4a]/40 focus:outline-none focus:border-[#731515]/50 transition-colors"
-            style={{ fontFamily: 'var(--font-nunito)' }}
+            style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
           />
         </div>
         {filtered.length > 0 && (

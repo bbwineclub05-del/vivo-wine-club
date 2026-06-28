@@ -171,6 +171,12 @@ function AddCategoryModal({
   const [saving,  setSaving]  = useState(false);
   const [error,   setError]   = useState<string | null>(null);
 
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
   async function handleSave() {
     if (!name.trim()) { setError('Il nome è obbligatorio.'); return; }
     setSaving(true); setError(null);
@@ -210,7 +216,7 @@ function AddCategoryModal({
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#eddada]">
           <div className="text-[9px] tracking-[0.4em] text-[#731515]">NUOVA VOCE DI BILANCIO</div>
-          <button onClick={onClose} className="text-[#7a4a4a]/50 hover:text-[#731515] transition-colors"><X size={15} /></button>
+          <button onClick={onClose} aria-label="Chiudi" className="min-w-[48px] min-h-[48px] flex items-center justify-center text-[#7a4a4a]/50 hover:text-[#731515] transition-colors rounded-lg"><X size={15} /></button>
         </div>
         <div className="px-5 py-4 space-y-3">
           <div>
@@ -222,7 +228,7 @@ function AddCategoryModal({
               onChange={e => setName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSave()}
               autoFocus
-              style={{ fontFamily: 'var(--font-nunito)' }}
+              style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
             />
           </div>
           <div>
@@ -310,6 +316,12 @@ function TxModal({
   const [error,        setError]        = useState<string | null>(null);
   const [showAddCat,   setShowAddCat]   = useState(false);
 
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
   const filteredCats = budgetCategories.filter(c =>
     form.type === 'revenue' ? c.type === 'revenue' || c.type === 'both'
                             : c.type === 'cost'    || c.type === 'both'
@@ -367,14 +379,14 @@ function TxModal({
         onClick={onClose}
       />
       <motion.div
-        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
+        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden"
         initial={{ opacity: 0, scale: 0.95, y: 16 }}
         animate={{ opacity: 1, scale: 1,    y: 0  }}
         exit={{    opacity: 0, scale: 0.95, y: 16 }}
         transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#eddada] sticky top-0 bg-white z-10">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#eddada] shrink-0 bg-white z-10">
           <div>
             <div className="text-[9px] tracking-[0.4em] text-[#731515] mb-0.5">
               {isNew ? 'NUOVA TRANSAZIONE' : 'MODIFICA TRANSAZIONE'}
@@ -383,10 +395,11 @@ function TxModal({
               {isNew ? 'Aggiungi movimento' : form.description}
             </h3>
           </div>
-          <button onClick={onClose} className="text-[#7a4a4a]/50 hover:text-[#731515] transition-colors p-1">
+          <button onClick={onClose} aria-label="Chiudi" className="min-w-[48px] min-h-[48px] flex items-center justify-center text-[#7a4a4a]/50 hover:text-[#731515] transition-colors rounded-lg">
             <X size={16} />
           </button>
         </div>
+        <div className="flex-1 overflow-y-auto" style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
 
         <div className="px-6 py-5 space-y-4">
           {/* Tipo — 2 buttons (rimborso is set automatically by Conti Founder) */}
@@ -418,7 +431,7 @@ function TxModal({
                 className={inputCls}
                 value={form.date}
                 onChange={e => set('date', e.target.value)}
-                style={{ fontFamily: 'var(--font-nunito)' }}
+                style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
               />
             </div>
             <div>
@@ -431,7 +444,7 @@ function TxModal({
                 placeholder="0,00"
                 value={form.amount || ''}
                 onChange={e => set('amount', parseFloat(e.target.value) || 0)}
-                style={{ fontFamily: 'var(--font-nunito)' }}
+                style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
               />
             </div>
           </div>
@@ -444,7 +457,7 @@ function TxModal({
               placeholder="Es. Biglietti evento Wine Party..."
               value={form.description}
               onChange={e => set('description', e.target.value)}
-              style={{ fontFamily: 'var(--font-nunito)' }}
+              style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
             />
           </div>
 
@@ -458,7 +471,7 @@ function TxModal({
                 if (e.target.value === '__add__') { setShowAddCat(true); return; }
                 set('budget_category', e.target.value || null);
               }}
-              style={{ fontFamily: 'var(--font-nunito)' }}
+              style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
             >
               <option value="">— Seleziona voce —</option>
               {filteredCats.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
@@ -473,7 +486,7 @@ function TxModal({
               className={inputCls}
               value={form.registered_by_name ?? ''}
               onChange={e => set('registered_by_name', e.target.value || null)}
-              style={{ fontFamily: 'var(--font-nunito)' }}
+              style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
             >
               <option value="">— Seleziona founder —</option>
               {FINANCE_FOUNDERS.map(f => (
@@ -489,7 +502,7 @@ function TxModal({
               className={inputCls}
               value={form.assigned_to}
               onChange={e => set('assigned_to', e.target.value)}
-              style={{ fontFamily: 'var(--font-nunito)' }}
+              style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
             >
               <option value="Club">Club</option>
               {FINANCE_FOUNDERS.map(f => (
@@ -514,7 +527,7 @@ function TxModal({
                   placeholder="Nome della persona..."
                   value={form.reimbursed_to ?? ''}
                   onChange={e => set('reimbursed_to', e.target.value)}
-                  style={{ fontFamily: 'var(--font-nunito)' }}
+                  style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
                 />
               </motion.div>
             )}
@@ -531,7 +544,7 @@ function TxModal({
               placeholder="Note aggiuntive..."
               value={form.notes ?? ''}
               onChange={e => set('notes', e.target.value)}
-              style={{ fontFamily: 'var(--font-nunito)' }}
+              style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
             />
           </div>
 
@@ -636,6 +649,7 @@ function TxModal({
             </button>
           </div>
         </div>
+        </div>{/* end scrollable area */}
       </motion.div>
     </div>
   );
@@ -650,6 +664,13 @@ function DeleteModal({ tx, onConfirm, onClose }: {
   onClose:   () => void;
 }) {
   const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <motion.div
