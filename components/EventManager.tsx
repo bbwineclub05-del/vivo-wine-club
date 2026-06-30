@@ -1127,12 +1127,20 @@ export default function EventManager() {
   const [inviteEvent,     setInviteEvent]     = useState<DbEvent | null>(null);
   const [guestListEventId, setGuestListEventId] = useState<string | null>(null);
   const [accessToken,     setAccessToken]     = useState<string | null>(null);
+  const topRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setAccessToken(session?.access_token ?? null);
     });
   }, []);
+
+  // Scroll the form into view whenever edit/create mode opens
+  useEffect(() => {
+    if (mode !== 'list') {
+      topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [mode]);
 
   const load = () => {
     setLoading(true);
@@ -1232,7 +1240,7 @@ export default function EventManager() {
 
   /* ── Header ── */
   return (
-    <div>
+    <div ref={topRef}>
       {/* Scanner modal */}
       <AnimatePresence>
         {scannerEvent && accessToken && (
