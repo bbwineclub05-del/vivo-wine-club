@@ -7,7 +7,16 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, ChevronLeft, ChevronRight, Plus, Minus, ShoppingBag, Zap, ArrowLeft } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
+import { useLocale } from 'next-intl';
 import type { ProductFull, ProductVariant, ProductTextVariant } from './page';
+
+const LOW_STOCK_THRESHOLD = 3;
+
+const LOW_STOCK_LABELS: Record<string, (n: number) => string> = {
+  it: n => n === 1 ? 'Solo 1 rimasto!' : `Solo ${n} rimasti!`,
+  en: n => n === 1 ? 'Only 1 left!'    : `Only ${n} left!`,
+  fr: n => n === 1 ? "Plus qu\u20191 en stock !" : `Plus que ${n} en stock !`,
+};
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -62,6 +71,7 @@ function AccordionItem({ label, children }: { label: string; children: React.Rea
 
 export default function ProductDetailClient({ product }: { product: ProductFull }) {
   const { addItem, setIsOpen: openCart } = useCart();
+  const locale = useLocale();
 
   const hasVariants     = product.product_variants.length > 0;
   const hasSizes        = product.sizes.length > 0;
@@ -92,6 +102,10 @@ export default function ProductDetailClient({ product }: { product: ProductFull 
   const [sizeErr,             setSizeErr]             = useState(false);
   const [colorErr,            setColorErr]            = useState(false);
   const [touchStartX,         setTouchStartX]         = useState<number | null>(null);
+
+  // Current stock for the active selection (used for low-stock warning)
+  const currentStock = getStock(selectedVariant?.id ?? null, hasSizes ? size : null);
+  const lowStockLabel = LOW_STOCK_LABELS[locale] ?? LOW_STOCK_LABELS.en;
 
   // Image priority:
   //   1. colour+text combination (most specific) — only when BOTH are selected
@@ -502,6 +516,20 @@ export default function ProductDetailClient({ product }: { product: ProductFull 
                   </p>
                 )}
               </div>
+            )}
+
+            {/* Low-stock warning — shown when active selection has 1-3 units left */}
+            {currentStock > 0 && currentStock <= LOW_STOCK_THRESHOLD && (
+              <motion.p
+                key={`low-${currentStock}`}
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="text-[11px] font-semibold text-orange-600"
+                style={{ fontFamily: 'var(--font-nunito)' }}
+              >
+                ⚠ {lowStockLabel(currentStock)}
+              </motion.p>
             )}
 
             {/* CTA buttons — full-width on all viewports */}

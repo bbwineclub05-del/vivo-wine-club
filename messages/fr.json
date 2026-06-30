@@ -290,5 +290,10 @@
     "heading": "WEAR THE CLUB",
     "subtitle": "Chaque pièce porte l'identité du club. Portez-la, partagez-la, vivez-la.",
     "shipping": "TOUS LES ARTICLES SONT EXPÉDIÉS SOUS 5 À 7 JOURS OUVRÉS"
+  },
+  "shop": {
+    "lowStockSingle": "Plus qu'1 en stock !",
+    "lowStockPlural": "Plus que {count} en stock !",
+    "soldOutSize": "Épuisé"
   }
 }

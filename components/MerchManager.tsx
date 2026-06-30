@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, Pencil, Trash2, X, Loader2, Eye, EyeOff,
   Package, ShoppingBag, CheckCircle, Clock, ImagePlus, Palette, Truck, Type,
+  Copy, Check as CheckIcon, MapPin, Phone, StickyNote,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
@@ -77,8 +78,42 @@ interface MerchOrder {
   customer_email:   string | null;
   items:            OrderItem[];
   total:            number;
-  status:           'da_evadere' | 'evaso';
+  status:           'da_evadere' | 'evaso' | 'spedito';
   created_at:       string;
+  // Shipping address
+  shipping_line1:   string | null;
+  shipping_line2:   string | null;
+  shipping_city:    string | null;
+  shipping_postal:  string | null;
+  shipping_state:   string | null;
+  shipping_country: string | null;
+  phone:            string | null;
+  delivery_notes:   string | null;
+  // Shipment tracking
+  carrier:          string | null;
+  tracking_code:    string | null;
+  tracking_url:     string | null;
+  shipped_at:       string | null;
+  shipping_notes:   string | null;
+}
+
+// ── Carrier tracking URL generators ───────────────────────────────────────────
+
+const CARRIERS = ['GLS', 'BRT', 'DHL', 'UPS', 'FedEx', 'Poste Italiane', 'SDA', 'TNT', 'Altro'] as const;
+
+const CARRIER_TRACKING: Partial<Record<string, (code: string) => string>> = {
+  GLS:              c => `https://gls-group.eu/IT/it/localizzazione-spedizioni?match=${c}`,
+  BRT:              c => `https://vas.brt.it/vas/sped_det_show.hsm?referer=sped_nuova_ric.hsm&Nspediz=${c}`,
+  DHL:              c => `https://www.dhl.com/it-it/home/tracking.html?tracking-id=${c}`,
+  UPS:              c => `https://www.ups.com/track?tracknum=${c}&loc=it_IT`,
+  FedEx:            c => `https://www.fedex.com/fedextrack/?trknbr=${c}`,
+  'Poste Italiane': c => `https://www.poste.it/cerca/index.html#/risultati-spedizioni/${c}`,
+  SDA:              c => `https://tracciamento.sda.it/tracking.htm?q=${c}`,
+  TNT:              c => `https://www.tnt.com/express/it_it/site/tracking.html?searchType=CON&cons=${c}`,
+};
+
+function autoTrackingUrl(carrier: string, code: string): string {
+  return CARRIER_TRACKING[carrier]?.(code.trim()) ?? '';
 }
 
 const ALL_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
@@ -515,9 +550,21 @@ function StockSection({
                 const v = parseInt(e.target.value, 10);
                 if (!isNaN(v) && v >= 0) setStock(prev => ({ ...prev, [key]: v }));
               }}
-              className={`${inp} w-24 text-center`}
+              className={`${inp} w-24 text-center ${
+                qty === 0                                     ? 'border-red-400 text-red-700 bg-red-50' :
+                typeof qty === 'number' && qty <= 3          ? 'border-orange-400 text-orange-700 bg-orange-50' :
+                ''
+              }`}
               style={{ fontFamily: 'var(--font-nunito)' }}
             />
+            {qty === 0 && (
+              <span className="text-[10px] text-red-600 font-semibold tracking-wide"
+                style={{ fontFamily: 'var(--font-nunito)' }}>Esaurito</span>
+            )}
+            {typeof qty === 'number' && qty > 0 && qty <= 3 && (
+              <span className="text-[10px] text-orange-600 font-semibold tracking-wide"
+                style={{ fontFamily: 'var(--font-nunito)' }}>Scorte basse</span>
+            )}
             <button
               type="button"
               disabled={busy || qty === ''}
@@ -1384,6 +1431,226 @@ function ProductCard({
   );
 }
 
+// ── Copy-to-clipboard button ───────────────────────────────────────────────────
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  function doCopy() {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+  return (
+    <button
+      onClick={doCopy}
+      title="Copia indirizzo"
+      className="ml-1 inline-flex items-center justify-center w-6 h-6 rounded text-[#7a4a4a]/40 hover:text-[#731515] hover:bg-[#fde8e8] transition-colors"
+    >
+      {copied ? <CheckIcon size={11} className="text-green-600" /> : <Copy size={11} />}
+    </button>
+  );
+}
+
+// ── Shipping modal ─────────────────────────────────────────────────────────────
+
+function ShippingModal({ order, token, onClose, onSent }: {
+  order:   MerchOrder;
+  token:   string;
+  onClose: () => void;
+  onSent:  (updated: MerchOrder) => void;
+}) {
+  const todayStr = new Date().toISOString().slice(0, 10);
+
+  const [carrier,       setCarrier]       = useState(order.carrier ?? '');
+  const [customCarrier, setCustomCarrier] = useState('');
+  const [trackingCode,  setTrackingCode]  = useState(order.tracking_code ?? '');
+  const [trackingUrl,   setTrackingUrl]   = useState(order.tracking_url ?? '');
+  const [shippedAt,     setShippedAt]     = useState(order.shipped_at ?? todayStr);
+  const [notes,         setNotes]         = useState(order.shipping_notes ?? '');
+  const [sending,       setSending]       = useState(false);
+  const [error,         setError]         = useState('');
+  const [urlManual,     setUrlManual]     = useState(false); // tracks if user manually edited URL
+
+  // Auto-generate tracking URL when carrier + code change (unless user edited it manually)
+  useEffect(() => {
+    if (urlManual) return;
+    const effectiveCarrier = carrier === 'Altro' ? customCarrier : carrier;
+    if (effectiveCarrier && trackingCode && CARRIER_TRACKING[effectiveCarrier]) {
+      setTrackingUrl(autoTrackingUrl(effectiveCarrier, trackingCode));
+    }
+  }, [carrier, customCarrier, trackingCode, urlManual]);
+
+  const isReinvio = order.status === 'spedito';
+
+  async function handleSend() {
+    setError('');
+    setSending(true);
+    try {
+      const effectiveCarrier = carrier === 'Altro' ? customCarrier : carrier;
+      const res = await fetch(`/api/merch/orders/${order.id}`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          carrier:        effectiveCarrier || null,
+          tracking_code:  trackingCode.trim() || null,
+          tracking_url:   trackingUrl.trim() || null,
+          shipped_at:     shippedAt || null,
+          shipping_notes: notes.trim() || null,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Errore invio email');
+      onSent(data.order as MerchOrder);
+      onClose();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Errore sconosciuto');
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+
+      {/* Panel */}
+      <div className="relative z-10 w-full max-w-md bg-white rounded-2xl shadow-xl border border-[#eddada] overflow-hidden">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#eddada] bg-[#fdf6f6]">
+          <div className="flex items-center gap-2">
+            <Truck size={16} className="text-[#731515]" />
+            <span className="text-sm tracking-[0.2em] text-[#1a0505]">
+              {isReinvio ? 'MODIFICA E REINVIA' : 'DATI DI SPEDIZIONE'}
+            </span>
+          </div>
+          <button onClick={onClose} className="text-[#7a4a4a]/50 hover:text-[#731515] transition-colors">
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
+
+          {/* Corriere */}
+          <div>
+            <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">CORRIERE</label>
+            <select
+              value={carrier}
+              onChange={e => { setCarrier(e.target.value); setUrlManual(false); }}
+              className={inp}
+            >
+              <option value="">— Seleziona corriere —</option>
+              {CARRIERS.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+            {carrier === 'Altro' && (
+              <input
+                type="text"
+                value={customCarrier}
+                onChange={e => setCustomCarrier(e.target.value)}
+                placeholder="Nome corriere"
+                className={`${inp} mt-2`}
+              />
+            )}
+          </div>
+
+          {/* Codice tracciamento */}
+          <div>
+            <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">CODICE TRACCIAMENTO</label>
+            <input
+              type="text"
+              value={trackingCode}
+              onChange={e => { setTrackingCode(e.target.value); setUrlManual(false); }}
+              placeholder="Es. 12345678901234"
+              className={inp}
+            />
+          </div>
+
+          {/* Link tracciamento */}
+          <div>
+            <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">
+              LINK TRACCIAMENTO
+              {carrier && carrier !== 'Altro' && CARRIER_TRACKING[carrier] && (
+                <span className="ml-2 normal-case tracking-normal text-[#7a4a4a]/50">— auto-generato da {carrier}</span>
+              )}
+            </label>
+            <input
+              type="url"
+              value={trackingUrl}
+              onChange={e => { setTrackingUrl(e.target.value); setUrlManual(true); }}
+              placeholder="https://..."
+              className={inp}
+            />
+            {trackingUrl && (
+              <a
+                href={trackingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-1 inline-flex items-center gap-1 text-[10px] text-[#731515] hover:underline"
+              >
+                Verifica link ↗
+              </a>
+            )}
+          </div>
+
+          {/* Data spedizione */}
+          <div>
+            <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">DATA SPEDIZIONE</label>
+            <input
+              type="date"
+              value={shippedAt}
+              onChange={e => setShippedAt(e.target.value)}
+              className={inp}
+            />
+          </div>
+
+          {/* Note aggiuntive */}
+          <div>
+            <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">
+              NOTE AGGIUNTIVE <span className="normal-case tracking-normal text-[#7a4a4a]/40">— opzionale</span>
+            </label>
+            <textarea
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              placeholder="Es. Pacco in 2 colli, suonare al piano 3…"
+              rows={2}
+              className={`${inp} resize-none`}
+            />
+          </div>
+
+          {error && (
+            <p className="text-[11px] text-[#731515] bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+              {error}
+            </p>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-[#eddada] bg-[#fdf6f6]">
+          <button
+            onClick={handleSend}
+            disabled={sending}
+            className="w-full flex items-center justify-center gap-2 py-3.5 bg-[#731515] text-white text-[11px] tracking-[0.3em] rounded-xl hover:bg-[#aa4848] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+          >
+            {sending
+              ? <Loader2 size={14} className="animate-spin" />
+              : <Truck size={14} />
+            }
+            {sending
+              ? 'INVIO IN CORSO…'
+              : isReinvio
+              ? 'REINVIA EMAIL DI SPEDIZIONE'
+              : 'INVIA EMAIL DI SPEDIZIONE'
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Order row ──────────────────────────────────────────────────────────────────
 
 function OrderRow({ order, token, onUpdated }: {
@@ -1392,13 +1659,15 @@ function OrderRow({ order, token, onUpdated }: {
   onUpdated: (o: MerchOrder) => void;
 }) {
   const [saving,           setSaving]           = useState(false);
-  const [mailSending,      setMailSending]      = useState(false);
-  const [mailSent,         setMailSent]         = useState(false);
-  const [mailError,        setMailError]        = useState('');
+  const [showShippingModal, setShowShippingModal] = useState(false);
+
+  const isSpedito = order.status === 'spedito';
+  const isEvaso   = order.status === 'evaso';
 
   async function toggleStatus() {
     setSaving(true);
-    const next = order.status === 'evaso' ? 'da_evadere' : 'evaso';
+    // spedito → evaso, evaso → da_evadere, da_evadere → evaso
+    const next = isSpedito ? 'evaso' : isEvaso ? 'da_evadere' : 'evaso';
     try {
       const res  = await fetch(`/api/merch/orders/${order.id}`, {
         method:  'PATCH',
@@ -1410,27 +1679,6 @@ function OrderRow({ order, token, onUpdated }: {
     } finally { setSaving(false); }
   }
 
-  async function sendShippingEmail() {
-    setMailSending(true);
-    setMailError('');
-    try {
-      const res = await fetch(`/api/merch/orders/${order.id}`, {
-        method:  'POST',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) {
-        const d = await res.json();
-        setMailError(d.error ?? 'Errore invio mail');
-      } else {
-        setMailSent(true);
-      }
-    } catch {
-      setMailError('Errore di rete');
-    } finally {
-      setMailSending(false);
-    }
-  }
-
   const date = new Date(order.created_at).toLocaleDateString('it-IT', {
     day: '2-digit', month: 'short', year: 'numeric',
   });
@@ -1438,77 +1686,337 @@ function OrderRow({ order, token, onUpdated }: {
     hour: '2-digit', minute: '2-digit',
   });
 
-  const isEvaso = order.status === 'evaso';
+  // Build full shipping address string for copy
+  const addressParts = [
+    order.shipping_line1,
+    order.shipping_line2,
+    [order.shipping_postal, order.shipping_city, order.shipping_state].filter(Boolean).join(' '),
+    order.shipping_country,
+  ].filter(Boolean);
+  const fullAddress = addressParts.join(', ');
+
+  const borderColor = isSpedito ? 'border-blue-200' : isEvaso ? 'border-green-200' : 'border-[#eddada]';
+  const headerBg    = isSpedito ? 'bg-blue-50'     : isEvaso ? 'bg-green-50'    : 'bg-[#fdf6f6]';
 
   return (
-    <div className={`border rounded-xl p-4 transition-colors ${isEvaso ? 'border-green-200 bg-green-50/30' : 'border-[#eddada] bg-white'}`}>
-      <div className="flex items-start gap-4 flex-wrap">
+    <>
+      <div className={`border rounded-xl overflow-hidden transition-colors ${borderColor}`}>
 
-        {/* Status button */}
-        <button onClick={toggleStatus} disabled={saving}
-          className={`shrink-0 flex items-center gap-1.5 text-[9px] tracking-[0.3em] font-medium px-3 py-1.5 rounded-full transition-colors ${
-            isEvaso
-              ? 'bg-green-100 text-green-700 hover:bg-green-200'
-              : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
-          }`}>
-          {saving
-            ? <Loader2 size={10} className="animate-spin" />
-            : isEvaso ? <CheckCircle size={10} /> : <Clock size={10} />}
-          {isEvaso ? 'EVASO' : 'DA EVADERE'}
-        </button>
-
-        {/* Customer */}
-        <div className="flex-1 min-w-[150px]">
-          <p className="text-[13px] font-medium text-[#1a0505]" style={{ fontFamily: 'var(--font-nunito)' }}>
-            {order.customer_name ?? '—'}
-          </p>
-          <p className="text-[11px] text-[#7a4a4a]/60" style={{ fontFamily: 'var(--font-nunito)' }}>
-            {order.customer_email ?? '—'}
-          </p>
+        {/* ── Header bar: status + date ── */}
+        <div className={`flex items-center justify-between gap-3 px-4 py-2.5 ${headerBg}`}>
+          <button onClick={toggleStatus} disabled={saving}
+            className={`flex items-center gap-1.5 text-[9px] tracking-[0.3em] font-medium px-3 py-1.5 rounded-full transition-colors ${
+              isSpedito
+                ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                : isEvaso
+                ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+            }`}>
+            {saving
+              ? <Loader2 size={10} className="animate-spin" />
+              : isSpedito ? <Truck size={10} />
+              : isEvaso   ? <CheckCircle size={10} />
+              :              <Clock size={10} />
+            }
+            {isSpedito ? 'SPEDITO' : isEvaso ? 'EVASO' : 'DA EVADERE'}
+          </button>
+          <span className="text-[10px] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
+            {date} · {time}
+          </span>
         </div>
 
-        {/* Items */}
-        <div className="flex-1 min-w-[160px]">
-          {order.items.map((item, i) => (
-            <p key={i} className="text-[11.5px] text-[#3a1a1a]" style={{ fontFamily: 'var(--font-nunito)' }}>
-              <span className="font-medium">{item.qty}×</span> {item.name}
-              <span className="text-[#7a4a4a]/50 ml-1">€{Number(item.price).toFixed(2)}</span>
-            </p>
-          ))}
-        </div>
+        <div className="p-4 bg-white space-y-4">
 
-        {/* Total + date */}
-        <div className="text-right shrink-0">
-          <p className="text-[14px] font-semibold text-[#731515]">€{Number(order.total).toFixed(2)}</p>
-          <p className="text-[10px] text-[#7a4a4a]/50 mt-0.5" style={{ fontFamily: 'var(--font-nunito)' }}>
-            {date} {time}
-          </p>
+          {/* ── Cliente ── */}
+          <div className="flex flex-wrap gap-x-6 gap-y-1">
+            <div>
+              <p className="text-[8px] tracking-[0.35em] text-[#7a4a4a]/40 mb-0.5">CLIENTE</p>
+              <p className="text-[13px] font-semibold text-[#1a0505]" style={{ fontFamily: 'var(--font-nunito)' }}>
+                {order.customer_name ?? '—'}
+              </p>
+            </div>
+            {order.customer_email && (
+              <div>
+                <p className="text-[8px] tracking-[0.35em] text-[#7a4a4a]/40 mb-0.5">EMAIL</p>
+                <p className="text-[12px] text-[#7a4a4a]" style={{ fontFamily: 'var(--font-nunito)' }}>
+                  {order.customer_email}
+                </p>
+              </div>
+            )}
+            {order.phone && (
+              <div>
+                <p className="text-[8px] tracking-[0.35em] text-[#7a4a4a]/40 mb-0.5 flex items-center gap-1"><Phone size={8} /> TELEFONO</p>
+                <p className="text-[12px] text-[#7a4a4a]" style={{ fontFamily: 'var(--font-nunito)' }}>
+                  {order.phone}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* ── Indirizzo spedizione ── */}
+          {fullAddress ? (
+            <div>
+              <p className="text-[8px] tracking-[0.35em] text-[#7a4a4a]/40 mb-1.5 flex items-center gap-1">
+                <MapPin size={8} /> INDIRIZZO DI SPEDIZIONE
+                <CopyButton text={fullAddress} />
+              </p>
+              <div className="bg-[#fdf6f6] border border-[#eddada] rounded-lg px-3 py-2.5 text-[12px] text-[#3a1a1a] leading-relaxed" style={{ fontFamily: 'var(--font-nunito)' }}>
+                {order.shipping_line1 && <p>{order.shipping_line1}</p>}
+                {order.shipping_line2 && <p>{order.shipping_line2}</p>}
+                <p>{[order.shipping_postal, order.shipping_city, order.shipping_state].filter(Boolean).join(' ')}</p>
+                {order.shipping_country && <p className="text-[#7a4a4a]/60">{order.shipping_country}</p>}
+              </div>
+            </div>
+          ) : (
+            <div>
+              <p className="text-[8px] tracking-[0.35em] text-[#7a4a4a]/40 mb-1 flex items-center gap-1"><MapPin size={8} /> INDIRIZZO DI SPEDIZIONE</p>
+              <p className="text-[11px] text-[#7a4a4a]/40 italic" style={{ fontFamily: 'var(--font-nunito)' }}>Non disponibile (ordine precedente all&apos;aggiornamento)</p>
+            </div>
+          )}
+
+          {/* ── Note di consegna ── */}
+          {order.delivery_notes && (
+            <div>
+              <p className="text-[8px] tracking-[0.35em] text-[#7a4a4a]/40 mb-1 flex items-center gap-1"><StickyNote size={8} /> NOTE CONSEGNA</p>
+              <p className="text-[12px] text-[#3a1a1a] bg-amber-50 border border-amber-200 rounded-lg px-3 py-2" style={{ fontFamily: 'var(--font-nunito)' }}>
+                {order.delivery_notes}
+              </p>
+            </div>
+          )}
+
+          {/* ── Tracking dati (dopo spedizione) ── */}
+          {isSpedito && (order.carrier || order.tracking_code) && (
+            <div>
+              <p className="text-[8px] tracking-[0.35em] text-blue-500/70 mb-1.5 flex items-center gap-1"><Truck size={8} /> TRACKING SPEDIZIONE</p>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5 space-y-1.5" style={{ fontFamily: 'var(--font-nunito)' }}>
+                {order.carrier && (
+                  <p className="text-[12px] text-[#1a0505]"><span className="text-[#7a4a4a]/50">Corriere:</span> <strong>{order.carrier}</strong></p>
+                )}
+                {order.tracking_code && (
+                  <p className="text-[12px] text-[#1a0505] font-mono">{order.tracking_code}</p>
+                )}
+                {order.tracking_url && (
+                  <a
+                    href={order.tracking_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:underline"
+                  >
+                    Traccia il pacco ↗
+                  </a>
+                )}
+                {order.shipped_at && (
+                  <p className="text-[11px] text-[#7a4a4a]/50">
+                    Spedito il {new Date(order.shipped_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}
+                  </p>
+                )}
+                {order.shipping_notes && (
+                  <p className="text-[11px] text-[#7a4a4a] italic">{order.shipping_notes}</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── Articoli ── */}
+          <div>
+            <p className="text-[8px] tracking-[0.35em] text-[#7a4a4a]/40 mb-1.5 flex items-center gap-1"><Package size={8} /> ARTICOLI</p>
+            <div className="space-y-1">
+              {order.items.map((item, i) => (
+                <div key={i} className="flex items-center justify-between gap-2 text-[12px]" style={{ fontFamily: 'var(--font-nunito)' }}>
+                  <span className="text-[#3a1a1a]">
+                    <span className="font-semibold">{item.qty}×</span> {item.name}
+                  </span>
+                  <span className="text-[#7a4a4a]/60 shrink-0">€{Number(item.price).toFixed(2)}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-end mt-2 pt-2 border-t border-[#eddada]">
+              <span className="text-[14px] font-bold text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>
+                Totale: €{Number(order.total).toFixed(2)}
+              </span>
+            </div>
+          </div>
+
+          {/* ── Azione spedizione ── */}
+          {order.customer_email && (
+            <div className={`flex items-center justify-end pt-3 border-t ${isSpedito ? 'border-blue-100' : isEvaso ? 'border-green-100' : 'border-[#eddada]'}`}>
+              <button
+                onClick={() => setShowShippingModal(true)}
+                disabled={!isEvaso && !isSpedito}
+                title={!isEvaso && !isSpedito ? 'Segna come evaso prima di inviare la mail' : undefined}
+                className={`flex items-center gap-1.5 text-[9px] tracking-[0.25em] px-3 py-1.5 rounded-full border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                  isSpedito
+                    ? 'border-blue-300 text-blue-700 hover:bg-blue-50'
+                    : 'border-green-300 text-green-700 hover:bg-green-50'
+                }`}
+              >
+                <Truck size={10} />
+                {isSpedito ? 'REINVIA EMAIL' : 'INVIA MAIL SPEDIZIONE'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Shipping email button — only when order is evased and customer has an email */}
-      {isEvaso && order.customer_email && (
-        <div className="mt-3 pt-3 border-t border-green-100 flex items-center justify-between gap-3 flex-wrap">
-          <div>
-            {mailError && (
-              <p className="text-[10px] text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>{mailError}</p>
-            )}
-            {mailSent && (
-              <p className="text-[10px] text-green-700 flex items-center gap-1" style={{ fontFamily: 'var(--font-nunito)' }}>
-                <CheckCircle size={10} /> Mail di spedizione inviata
-              </p>
-            )}
+      {/* ── Shipping modal ── */}
+      {showShippingModal && (
+        <ShippingModal
+          order={order}
+          token={token}
+          onClose={() => setShowShippingModal(false)}
+          onSent={updated => { onUpdated(updated); setShowShippingModal(false); }}
+        />
+      )}
+    </>
+  );
+}
+
+// ── Stock overview tab ────────────────────────────────────────────────────────
+
+interface StockRow {
+  id:         string;
+  product_id: string;
+  variant_id: string | null;
+  size:       string | null;
+  quantity:   number;
+  updated_at: string;
+  products:   { title: string } | null;
+}
+
+interface AuditRow {
+  id:         string;
+  product_id: string;
+  variant_id: string | null;
+  size:       string | null;
+  old_qty:    number;
+  new_qty:    number;
+  reason:     string;
+  changed_by: string | null;
+  created_at: string;
+}
+
+function StockOverviewTab({ token }: { token: string }) {
+  const [stock,    setStock]    = useState<StockRow[]>([]);
+  const [log,      setLog]      = useState<AuditRow[]>([]);
+  const [loading,  setLoading]  = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/merch/stock?all=true', { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => r.json()).then(d => setStock(d.stock ?? [])).catch(() => {}),
+      fetch('/api/merch/stock/log', { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => r.json()).then(d => setLog(d.log ?? [])).catch(() => {}),
+    ]).finally(() => setLoading(false));
+  }, [token]);
+
+  if (loading) return (
+    <div className="flex items-center justify-center py-20">
+      <Loader2 size={24} className="animate-spin text-[#731515]/40" />
+    </div>
+  );
+
+  const noStock     = stock.filter(s => s.quantity === 0);
+  const lowStock    = stock.filter(s => s.quantity > 0 && s.quantity <= 3);
+  const okStock     = stock.filter(s => s.quantity > 3);
+
+  function stockBadge(qty: number) {
+    if (qty === 0) return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] tracking-[0.2em] bg-red-100 text-red-700">ESAURITO</span>;
+    if (qty <= 3)  return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] tracking-[0.2em] bg-orange-100 text-orange-700">BASSO ({qty})</span>;
+    return <span className="text-[12px] text-green-700 font-medium">{qty}</span>;
+  }
+
+  return (
+    <div className="space-y-8">
+
+      {/* Summary chips */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="border border-red-200 rounded-xl p-4 bg-red-50 text-center">
+          <p className="text-2xl font-light text-red-600" style={{ fontFamily: 'var(--font-syne)' }}>{noStock.length}</p>
+          <p className="text-[9px] tracking-[0.35em] text-red-400 mt-1">ESAURITI</p>
+        </div>
+        <div className="border border-orange-200 rounded-xl p-4 bg-orange-50 text-center">
+          <p className="text-2xl font-light text-orange-600" style={{ fontFamily: 'var(--font-syne)' }}>{lowStock.length}</p>
+          <p className="text-[9px] tracking-[0.35em] text-orange-400 mt-1">SCORTE BASSE</p>
+        </div>
+        <div className="border border-green-200 rounded-xl p-4 bg-green-50 text-center">
+          <p className="text-2xl font-light text-green-600" style={{ fontFamily: 'var(--font-syne)' }}>{okStock.length}</p>
+          <p className="text-[9px] tracking-[0.35em] text-green-400 mt-1">DISPONIBILI</p>
+        </div>
+      </div>
+
+      {/* Stock table */}
+      {stock.length > 0 ? (
+        <div>
+          <p className="text-[9px] tracking-[0.35em] text-[#731515] mb-3">DISPONIBILITÀ PRODOTTI</p>
+          <div className="border border-[#eddada] rounded-xl overflow-hidden">
+            <table className="w-full text-[12px]" style={{ fontFamily: 'var(--font-nunito)' }}>
+              <thead>
+                <tr className="bg-[#fdf6f6] border-b border-[#eddada]">
+                  <th className="text-left px-4 py-2.5 text-[9px] tracking-[0.3em] text-[#7a4a4a]/50 font-normal">PRODOTTO</th>
+                  <th className="text-left px-4 py-2.5 text-[9px] tracking-[0.3em] text-[#7a4a4a]/50 font-normal">TAGLIA</th>
+                  <th className="text-right px-4 py-2.5 text-[9px] tracking-[0.3em] text-[#7a4a4a]/50 font-normal">QTÀ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {/* Sort: esauriti first, then low, then ok */}
+                {[...noStock, ...lowStock, ...okStock].map(row => (
+                  <tr key={row.id} className={`border-b border-[#eddada] last:border-0 ${row.quantity === 0 ? 'bg-red-50/40' : row.quantity <= 3 ? 'bg-orange-50/40' : 'bg-white'}`}>
+                    <td className="px-4 py-2.5 text-[#1a0505]">{row.products?.title ?? row.product_id.slice(0, 8)}</td>
+                    <td className="px-4 py-2.5 text-[#7a4a4a]">{row.size ?? '—'}</td>
+                    <td className="px-4 py-2.5 text-right">{stockBadge(row.quantity)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-          <button
-            onClick={sendShippingEmail}
-            disabled={mailSending || mailSent}
-            className="flex items-center gap-1.5 text-[9px] tracking-[0.25em] px-3 py-1.5 rounded-full border transition-colors disabled:opacity-50 disabled:cursor-not-allowed border-green-300 text-green-700 hover:bg-green-50"
-          >
-            {mailSending
-              ? <Loader2 size={10} className="animate-spin" />
-              : <CheckCircle size={10} />}
-            {mailSent ? 'INVIATA' : 'INVIA MAIL SPEDIZIONE'}
-          </button>
+        </div>
+      ) : (
+        <div className="border border-dashed border-[#eddada] rounded-xl p-12 text-center">
+          <p className="text-sm text-[#7a4a4a]/40 italic" style={{ fontFamily: 'var(--font-nunito)' }}>
+            Nessun dato di stock ancora. Imposta le disponibilità nella sezione Prodotti.
+          </p>
+        </div>
+      )}
+
+      {/* Audit log */}
+      {log.length > 0 && (
+        <div>
+          <p className="text-[9px] tracking-[0.35em] text-[#731515] mb-3">STORICO MODIFICHE STOCK</p>
+          <div className="border border-[#eddada] rounded-xl overflow-hidden">
+            <table className="w-full text-[11px]" style={{ fontFamily: 'var(--font-nunito)' }}>
+              <thead>
+                <tr className="bg-[#fdf6f6] border-b border-[#eddada]">
+                  <th className="text-left px-4 py-2 text-[9px] tracking-[0.3em] text-[#7a4a4a]/50 font-normal">DATA</th>
+                  <th className="text-left px-4 py-2 text-[9px] tracking-[0.3em] text-[#7a4a4a]/50 font-normal">TAGLIA</th>
+                  <th className="text-right px-4 py-2 text-[9px] tracking-[0.3em] text-[#7a4a4a]/50 font-normal">PRIMA</th>
+                  <th className="text-right px-4 py-2 text-[9px] tracking-[0.3em] text-[#7a4a4a]/50 font-normal">DOPO</th>
+                  <th className="text-left px-4 py-2 text-[9px] tracking-[0.3em] text-[#7a4a4a]/50 font-normal">MOTIVO</th>
+                  <th className="text-left px-4 py-2 text-[9px] tracking-[0.3em] text-[#7a4a4a]/50 font-normal">DA</th>
+                </tr>
+              </thead>
+              <tbody>
+                {log.map(row => {
+                  const delta = row.new_qty - row.old_qty;
+                  const reasonLabel = row.reason === 'sale' ? '🛒 Vendita' : row.reason === 'oversell' ? '⚠ Oversell' : '✏ Manuale';
+                  return (
+                    <tr key={row.id} className={`border-b border-[#eddada] last:border-0 ${row.reason === 'oversell' ? 'bg-red-50/60' : 'bg-white'}`}>
+                      <td className="px-4 py-2 text-[#7a4a4a]/60 whitespace-nowrap">
+                        {new Date(row.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })}{' '}
+                        {new Date(row.created_at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+                      </td>
+                      <td className="px-4 py-2 text-[#7a4a4a]">{row.size ?? '—'}</td>
+                      <td className="px-4 py-2 text-right text-[#7a4a4a]">{row.old_qty}</td>
+                      <td className={`px-4 py-2 text-right font-medium ${delta > 0 ? 'text-green-700' : delta < 0 ? 'text-red-700' : 'text-[#7a4a4a]'}`}>
+                        {delta > 0 ? `+${delta}` : delta} → {row.new_qty}
+                      </td>
+                      <td className="px-4 py-2 text-[#7a4a4a]">{reasonLabel}</td>
+                      <td className="px-4 py-2 text-[#7a4a4a]/60 truncate max-w-[120px]">{row.changed_by ?? '—'}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
@@ -1518,7 +2026,7 @@ function OrderRow({ order, token, onUpdated }: {
 // ── Main component ─────────────────────────────────────────────────────────────
 
 export default function MerchManager() {
-  const [tab,      setTab]      = useState<'products' | 'orders'>('products');
+  const [tab,      setTab]      = useState<'products' | 'orders' | 'stock'>('products');
   const [products, setProducts] = useState<Product[]>([]);
   const [orders,   setOrders]   = useState<MerchOrder[]>([]);
   const [loading,  setLoading]  = useState(true);
@@ -1620,6 +2128,7 @@ export default function MerchManager() {
 
   const daEvadere = orders.filter(o => o.status === 'da_evadere').length;
   const evaso     = orders.filter(o => o.status === 'evaso').length;
+  const spedito   = orders.filter(o => o.status === 'spedito').length;
 
   return (
     <>
@@ -1643,15 +2152,19 @@ export default function MerchManager() {
 
       {/* Tabs */}
       <div className="flex gap-1 mb-6 border-b border-[#eddada]">
-        {(['products', 'orders'] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)}
+        {([
+          { id: 'products', label: 'PRODOTTI',           icon: <Package size={13} /> },
+          { id: 'orders',   label: `ORDINI${orders.length ? ` (${orders.length})` : ''}`, icon: <ShoppingBag size={13} /> },
+          { id: 'stock',    label: 'STOCK',              icon: <CheckCircle size={13} /> },
+        ] as const).map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
             className={`flex items-center gap-2 px-4 py-2.5 text-[11px] tracking-[0.3em] transition-colors border-b-2 -mb-px ${
-              tab === t
+              tab === t.id
                 ? 'border-[#731515] text-[#731515]'
                 : 'border-transparent text-[#7a4a4a]/50 hover:text-[#7a4a4a]'
             }`}>
-            {t === 'products' ? <Package size={13} /> : <ShoppingBag size={13} />}
-            {t === 'products' ? 'PRODOTTI' : `ORDINI${orders.length ? ` (${orders.length})` : ''}`}
+            {t.icon}
+            {t.label}
           </button>
         ))}
       </div>
@@ -1724,11 +2237,12 @@ export default function MerchManager() {
       {!loading && tab === 'orders' && (
         <>
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-4 gap-3 mb-6">
             {[
               { label: 'Totale',      value: orders.length, color: 'text-[#1a0505]' },
               { label: 'Da evadere',  value: daEvadere,     color: 'text-orange-600' },
               { label: 'Evasi',       value: evaso,         color: 'text-green-600'  },
+              { label: 'Spediti',     value: spedito,       color: 'text-blue-600'   },
             ].map(s => (
               <div key={s.label} className="border border-[#eddada] rounded-xl p-4 text-center bg-white">
                 <p className={`text-2xl font-light ${s.color}`} style={{ fontFamily: 'var(--font-syne)' }}>{s.value}</p>
@@ -1753,6 +2267,11 @@ export default function MerchManager() {
             </div>
           )}
         </>
+      )}
+
+      {/* ── Stock tab ── */}
+      {!loading && tab === 'stock' && (
+        <StockOverviewTab token={token} />
       )}
 
       {/* Product modal */}

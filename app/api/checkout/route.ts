@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { supabase } from '@/lib/supabase';
+import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2026-04-22.dahlia',
@@ -56,6 +57,30 @@ export async function POST(request: Request) {
     // Validation-only request: just confirm the code is valid, don't create a session
     if (validateOnly) {
       return NextResponse.json({ ok: true, discountPercent });
+    }
+
+    // ── Stock check (preliminary, non-locking) ──────────────────────────────────
+    if (items.some(item => item.variantId !== undefined || item.size !== undefined)) {
+      const db = getSupabaseAdmin() as any; // eslint-disable-line
+      for (const item of items) {
+        const vid = item.variantId ?? null;
+        const sz  = item.size      ?? null;
+        let query = db.from('product_stock').select('quantity').eq('product_id', item.id);
+        query = vid ? query.eq('variant_id', vid) : query.is('variant_id', null);
+        query = sz  ? query.eq('size', sz)        : query.is('size', null);
+        const { data: row } = await query.maybeSingle();
+        if (row && row.quantity < item.quantity) {
+          const avail = row.quantity;
+          return NextResponse.json({
+            error: avail === 0
+              ? `"${item.name}" è esaurito.`
+              : `Disponibili solo ${avail} pezzi di "${item.name}".`,
+            stockError: true,
+            itemName: item.name,
+            available: avail,
+          }, { status: 400 });
+        }
+      }
     }
 
     // ── Build line items (apply discount if any) ─────────────────────────────

@@ -2,18 +2,31 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { requireAdminOrStaff } from '@/lib/auth-guard';
 
-// ── GET /api/merch/stock?product_id=xxx ───────────────────────────────────────
-// Staff can read and update stock levels.
+// ── GET /api/merch/stock?product_id=xxx  (or omit for all) ───────────────────
+// Staff can read stock levels. Pass ?all=true to include product title.
 export async function GET(request: Request) {
   const auth = await requireAdminOrStaff(request);
   if (!auth.ok) return auth.response;
 
   const { searchParams } = new URL(request.url);
   const productId = searchParams.get('product_id');
-  if (!productId) return NextResponse.json({ error: 'Missing product_id' }, { status: 400 });
+  const withAll   = searchParams.get('all') === 'true';
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db = getSupabaseAdmin() as any;
+
+  if (withAll) {
+    // Return all stock rows joined with product title
+    const { data, error } = await db
+      .from('product_stock')
+      .select('id, product_id, variant_id, size, quantity, updated_at, products(title)')
+      .order('updated_at', { ascending: false });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ stock: data ?? [] });
+  }
+
+  if (!productId) return NextResponse.json({ error: 'Missing product_id' }, { status: 400 });
+
   const { data, error } = await db
     .from('product_stock')
     .select('id, product_id, variant_id, size, quantity, updated_at')
@@ -45,11 +58,13 @@ export async function POST(request: Request) {
   // Find existing row (handle NULL comparisons)
   let query = db
     .from('product_stock')
-    .select('id')
+    .select('id, quantity')
     .eq('product_id', product_id);
   query = variant_id ? query.eq('variant_id', variant_id) : query.is('variant_id', null);
   query = size       ? query.eq('size', size)             : query.is('size', null);
   const { data: existing } = await query.maybeSingle();
+
+  const oldQty: number = existing?.quantity ?? 0;
 
   let result;
   if (existing?.id) {
@@ -70,6 +85,17 @@ export async function POST(request: Request) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     result = data;
   }
+
+  // Audit log
+  await db.from('stock_audit_log').insert({
+    product_id,
+    variant_id: variant_id ?? null,
+    size: size ?? null,
+    old_qty: oldQty,
+    new_qty: quantity,
+    reason: 'manual',
+    changed_by: auth.email ?? 'admin',
+  }).catch(() => {/* non-fatal */});
 
   return NextResponse.json({ stock: result });
 }

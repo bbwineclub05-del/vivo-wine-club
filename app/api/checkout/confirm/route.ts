@@ -116,6 +116,17 @@ export async function GET(request: Request) {
       const customerName  = sessionWithItems.customer_details?.name  ?? null;
       const customerEmail = sessionWithItems.customer_details?.email ?? null;
 
+      // Extract shipping address and phone from Stripe
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sessionAny   = sessionWithItems as any;
+      const shipping     = sessionAny.shipping_details?.address ?? sessionWithItems.customer_details?.address ?? null;
+      const phone        = sessionWithItems.customer_details?.phone ?? null;
+      // Extract delivery notes (custom field)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const deliveryNotesField = ((sessionWithItems as any).custom_fields ?? [])
+        .find((f: { key: string; text?: { value?: string | null } }) => f.key === 'delivery_notes');
+      const deliveryNotes = deliveryNotesField?.text?.value ?? null;
+
       const db = getSupabaseAdmin() as any; // eslint-disable-line @typescript-eslint/no-explicit-any
       await db.from('merch_orders').upsert({
         stripe_session_id: sessionId,
@@ -125,19 +136,39 @@ export async function GET(request: Request) {
         total,
         status:            'da_evadere',
         created_at:        new Date(sessionWithItems.created * 1000).toISOString(),
+        shipping_line1:    shipping?.line1   ?? null,
+        shipping_line2:    shipping?.line2   ?? null,
+        shipping_city:     shipping?.city    ?? null,
+        shipping_postal:   shipping?.postal_code ?? null,
+        shipping_state:    shipping?.state   ?? null,
+        shipping_country:  shipping?.country ?? null,
+        phone,
+        delivery_notes:    deliveryNotes,
       }, { onConflict: 'stripe_session_id', ignoreDuplicates: true });
 
-      // Decrement stock for each purchased item (idempotent via GREATEST(0,…))
+      // Decrement stock for each purchased item (atomic check + decrement)
       try {
         const stockAdjs: { product_id: string; variant_id: string | null; size: string | null; qty: number }[] =
           JSON.parse(meta.stock_adjustments || '[]');
         for (const adj of stockAdjs) {
-          await db.rpc('decrement_product_stock', {
+          const { data: ok } = await db.rpc('check_and_decrement_stock', {
             p_product_id: adj.product_id,
             p_variant_id: adj.variant_id,
             p_size:       adj.size,
             p_qty:        adj.qty,
           });
+          if (!ok) {
+            // Oversell detected — log it but don't fail (payment already confirmed)
+            await db.from('stock_audit_log').insert({
+              product_id: adj.product_id,
+              variant_id: adj.variant_id ?? null,
+              size:       adj.size       ?? null,
+              old_qty:    0,
+              new_qty:    0,
+              reason:     'oversell',
+              changed_by: 'stripe_webhook',
+            }).catch(() => {});
+          }
         }
       } catch (stockErr) {
         console.error('[confirm] stock decrement error (non-fatal):', stockErr);

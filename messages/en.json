@@ -290,5 +290,10 @@
     "heading": "WEAR THE CLUB",
     "subtitle": "Each piece carries the identity of the club. Wear it, share it, live it.",
     "shipping": "ALL ITEMS SHIP WITHIN 5–7 BUSINESS DAYS"
+  },
+  "shop": {
+    "lowStockSingle": "Only 1 left!",
+    "lowStockPlural": "Only {count} left!",
+    "soldOutSize": "Sold out"
   }
 }

@@ -18,9 +18,6 @@ export default function CartDrawer() {
   const [discountLoading, setDiscountLoading] = useState(false);
   const [globalShipping, setGlobalShipping]   = useState(0);
   const [email, setEmail]                     = useState('');
-  const [confirmEmail, setConfirmEmail]       = useState('');
-
-  const emailsMatch = email.length > 0 && email === confirmEmail;
 
   useEffect(() => {
     fetch('/api/merch/settings')
@@ -64,7 +61,6 @@ export default function CartDrawer() {
   }, [discountCode, items]);
 
   const handleCheckout = useCallback(async () => {
-    if (!emailsMatch) return;
     setCheckoutError('');
     setCheckoutLoading(true);
     try {
@@ -75,7 +71,7 @@ export default function CartDrawer() {
           items,
           discountCode:  discountApplied ? discountCode.trim().toUpperCase() : undefined,
           shippingCost:  effectiveShipping > 0 ? effectiveShipping : undefined,
-          customerEmail: email.trim().toLowerCase(),
+          customerEmail: email.trim() ? email.trim().toLowerCase() : undefined,
         }),
       });
       const data = await res.json();
@@ -85,7 +81,7 @@ export default function CartDrawer() {
       setCheckoutError(err instanceof Error ? err.message : 'Checkout failed');
       setCheckoutLoading(false);
     }
-  }, [items, discountCode, discountApplied, effectiveShipping, email, emailsMatch]);
+  }, [items, discountCode, discountApplied, effectiveShipping, email]);
 
   return (
     <AnimatePresence>
@@ -237,37 +233,18 @@ export default function CartDrawer() {
                     </span>
                   </div>
                 </div>
-                {/* Email + Confirm email */}
-                <div className="flex flex-col gap-2">
-                  <div>
-                    <label className="block text-[9px] tracking-[0.3em] text-[#7a4a4a] mb-1.5">EMAIL</label>
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={e => setEmail(e.target.value)}
-                      placeholder="your@email.com"
-                      autoComplete="email"
-                      className="w-full bg-white border border-[#e8d5d5] px-3 py-2.5 text-xs text-[#1a0505] placeholder-[#b09090] focus:outline-none focus:border-[#731515] transition-colors rounded-lg"
-                      style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[9px] tracking-[0.3em] text-[#7a4a4a] mb-1.5">CONFIRM EMAIL</label>
-                    <input
-                      type="email"
-                      value={confirmEmail}
-                      onChange={e => setConfirmEmail(e.target.value)}
-                      placeholder="your@email.com"
-                      autoComplete="off"
-                      className={`w-full bg-white border px-3 py-2.5 text-xs text-[#1a0505] placeholder-[#b09090] focus:outline-none transition-colors rounded-lg ${confirmEmail.length > 0 && email !== confirmEmail ? 'border-[#731515]' : 'border-[#e8d5d5] focus:border-[#731515]'}`}
-                      style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
-                    />
-                    {confirmEmail.length > 0 && email !== confirmEmail && (
-                      <p className="mt-1 text-[10px] text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>
-                        Email addresses do not match.
-                      </p>
-                    )}
-                  </div>
+                {/* Email (optional — pre-fills Stripe) */}
+                <div>
+                  <label className="block text-[9px] tracking-[0.3em] text-[#7a4a4a] mb-1.5">EMAIL <span className="text-[#7a4a4a]/40 normal-case tracking-normal">(per ricevere la conferma)</span></label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="your@email.com"
+                    autoComplete="email"
+                    className="w-full bg-white border border-[#e8d5d5] px-3 py-2.5 text-xs text-[#1a0505] placeholder-[#b09090] focus:outline-none focus:border-[#731515] transition-colors rounded-lg"
+                    style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
+                  />
                 </div>
 
                 {/* Discount code */}
@@ -313,7 +290,7 @@ export default function CartDrawer() {
                 )}
                 <button
                   onClick={handleCheckout}
-                  disabled={checkoutLoading || !emailsMatch}
+                  disabled={checkoutLoading}
                   className="w-full py-4 bg-[#731515] text-white text-[11px] tracking-[0.35em] hover:bg-[#aa4848] disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-300 rounded-lg"
                 >
                   {checkoutLoading ? 'REDIRECTING…' : 'CHECKOUT'}
