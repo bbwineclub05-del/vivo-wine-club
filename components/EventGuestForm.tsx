@@ -3,25 +3,27 @@
 import { useState } from 'react';
 import { pixel } from '@/lib/pixel';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle, User, Mail, Phone, Loader2 } from 'lucide-react';
+import { CheckCircle, User, Mail, Phone, Loader2, Route } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import ReferralShare from '@/components/ReferralShare';
 
 interface Props {
-  eventSlug:     string;
-  eventTitle:    string;
-  eventDate:     string;   // e.g. "12 LUG 2026"
-  eventLocation: string;
-  refCode?:      string;   // incoming ?ref= from URL (user referral)
-  partnerCode?:  string;   // incoming ?partner= from URL (organisation tracking)
+  eventSlug:       string;
+  eventTitle:      string;
+  eventDate:       string;   // e.g. "12 LUG 2026"
+  eventLocation:   string;
+  refCode?:        string;   // incoming ?ref= from URL (user referral)
+  partnerCode?:    string;   // incoming ?partner= from URL (organisation tracking)
+  showRouteOption?: boolean; // true only for Vivo Wine Ride
 }
 
 const INPUT_CLS =
   'w-full bg-white border border-[#e8d5d5] text-[#1a0505] px-4 py-3 placeholder:text-[#7a4a4a]/35 focus:outline-none focus:border-[#731515]/50 transition-colors duration-200 rounded-lg';
 
-export default function EventGuestForm({ eventSlug, eventTitle, eventDate, eventLocation, refCode, partnerCode }: Props) {
+export default function EventGuestForm({ eventSlug, eventTitle, eventDate, eventLocation, refCode, partnerCode, showRouteOption }: Props) {
   const t = useTranslations('events');
   const [form, setForm]           = useState({ first_name: '', last_name: '', email: '', phone: '' });
+  const [routeOption, setRouteOption] = useState<'40km' | '80km' | null>(null);
   const [loading, setLoading]     = useState(false);
   const [success, setSuccess]     = useState(false);
   const [error,   setError]       = useState('');
@@ -38,13 +40,24 @@ export default function EventGuestForm({ eventSlug, eventTitle, eventDate, event
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
+
+    // Validate route option for Wine Ride
+    if (showRouteOption && !routeOption) {
+      setError(t('routeOptionRequired'));
+      return;
+    }
+
     setLoading(true);
 
     try {
       const res = await fetch(`/api/events/${eventSlug}/guests`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ ...form, partner_code: partnerCode ?? null }),
+        body:    JSON.stringify({
+          ...form,
+          partner_code:  partnerCode ?? null,
+          route_option:  showRouteOption ? routeOption : null,
+        }),
       });
       const json = await res.json();
 
@@ -129,6 +142,11 @@ export default function EventGuestForm({ eventSlug, eventTitle, eventDate, event
             <div className="mt-2 px-5 py-3 bg-[#fdf6f6] border border-[#eddada] rounded-lg text-sm text-[#7a4a4a] w-full max-w-xs text-left space-y-1">
               <p className="text-[10px] tracking-[0.3em] text-[#731515] mb-2">{t('registrationSummary')}</p>
               <p style={{ fontFamily: 'var(--font-nunito)' }}>{eventDate} · {eventLocation}</p>
+              {showRouteOption && routeOption && (
+                <p className="text-[#731515] font-semibold" style={{ fontFamily: 'var(--font-nunito)' }}>
+                  {routeOption === '40km' ? t('routeOption40') : t('routeOption80')}
+                </p>
+              )}
             </div>
             <p
               className="text-[11px] text-[#7a4a4a]/45 text-center"
@@ -229,6 +247,43 @@ export default function EventGuestForm({ eventSlug, eventTitle, eventDate, event
                 />
               </div>
             </div>
+
+            {/* ── Route selector (Wine Ride only) ── */}
+            {showRouteOption && (
+              <div className="flex flex-col gap-2.5 pt-1">
+                <label className="text-[10px] tracking-[0.3em] text-[#731515] flex items-center gap-1.5">
+                  <Route size={10} />
+                  {t('routeOptionLabel')} *
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  {(['40km', '80km'] as const).map((opt) => (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => setRouteOption(opt)}
+                      className={`flex flex-col items-center justify-center gap-1.5 py-5 rounded-xl border-2 transition-all duration-200 ${
+                        routeOption === opt
+                          ? 'border-[#731515] bg-[#731515] text-white shadow-sm'
+                          : 'border-[#e8d5d5] bg-white text-[#4a2a2a] hover:border-[#731515]/40 hover:bg-[#fdf6f6]'
+                      }`}
+                    >
+                      <span
+                        className="text-2xl font-bold"
+                        style={{ fontFamily: 'var(--font-syne)' }}
+                      >
+                        {opt === '40km' ? '40' : '80'}
+                      </span>
+                      <span
+                        className={`text-[10px] tracking-[0.3em] ${routeOption === opt ? 'text-white/80' : 'text-[#7a4a4a]/60'}`}
+                        style={{ fontFamily: 'var(--font-nunito)' }}
+                      >
+                        KM
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {error && (
               <motion.p

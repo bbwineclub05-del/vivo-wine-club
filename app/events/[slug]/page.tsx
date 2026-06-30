@@ -368,6 +368,7 @@ export default async function EventDetailPage({
                 eventLocation={event.locationFull || event.location}
                 refCode={refCode}
                 partnerCode={partnerCode}
+                showRouteOption={slug === 'vivo-wine-ride-jul-2026'}
               />
             )}
 

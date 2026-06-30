@@ -6,13 +6,14 @@ import { X, Search, Users, CheckCheck, Phone, Mail, UserCheck, Clock } from 'luc
 import { supabase } from '@/lib/supabase';
 
 interface Guest {
-  id:         string;
-  first_name: string;
-  last_name:  string;
-  email:      string;
-  phone:      string | null;
-  checked_in: boolean;
-  created_at: string;
+  id:           string;
+  first_name:   string;
+  last_name:    string;
+  email:        string;
+  phone:        string | null;
+  checked_in:   boolean;
+  created_at:   string;
+  route_option: string | null;
 }
 
 interface Props {
@@ -103,7 +104,10 @@ export default function EventGuestList({ event, accessToken, onClose }: Props) {
     );
   });
 
-  const checkedIn = guests.filter(g => g.checked_in).length;
+  const checkedIn   = guests.filter(g => g.checked_in).length;
+  const hasRoutes   = guests.some(g => g.route_option != null);
+  const count40km   = guests.filter(g => g.route_option === '40km').length;
+  const count80km   = guests.filter(g => g.route_option === '80km').length;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -137,7 +141,7 @@ export default function EventGuestList({ event, accessToken, onClose }: Props) {
             </h2>
 
             {/* Counters */}
-            <div className="flex items-center gap-4 mt-3">
+            <div className="flex flex-wrap items-center gap-3 mt-3">
               <div className="flex items-center gap-1.5">
                 <Users size={13} className="text-[#731515]" />
                 <span className="text-[13px] text-[#1a0505]" style={{ fontFamily: 'var(--font-nunito)' }}>
@@ -157,6 +161,20 @@ export default function EventGuestList({ event, accessToken, onClose }: Props) {
                   </span>
                 </span>
               </div>
+              {hasRoutes && (
+                <>
+                  <span className="text-[#eddada]">·</span>
+                  <span className="text-[13px] text-[#1a0505]" style={{ fontFamily: 'var(--font-nunito)' }}>
+                    <strong>{count40km}</strong>
+                    <span className="text-[#7a4a4a]/60 ml-1">× 40 km</span>
+                  </span>
+                  <span className="text-[#eddada]">·</span>
+                  <span className="text-[13px] text-[#1a0505]" style={{ fontFamily: 'var(--font-nunito)' }}>
+                    <strong>{count80km}</strong>
+                    <span className="text-[#7a4a4a]/60 ml-1">× 80 km</span>
+                  </span>
+                </>
+              )}
             </div>
           </div>
           <button
@@ -228,12 +246,20 @@ export default function EventGuestList({ event, accessToken, onClose }: Props) {
                   {/* Info */}
                   <div className="flex-1 min-w-0">
                     <p
-                      className={`text-[15px] font-medium leading-tight ${guest.checked_in ? 'text-emerald-800' : 'text-[#1a0505]'}`}
+                      className={`text-[15px] font-medium leading-tight flex flex-wrap items-center gap-2 ${guest.checked_in ? 'text-emerald-800' : 'text-[#1a0505]'}`}
                       style={{ fontFamily: 'var(--font-syne)' }}
                     >
                       {guest.first_name} {guest.last_name}
                       {guest.checked_in && (
-                        <span className="ml-2 text-[9px] tracking-[0.25em] text-emerald-600 font-normal">✓ PRESENTE</span>
+                        <span className="text-[9px] tracking-[0.25em] text-emerald-600 font-normal">✓ PRESENTE</span>
+                      )}
+                      {guest.route_option && (
+                        <span
+                          className="text-[9px] tracking-[0.2em] px-1.5 py-0.5 rounded-md font-normal bg-[#731515]/10 text-[#731515]"
+                          style={{ fontFamily: 'var(--font-nunito)' }}
+                        >
+                          {guest.route_option === '40km' ? '40 KM' : '80 KM'}
+                        </span>
                       )}
                     </p>
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1">

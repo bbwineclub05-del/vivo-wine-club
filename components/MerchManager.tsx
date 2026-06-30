@@ -1880,7 +1880,16 @@ interface StockRow {
   size:       string | null;
   quantity:   number;
   updated_at: string;
-  products:   { title: string } | null;
+  products: {
+    title:  string;
+    images: string[];
+  } | null;
+  product_variants: {
+    color_name:   string;
+    display_name: string | null;
+    images:       string[];
+    sort_order:   number;
+  } | null;
 }
 
 interface AuditRow {
@@ -1895,19 +1904,75 @@ interface AuditRow {
   created_at: string;
 }
 
+// Standard size ordering for display
+const SIZE_ORDER = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '2XL'];
+function sizeRank(s: string | null) {
+  if (!s) return -1;
+  const i = SIZE_ORDER.indexOf(s.toUpperCase());
+  return i === -1 ? 99 : i;
+}
+
+function sortStockRows(rows: StockRow[]): StockRow[] {
+  return [...rows].sort((a, b) => {
+    const ta = (a.products?.title ?? '').toLowerCase();
+    const tb = (b.products?.title ?? '').toLowerCase();
+    if (ta !== tb) return ta.localeCompare(tb);
+    const va = a.product_variants?.sort_order ?? 0;
+    const vb = b.product_variants?.sort_order ?? 0;
+    if (va !== vb) return va - vb;
+    return sizeRank(a.size) - sizeRank(b.size);
+  });
+}
+
 function StockOverviewTab({ token }: { token: string }) {
-  const [stock,    setStock]    = useState<StockRow[]>([]);
-  const [log,      setLog]      = useState<AuditRow[]>([]);
-  const [loading,  setLoading]  = useState(true);
+  const [stock,   setStock]   = useState<StockRow[]>([]);
+  const [log,     setLog]     = useState<AuditRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editQty, setEditQty] = useState<Record<string, number>>({});
+  const [saving,  setSaving]  = useState<Record<string, boolean>>({});
+
+  function loadAll(tk: string) {
+    return Promise.all([
+      fetch('/api/merch/stock?all=true', { headers: { Authorization: `Bearer ${tk}` } })
+        .then(r => r.json())
+        .then(d => {
+          const rows: StockRow[] = d.stock ?? [];
+          setStock(rows);
+          const map: Record<string, number> = {};
+          for (const row of rows) map[row.id] = row.quantity;
+          setEditQty(map);
+        })
+        .catch(() => {}),
+      fetch('/api/merch/stock/log', { headers: { Authorization: `Bearer ${tk}` } })
+        .then(r => r.json()).then(d => setLog(d.log ?? [])).catch(() => {}),
+    ]);
+  }
 
   useEffect(() => {
-    Promise.all([
-      fetch('/api/merch/stock?all=true', { headers: { Authorization: `Bearer ${token}` } })
-        .then(r => r.json()).then(d => setStock(d.stock ?? [])).catch(() => {}),
-      fetch('/api/merch/stock/log', { headers: { Authorization: `Bearer ${token}` } })
-        .then(r => r.json()).then(d => setLog(d.log ?? [])).catch(() => {}),
-    ]).finally(() => setLoading(false));
+    loadAll(token).finally(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
+
+  async function saveQty(row: StockRow) {
+    const qty = editQty[row.id];
+    if (qty === undefined || qty === row.quantity) return; // no change
+    setSaving(prev => ({ ...prev, [row.id]: true }));
+    try {
+      const res = await fetch('/api/merch/stock', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body:    JSON.stringify({ product_id: row.product_id, variant_id: row.variant_id, size: row.size, quantity: qty }),
+      });
+      if (res.ok) {
+        setStock(prev => prev.map(s => s.id === row.id ? { ...s, quantity: qty } : s));
+        // Refresh audit log
+        fetch('/api/merch/stock/log', { headers: { Authorization: `Bearer ${token}` } })
+          .then(r => r.json()).then(d => setLog(d.log ?? [])).catch(() => {});
+      }
+    } finally {
+      setSaving(prev => ({ ...prev, [row.id]: false }));
+    }
+  }
 
   if (loading) return (
     <div className="flex items-center justify-center py-20">
@@ -1915,28 +1980,29 @@ function StockOverviewTab({ token }: { token: string }) {
     </div>
   );
 
-  const noStock     = stock.filter(s => s.quantity === 0);
-  const lowStock    = stock.filter(s => s.quantity > 0 && s.quantity <= 3);
-  const okStock     = stock.filter(s => s.quantity > 3);
+  const sorted  = sortStockRows(stock);
+  const noStock = stock.filter(s => s.quantity === 0);
+  const okStock = stock.filter(s => s.quantity > 0);
 
-  function stockBadge(qty: number) {
-    if (qty === 0) return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] tracking-[0.2em] bg-red-100 text-red-700">ESAURITO</span>;
-    if (qty <= 3)  return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] tracking-[0.2em] bg-orange-100 text-orange-700">BASSO ({qty})</span>;
-    return <span className="text-[12px] text-green-700 font-medium">{qty}</span>;
+  // Group sorted rows by product_id to show product headers
+  const groups: { productId: string; title: string; rows: StockRow[] }[] = [];
+  for (const row of sorted) {
+    const last = groups[groups.length - 1];
+    if (last && last.productId === row.product_id) {
+      last.rows.push(row);
+    } else {
+      groups.push({ productId: row.product_id, title: row.products?.title ?? row.product_id, rows: [row] });
+    }
   }
 
   return (
     <div className="space-y-8">
 
-      {/* Summary chips */}
-      <div className="grid grid-cols-3 gap-4">
+      {/* Summary — 2 chips only (remove "Scorte basse") */}
+      <div className="grid grid-cols-2 gap-4">
         <div className="border border-red-200 rounded-xl p-4 bg-red-50 text-center">
           <p className="text-2xl font-light text-red-600" style={{ fontFamily: 'var(--font-syne)' }}>{noStock.length}</p>
           <p className="text-[9px] tracking-[0.35em] text-red-400 mt-1">ESAURITI</p>
-        </div>
-        <div className="border border-orange-200 rounded-xl p-4 bg-orange-50 text-center">
-          <p className="text-2xl font-light text-orange-600" style={{ fontFamily: 'var(--font-syne)' }}>{lowStock.length}</p>
-          <p className="text-[9px] tracking-[0.35em] text-orange-400 mt-1">SCORTE BASSE</p>
         </div>
         <div className="border border-green-200 rounded-xl p-4 bg-green-50 text-center">
           <p className="text-2xl font-light text-green-600" style={{ fontFamily: 'var(--font-syne)' }}>{okStock.length}</p>
@@ -1952,23 +2018,97 @@ function StockOverviewTab({ token }: { token: string }) {
             <table className="w-full text-[12px]" style={{ fontFamily: 'var(--font-nunito)' }}>
               <thead>
                 <tr className="bg-[#fdf6f6] border-b border-[#eddada]">
-                  <th className="text-left px-4 py-2.5 text-[9px] tracking-[0.3em] text-[#7a4a4a]/50 font-normal">PRODOTTO</th>
-                  <th className="text-left px-4 py-2.5 text-[9px] tracking-[0.3em] text-[#7a4a4a]/50 font-normal">TAGLIA</th>
-                  <th className="text-right px-4 py-2.5 text-[9px] tracking-[0.3em] text-[#7a4a4a]/50 font-normal">QTÀ</th>
+                  <th className="w-12" />
+                  <th className="text-left px-3 py-2.5 text-[9px] tracking-[0.3em] text-[#7a4a4a]/50 font-normal">PRODOTTO / VARIANTE</th>
+                  <th className="text-center px-3 py-2.5 text-[9px] tracking-[0.3em] text-[#7a4a4a]/50 font-normal w-16">TAGLIA</th>
+                  <th className="text-right px-4 py-2.5 text-[9px] tracking-[0.3em] text-[#7a4a4a]/50 font-normal w-36">QUANTITÀ</th>
                 </tr>
               </thead>
               <tbody>
-                {/* Sort: esauriti first, then low, then ok */}
-                {[...noStock, ...lowStock, ...okStock].map(row => (
-                  <tr key={row.id} className={`border-b border-[#eddada] last:border-0 ${row.quantity === 0 ? 'bg-red-50/40' : row.quantity <= 3 ? 'bg-orange-50/40' : 'bg-white'}`}>
-                    <td className="px-4 py-2.5 text-[#1a0505]">{row.products?.title ?? row.product_id.slice(0, 8)}</td>
-                    <td className="px-4 py-2.5 text-[#7a4a4a]">{row.size ?? '—'}</td>
-                    <td className="px-4 py-2.5 text-right">{stockBadge(row.quantity)}</td>
-                  </tr>
+                {groups.map(group => (
+                  group.rows.map((row, rowIdx) => {
+                    const qty       = editQty[row.id] ?? row.quantity;
+                    const isBusy    = saving[row.id] ?? false;
+                    const isDirty   = qty !== row.quantity;
+                    const isZero    = row.quantity === 0;
+                    const isLow     = row.quantity > 0 && row.quantity <= 3;
+                    const thumb     = row.product_variants?.images?.[0] ?? row.products?.images?.[0] ?? null;
+                    const varName   = row.product_variants?.display_name || row.product_variants?.color_name || null;
+                    const isFirst   = rowIdx === 0;
+                    const isLast    = rowIdx === group.rows.length - 1;
+                    const rowBg     = isZero ? 'bg-red-50/50' : isLow ? 'bg-orange-50/50' : 'bg-white';
+
+                    return (
+                      <tr
+                        key={row.id}
+                        className={`${rowBg} ${isLast ? '' : 'border-b border-[#eddada]'}`}
+                      >
+                        {/* Thumbnail */}
+                        <td className={`pl-3 py-1.5 ${isFirst ? 'pt-3' : ''} ${isLast ? 'pb-3' : ''}`}>
+                          <div className="w-10 h-10 rounded-lg overflow-hidden bg-[#f5eded] shrink-0 flex items-center justify-center">
+                            {thumb
+                              ? <img src={thumb} alt="" className="w-full h-full object-cover" />
+                              : <span className="text-lg opacity-20">🍷</span>
+                            }
+                          </div>
+                        </td>
+
+                        {/* Name + variant */}
+                        <td className={`px-3 py-1.5 ${isFirst ? 'pt-3' : ''} ${isLast ? 'pb-3' : ''}`}>
+                          <p className="text-[12px] font-medium text-[#1a0505] leading-tight">
+                            {group.title}
+                            {varName && (
+                              <span className="font-normal text-[#7a4a4a]"> — {varName}</span>
+                            )}
+                          </p>
+                        </td>
+
+                        {/* Size */}
+                        <td className={`px-3 py-1.5 text-center text-[#7a4a4a] ${isFirst ? 'pt-3' : ''} ${isLast ? 'pb-3' : ''}`}>
+                          {row.size ?? <span className="text-[#7a4a4a]/30">—</span>}
+                        </td>
+
+                        {/* Editable quantity */}
+                        <td className={`px-4 py-1.5 text-right ${isFirst ? 'pt-3' : ''} ${isLast ? 'pb-3' : ''}`}>
+                          <div className="flex items-center justify-end gap-2">
+                            <input
+                              type="number"
+                              min="0"
+                              step="1"
+                              value={qty}
+                              onChange={e => {
+                                const v = parseInt(e.target.value, 10);
+                                if (!isNaN(v) && v >= 0) setEditQty(prev => ({ ...prev, [row.id]: v }));
+                              }}
+                              onBlur={() => saveQty(row)}
+                              onKeyDown={e => { if (e.key === 'Enter') { (e.target as HTMLInputElement).blur(); } }}
+                              className={`w-16 text-center text-[12px] border rounded-lg px-2 py-1 focus:outline-none focus:border-[#731515]/50 transition-colors ${
+                                isZero ? 'border-red-300 text-red-700 bg-red-50'
+                                : isLow ? 'border-orange-300 text-orange-700 bg-orange-50'
+                                : 'border-[#eddada] text-[#1a0505] bg-white'
+                              }`}
+                            />
+                            {isBusy && <Loader2 size={11} className="animate-spin text-[#731515]/50 shrink-0" />}
+                            {!isBusy && isDirty && (
+                              <button
+                                onClick={() => saveQty(row)}
+                                className="text-[9px] tracking-[0.2em] px-2 py-1 bg-[#731515] text-white rounded-lg hover:bg-[#9b2323] transition-colors shrink-0"
+                              >
+                                OK
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 ))}
               </tbody>
             </table>
           </div>
+          <p className="text-[10px] text-[#7a4a4a]/40 mt-2 text-right" style={{ fontFamily: 'var(--font-nunito)' }}>
+            Modifica il numero e premi Invio o clicca fuori per salvare
+          </p>
         </div>
       ) : (
         <div className="border border-dashed border-[#eddada] rounded-xl p-12 text-center">

@@ -16,11 +16,10 @@ export async function GET(request: Request) {
   const db = getSupabaseAdmin() as any;
 
   if (withAll) {
-    // Return all stock rows joined with product title
+    // Return all stock rows with product title+images and variant name+images+sort_order
     const { data, error } = await db
       .from('product_stock')
-      .select('id, product_id, variant_id, size, quantity, updated_at, products(title)')
-      .order('updated_at', { ascending: false });
+      .select('id, product_id, variant_id, size, quantity, updated_at, products(title, images), product_variants(color_name, display_name, images, sort_order)');
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ stock: data ?? [] });
   }

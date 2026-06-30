@@ -14,8 +14,9 @@ function buildConfirmationEmail(opts: {
   eventDate: string;   // "12 JUL 2026"
   eventLocation: string;
   eventTime: string | null;
+  routeOption?: string | null;
 }): string {
-  const { firstName, eventTitle, eventDate, eventLocation, eventTime } = opts;
+  const { firstName, eventTitle, eventDate, eventLocation, eventTime, routeOption } = opts;
 
   const body = `
 ${heading('Iscrizione confermata', 'Vivo Wine Club · Guest List')}
@@ -39,11 +40,17 @@ ${divider('20px 0')}
     </td>
   </tr>
   <tr>
-    <td style="padding:8px 0;border-top:1px solid #eddada;border-bottom:1px solid #eddada;">
+    <td style="padding:8px 0;border-top:1px solid #eddada;${routeOption ? '' : 'border-bottom:1px solid #eddada;'}">
       <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#7a4a4a;">Luogo</p>
       <p style="margin:4px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1a0505;">${eventLocation}</p>
     </td>
   </tr>
+  ${routeOption ? `<tr>
+    <td style="padding:8px 0;border-top:1px solid #eddada;border-bottom:1px solid #eddada;">
+      <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#7a4a4a;">Percorso scelto</p>
+      <p style="margin:4px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:bold;color:#731515;">${routeOption === '40km' ? '40 km' : '80 km'} 🚴</p>
+    </td>
+  </tr>` : ''}
 </table>
 ${para('Porta con te questa email come conferma oppure comunicaci semplicemente il tuo nome all&apos;ingresso.')}
 `;
@@ -116,6 +123,9 @@ export async function POST(
   const email       = String(body.email        ?? '').trim().toLowerCase();
   const phone       = String(body.phone        ?? '').trim() || null;
   const partnerCode = body.partner_code ? String(body.partner_code).trim().toUpperCase() : null;
+  const routeOption = body.route_option && ['40km', '80km'].includes(String(body.route_option))
+    ? String(body.route_option)
+    : null;
 
   if (!firstName || !lastName || !email) {
     return NextResponse.json({ error: 'Nome, cognome ed email sono obbligatori.' }, { status: 422 });
@@ -166,6 +176,7 @@ export async function POST(
       email,
       phone,
       partner_code: partnerCode,
+      route_option: routeOption,
     })
     .select()
     .single();
@@ -200,6 +211,7 @@ export async function POST(
         eventDate,
         eventLocation: eventRow.location_full || eventRow.location,
         eventTime:     eventRow.time ?? null,
+        routeOption,
       }),
       headers: {
         'List-Unsubscribe':      '<mailto:info@vivowineclub.com?subject=unsubscribe>',
