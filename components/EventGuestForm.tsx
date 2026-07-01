@@ -5,32 +5,28 @@ import { pixel } from '@/lib/pixel';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, User, Mail, Phone, Loader2, Route } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import ReferralShare from '@/components/ReferralShare';
 
 interface Props {
   eventSlug:       string;
   eventTitle:      string;
   eventDate:       string;   // e.g. "12 LUG 2026"
   eventLocation:   string;
-  refCode?:        string;   // incoming ?ref= from URL (user referral)
+  refCode?:        string;   // incoming ?ref= from URL (user referral) — ignored for list-only
   partnerCode?:    string;   // incoming ?partner= from URL (organisation tracking)
   showRouteOption?: boolean; // true only for Vivo Wine Ride
+  eventPrice?:     number;   // >0 means "pagamento all'ingresso" (list-only events with price)
 }
 
 const INPUT_CLS =
   'w-full bg-white border border-[#e8d5d5] text-[#1a0505] px-4 py-3 placeholder:text-[#7a4a4a]/35 focus:outline-none focus:border-[#731515]/50 transition-colors duration-200 rounded-lg';
 
-export default function EventGuestForm({ eventSlug, eventTitle, eventDate, eventLocation, refCode, partnerCode, showRouteOption }: Props) {
+export default function EventGuestForm({ eventSlug, eventTitle, eventDate, eventLocation, partnerCode, showRouteOption, eventPrice = 0 }: Props) {
   const t = useTranslations('events');
   const [form, setForm]           = useState({ first_name: '', last_name: '', email: '', phone: '' });
   const [routeOption, setRouteOption] = useState<'40km' | '80km' | null>(null);
   const [loading, setLoading]     = useState(false);
   const [success, setSuccess]     = useState(false);
   const [error,   setError]       = useState('');
-  const [myRefCode,         setMyRefCode]         = useState<string | null>(null);
-  const [refUses,           setRefUses]           = useState(0);
-  const [refRewardUnlocked, setRefRewardUnlocked] = useState(false);
-  const [refRewardCode,     setRefRewardCode]     = useState<string | null>(null);
 
   function set(field: keyof typeof form) {
     return (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -66,26 +62,8 @@ export default function EventGuestForm({ eventSlug, eventTitle, eventDate, event
         return;
       }
 
-      // Referral code arrives inline with the registration response
-      if (json.referral?.code) {
-        setMyRefCode(json.referral.code);
-        setRefUses(json.referral.uses ?? 0);
-        setRefRewardUnlocked(json.referral.reward_unlocked ?? false);
-        setRefRewardCode(json.referral.reward_code ?? null);
-      }
-
       pixel.lead({ content_name: eventTitle });
       setSuccess(true);
-
-      // Attribute an incoming referral (if ?ref= was in the URL) — fire-and-forget
-      if (refCode) {
-        const email = form.email.trim().toLowerCase();
-        fetch('/api/referral/use', {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ ref_code: refCode, used_by_email: email, event_slug: eventSlug }),
-        }).catch(() => {/* non-fatal */});
-      }
     } catch {
       setError('Errore di connessione. Controlla la rete e riprova.');
     } finally {
@@ -110,6 +88,13 @@ export default function EventGuestForm({ eventSlug, eventTitle, eventDate, event
         >
           {t('guestListSubtitle')}
         </p>
+        {eventPrice > 0 && (
+          <div className="mt-3 flex items-center gap-2 text-sm text-[#731515] bg-[#fdf6f6] border border-[#eddada] rounded-lg px-4 py-2.5" style={{ fontFamily: 'var(--font-nunito)' }}>
+            <span className="font-semibold">€{eventPrice}</span>
+            <span className="text-[#7a4a4a]/60">·</span>
+            <span>{t('paymentAtDoorNote')}</span>
+          </div>
+        )}
       </div>
 
       <AnimatePresence mode="wait">
@@ -147,6 +132,11 @@ export default function EventGuestForm({ eventSlug, eventTitle, eventDate, event
                   {routeOption === '40km' ? t('routeOption40') : t('routeOption80')}
                 </p>
               )}
+              {eventPrice > 0 && (
+                <p className="text-[#731515] font-semibold" style={{ fontFamily: 'var(--font-nunito)' }}>
+                  €{eventPrice} · {t('paymentAtDoor')}
+                </p>
+              )}
             </div>
             <p
               className="text-[11px] text-[#7a4a4a]/45 text-center"
@@ -154,17 +144,6 @@ export default function EventGuestForm({ eventSlug, eventTitle, eventDate, event
             >
               {t('spamNote')}
             </p>
-            {/* Referral share widget — code arrives with the registration response */}
-            {myRefCode && (
-              <ReferralShare
-                referralCode={myRefCode}
-                eventSlug={eventSlug}
-                eventTitle={eventTitle}
-                initialUses={refUses}
-                initialRewardUnlocked={refRewardUnlocked}
-                initialRewardCode={refRewardCode}
-              />
-            )}
           </motion.div>
         ) : (
           /* ── Form ── */

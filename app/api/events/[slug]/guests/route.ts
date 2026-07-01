@@ -3,7 +3,6 @@ import { Resend } from 'resend';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { requireAdminOrStaff } from '@/lib/auth-guard';
 import { emailShell, heading, para, divider } from '@/lib/email-shell';
-import { generateReferralCode } from '@/lib/referral';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -15,8 +14,10 @@ function buildConfirmationEmail(opts: {
   eventLocation: string;
   eventTime: string | null;
   routeOption?: string | null;
+  eventPrice?: number | null;
 }): string {
-  const { firstName, eventTitle, eventDate, eventLocation, eventTime, routeOption } = opts;
+  const { firstName, eventTitle, eventDate, eventLocation, eventTime, routeOption, eventPrice } = opts;
+  const hasExtra = !!(routeOption || (eventPrice && eventPrice > 0));
 
   const body = `
 ${heading('Iscrizione confermata', 'Vivo Wine Club · Guest List')}
@@ -40,15 +41,21 @@ ${divider('20px 0')}
     </td>
   </tr>
   <tr>
-    <td style="padding:8px 0;border-top:1px solid #eddada;${routeOption ? '' : 'border-bottom:1px solid #eddada;'}">
+    <td style="padding:8px 0;border-top:1px solid #eddada;${hasExtra ? '' : 'border-bottom:1px solid #eddada;'}">
       <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#7a4a4a;">Luogo</p>
       <p style="margin:4px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1a0505;">${eventLocation}</p>
     </td>
   </tr>
   ${routeOption ? `<tr>
-    <td style="padding:8px 0;border-top:1px solid #eddada;border-bottom:1px solid #eddada;">
+    <td style="padding:8px 0;border-top:1px solid #eddada;${eventPrice && eventPrice > 0 ? '' : 'border-bottom:1px solid #eddada;'}">
       <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#7a4a4a;">Percorso scelto</p>
       <p style="margin:4px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:bold;color:#731515;">${routeOption === '40km' ? '40 km' : '80 km'} 🚴</p>
+    </td>
+  </tr>` : ''}
+  ${eventPrice && eventPrice > 0 ? `<tr>
+    <td style="padding:8px 0;border-top:1px solid #eddada;border-bottom:1px solid #eddada;">
+      <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#7a4a4a;">Ingresso</p>
+      <p style="margin:4px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1a0505;">€${eventPrice} — pagamento all&apos;ingresso</p>
     </td>
   </tr>` : ''}
 </table>
@@ -140,7 +147,7 @@ export async function POST(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: eventRow, error: evtErr } = await (db as any)
     .from('events')
-    .select('id, title, date, time, location, location_full, guest_list_enabled, is_list_only')
+    .select('id, title, date, time, location, location_full, guest_list_enabled, is_list_only, price')
     .eq('slug', slug)
     .single();
 
@@ -190,14 +197,6 @@ export async function POST(
   const months = ['GEN','FEB','MAR','APR','MAG','GIU','LUG','AGO','SET','OTT','NOV','DIC'];
   const eventDate = `${parseInt(d)} ${months[parseInt(m) - 1]} ${y}`;
 
-  // Generate referral code inline — non-fatal if tables don't exist yet
-  const referral = await generateReferralCode({
-    email,
-    eventSlug:   slug,
-    name:        `${firstName} ${lastName}`,
-    partnerCode,
-  });
-
   // Send confirmation email (non-blocking — don't fail the request if email fails)
   try {
     await resend.emails.send({
@@ -212,6 +211,7 @@ export async function POST(
         eventLocation: eventRow.location_full || eventRow.location,
         eventTime:     eventRow.time ?? null,
         routeOption,
+        eventPrice:    eventRow.is_list_only && eventRow.price > 0 ? eventRow.price : null,
       }),
       headers: {
         'List-Unsubscribe':      '<mailto:info@vivowineclub.com?subject=unsubscribe>',
@@ -222,7 +222,7 @@ export async function POST(
     console.error('[event guests] email error:', emailErr);
   }
 
-  return NextResponse.json({ guest, referral }, { status: 201 });
+  return NextResponse.json({ guest }, { status: 201 });
 }
 
 /* ── DELETE /api/events/[slug]/guests  (admin/staff only)

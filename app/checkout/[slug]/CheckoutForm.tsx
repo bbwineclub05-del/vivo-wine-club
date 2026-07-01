@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { pixel } from '@/lib/pixel';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { MapPin, Minus, Plus, Calendar, Tag, User } from 'lucide-react';
+import { MapPin, Minus, Plus, Calendar, Tag, User, Gift } from 'lucide-react';
 import BackButton from '@/components/BackButton';
 import Navbar from '@/components/Navbar';
 import { type EventData } from '@/lib/events';
@@ -52,15 +52,16 @@ function Field({
 }
 
 /* ── Checkout form ── */
-export default function CheckoutForm({ event, refCode, partnerCode }: { event: EventData; refCode?: string; partnerCode?: string }) {
-  const [qty,          setQty]          = useState(1);
-  const [firstName,    setFirstName]    = useState('');
-  const [lastName,     setLastName]     = useState('');
-  const [email,        setEmail]        = useState('');
-  const [confirmEmail, setConfirmEmail] = useState('');
-  const [phone,        setPhone]        = useState('');
-  const [loading,      setLoading]      = useState(false);
-  const [error,        setError]        = useState('');
+export default function CheckoutForm({ event, refCode, partnerCode, referralEnabled }: { event: EventData; refCode?: string; partnerCode?: string; referralEnabled?: boolean }) {
+  const [qty,            setQty]            = useState(1);
+  const [firstName,      setFirstName]      = useState('');
+  const [lastName,       setLastName]       = useState('');
+  const [email,          setEmail]          = useState('');
+  const [confirmEmail,   setConfirmEmail]   = useState('');
+  const [phone,          setPhone]          = useState('');
+  const [enteredRefCode, setEnteredRefCode] = useState(refCode ?? '');
+  const [loading,        setLoading]        = useState(false);
+  const [error,          setError]          = useState('');
 
   const emailsMatch = email.length > 0 && email === confirmEmail;
 
@@ -78,7 +79,7 @@ export default function CheckoutForm({ event, refCode, partnerCode }: { event: E
       const res  = await fetch('/api/checkout/event', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ slug: event.slug, qty, firstName, lastName, email, phone, refCode, partnerCode }),
+        body:    JSON.stringify({ slug: event.slug, qty, firstName, lastName, email, phone, refCode: enteredRefCode.trim().toUpperCase() || undefined, partnerCode }),
       });
       const data = await res.json();
 
@@ -287,6 +288,30 @@ export default function CheckoutForm({ event, refCode, partnerCode }: { event: E
                       <span className="text-xl font-light text-[#731515]" style={{ fontFamily: 'var(--font-syne)' }}>
                         FREE
                       </span>
+                    </div>
+                  )}
+
+                  {/* ── Referral code (paid events with referral enabled) ── */}
+                  {referralEnabled && event.price > 0 && (
+                    <div className="mb-6 flex flex-col gap-1.5">
+                      <label className="flex items-center gap-1.5 text-[9px] tracking-[0.3em] text-[#7a4a4a]">
+                        <Gift size={11} className="text-[#731515]" />
+                        {refCode ? 'REFERRAL CODE' : 'HAI UN CODICE REFERRAL? INSERISCILO QUI'}
+                      </label>
+                      <input
+                        type="text"
+                        value={enteredRefCode}
+                        onChange={e => setEnteredRefCode(e.target.value)}
+                        readOnly={!!refCode}
+                        placeholder="VIVO-XXXXX (opzionale)"
+                        className={`w-full border bg-white px-4 py-3 text-sm text-[#1a0505] placeholder-[#c0a0a0] focus:outline-none transition-colors duration-200 rounded-lg uppercase tracking-widest ${refCode ? 'border-[#e8d5d5] bg-[#fdf6f6] text-[#731515] font-semibold cursor-default' : 'border-[#e8d5d5] focus:border-[#731515]'}`}
+                        style={{ fontFamily: 'var(--font-nunito)', fontSize: '14px' }}
+                      />
+                      {refCode && (
+                        <p className="text-[10px] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
+                          Codice referral applicato automaticamente dal link.
+                        </p>
+                      )}
                     </div>
                   )}
 

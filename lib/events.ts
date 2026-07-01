@@ -24,6 +24,7 @@ export interface DbEvent {
   sort_order: number;
   guest_list_enabled?: boolean;
   is_list_only?: boolean;    // true = no checkout, show guest registration form
+  referral_enabled?: boolean; // true = referral widget shown after paid checkout
   created_at: string;
   updated_at?: string;
 }
@@ -57,6 +58,7 @@ export function dbEventToEventData(e: DbEvent): EventData {
     titleStrikethrough: e.title_strikethrough,
     image_url:         e.image_url,
     isListOnly:        e.is_list_only ?? false,
+    referralEnabled:   e.referral_enabled ?? false,
   };
 }
 
@@ -77,6 +79,7 @@ export interface EventData {
   titleStrikethrough?: boolean;
   image_url?: string | null;
   isListOnly?: boolean;
+  referralEnabled?: boolean;
 }
 
 /**

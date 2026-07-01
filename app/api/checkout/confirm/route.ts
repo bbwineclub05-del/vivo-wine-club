@@ -33,12 +33,17 @@ export async function GET(request: Request) {
     if (meta.type === 'event') {
       // Resolve event from Supabase
       let event;
+      let referralEnabled = false;
       try {
         const supabaseAdmin = getSupabaseAdmin();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data } = await (supabaseAdmin as any)
           .from('events').select('*').eq('slug', meta.event_slug).single();
-        if (data) event = dbEventToEventData(data as DbEvent);
+        if (data) {
+          event = dbEventToEventData(data as DbEvent);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          referralEnabled = !!(data as any).referral_enabled;
+        }
       } catch {/* ignore */}
       if (!event) {
         return NextResponse.json({ error: 'Event not found in metadata' }, { status: 400 });
@@ -73,11 +78,12 @@ export async function GET(request: Request) {
       }
 
       return NextResponse.json({
-        ok:          true,
-        type:        'event',
-        order_id:    meta.order_id,
-        buyer_email: meta.buyer_email,
-        buyer_name:  `${meta.buyer_first_name} ${meta.buyer_last_name}`.trim(),
+        ok:               true,
+        type:             'event',
+        order_id:         meta.order_id,
+        buyer_email:      meta.buyer_email,
+        buyer_name:       `${meta.buyer_first_name} ${meta.buyer_last_name}`.trim(),
+        referral_enabled: referralEnabled,
         event: {
           title:        event.title,
           month:        event.month,

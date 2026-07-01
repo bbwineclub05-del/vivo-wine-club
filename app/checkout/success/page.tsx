@@ -31,10 +31,11 @@ function SuccessContent() {
   const [eventInfo,   setEventInfo]   = useState<EventInfo | null>(null);
   const [buyerEmail,  setBuyerEmail]  = useState<string>('');
   const [buyerName,   setBuyerName]   = useState<string>('');
-  const [myRefCode,   setMyRefCode]   = useState<string | null>(null);
-  const [refUses,     setRefUses]     = useState(0);
-  const [refReward,   setRefReward]   = useState(false);
-  const [refRewardCode, setRefRewardCode] = useState<string | null>(null);
+  const [myRefCode,        setMyRefCode]        = useState<string | null>(null);
+  const [refUses,          setRefUses]          = useState(0);
+  const [refReward,        setRefReward]        = useState(false);
+  const [refRewardCode,    setRefRewardCode]    = useState<string | null>(null);
+  const [referralEnabled,  setReferralEnabled]  = useState(false);
   const purchaseFired = useRef(false);
 
   useEffect(() => {
@@ -54,8 +55,9 @@ function SuccessContent() {
           if (data.type === 'event') {
             setEventInfo(data.event);
             setOrderType('event');
-            if (data.buyer_email) setBuyerEmail(data.buyer_email);
-            if (data.buyer_name)  setBuyerName(data.buyer_name);
+            if (data.buyer_email)      setBuyerEmail(data.buyer_email);
+            if (data.buyer_name)       setBuyerName(data.buyer_name);
+            if (data.referral_enabled) setReferralEnabled(true);
           } else {
             setOrderType('merch');
           }
@@ -97,9 +99,9 @@ function SuccessContent() {
     }
   }, [orderType, eventInfo]);
 
-  // Generate referral code once we know the buyer email + event slug
+  // Generate referral code once we know the buyer email + event slug (only if referral is enabled)
   useEffect(() => {
-    if (!buyerEmail || !eventInfo?.slug) return;
+    if (!buyerEmail || !eventInfo?.slug || !referralEnabled) return;
     fetch('/api/referral/generate', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -119,7 +121,7 @@ function SuccessContent() {
         }
       })
       .catch(() => {/* non-fatal */});
-  }, [buyerEmail, buyerName, eventInfo?.slug]);
+  }, [buyerEmail, buyerName, eventInfo?.slug, referralEnabled]);
 
   return (
     <>

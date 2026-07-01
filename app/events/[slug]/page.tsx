@@ -298,9 +298,11 @@ export default async function EventDetailPage({
                 icon={<Ticket size={14} className="text-[#731515] shrink-0" />}
                 label={t('labelPrice')}
                 value={
-                  isListOnly || !event.price
+                  !event.price
                     ? t('freeEntry')
-                    : `€${event.price} / ${t('perPerson')}`
+                    : isListOnly
+                      ? `€${event.price} — ${t('paymentAtDoor')}`
+                      : `€${event.price} / ${t('perPerson')}`
                 }
               />
               {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
@@ -369,6 +371,7 @@ export default async function EventDetailPage({
                 refCode={refCode}
                 partnerCode={partnerCode}
                 showRouteOption={slug === 'vivo-wine-ride-jul-2026'}
+                eventPrice={isListOnly ? (event.price ?? 0) : 0}
               />
             )}
 

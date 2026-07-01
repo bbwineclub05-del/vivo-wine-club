@@ -218,6 +218,8 @@
     "routeOption40": "40 km",
     "routeOption80": "80 km",
     "routeOptionRequired": "Please select a route to continue",
+    "paymentAtDoor": "Payment at the door",
+    "paymentAtDoorNote": "Payment is made directly at the entrance to the event.",
     "referralLabel": "INVITE A FRIEND",
     "referralHeading": "Invite 5 friends and get a free drink",
     "referralProgress": "FRIENDS INVITED",

@@ -34,6 +34,7 @@ interface DbEvent {
   title_strikethrough: boolean;
   guest_list_enabled: boolean;
   is_list_only: boolean;
+  referral_enabled: boolean;
   image_url: string | null;
   stripe_product_id: string | null;
   stripe_price_id: string | null;
@@ -48,7 +49,7 @@ const BLANK: FormData = {
   location: '', location_full: '', description: '',
   price: 0, capacity: null, status: 'open',
   published: false, title_strikethrough: false, guest_list_enabled: false,
-  is_list_only: false,
+  is_list_only: false, referral_enabled: false,
   image_url: null, sort_order: 0,
 };
 
@@ -282,7 +283,6 @@ function EventForm({
               onClick={() => {
                 set('is_list_only', true);
                 set('guest_list_enabled', true);
-                set('price', 0);
               }}
               className={`flex-1 py-3 px-4 rounded-lg border text-[11px] tracking-[0.2em] transition-colors ${
                 f.is_list_only
@@ -295,24 +295,27 @@ function EventForm({
           </div>
           <p className="mt-1.5 text-[10px] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
             {f.is_list_only
-              ? 'Nessun checkout — gli utenti si iscrivono direttamente alla lista. La lista invitati viene attivata automaticamente.'
+              ? 'Nessun checkout — gli utenti si iscrivono direttamente alla lista. La lista invitati viene attivata automaticamente. Se c\'è un prezzo, verrà indicato come "pagamento all\'ingresso".'
               : 'Checkout con Stripe. Prezzo obbligatorio per eventi a pagamento.'}
           </p>
         </div>
 
-        {/* Price — hidden for list-only events */}
-        {!f.is_list_only && (
+        {/* Price */}
         <div>
           <Label>Prezzo (€) — 0 = gratuito</Label>
           <input className={inputCls} type="number" min={0} step={1} value={f.price}
             onChange={e => set('price', parseFloat(e.target.value) || 0)} />
-          {f.price > 0 && (
+          {f.price > 0 && !f.is_list_only && (
             <p className="mt-1 text-[10px] text-[#731515]/70" style={{ fontFamily: 'var(--font-nunito)' }}>
               Prodotto Stripe creato automaticamente al salvataggio
             </p>
           )}
+          {f.price > 0 && f.is_list_only && (
+            <p className="mt-1 text-[10px] text-[#731515]/70" style={{ fontFamily: 'var(--font-nunito)' }}>
+              Mostrato come &ldquo;pagamento all&apos;ingresso&rdquo; sulla pagina pubblica
+            </p>
+          )}
         </div>
-        )}
 
         {/* Capacity */}
         <div>
@@ -375,6 +378,18 @@ function EventForm({
             <div className="flex items-center gap-2 text-[11px] text-[#731515]/60" style={{ fontFamily: 'var(--font-nunito)' }}>
               <span className="text-[#731515]">✓</span> Lista invitati attiva automaticamente (Solo lista)
             </div>
+          )}
+          {!f.is_list_only && f.price > 0 && (
+            <Toggle
+              label="Programma Referral attivo"
+              checked={f.referral_enabled ?? false}
+              onChange={v => set('referral_enabled', v)}
+            />
+          )}
+          {!f.is_list_only && f.price > 0 && (f.referral_enabled ?? false) && (
+            <p className="text-[10px] text-[#731515]/60 -mt-1" style={{ fontFamily: 'var(--font-nunito)' }}>
+              Widget condivisione e reward 5 inviti visibile nel checkout
+            </p>
           )}
         </div>
 
@@ -1364,6 +1379,7 @@ export default function EventManager() {
                   title_strikethrough: mode.edit.title_strikethrough,
                   guest_list_enabled:  mode.edit.guest_list_enabled ?? false,
                   is_list_only:        mode.edit.is_list_only ?? false,
+                  referral_enabled:    mode.edit.referral_enabled ?? false,
                   image_url:          mode.edit.image_url,
                   sort_order:         mode.edit.sort_order,
                   section:            mode.edit.section ?? 'general',

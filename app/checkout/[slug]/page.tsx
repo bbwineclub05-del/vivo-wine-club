@@ -74,6 +74,7 @@ export default async function CheckoutPage({
 
   let event: EventData | undefined;
   let rawDate: string | undefined;
+  let referralEnabled = false;
 
   // Try DB first
   try {
@@ -85,8 +86,10 @@ export default async function CheckoutPage({
       .eq('slug', slug)
       .single();
     if (data) {
-      event   = dbEventToEventData(data as DbEvent);
-      rawDate = (data as DbEvent).date;
+      event          = dbEventToEventData(data as DbEvent);
+      rawDate        = (data as DbEvent).date;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      referralEnabled = !!(data as any).referral_enabled;
     }
   } catch {/* fall through */}
 
@@ -100,7 +103,7 @@ export default async function CheckoutPage({
   }
 
   // Pass raw image_url from DB (dbEventToEventData already includes it)
-  return <CheckoutForm event={event} refCode={refCode} partnerCode={partnerCode} />;
+  return <CheckoutForm event={event} refCode={refCode} partnerCode={partnerCode} referralEnabled={referralEnabled} />;
 }
 
 /* ── Evento concluso ── */
