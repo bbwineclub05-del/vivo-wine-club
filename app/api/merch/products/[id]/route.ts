@@ -73,6 +73,37 @@ export async function PATCH(
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Sync stock rows when sizes change
+  if (sizes !== undefined) {
+    const oldSizes: string[] = Array.isArray(current.sizes) ? current.sizes : [];
+    const newSizes: string[] = Array.isArray(sizes) ? sizes : [];
+    const addedSizes   = newSizes.filter((s: string) => !oldSizes.includes(s));
+    const removedSizes = oldSizes.filter((s: string) => !newSizes.includes(s));
+
+    if (addedSizes.length > 0 || removedSizes.length > 0) {
+      // Fetch existing variants for this product
+      const { data: variants } = await db
+        .from('product_variants')
+        .select('id')
+        .eq('product_id', id);
+      const variantIds: (string | null)[] = [null, ...((variants ?? []).map((v: { id: string }) => v.id))];
+
+      // Add rows for new sizes × all variants (null + existing)
+      if (addedSizes.length > 0) {
+        const newRows = variantIds.flatMap((vid: string | null) =>
+          addedSizes.map((s: string) => ({ product_id: id, variant_id: vid, size: s, quantity: 0 }))
+        );
+        await db.from('product_stock').insert(newRows).then(() => {}).catch(() => {});
+      }
+
+      // Delete rows for removed sizes
+      if (removedSizes.length > 0) {
+        await db.from('product_stock').delete().eq('product_id', id).in('size', removedSizes).then(() => {}).catch(() => {});
+      }
+    }
+  }
+
   return NextResponse.json({ product: data });
 }
 
@@ -98,6 +129,9 @@ export async function DELETE(
       console.error('[merch/products DELETE] Stripe error:', stripeErr);
     }
   }
+
+  // Delete stock rows first (cascade clean-up)
+  await db.from('product_stock').delete().eq('product_id', id).then(() => {}).catch(() => {});
 
   const { error } = await db.from('products').delete().eq('id', id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

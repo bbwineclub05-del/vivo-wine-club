@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   const auth = await requireAdminOrStaff(request);
   if (!auth.ok) return auth.response;
 
-  const { title, description, price, sizes, colors, images, visible, shipping_cost, slug, details } = await request.json();
+  const { title, description, price, sizes, colors, images, visible, shipping_cost, slug, details, initialStock } = await request.json();
   if (!title || price == null) {
     return NextResponse.json({ error: 'title e price sono obbligatori' }, { status: 400 });
   }
@@ -78,5 +78,20 @@ export async function POST(request: Request) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Auto-create stock rows for new product
+  const productSizes: string[] = sizes ?? [];
+  const stockMap: Record<string, number> = (initialStock && typeof initialStock === 'object') ? initialStock as Record<string, number> : {};
+  const stockRows = productSizes.length > 0
+    ? productSizes.map((s: string) => ({
+        product_id: data.id,
+        variant_id: null,
+        size:       s,
+        quantity:   Math.max(0, Math.round(stockMap[s] ?? 0)),
+      }))
+    : [{ product_id: data.id, variant_id: null, size: null, quantity: Math.max(0, Math.round(stockMap['_'] ?? 0)) }];
+
+  await db.from('product_stock').insert(stockRows).then(() => {}).catch(() => {/* non-fatal */});
+
   return NextResponse.json({ product: data });
 }

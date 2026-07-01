@@ -52,5 +52,16 @@ export async function POST(request: Request, { params }: Ctx) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Auto-create stock rows for the new variant (one per size, or one without size)
+  try {
+    const { data: product } = await db.from('products').select('sizes').eq('id', id).single();
+    const productSizes: string[] = Array.isArray(product?.sizes) && product.sizes.length > 0 ? product.sizes : [];
+    const stockRows = productSizes.length > 0
+      ? productSizes.map((s: string) => ({ product_id: id, variant_id: data.id, size: s, quantity: 0 }))
+      : [{ product_id: id, variant_id: data.id, size: null, quantity: 0 }];
+    await db.from('product_stock').insert(stockRows).then(() => {}).catch(() => {});
+  } catch {/* non-fatal */}
+
   return NextResponse.json({ variant: data });
 }

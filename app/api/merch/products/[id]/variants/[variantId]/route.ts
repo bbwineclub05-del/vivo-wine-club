@@ -45,6 +45,10 @@ export async function DELETE(request: Request, { params }: Ctx) {
   const { variantId } = await params;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db = getSupabaseAdmin() as any;
+
+  // Delete stock rows for this variant first
+  await db.from('product_stock').delete().eq('variant_id', variantId).then(() => {}).catch(() => {});
+
   const { error } = await db.from('product_variants').delete().eq('id', variantId);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

@@ -254,6 +254,7 @@ function ProductModal({
   const [detailDimensions, setDetailDimensions] = useState(product?.details?.dimensions ?? '');
   const [detailCare,       setDetailCare]       = useState(product?.details?.care       ?? '');
   const [detailShipping,   setDetailShipping]   = useState(product?.details?.shipping   ?? '');
+  const [sizeQty,         setSizeQty]         = useState<Record<string, number>>({});
   const [saving,          setSaving]          = useState(false);
   const [error,           setError]           = useState('');
 
@@ -287,12 +288,22 @@ function ProductModal({
       if (detailCare.trim())       details.care       = detailCare.trim();
       if (detailShipping.trim())   details.shipping   = detailShipping.trim();
 
-      const body = {
+      const body: Record<string, unknown> = {
         title, description, price: Number(price), sizes, visible,
         shipping_cost: shippingCost !== '' ? Number(shippingCost) : null,
         slug: slug.trim() || null,
         details: Object.keys(details).length > 0 ? details : null,
       };
+      if (!editing) {
+        // Include initial stock quantities for new products
+        const initialStock: Record<string, number> = {};
+        if (sizes.length > 0) {
+          for (const s of sizes) initialStock[s] = sizeQty[s] ?? 0;
+        } else {
+          initialStock['_'] = sizeQty['_'] ?? 0;
+        }
+        body.initialStock = initialStock;
+      }
       const url    = editing ? `/api/merch/products/${product!.id}` : '/api/merch/products';
       const method = editing ? 'PATCH' : 'POST';
 
@@ -399,8 +410,42 @@ function ProductModal({
             )}
           </div>
 
+          {/* Initial stock qty (only when creating) */}
+          {!editing && (
+            <div>
+              <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-2">DISPONIBILITÀ INIZIALE</label>
+              {sizes.length > 0 ? (
+                <div className="flex flex-wrap gap-3">
+                  {sizes.map(s => (
+                    <div key={s} className="flex items-center gap-1.5">
+                      <span className="text-[11px] text-[#7a4a4a] w-6 text-center" style={{ fontFamily: 'var(--font-nunito)' }}>{s}</span>
+                      <input
+                        type="number" min="0" step="1"
+                        value={sizeQty[s] ?? 0}
+                        onChange={e => setSizeQty(prev => ({ ...prev, [s]: Math.max(0, parseInt(e.target.value) || 0) }))}
+                        className="w-16 px-2 py-1 text-[12px] border border-[#eddada] rounded-lg text-center"
+                        style={{ fontFamily: 'var(--font-nunito)' }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] text-[#7a4a4a]" style={{ fontFamily: 'var(--font-nunito)' }}>Quantità</span>
+                  <input
+                    type="number" min="0" step="1"
+                    value={sizeQty['_'] ?? 0}
+                    onChange={e => setSizeQty({ _: Math.max(0, parseInt(e.target.value) || 0) })}
+                    className="w-20 px-2 py-1 text-[12px] border border-[#eddada] rounded-lg text-center"
+                    style={{ fontFamily: 'var(--font-nunito)' }}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Stock — only for products without color variants (stock per variant is managed in Varianti Colore) */}
-          {editing && product!.colors.length === 0 && (
+          {editing && !product!.product_variants?.length && (
             <div>
               <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-2">DISPONIBILITÀ</label>
               <StockSection productId={product!.id} sizes={sizes} token={token} />
