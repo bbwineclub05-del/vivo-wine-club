@@ -31,7 +31,22 @@
     "line2italic": "condividere il vino",
     "line2rest": "",
     "subtitle": "Dove i giovani scoprono il vino: visite in cantina, degustazioni guidate e wine party con musica, atmosfera memorabile e grandi bottiglie.",
-    "cta": "DIVENTA MEMBRO"
+    "cta": "DIVENTA MEMBRO",
+    "joinList": "Iscriviti alla lista",
+    "labelWhen": "QUANDO",
+    "labelWhere": "DOVE",
+    "labelType": "TIPO",
+    "labelAccess": "ACCESSO",
+    "slide1Slogan": "Sorseggia, Condividi, Lago di Garda",
+    "slide1When": "12 Luglio · 18:00",
+    "slide1Where": "Cantina Bottenago, Lake Garda",
+    "slide1Type": "Wine & DJ Set",
+    "slide1Access": "Posti limitati",
+    "slide2Slogan": "Estate, Mare, Versilia",
+    "slide2When": "11 Luglio · 19:00",
+    "slide2Where": "Petra Beach Club, Versilia",
+    "slide2Type": "Wine & DJ Set",
+    "slide2Access": "Posti limitati"
   },
   "stats": {
     "eventsHosted": "Eventi organizzati",

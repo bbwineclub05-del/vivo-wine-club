@@ -1,204 +1,313 @@
 'use client';
 
 import Link from 'next/link';
-import { motion, useReducedMotion } from 'framer-motion';
+import Image from 'next/image';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { ChevronLeft, ChevronRight, Calendar, MapPin, Wine, Users } from 'lucide-react';
 
-/* ─── Line-art landmark SVGs ─── */
+/* ─── Slide definitions ─────────────────────────────────────────────────────── */
 
-function EiffelIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 22 38" fill="none" stroke="currentColor" strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <line x1="11" y1="0.5" x2="11" y2="4" />
-      <path d="M11 4 L8.5 13 L13.5 13" />
-      <line x1="8.5" y1="11" x2="13.5" y2="11" />
-      <path d="M8.5 13 L6 24 L16 24 L13.5 13" />
-      <line x1="7" y1="19" x2="15" y2="19" />
-      <path d="M6 24 L3 34 M16 24 L19 34" />
-      <line x1="3" y1="34" x2="19" y2="34" />
-      <path d="M6 24 Q11 21 16 24" />
-    </svg>
-  );
-}
+const SLIDES = [
+  {
+    image:           '/bottenago.jpg',
+    imagePosition:   'center center',
+    sloganColor:     '#2C4A6E',   // deep navy
+    infoColor:       '#FFFFFF',
+    contentPushDown: false,
+    slug:            'bottenago-lake-garda-jul-2026',
+    sloganKey:       'slide1Slogan',
+    whenKey:         'slide1When',
+    whereKey:        'slide1Where',
+    typeKey:         'slide1Type',
+    accessKey:       'slide1Access',
+  },
+  {
+    image:           '/Petra Beach.png',
+    imagePosition:   'center 40%',
+    sloganColor:     '#4A1518',   // deep dark bordeaux
+    infoColor:       '#FFFFFF',
+    contentPushDown: true,        // text sits lower for beach panorama
+    slug:            'terrace-party-versilia-edition-jul-2026',
+    sloganKey:       'slide2Slogan',
+    whenKey:         'slide2When',
+    whereKey:        'slide2Where',
+    typeKey:         'slide2Type',
+    accessKey:       'slide2Access',
+  },
+] as const;
 
-function MoleIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 20 42" fill="none" stroke="currentColor" strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <line x1="10" y1="0.5" x2="10" y2="10" />
-      <path d="M10 10 L7.5 18 L12.5 18 Z" />
-      <rect x="8.5" y="18" width="3" height="4" />
-      <line x1="6" y1="22" x2="6" y2="30" />
-      <line x1="14" y1="22" x2="14" y2="30" />
-      <line x1="6" y1="22" x2="14" y2="22" />
-      <path d="M8.5 25 Q10 23 11.5 25" />
-      <rect x="5" y="30" width="10" height="6" />
-      <line x1="3" y1="36" x2="17" y2="36" />
-      <line x1="1.5" y1="38" x2="18.5" y2="38" />
-    </svg>
-  );
-}
+const INFO_ITEMS = [
+  { labelKey: 'labelWhen',   Icon: Calendar },
+  { labelKey: 'labelWhere',  Icon: MapPin },
+  { labelKey: 'labelType',   Icon: Wine },
+  { labelKey: 'labelAccess', Icon: Users },
+] as const;
 
-function DuomoIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 28 36" fill="none" stroke="currentColor" strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <line x1="14" y1="0.5" x2="14" y2="3.5" />
-      <path d="M12 3.5 L12 7.5 L16 7.5 L16 3.5" />
-      <path d="M14 7.5 Q5 10 4.5 22 L23.5 22 Q23 10 14 7.5 Z" />
-      <line x1="14" y1="7.5" x2="14" y2="22" strokeOpacity="0.35" />
-      <rect x="5.5" y="22" width="17" height="5" />
-      <path d="M8 22 Q9.5 20 11 22" />
-      <path d="M17 22 Q18.5 20 20 22" />
-      <rect x="3" y="27" width="22" height="7" />
-      <circle cx="14" cy="30.5" r="2.2" />
-    </svg>
-  );
-}
+const AUTOPLAY_MS = 4000;
+const RESUME_MS   = 5000;
 
-function TorreIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 20 40" fill="none" stroke="currentColor" strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M4 5 L4 9 M7 5 L7 9 M10 5 L10 9 M13 5 L13 9 M16 5 L16 9" />
-      <line x1="4" y1="5" x2="16" y2="5" />
-      <line x1="4" y1="9" x2="6" y2="9" />
-      <line x1="8" y1="9" x2="10" y2="9" />
-      <line x1="12" y1="9" x2="14" y2="9" />
-      <line x1="16" y1="5" x2="16" y2="9" />
-      <rect x="4" y="9" width="12" height="24" />
-      <path d="M8 16 Q10 13.5 12 16 L12 21 L8 21 Z" />
-      <line x1="4" y1="26" x2="16" y2="26" strokeOpacity="0.3" />
-      <path d="M8 33 Q10 30.5 12 33 L12 33 L8 33" />
-      <rect x="2" y="33" width="16" height="3.5" />
-      <line x1="0.5" y1="36.5" x2="19.5" y2="36.5" />
-    </svg>
-  );
-}
-
-const CITIES = [
-  { name: 'PARIS',   Icon: EiffelIcon },
-  { name: 'TORINO',  Icon: MoleIcon },
-  { name: 'FIRENZE', Icon: DuomoIcon },
-  { name: 'BRESCIA', Icon: TorreIcon },
-];
+/* ─── Component ─────────────────────────────────────────────────────────────── */
 
 export default function HeroSection() {
-  const reducedMotion = useReducedMotion();
   const t = useTranslations('hero');
+  const [current,   setCurrent]   = useState(0);
+  const [direction, setDirection] = useState(1);
 
-  // Durations collapse to 0 for users who prefer reduced motion
-  const d = (n: number) => (reducedMotion ? 0 : n);
+  const autoplayRef  = useRef<ReturnType<typeof setInterval>  | null>(null);
+  const resumeRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const touchStartX  = useRef<number | null>(null);
+  const touchStartY  = useRef<number | null>(null);
+  const isHorizSwipe = useRef(false);
+
+  /* ── Autoplay ── */
+  const startAutoplay = useCallback(() => {
+    if (autoplayRef.current) clearInterval(autoplayRef.current);
+    autoplayRef.current = setInterval(() => {
+      setDirection(1);
+      setCurrent(prev => (prev + 1) % SLIDES.length);
+    }, AUTOPLAY_MS);
+  }, []);
+
+  const pauseAndResume = useCallback(() => {
+    if (autoplayRef.current) clearInterval(autoplayRef.current);
+    if (resumeRef.current)   clearTimeout(resumeRef.current);
+    resumeRef.current = setTimeout(startAutoplay, RESUME_MS);
+  }, [startAutoplay]);
+
+  useEffect(() => {
+    startAutoplay();
+    return () => {
+      if (autoplayRef.current) clearInterval(autoplayRef.current);
+      if (resumeRef.current)   clearTimeout(resumeRef.current);
+    };
+  }, [startAutoplay]);
+
+  /* ── Navigation ── */
+  function goTo(index: number, dir: number) {
+    setDirection(dir);
+    setCurrent(index);
+    pauseAndResume();
+  }
+  function prev() { goTo((current - 1 + SLIDES.length) % SLIDES.length, -1); }
+  function next() { goTo((current + 1) % SLIDES.length, 1); }
+
+  /* ── Touch / swipe ── */
+  function handleTouchStart(e: React.TouchEvent) {
+    touchStartX.current  = e.touches[0].clientX;
+    touchStartY.current  = e.touches[0].clientY;
+    isHorizSwipe.current = false;
+  }
+  function handleTouchMove(e: React.TouchEvent) {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+    const dx = Math.abs(e.touches[0].clientX - touchStartX.current);
+    const dy = Math.abs(e.touches[0].clientY - touchStartY.current);
+    // Detect horizontal intent early — prevent pull-to-refresh on horiz swipes
+    if (!isHorizSwipe.current && (dx > 5 || dy > 5)) {
+      isHorizSwipe.current = dx > dy;
+    }
+    if (isHorizSwipe.current) {
+      e.preventDefault(); // block pull-to-refresh / scroll while swiping sideways
+    }
+  }
+  function handleTouchEnd(e: React.TouchEvent) {
+    if (touchStartX.current === null) return;
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (isHorizSwipe.current && Math.abs(diff) > 40) {
+      if (diff > 0) next(); else prev();
+    }
+    touchStartX.current  = null;
+    touchStartY.current  = null;
+    isHorizSwipe.current = false;
+  }
+
+  const slide = SLIDES[current];
+
+  /* ── Slide variants ── */
+  const imgVariants = {
+    enter:  (dir: number) => ({ x: dir > 0 ? '100%' : '-100%' }),
+    center: { x: '0%' },
+    exit:   (dir: number) => ({ x: dir > 0 ? '-100%' : '100%' }),
+  };
+
+  const valueKeys = [slide.whenKey, slide.whereKey, slide.typeKey, slide.accessKey] as const;
 
   return (
-    <section className="relative min-h-screen min-h-[100svh] flex flex-col items-center justify-center overflow-hidden">
+    <section
+      className="relative min-h-screen min-h-[100svh] flex flex-col items-center justify-center overflow-hidden"
+      style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
 
-      {/* Video background */}
-      <video
-        autoPlay
-        muted
-        loop
-        playsInline
-        className="absolute inset-0 w-full h-full object-cover"
-        style={{ zIndex: 0 }}
-      >
-        <source src="/videosito vero.mov" type="video/mp4" />
-      </video>
-
-      {/* Bordeaux overlay */}
-      <div className="absolute inset-0 bg-[#1a0505]/50" style={{ zIndex: 1 }} />
-
-      {/* ── Content ── */}
-      <div className="relative z-[2] text-center px-6 max-w-5xl mx-auto w-full">
-
-        <h1 className="mb-10">
-          <div className="overflow-hidden">
-            <motion.div
-              initial={{ y: reducedMotion ? '0%' : '110%' }}
-              animate={{ y: '0%' }}
-              transition={{ duration: d(1.1), delay: d(0.5), ease: [0.16, 1, 0.3, 1] }}
-            >
-              <span
-                className="block text-[clamp(2.4rem,6.5vw,5.8rem)] font-light tracking-[-0.01em] text-white leading-tight"
-                style={{ fontFamily: 'var(--font-syne)' }}
-              >
-                {t('line1')}
-              </span>
-            </motion.div>
-          </div>
-
-          <div className="overflow-hidden">
-            <motion.div
-              initial={{ y: reducedMotion ? '0%' : '110%' }}
-              animate={{ y: '0%' }}
-              transition={{ duration: d(1.1), delay: d(0.68), ease: [0.16, 1, 0.3, 1] }}
-            >
-              <span
-                className="block text-[clamp(2.4rem,6.5vw,5.8rem)] font-light tracking-[-0.01em] text-white leading-tight"
-                style={{ fontFamily: 'var(--font-syne)' }}
-              >
-                <em className="not-italic" style={{ fontStyle: 'italic', color: '#e8b4b4' }}>
-                  {t('line2italic')}
-                </em>
-                {t('line2rest')}
-              </span>
-            </motion.div>
-          </div>
-        </h1>
-
-        {/* City strip */}
+      {/* ── Background slides ── */}
+      <AnimatePresence initial={false} custom={direction}>
         <motion.div
-          initial={{ opacity: reducedMotion ? 1 : 0, y: reducedMotion ? 0 : 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: d(0.9), delay: d(1.05) }}
-          className="flex items-start justify-center gap-0 mb-10"
+          key={`bg-${current}`}
+          custom={direction}
+          variants={imgVariants}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+          className="absolute inset-0"
         >
-          {CITIES.map((city, i) => (
-            <div key={city.name} className="flex items-start">
-              <div className="flex flex-col items-center gap-2 px-3 sm:px-5 md:px-7">
-                <span className="text-[7px] sm:text-[9px] tracking-[0.3em] sm:tracking-[0.45em] text-white/70 font-light">{city.name}</span>
-                <city.Icon className="w-4 h-7 sm:w-5 sm:h-8 md:w-6 md:h-9 text-white/40" />
-              </div>
-              {i < CITIES.length - 1 && (
-                <div className="flex flex-col items-center self-start pt-[7px]">
-                  <span className="text-white/25 text-xs leading-none select-none">✦</span>
-                </div>
-              )}
-            </div>
-          ))}
+          <Image
+            src={slide.image}
+            alt={t(slide.sloganKey)}
+            fill
+            className="object-cover"
+            style={{ objectPosition: slide.imagePosition }}
+            priority={current === 0}
+            sizes="100vw"
+          />
+          {/* Light bordeaux veil — vivid but unified, aids text readability */}
+          <div className="absolute inset-0 bg-[#1a0505]/25" />
+          {/* Subtle bottom gradient for extra text contrast */}
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.20) 0%, transparent 55%)' }} />
         </motion.div>
+      </AnimatePresence>
 
-        {/* Divider */}
+      {/* ── Slide content ── */}
+      <AnimatePresence mode="wait">
         <motion.div
-          initial={{ scaleX: reducedMotion ? 1 : 0 }}
-          animate={{ scaleX: 1 }}
-          transition={{ duration: d(1), delay: d(1.2), ease: [0.16, 1, 0.3, 1] }}
-          className="w-32 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent mx-auto mb-8"
-        />
-
-        {/* Subtitle */}
-        <motion.p
-          initial={{ opacity: reducedMotion ? 1 : 0, y: reducedMotion ? 0 : 14 }}
+          key={`content-${current}`}
+          initial={{ opacity: 0, y: 22 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: d(0.9), delay: d(1.4) }}
-          className="text-[clamp(1rem,2.2vw,1.25rem)] text-white/70 font-light tracking-wide max-w-2xl mx-auto leading-relaxed"
-          style={{ fontFamily: 'var(--font-nunito)' }}
+          exit={{ opacity: 0, y: -12 }}
+          transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+          className="relative z-[2] text-center px-6 max-w-3xl mx-auto w-full"
+          style={slide.contentPushDown ? { marginTop: '24vh' } : undefined}
         >
-          {t('subtitle')}
-        </motion.p>
-
-        {/* CTA buttons */}
-        <motion.div
-          initial={{ opacity: reducedMotion ? 1 : 0, y: reducedMotion ? 0 : 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: d(0.9), delay: d(1.65) }}
-          className="flex items-center justify-center mt-12"
-        >
-          <Link
-            href="/membership"
-            className="px-14 py-5 bg-[#731515] text-white text-[13px] tracking-[0.35em] hover:bg-[#aa4848] hover:shadow-[0_0_40px_rgba(115,21,21,0.3)] transition-all duration-300 border border-[#731515] rounded-lg"
+          {/* Slogan */}
+          <h1
+            className="font-light tracking-[-0.01em] leading-tight mb-10"
+            style={{
+              fontFamily: 'var(--font-syne)',
+              color: slide.sloganColor,
+              fontSize: 'clamp(1.75rem, 5.5vw, 5rem)',
+              textShadow: '0 2px 8px rgba(0,0,0,0.55)',
+            }}
           >
-            {t('cta')}
+            {t(slide.sloganKey)}
+          </h1>
+
+          {/* Event info strip
+              · Mobile  (<sm): 2×2 grid
+              · Desktop (sm+): single row with ✦ separators           */}
+          <div className="mb-10">
+            {/* Desktop row */}
+            <div className="hidden sm:flex items-start justify-center gap-0">
+              {INFO_ITEMS.map((item, i) => (
+                <div key={item.labelKey} className="flex items-start">
+                  <div className="flex flex-col items-center gap-2.5 px-5 md:px-7">
+                    <span
+                      className="text-[11px] tracking-[0.4em] font-black"
+                      style={{ color: slide.infoColor, textShadow: '0 2px 6px rgba(0,0,0,0.65)', WebkitTextStroke: '0.3px rgba(0,0,0,0.2)' }}
+                    >
+                      {t(item.labelKey)}
+                    </span>
+                    <item.Icon size={20} strokeWidth={2} style={{ color: slide.infoColor }} />
+                    <span
+                      className="text-[11px] tracking-[0.3em] font-extrabold text-center"
+                      style={{
+                        fontFamily: 'var(--font-nunito)',
+                        color: slide.infoColor,
+                        textShadow: '0 2px 6px rgba(0,0,0,0.65)', WebkitTextStroke: '0.3px rgba(0,0,0,0.2)',
+                      }}
+                    >
+                      {t(valueKeys[i])}
+                    </span>
+                  </div>
+                  {i < INFO_ITEMS.length - 1 && (
+                    <div className="flex flex-col items-center self-center">
+                      <span className="text-xs leading-none select-none" style={{ color: slide.infoColor, opacity: 0.4 }}>✦</span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Mobile 2×2 grid */}
+            <div className="grid grid-cols-2 gap-x-6 gap-y-6 sm:hidden max-w-[300px] mx-auto">
+              {INFO_ITEMS.map((item, i) => (
+                <div key={item.labelKey} className="flex flex-col items-center gap-2">
+                  <span
+                    className="text-[10px] tracking-[0.35em] font-black"
+                    style={{ color: slide.infoColor, textShadow: '0 2px 6px rgba(0,0,0,0.65)', WebkitTextStroke: '0.3px rgba(0,0,0,0.2)' }}
+                  >
+                    {t(item.labelKey)}
+                  </span>
+                  <item.Icon size={17} strokeWidth={2} style={{ color: slide.infoColor }} />
+                  <span
+                    className="text-[10px] tracking-[0.2em] font-extrabold text-center leading-snug"
+                    style={{
+                      fontFamily: 'var(--font-nunito)',
+                      color: slide.infoColor,
+                      textShadow: '0 2px 6px rgba(0,0,0,0.65)', WebkitTextStroke: '0.3px rgba(0,0,0,0.2)',
+                    }}
+                  >
+                    {t(valueKeys[i])}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* CTA */}
+          <Link
+            href={`/events/${slide.slug}#guest-form`}
+            className="inline-block px-14 py-5 bg-[#731515] text-white text-[13px] tracking-[0.35em] hover:bg-[#aa4848] hover:shadow-[0_0_40px_rgba(115,21,21,0.4)] transition-all duration-300 border border-[#731515] rounded-lg"
+            style={{ WebkitTapHighlightColor: 'transparent' }}
+          >
+            {t('joinList')}
           </Link>
         </motion.div>
+      </AnimatePresence>
 
+      {/* ── Left / Right arrows — hidden on mobile, 48×48 tap target on desktop ── */}
+      <button
+        onClick={prev}
+        aria-label="Slide precedente"
+        className="hidden sm:flex absolute left-3 sm:left-5 top-1/2 -translate-y-1/2 z-10 items-center justify-center w-12 h-12 transition-colors duration-200"
+        style={{ color: 'rgba(115,21,21,0.55)', WebkitTapHighlightColor: 'transparent' }}
+        onMouseEnter={e => (e.currentTarget.style.color = '#731515')}
+        onMouseLeave={e => (e.currentTarget.style.color = 'rgba(115,21,21,0.55)')}
+      >
+        <ChevronLeft size={36} strokeWidth={1} />
+      </button>
+      <button
+        onClick={next}
+        aria-label="Slide successiva"
+        className="hidden sm:flex absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 z-10 items-center justify-center w-12 h-12 transition-colors duration-200"
+        style={{ color: 'rgba(115,21,21,0.55)', WebkitTapHighlightColor: 'transparent' }}
+        onMouseEnter={e => (e.currentTarget.style.color = '#731515')}
+        onMouseLeave={e => (e.currentTarget.style.color = 'rgba(115,21,21,0.55)')}
+      >
+        <ChevronRight size={36} strokeWidth={1} />
+      </button>
+
+      {/* ── Dot indicators — 44×44 tap area via padding ── */}
+      <div className="absolute bottom-8 z-10 flex items-center gap-1 px-2 py-3">
+        {SLIDES.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => goTo(i, i > current ? 1 : -1)}
+            aria-label={`Vai alla slide ${i + 1}`}
+            className="flex items-center justify-center p-3"
+            style={{ WebkitTapHighlightColor: 'transparent' }}
+          >
+            <span
+              className="block h-1.5 rounded-full transition-all duration-300"
+              style={{
+                width:      i === current ? '1.25rem' : '0.375rem',
+                background: i === current ? '#731515' : 'rgba(115,21,21,0.35)',
+              }}
+            />
+          </button>
+        ))}
       </div>
 
     </section>

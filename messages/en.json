@@ -31,7 +31,22 @@
     "line2italic": "sharing fine wines",
     "line2rest": "",
     "subtitle": "Where young people discover wine: cellar visits, guided tastings and wine parties with music, good vibes and great bottles.",
-    "cta": "BECOME A MEMBER"
+    "cta": "BECOME A MEMBER",
+    "joinList": "Join the list",
+    "labelWhen": "WHEN",
+    "labelWhere": "WHERE",
+    "labelType": "TYPE",
+    "labelAccess": "ACCESS",
+    "slide1Slogan": "Sip, Share, Lake Garda",
+    "slide1When": "July 12 · 6 PM",
+    "slide1Where": "Cantina Bottenago, Lake Garda",
+    "slide1Type": "Wine & DJ Set",
+    "slide1Access": "Limited spots",
+    "slide2Slogan": "Sun, Sea, Versilia",
+    "slide2When": "July 11 · 7 PM",
+    "slide2Where": "Petra Beach Club, Versilia",
+    "slide2Type": "Wine & DJ Set",
+    "slide2Access": "Limited spots"
   },
   "stats": {
     "eventsHosted": "Events hosted",
