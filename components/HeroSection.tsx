@@ -29,8 +29,8 @@ const SLIDES = [
     imagePosition:   'center 35%',
     sloganColor:     '#4A1518',
     infoColor:       '#FFFFFF',
-    contentOffset:   '-22vh',        // slogan sits near top of image
-    sloganGap:       '35vh' as string | null,   // gap so info falls well below "PETRA BEACH CLUB" text
+    contentOffset:   '28vh',          // shift block down so slogan appears below "PETRA BEACH CLUB" image text
+    sloganGap:       '3vh' as string | null,    // compact gap between slogan and info strip
     slug:            'terrace-party-versilia-edition-jul-2026',
     sloganKey:       'slide2Slogan',
     whenKey:         'slide2When',
