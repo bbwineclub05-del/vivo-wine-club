@@ -9,15 +9,9 @@ import {
 import { supabase } from '@/lib/supabase';
 
 /* ─────────────────────────────────────────────
-   Constants
+   Types for dynamic member list
 ───────────────────────────────────────────── */
-const FOUNDERS = [
-  { name: 'Giacomo',   initials: 'GG', email: 'giacomogallo1310@gmail.com'   },
-  { name: 'Filippo',   initials: 'FL', email: 'filippo.lombardi890@gmail.com' },
-  { name: 'Cristiano', initials: 'CM', email: 'cristianomichelotti@gmail.com' },
-  { name: 'Marcello',  initials: 'MA', email: 'marcelloabbadati02@gmail.com'  },
-  { name: 'Lorenzo',   initials: 'LF', email: 'lorenzofioretti2001@gmail.com' },
-];
+interface TeamMember { name: string; email: string; initials: string; }
 
 const CATEGORIES = ['Evento', 'Membership', 'Marketing', 'Operativo', 'Merch', 'Altro'];
 
@@ -61,7 +55,7 @@ const TYPE_CFG: Record<MovType, {
 }> = {
   spesa_personale:    {
     label:      'Ha pagato per il Club',
-    sublabel:   'Il founder ha anticipato una spesa — il Club gli deve rimborsare',
+    sublabel:   'Il membro ha anticipato una spesa — il Club gli deve rimborsare',
     short:      'SPESA',
     badgeCls:   'bg-blue-50 text-blue-700 border-blue-200',
     amountSign:  1,
@@ -69,7 +63,7 @@ const TYPE_CFG: Record<MovType, {
   },
   incasso_personale:  {
     label:      'Ha incassato per il Club',
-    sublabel:   'Il founder ha ricevuto soldi per il Club — deve trasferirli',
+    sublabel:   'Il membro ha ricevuto soldi per il Club — deve trasferirli',
     short:      'INCASSO',
     badgeCls:   'bg-orange-50 text-orange-700 border-orange-200',
     amountSign: -1,
@@ -107,8 +101,8 @@ function localToday() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
-function founderName(email: string) {
-  return FOUNDERS.find(f => f.email === email)?.name ?? email.split('@')[0];
+function memberName(email: string, members: TeamMember[]) {
+  return members.find(m => m.email === email)?.name ?? email.split('@')[0];
 }
 
 const inputCls =
@@ -132,13 +126,15 @@ function MovModal({
   initial,
   onSave,
   onClose,
+  members,
 }: {
   initial:  Partial<FormState> | null;
   onSave:   (data: Omit<Movement, 'id' | 'created_by' | 'created_at' | 'settled' | 'settled_date'>) => Promise<void>;
   onClose:  () => void;
+  members:  TeamMember[];
 }) {
   const [form, setForm] = useState<FormState>({
-    founder_email: initial?.founder_email ?? FOUNDERS[0].email,
+    founder_email: initial?.founder_email ?? members[0]?.email ?? '',
     type:          (initial?.type as UserMovType) ?? 'spesa_personale',
     date:          initial?.date ?? localToday(),
     description:   initial?.description ?? '',
@@ -210,7 +206,7 @@ function MovModal({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#eddada] shrink-0 bg-white z-10">
           <div>
-            <div className="text-[9px] tracking-[0.4em] text-[#731515] mb-0.5">CONTI FOUNDER</div>
+            <div className="text-[9px] tracking-[0.4em] text-[#731515] mb-0.5">CONTI MEMBER</div>
             <h3 className="text-base font-light text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>
               {isEdit ? 'Modifica movimento' : 'Registra movimento'}
             </h3>
@@ -220,25 +216,20 @@ function MovModal({
 
         <div className="flex-1 overflow-y-auto" style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
         <div className="px-6 py-5 space-y-4">
-          {/* Founder */}
+          {/* Member */}
           <div>
-            <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">FOUNDER</div>
-            <div className="grid grid-cols-4 gap-2">
-              {FOUNDERS.map(f => (
-                <button
-                  key={f.email}
-                  onClick={() => set('founder_email', f.email)}
-                  className={`py-2.5 rounded-lg text-[11px] font-medium transition-all border ${
-                    form.founder_email === f.email
-                      ? 'bg-[#731515] text-white border-[#731515]'
-                      : 'bg-white text-[#7a4a4a] border-[#eddada] hover:border-[#731515]/30'
-                  }`}
-                  style={{ fontFamily: 'var(--font-nunito)' }}
-                >
-                  {f.name}
-                </button>
+            <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">MEMBER</div>
+            <select
+              className={inputCls}
+              value={form.founder_email}
+              onChange={e => set('founder_email', e.target.value)}
+              style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
+            >
+              <option value="">— Seleziona membro —</option>
+              {members.map(m => (
+                <option key={m.email} value={m.email}>{m.name}</option>
               ))}
-            </div>
+            </select>
           </div>
 
           {/* Tipo */}
@@ -382,6 +373,7 @@ function DeleteModal({ mov, onConfirm, onClose }: { mov: Movement; onConfirm: ()
 ───────────────────────────────────────────── */
 export default function FounderAccounts() {
   const [movements,    setMovements]    = useState<Movement[]>([]);
+  const [members,      setMembers]      = useState<TeamMember[]>([]);
   const [loading,      setLoading]      = useState(true);
   const [editTarget,   setEditTarget]   = useState<Movement | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Movement | null>(null);
@@ -406,6 +398,16 @@ export default function FounderAccounts() {
   /* Realtime: aggiorna la lista ogni volta che founder_accounts cambia
      (incluse le insert fatte da FinanceManager con assigned_to != Club) */
   useEffect(() => {
+    // Fetch team members dynamically
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const token = session?.access_token ?? '';
+      if (token) {
+        fetch('/api/team/members', { headers: { Authorization: `Bearer ${token}` } })
+          .then(r => r.json())
+          .then(d => { if (d.members) setMembers(d.members as TeamMember[]); })
+          .catch(() => {});
+      }
+    });
     load();
     const channel = supabase
       .channel('founder_accounts_realtime')
@@ -470,17 +472,15 @@ export default function FounderAccounts() {
 
   /* ── Computed stats (only unsettled movements) ── */
   const founderStats = useMemo(() => {
-    const stats = FOUNDERS.map(f => {
+    return members.map(f => {
       const open    = movements.filter(m => m.founder_email === f.email && !m.settled);
       const balance = open.reduce((sum, m) => {
         const sign = TYPE_CFG[m.type]?.amountSign ?? 0;
         return sum + m.amount * sign;
       }, 0);
-      console.log(`[FounderAccounts] ${f.name}: ${open.length} open movements, balance=${balance}`, open);
       return { ...f, balance, openCount: open.length };
     });
-    return stats;
-  }, [movements]);
+  }, [movements, members]);
 
   const totalClubOwes    = founderStats.filter(f => f.balance > 0).reduce((s, f) => s + f.balance, 0);
   const totalFounderOwes = founderStats.filter(f => f.balance < 0).reduce((s, f) => s + Math.abs(f.balance), 0);
@@ -508,6 +508,7 @@ export default function FounderAccounts() {
             }}
             onSave={handleEdit}
             onClose={() => setEditTarget(null)}
+            members={members}
           />
         )}
         {deleteTarget && (
@@ -518,8 +519,8 @@ export default function FounderAccounts() {
       {/* ── Header ── */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <div className="text-[9px] tracking-[0.42em] text-[#731515] mb-1">FINANCE · CONTI FOUNDER</div>
-          <h2 className="text-xl font-light text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>Conti Founder</h2>
+          <div className="text-[9px] tracking-[0.42em] text-[#731515] mb-1">FINANCE · CONTI MEMBER</div>
+          <h2 className="text-xl font-light text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>Conti Member</h2>
         </div>
         <button onClick={load} disabled={loading} className="inline-flex items-center gap-2 px-4 py-2 border border-[#eddada] bg-white text-[#7a4a4a] text-[10px] tracking-[0.25em] rounded-lg hover:border-[#731515]/40 transition-colors disabled:opacity-50">
           <RefreshCw size={11} className={loading ? 'animate-spin' : ''} />
@@ -534,7 +535,7 @@ export default function FounderAccounts() {
             <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
               <TrendingUp size={15} className="text-blue-600" />
             </div>
-            <span className="text-[9px] tracking-[0.35em] text-[#7a4a4a]/60">CLUB DEVE AI FOUNDER</span>
+            <span className="text-[9px] tracking-[0.35em] text-[#7a4a4a]/60">CLUB DEVE AI MEMBER</span>
           </div>
           <div className="text-2xl font-light text-blue-600" style={{ fontFamily: 'var(--font-syne)' }}>{fmtEur(totalClubOwes)}</div>
           <div className="text-[10px] text-[#7a4a4a]/40 mt-1" style={{ fontFamily: 'var(--font-nunito)' }}>spese non rimborsate</div>
@@ -545,7 +546,7 @@ export default function FounderAccounts() {
             <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center">
               <TrendingDown size={15} className="text-orange-600" />
             </div>
-            <span className="text-[9px] tracking-[0.35em] text-[#7a4a4a]/60">FOUNDER DEVONO AL CLUB</span>
+            <span className="text-[9px] tracking-[0.35em] text-[#7a4a4a]/60">MEMBER DEVONO AL CLUB</span>
           </div>
           <div className="text-2xl font-light text-orange-600" style={{ fontFamily: 'var(--font-syne)' }}>{fmtEur(totalFounderOwes)}</div>
           <div className="text-[10px] text-[#7a4a4a]/40 mt-1" style={{ fontFamily: 'var(--font-nunito)' }}>incassi non trasferiti</div>
@@ -562,12 +563,12 @@ export default function FounderAccounts() {
             {netBalance >= 0 ? '+' : '−'}{fmtEur(netBalance)}
           </div>
           <div className="text-[10px] text-white/40 mt-1" style={{ fontFamily: 'var(--font-nunito)' }}>
-            {netBalance >= 0 ? 'Club deve complessivamente ai founder' : 'Founder devono al Club'}
+            {netBalance >= 0 ? 'Club deve complessivamente ai member' : 'Member devono al Club'}
           </div>
         </div>
       </div>
 
-      {/* ── Founder cards ── */}
+      {/* ── Member cards ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {founderStats.map(f => {
           const owesClub = f.balance < 0;
@@ -601,7 +602,7 @@ export default function FounderAccounts() {
                 {owesClub ? '−' : clubOwes ? '+' : ''}{fmtEur(f.balance)}
               </div>
               <div className={`text-[10px] mt-0.5 ${owesClub ? 'text-orange-500/70' : clubOwes ? 'text-blue-500/70' : 'text-[#7a4a4a]/40'}`} style={{ fontFamily: 'var(--font-nunito)' }}>
-                {owesClub ? 'Founder deve al Club' : clubOwes ? 'Club deve al founder' : 'In pari'}
+                {owesClub ? 'Membro deve al Club' : clubOwes ? 'Club deve al membro' : 'In pari'}
               </div>
             </button>
           );
@@ -613,7 +614,7 @@ export default function FounderAccounts() {
         {/* Table header */}
         <div className="flex items-center justify-between px-5 py-3 bg-[#fdf6f6] border-b border-[#eddada]">
           <div className="text-[9px] tracking-[0.4em] text-[#731515]">
-            STORICO {filterEmail ? `— ${founderName(filterEmail).toUpperCase()}` : '— TUTTI'}
+            STORICO {filterEmail ? `— ${memberName(filterEmail, members).toUpperCase()}` : '— TUTTI'}
           </div>
           {filterEmail && (
             <button onClick={() => setFilterEmail('')} className="text-[10px] text-[#7a4a4a]/50 hover:text-[#731515] transition-colors flex items-center gap-1" style={{ fontFamily: 'var(--font-nunito)' }}>
@@ -642,9 +643,9 @@ export default function FounderAccounts() {
                     {fmtDate(m.date)}
                   </div>
 
-                  {/* Founder avatar */}
+                  {/* Member avatar */}
                   <div className="w-8 h-8 rounded-full bg-[#731515]/15 flex items-center justify-center text-[10px] font-semibold text-[#731515] shrink-0" style={{ fontFamily: 'var(--font-syne)' }}>
-                    {FOUNDERS.find(f => f.email === m.founder_email)?.initials ?? '?'}
+                    {members.find(f => f.email === m.founder_email)?.initials ?? '?'}
                   </div>
 
                   {/* Description + notes */}

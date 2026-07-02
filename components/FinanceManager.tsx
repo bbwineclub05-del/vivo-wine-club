@@ -46,20 +46,20 @@ interface Transaction {
 type FormData = Omit<Transaction, 'id' | 'created_by' | 'created_at'>;
 
 /* ─────────────────────────────────────────────
-   Founder list for "Registrato da" dropdown
+   Team member type (mirrors /api/team/members)
 ───────────────────────────────────────────── */
-const FINANCE_FOUNDERS: { name: string; email: string }[] = [
-  { name: 'Giacomo Gallo',        email: 'giacomogallo1310@gmail.com'   },
-  { name: 'Filippo Lombardi',     email: 'filippo.lombardi890@gmail.com' },
-  { name: 'Cristiano Michelotti', email: 'cristianomichelotti@gmail.com' },
-  { name: 'Marcello Abbadati',    email: 'marcelloabbadati02@gmail.com'  },
-  { name: 'Riccardo Consalvo',    email: 'riccardo.consalvo@icloud.com'  },
-  { name: 'Lorenzo Fioretti',     email: 'lorenzofioretti2001@gmail.com' },
-].filter(f => (FINANCE_EMAILS as readonly string[]).includes(f.email));
+interface TeamMember { name: string; email: string; initials: string; }
 
-function nameFromEmail(email: string): string | null {
-  return FINANCE_FOUNDERS.find(f => f.email === email)?.name ?? null;
-}
+/* ─────────────────────────────────────────────
+   Revenue category groups (for grouped <select>)
+───────────────────────────────────────────── */
+const REVENUE_GROUPS: { label: string; items: string[] }[] = [
+  { label: 'VENDITE',     items: ['Vendita Biglietti Eventi', 'Vendita Merch', 'Vendita Vino'] },
+  { label: 'MEMBERSHIP',  items: ['Quote Membership', 'Rinnovi Membership'] },
+  { label: 'EVENTI',      items: ['Incassi Door', 'Sponsorizzazioni Evento'] },
+  { label: 'PARTNERSHIP', items: ['Sponsorizzazioni Brand', 'Collaborazioni', 'Commissioni Partner'] },
+  { label: 'ALTRO',       items: ['Donazioni / Contributi', 'Altro'] },
+];
 
 const MONTHS_IT = [
   'Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno',
@@ -296,6 +296,7 @@ function TxModal({
   budgetCategories,
   onCategoryAdded,
   currentUserName,
+  teamMembers,
 }: {
   initial:          FormData | null;
   onSave:           (data: FormData) => Promise<void>;
@@ -303,6 +304,7 @@ function TxModal({
   budgetCategories: BudgetCategory[];
   onCategoryAdded:  (cat: BudgetCategory) => void;
   currentUserName:  string | null;
+  teamMembers:      TeamMember[];
 }) {
   const defaultForm: FormData = initial ?? {
     ...EMPTY_FORM,
@@ -474,22 +476,58 @@ function TxModal({
               style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
             >
               <option value="">— Seleziona voce —</option>
-              {filteredCats.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+              {form.type === 'revenue' ? (
+                <>
+                  {(() => {
+                    const grouped = new Set<string>();
+                    return REVENUE_GROUPS.map(group => {
+                      const cats = filteredCats.filter(c => group.items.includes(c.name));
+                      cats.forEach(c => grouped.add(c.name));
+                      if (cats.length === 0) return null;
+                      return (
+                        <optgroup key={group.label} label={group.label}>
+                          {group.items
+                            .filter(name => cats.some(c => c.name === name))
+                            .map(name => {
+                              const cat = cats.find(c => c.name === name)!;
+                              return <option key={cat.id} value={cat.name}>{cat.name}</option>;
+                            })}
+                        </optgroup>
+                      );
+                    }).concat(
+                      // Categorie personalizzate non in nessun gruppo
+                      (() => {
+                        const extra = filteredCats.filter(c => !grouped.has(c.name));
+                        if (extra.length === 0) return null;
+                        return (
+                          <optgroup key="__custom__" label="PERSONALIZZATE">
+                            {extra.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                          </optgroup>
+                        );
+                      })()
+                    );
+                  })()}
+                </>
+              ) : (
+                filteredCats.map(c => <option key={c.id} value={c.name}>{c.name}</option>)
+              )}
               <option value="__add__">+ Aggiungi nuova voce…</option>
             </select>
           </div>
 
           {/* Registrato da */}
           <div>
-            <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">REGISTRATO DA</div>
+            <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">
+              REGISTRATO DA <span className="text-[#7a4a4a]/40 normal-case tracking-normal">— opzionale</span>
+            </div>
             <select
               className={inputCls}
               value={form.registered_by_name ?? ''}
               onChange={e => set('registered_by_name', e.target.value || null)}
               style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
             >
-              <option value="">— Seleziona founder —</option>
-              {FINANCE_FOUNDERS.map(f => (
+              <option value="">— Seleziona membro —</option>
+              {teamMembers.map(f => (
                 <option key={f.email} value={f.name}>{f.name}</option>
               ))}
             </select>
@@ -497,15 +535,17 @@ function TxModal({
 
           {/* Assegnato a */}
           <div>
-            <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">ASSEGNATO A</div>
+            <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">
+              ASSEGNATO A <span className="text-[#7a4a4a]/40 normal-case tracking-normal">— opzionale</span>
+            </div>
             <select
               className={inputCls}
               value={form.assigned_to}
               onChange={e => set('assigned_to', e.target.value)}
               style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
             >
-              <option value="Club">Club</option>
-              {FINANCE_FOUNDERS.map(f => (
+              <option value="Club">Club (nessuna persona)</option>
+              {teamMembers.map(f => (
                 <option key={f.email} value={f.name}>{f.name}</option>
               ))}
             </select>
@@ -807,6 +847,7 @@ export default function FinanceManager() {
   const [editTarget,       setEditTarget]       = useState<Transaction | null>(null);
   const [deleteTarget,     setDeleteTarget]     = useState<Transaction | null>(null);
   const [currentUserName,  setCurrentUserName]  = useState<string | null>(null);
+  const [teamMembers,      setTeamMembers]      = useState<TeamMember[]>([]);
 
   const MONTHS = useMemo(() => generateMonths(24), []);
   const now = new Date();
@@ -848,8 +889,19 @@ export default function FinanceManager() {
     load();
     loadBudgetCategories();
     supabase.auth.getSession().then(({ data: { session } }) => {
-      const email = session?.user.email ?? '';
-      setCurrentUserName(nameFromEmail(email));
+      // Get user's display name from session metadata
+      const meta = session?.user?.user_metadata ?? {};
+      const name = ((meta.full_name ?? meta.name ?? '') as string).trim() || null;
+      setCurrentUserName(name);
+
+      // Fetch team members dynamically (requires auth token)
+      const token = session?.access_token ?? '';
+      if (token) {
+        fetch('/api/team/members', { headers: { Authorization: `Bearer ${token}` } })
+          .then(r => r.json())
+          .then(d => { if (d.members) setTeamMembers(d.members as TeamMember[]); })
+          .catch(() => {/* keep empty */});
+      }
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -885,13 +937,9 @@ export default function FinanceManager() {
 
     if (form.assigned_to && form.assigned_to !== 'Club' && (form.type === 'cost' || form.type === 'revenue')) {
       // Mappatura diretta nome → email (non dipende da filtri esterni)
-      const FOUNDER_EMAIL_MAP: Record<string, string> = {
-        'Giacomo Gallo':        'giacomogallo1310@gmail.com',
-        'Filippo Lombardi':     'filippo.lombardi890@gmail.com',
-        'Cristiano Michelotti': 'cristianomichelotti@gmail.com',
-        'Marcello Abbadati':    'marcelloabbadati02@gmail.com',
-        'Riccardo Consalvo':    'riccardo.consalvo@icloud.com',
-      };
+      const FOUNDER_EMAIL_MAP: Record<string, string> = Object.fromEntries(
+        teamMembers.map(m => [m.name, m.email])
+      );
 
       const founderEmail = FOUNDER_EMAIL_MAP[form.assigned_to];
       console.log('[FinanceManager] founder lookup → email:', founderEmail ?? 'NOT FOUND');
@@ -997,6 +1045,7 @@ export default function FinanceManager() {
             budgetCategories={budgetCategories}
             onCategoryAdded={(cat) => setBudgetCategories(prev => [...prev, cat].sort((a,b) => a.name.localeCompare(b.name)))}
             currentUserName={currentUserName}
+            teamMembers={teamMembers}
           />
         )}
         {editTarget && (
@@ -1020,6 +1069,7 @@ export default function FinanceManager() {
             budgetCategories={budgetCategories}
             onCategoryAdded={(cat) => setBudgetCategories(prev => [...prev, cat].sort((a,b) => a.name.localeCompare(b.name)))}
             currentUserName={currentUserName}
+            teamMembers={teamMembers}
           />
         )}
         {deleteTarget && (
@@ -1060,7 +1110,7 @@ export default function FinanceManager() {
       <div className="flex gap-1 bg-[#fdf6f6] border border-[#eddada] rounded-xl p-1 w-fit">
         {([
           { id: 'transazioni',   label: 'Transazioni' },
-          { id: 'conti_founder', label: 'Conti Founder' },
+          { id: 'conti_founder', label: 'Conti Member' },
         ] as { id: FinanceTab; label: string }[]).map((tab) => (
           <button
             key={tab.id}

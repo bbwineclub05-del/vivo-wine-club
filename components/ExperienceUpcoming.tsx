@@ -43,6 +43,8 @@ function UpcomingRow({
 }) {
   const tCommon = useTranslations('common');
   const tEvents = useTranslations('events');
+  const detailHref = `/events/${event.slug}`;
+
   return (
     <motion.div
       key={event.slug}
@@ -51,7 +53,9 @@ function UpcomingRow({
       viewport={{ once: true, margin: '-20px' }}
       transition={{ duration: 0.55, delay: index * 0.08, ease: [0.16, 1, 0.3, 1] }}
     >
-      <div className="flex items-center gap-6 md:gap-10 py-6 group">
+      <div className="relative flex items-center gap-6 md:gap-10 py-6 group">
+        {/* Full-row link overlay — below CTA buttons */}
+        <Link href={detailHref} className="absolute inset-0 z-0" aria-label={event.title} />
         {/* Date */}
         <div className="flex flex-col items-end w-14 shrink-0">
           <span className="text-[8px] tracking-[0.4em] mb-0.5" style={{ color: accentColor }}>
@@ -95,19 +99,19 @@ function UpcomingRow({
         {event.status === 'open' && (
           <Link
             href={event.isListOnly ? `/events/${event.slug}#guest-form` : `/checkout/${event.slug}`}
-            className="shrink-0 hidden sm:inline-flex text-[9px] tracking-[0.28em] px-5 py-2.5 transition-all duration-300 hover:opacity-80 rounded-lg"
+            className="relative z-[1] shrink-0 hidden sm:inline-flex text-[9px] tracking-[0.28em] px-5 py-2.5 transition-all duration-300 hover:opacity-80 rounded-lg"
             style={{ background: btnBg, color: btnText }}
           >
             {event.isListOnly ? tEvents('joinTheList') : event.price > 0 ? tCommon('buyTickets') : tCommon('register')}
           </Link>
         )}
         {event.status === 'soldout' && (
-          <span className="shrink-0 hidden sm:inline-block text-[9px] tracking-[0.28em] px-5 py-2.5 bg-[#3a3a3a] text-white rounded-lg">
+          <span className="relative z-[1] shrink-0 hidden sm:inline-block text-[9px] tracking-[0.28em] px-5 py-2.5 bg-[#3a3a3a] text-white rounded-lg">
             {tCommon('soldOut')}
           </span>
         )}
         {event.status === 'soon' && (
-          <span className="shrink-0 hidden sm:inline-block text-[9px] tracking-[0.28em] px-5 py-2.5 border border-white/20 text-white/50 rounded-lg">
+          <span className="relative z-[1] shrink-0 hidden sm:inline-block text-[9px] tracking-[0.28em] px-5 py-2.5 border border-white/20 text-white/50 rounded-lg">
             {tCommon('comingSoon')}
           </span>
         )}
@@ -115,7 +119,7 @@ function UpcomingRow({
 
       {/* Mobile CTA */}
       {event.status === 'open' && (
-        <div className="sm:hidden pb-4 pl-20">
+        <div className="relative z-[1] sm:hidden pb-4 pl-20">
           <Link
             href={event.isListOnly ? `/events/${event.slug}#guest-form` : `/checkout/${event.slug}`}
             className="text-[9px] tracking-[0.28em] px-5 py-3 min-h-[44px] inline-flex items-center transition-all duration-300 hover:opacity-80 rounded-lg"

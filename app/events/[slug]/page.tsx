@@ -362,7 +362,7 @@ export default async function EventDetailPage({
             )}
 
             {/* Guest list registration form */}
-            {guestListEnabled && !isPast && (
+            {guestListEnabled && !isPast && event.status !== 'soldout' && (
               <EventGuestForm
                 eventSlug={event.slug}
                 eventTitle={event.title}
