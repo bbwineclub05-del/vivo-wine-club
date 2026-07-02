@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { requireAdminOrStaff } from '@/lib/auth-guard';
+import { requireAdminOrStaff, requireAdminStaffOrAssignedCollaborator } from '@/lib/auth-guard';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = () => getSupabaseAdmin() as any;
@@ -20,10 +20,9 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ slug: string }> },
 ) {
-  const auth = await requireAdminOrStaff(request);
-  if (!auth.ok) return auth.response;
-
   const { slug } = await params;
+  const auth = await requireAdminStaffOrAssignedCollaborator(request, slug);
+  if (!auth.ok) return auth.response;
 
   try {
     // Fetch partners

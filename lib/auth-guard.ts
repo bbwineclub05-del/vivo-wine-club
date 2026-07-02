@@ -60,3 +60,27 @@ export async function requireAdminOrStaff(request: Request): Promise<AuthOk | Au
   }
   return result;
 }
+
+/**
+ * Requires admin, staff, OR a collaborator assigned to the given event slug.
+ * Used for read-only partner data: collaborators can view, but not mutate.
+ */
+export async function requireAdminStaffOrAssignedCollaborator(
+  request: Request,
+  eventSlug: string,
+): Promise<AuthOk | AuthFail> {
+  const result = await getAuthUser(request);
+  if (!result.ok) return result;
+  if (result.isAdmin || result.isStaff) return result;
+  if (result.isCollaborator) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data } = await (getSupabaseAdmin() as any)
+      .from('collaborator_events')
+      .select('id')
+      .eq('user_id', result.userId)
+      .eq('event_slug', eventSlug)
+      .maybeSingle();
+    if (data) return result;
+  }
+  return { ok: false, response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
+}
