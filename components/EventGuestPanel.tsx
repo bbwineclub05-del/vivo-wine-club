@@ -4,9 +4,10 @@ import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Search, Users, CheckCheck, Phone, Mail,
-  Check, Clock, Plus, X, Loader2, Trash2, Star,
+  Check, Clock, Plus, X, Loader2, Trash2, Star, FileDown,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { generateGuestListPdf, downloadPdf } from '@/lib/guest-list-pdf';
 
 interface Guest {
   id:           string;
@@ -45,6 +46,7 @@ export default function EventGuestPanel({ event, accessToken, onGuestEnabled }: 
   const [deleting,   setDeleting]   = useState(false);
   const [search,     setSearch]     = useState('');
   const [toggling,   setToggling]   = useState<Set<string>>(new Set());
+  const [exporting,  setExporting]  = useState(false);
 
   /* ── Initial load ── */
   function load() {
@@ -199,6 +201,27 @@ export default function EventGuestPanel({ event, accessToken, onGuestEnabled }: 
 
   const checkedIn = guests.filter(g => g.checked_in).length;
 
+  /* ── Export PDF ── */
+  async function exportPdf() {
+    if (exporting || guests.length === 0) return;
+    setExporting(true);
+    try {
+      const sorted = [...guests].sort((a, b) =>
+        a.last_name.localeCompare(b.last_name, 'it') ||
+        a.first_name.localeCompare(b.first_name, 'it'),
+      );
+      const bytes = await generateGuestListPdf({
+        eventTitle: event.title,
+        eventSlug:  event.slug,
+        guests:     sorted,
+      });
+      const safeName = event.title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      downloadPdf(bytes, `lista_invitati_${safeName}.pdf`);
+    } finally {
+      setExporting(false);
+    }
+  }
+
   /* ── Not active yet ── */
   if (!event.guest_list_enabled) {
     return (
@@ -298,6 +321,20 @@ export default function EventGuestPanel({ event, accessToken, onGuestEnabled }: 
             </div>
           </div>
           <div className="flex-1" />
+          {/* Export PDF */}
+          <button
+            onClick={exportPdf}
+            disabled={exporting || guests.length === 0}
+            title="Esporta PDF"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] tracking-[0.2em] border border-[#eddada] text-[#731515] rounded-lg hover:bg-[#fdf6f6] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            style={{ fontFamily: 'var(--font-nunito)' }}
+          >
+            {exporting
+              ? <Loader2 size={12} className="animate-spin" />
+              : <FileDown size={12} />
+            }
+            {exporting ? 'PDF…' : 'PDF'}
+          </button>
           {/* Delete list */}
           <button
             onClick={() => setDelConfirm(x => !x)}

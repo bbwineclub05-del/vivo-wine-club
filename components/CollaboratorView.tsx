@@ -2,9 +2,10 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Users, CheckCheck, Check, Loader2, LogOut, Wine, ChevronDown, Link2, X } from 'lucide-react';
+import { Search, Users, CheckCheck, Check, Loader2, LogOut, Wine, ChevronDown, Link2, X, FileDown } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { generateGuestListPdf, downloadPdf } from '@/lib/guest-list-pdf';
 
 interface Guest {
   id:          string;
@@ -50,6 +51,7 @@ export default function CollaboratorView({ token, onLogout, name }: Props) {
   const [partners,        setPartners]        = useState<Partner[]>([]);
   const [eventTotal,      setEventTotal]      = useState(0);
   const [partnerLoading,  setPartnerLoading]  = useState(false);
+  const [exporting,       setExporting]       = useState(false);
 
   /* ── Load assigned events ── */
   function loadEvents() {
@@ -141,6 +143,26 @@ export default function CollaboratorView({ token, onLogout, name }: Props) {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [activeSlug, loadPartners]);
+
+  async function exportPdf() {
+    if (!activeEvent || exporting || activeEvent.guests.length === 0) return;
+    setExporting(true);
+    try {
+      const sorted = [...activeEvent.guests].sort((a, b) =>
+        a.last_name.localeCompare(b.last_name, 'it') ||
+        a.first_name.localeCompare(b.first_name, 'it'),
+      );
+      const bytes = await generateGuestListPdf({
+        eventTitle: activeEvent.title,
+        eventSlug:  activeEvent.slug,
+        guests:     sorted,
+      });
+      const safeName = activeEvent.title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      downloadPdf(bytes, `lista_invitati_${safeName}.pdf`);
+    } finally {
+      setExporting(false);
+    }
+  }
 
   function sortGuests(a: Guest, b: Guest) {
     const la = a.last_name.toLowerCase(), lb = b.last_name.toLowerCase();
@@ -312,6 +334,21 @@ export default function CollaboratorView({ token, onLogout, name }: Props) {
                       </div>
                     </>
                   )}
+                  <div className="flex-1" />
+                  {/* Export PDF */}
+                  <button
+                    onClick={exportPdf}
+                    disabled={exporting || total === 0}
+                    title="Esporta PDF"
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] tracking-[0.2em] border border-[#eddada] text-[#731515] rounded-lg hover:bg-[#fdf6f6] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    style={{ fontFamily: 'var(--font-nunito)' }}
+                  >
+                    {exporting
+                      ? <Loader2 size={12} className="animate-spin" />
+                      : <FileDown size={12} />
+                    }
+                    {exporting ? 'PDF…' : 'PDF'}
+                  </button>
                 </div>
               </div>
 
