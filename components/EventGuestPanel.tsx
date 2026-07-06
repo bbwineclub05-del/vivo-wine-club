@@ -18,6 +18,7 @@ interface Guest {
   checked_in:   boolean;
   checked_in_at?: string | null;
   created_at:   string;
+  partner_code?:             string | null;
   referral_reward_unlocked?: boolean;
   referral_reward_code?:     string | null;
 }
@@ -45,8 +46,9 @@ export default function EventGuestPanel({ event, accessToken, onGuestEnabled }: 
   const [delConfirm, setDelConfirm] = useState(false);
   const [deleting,   setDeleting]   = useState(false);
   const [search,     setSearch]     = useState('');
-  const [toggling,   setToggling]   = useState<Set<string>>(new Set());
-  const [exporting,  setExporting]  = useState(false);
+  const [toggling,     setToggling]     = useState<Set<string>>(new Set());
+  const [exporting,    setExporting]    = useState(false);
+  const [partnerNames, setPartnerNames] = useState<Map<string, string>>(new Map());
 
   /* ── Initial load ── */
   function load() {
@@ -61,7 +63,20 @@ export default function EventGuestPanel({ event, accessToken, onGuestEnabled }: 
   }
 
   useEffect(() => {
-    if (event.guest_list_enabled) load();
+    if (event.guest_list_enabled) {
+      load();
+      // Load partner names (code → name) for badge display
+      fetch(`/api/events/${event.slug}/partners`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+        .then(r => r.ok ? r.json() : { partners: [] })
+        .then(j => {
+          const map = new Map<string, string>();
+          for (const p of (j.partners ?? [])) map.set(p.code, p.name);
+          setPartnerNames(map);
+        })
+        .catch(() => {});
+    }
   }, [event.guest_list_enabled]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ── Realtime — handle payload directly, no full re-fetch ── */
@@ -405,6 +420,15 @@ export default function EventGuestPanel({ event, accessToken, onGuestEnabled }: 
 
                   {/* Guest info */}
                   <div className="flex-1 min-w-0">
+                    {/* Partner badge — shown only when partner_code is mapped to a name */}
+                    {guest.partner_code && partnerNames.has(guest.partner_code) && (
+                      <span
+                        className="block text-[9px] tracking-[0.18em] text-[#7a4a4a]/45 uppercase leading-none mb-1"
+                        style={{ fontFamily: 'var(--font-nunito)' }}
+                      >
+                        {partnerNames.get(guest.partner_code)}
+                      </span>
+                    )}
                     <div className="flex items-center gap-1.5">
                       <p
                         className={`text-[15px] font-medium leading-tight truncate ${
