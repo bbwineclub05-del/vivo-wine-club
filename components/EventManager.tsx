@@ -507,15 +507,15 @@ The Vivo Wine Club team`,
 
 type CrmCustomer = { id: string; email: string; name: string };
 
+type EventWithCount = { slug: string; title: string; date: string; count: number };
+
 function EventInviteModal({
   event,
   accessToken,
-  allEvents,
   onClose,
 }: {
   event:       DbEvent;
   accessToken: string;
-  allEvents:   DbEvent[];
   onClose:     () => void;
 }) {
   const [lang,    setLang]    = useState<Lang>('IT');
@@ -530,15 +530,10 @@ function EventInviteModal({
   const [selectedEmails, setSelectedEmails] = useState<Set<string>>(new Set());
   const [custSearch,     setCustSearch]     = useState('');
 
-  // Past-event filter
+  // Past-event filter — loaded from API (all events with ≥1 guest, sorted newest→oldest)
+  const [pastEvents,    setPastEvents]    = useState<EventWithCount[]>([]);
   const [filterSlug,    setFilterSlug]    = useState('');
   const [loadingFilter, setLoadingFilter] = useState(false);
-
-  // Past events = all events except this one with date < today or status completed
-  const today = new Date().toISOString().slice(0, 10);
-  const pastEvents = allEvents
-    .filter(e => e.slug !== event.slug && (e.status === 'completed' || e.date < today))
-    .sort((a, b) => b.date.localeCompare(a.date));
 
   // Template
   useEffect(() => {
@@ -547,7 +542,7 @@ function EventInviteModal({
     setBody(tpl.body);
   }, [lang, event]);
 
-  // Load customers (select all by default)
+  // Load customers (select all by default) + events with guest counts
   useEffect(() => {
     setLoadingCust(true);
     fetch('/api/crm/customers', { headers: { Authorization: `Bearer ${accessToken}` } })
@@ -559,24 +554,33 @@ function EventInviteModal({
       })
       .catch(() => {})
       .finally(() => setLoadingCust(false));
-  }, [accessToken]);
+
+    fetch('/api/events/guest-counts', { headers: { Authorization: `Bearer ${accessToken}` } })
+      .then(r => r.json())
+      .then(j => {
+        const all: EventWithCount[] = Array.isArray(j.events) ? j.events : [];
+        // Exclude the current event
+        setPastEvents(all.filter(e => e.slug !== event.slug));
+      })
+      .catch(() => {});
+  }, [accessToken, event.slug]);
 
   // Apply past-event filter: select only guests of that event who are in the CRM
   async function applyEventFilter(slug: string) {
     if (!slug) return;
     setLoadingFilter(true);
     try {
-      const res = await fetch(`/api/events/${slug}/guests`, {
+      const res = await fetch(`/api/events/${slug}/participants`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (!res.ok) return;
       const data = await res.json();
-      const guestEmails = new Set<string>(
-        (data.guests ?? []).map((g: { email: string }) => g.email.toLowerCase()),
+      const participantEmails = new Set<string>(
+        (data.emails ?? []).map((e: string) => e.toLowerCase()),
       );
       setSelectedEmails(new Set(
         customers
-          .filter(c => guestEmails.has(c.email.toLowerCase()))
+          .filter(c => participantEmails.has(c.email.toLowerCase()))
           .map(c => c.email),
       ));
     } finally {
@@ -600,6 +604,11 @@ function EventInviteModal({
     const q = custSearch.toLowerCase();
     return c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q);
   });
+
+  // Event suggestions: past events whose title contains the search query
+  const eventSuggestions = custSearch.length >= 2
+    ? pastEvents.filter(e => e.title.toLowerCase().includes(custSearch.toLowerCase()))
+    : [];
 
   async function handleSend() {
     if (!subject.trim() || !body.trim() || selectedEmails.size === 0) return;
@@ -717,7 +726,7 @@ function EventInviteModal({
                   >
                     <option value="">↩ Partecipanti evento…</option>
                     {pastEvents.map(e => (
-                      <option key={e.slug} value={e.slug}>{e.title}</option>
+                      <option key={e.slug} value={e.slug}>{e.title} ({e.count} partecipanti)</option>
                     ))}
                   </select>
                   {loadingFilter && <Loader2 size={11} className="animate-spin text-[#731515] shrink-0" />}
@@ -729,7 +738,7 @@ function EventInviteModal({
                 <Search size={11} className="text-[#7a4a4a]/40 shrink-0" />
                 <input
                   type="text"
-                  placeholder="Cerca per nome o email…"
+                  placeholder="Cerca cliente per nome, email o evento…"
                   value={custSearch}
                   onChange={e => setCustSearch(e.target.value)}
                   className="flex-1 bg-transparent text-[12px] text-[#1a0505] placeholder:text-[#7a4a4a]/30 focus:outline-none"
@@ -741,6 +750,32 @@ function EventInviteModal({
                   </button>
                 )}
               </div>
+
+              {/* Event suggestions */}
+              {eventSuggestions.length > 0 && (
+                <div className="mb-2 space-y-1">
+                  {eventSuggestions.map(ev => (
+                    <button
+                      key={ev.slug}
+                      disabled={loadingFilter}
+                      onClick={async () => {
+                        setCustSearch('');
+                        setFilterSlug(ev.slug);
+                        await applyEventFilter(ev.slug);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-[#731515]/20 bg-[#731515]/5 hover:bg-[#731515]/10 transition-colors text-left disabled:opacity-50"
+                    >
+                      <span className="text-[9px] tracking-[0.25em] text-[#731515] shrink-0">EVENTO</span>
+                      <span className="flex-1 text-[11px] text-[#1a0505] truncate" style={{ fontFamily: 'var(--font-nunito)' }}>
+                        {ev.title}
+                      </span>
+                      <span className="text-[10px] text-[#7a4a4a]/55 shrink-0" style={{ fontFamily: 'var(--font-nunito)' }}>
+                        {ev.count} partecipanti →
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
 
               {/* Customer checklist */}
               {loadingCust ? (
@@ -1456,7 +1491,6 @@ export default function EventManager() {
             key="invite"
             event={inviteEvent}
             accessToken={accessToken}
-            allEvents={events}
             onClose={() => setInviteEvent(null)}
           />
         )}
