@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { isAdminEmail } from '@/lib/admins';
+import { requireAdminOrStaff } from '@/lib/auth-guard';
 import { emailShell, ctaButton, divider } from '@/lib/email-shell';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -36,47 +36,43 @@ ${divider('24px 0')}
  * Fetches all CRM customers and sends a personalised invitation to each.
  */
 export async function POST(request: Request) {
-  const authHeader  = request.headers.get('Authorization');
-  const accessToken = authHeader?.replace('Bearer ', '').trim();
-  if (!accessToken) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const { data: { user }, error: authError } =
-    await getSupabaseAdmin().auth.getUser(accessToken);
-
-  if (authError || !user || !isAdminEmail(user.email ?? '')) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
+  const auth = await requireAdminOrStaff(request);
+  if (!auth.ok) return auth.response;
 
   const reqBody = await request.json();
-  const { eventSlug, subject, body: bodyText } = reqBody as {
-    eventSlug: string;
-    subject:   string;
-    body:      string;
+  const { eventSlug, subject, body: bodyText, recipients: reqRecipients } = reqBody as {
+    eventSlug:    string;
+    subject:      string;
+    body:         string;
+    recipients?:  Array<{ email: string; name: string }>;
   };
 
   if (!eventSlug || !subject || !bodyText) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
   }
 
-  // Fetch all customers
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: customers, error: dbErr } = await (getSupabaseAdmin() as any)
-    .from('customers')
-    .select('email, name');
-
-  if (dbErr) {
-    console.error('[events/invite] DB error:', dbErr);
-    return NextResponse.json({ error: 'DB error' }, { status: 500 });
+  // Use provided recipients or fall back to fetching all customers
+  let customers: Array<{ email: string; name: string }>;
+  if (reqRecipients?.length) {
+    customers = reqRecipients;
+  } else {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error: dbErr } = await (getSupabaseAdmin() as any)
+      .from('customers')
+      .select('email, name');
+    if (dbErr) {
+      console.error('[events/invite] DB error:', dbErr);
+      return NextResponse.json({ error: 'DB error' }, { status: 500 });
+    }
+    customers = data ?? [];
   }
 
-  if (!customers?.length) {
+  if (!customers.length) {
     return NextResponse.json({ ok: true, sent: 0, failed: 0, total: 0 });
   }
 
   const results = await Promise.allSettled(
-    (customers as Array<{ email: string; name: string }>).map(({ email, name }) => {
+    customers.map(({ email, name }) => {
       const firstName = name.split(' ')[0] || name;
       const personalised = bodyText
         .replace(/\[Nome\]/g, firstName)

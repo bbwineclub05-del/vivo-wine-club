@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { isAdminEmail } from '@/lib/admins';
+import { requireAdminOrStaff } from '@/lib/auth-guard';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -36,18 +36,8 @@ function buildHtml(bodyText: string): string {
  * Sends a personalised email to each recipient (replaces [Nome]/[Name]/[Prénom]).
  */
 export async function POST(request: Request) {
-  const authHeader  = request.headers.get('Authorization');
-  const accessToken = authHeader?.replace('Bearer ', '').trim();
-  if (!accessToken) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const { data: { user }, error: authError } =
-    await getSupabaseAdmin().auth.getUser(accessToken);
-
-  if (authError || !user || !isAdminEmail(user.email ?? '')) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
+  const auth = await requireAdminOrStaff(request);
+  if (!auth.ok) return auth.response;
 
   const body = await request.json();
   const { recipients, subject, text } = body as {

@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, Pencil, Trash2, Eye, EyeOff, ChevronDown, ChevronUp,
   CalendarDays, MapPin, Tag, Users, CheckCircle2, Clock, XCircle, Globe, ScanLine,
-  Send, X, Check, Languages, ImagePlus, Loader2, ClipboardList, UserCheck, Link2,
+  Send, X, Check, Languages, ImagePlus, Loader2, ClipboardList, UserCheck, Link2, Search,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import EventScanner from '@/components/EventScanner';
@@ -505,45 +505,113 @@ The Vivo Wine Club team`,
   };
 }
 
+type CrmCustomer = { id: string; email: string; name: string };
+
 function EventInviteModal({
   event,
   accessToken,
+  allEvents,
   onClose,
 }: {
   event:       DbEvent;
   accessToken: string;
+  allEvents:   DbEvent[];
   onClose:     () => void;
 }) {
-  const [lang,        setLang]        = useState<Lang>('IT');
-  const [subject,     setSubject]     = useState('');
-  const [body,        setBody]        = useState('');
-  const [customerCount, setCustomerCount] = useState<number | null>(null);
-  const [status,      setStatus]      = useState<'idle' | 'sending' | 'done' | 'error'>('idle');
-  const [result,      setResult]      = useState<{ sent: number; failed: number } | null>(null);
+  const [lang,    setLang]    = useState<Lang>('IT');
+  const [subject, setSubject] = useState('');
+  const [body,    setBody]    = useState('');
+  const [status,  setStatus]  = useState<'idle' | 'sending' | 'done' | 'error'>('idle');
+  const [result,  setResult]  = useState<{ sent: number; failed: number } | null>(null);
 
-  // Populate template whenever language changes
+  // Customer selection
+  const [customers,      setCustomers]      = useState<CrmCustomer[]>([]);
+  const [loadingCust,    setLoadingCust]    = useState(true);
+  const [selectedEmails, setSelectedEmails] = useState<Set<string>>(new Set());
+  const [custSearch,     setCustSearch]     = useState('');
+
+  // Past-event filter
+  const [filterSlug,    setFilterSlug]    = useState('');
+  const [loadingFilter, setLoadingFilter] = useState(false);
+
+  // Past events = all events except this one with date < today or status completed
+  const today = new Date().toISOString().slice(0, 10);
+  const pastEvents = allEvents
+    .filter(e => e.slug !== event.slug && (e.status === 'completed' || e.date < today))
+    .sort((a, b) => b.date.localeCompare(a.date));
+
+  // Template
   useEffect(() => {
     const tpl = buildTemplate(lang, event);
     setSubject(tpl.subject);
     setBody(tpl.body);
   }, [lang, event]);
 
-  // Fetch customer count
+  // Load customers (select all by default)
   useEffect(() => {
+    setLoadingCust(true);
     fetch('/api/crm/customers', { headers: { Authorization: `Bearer ${accessToken}` } })
       .then(r => r.json())
-      .then(j => setCustomerCount(Array.isArray(j.customers) ? j.customers.length : 0))
-      .catch(() => setCustomerCount(0));
+      .then(j => {
+        const list: CrmCustomer[] = Array.isArray(j.customers) ? j.customers : [];
+        setCustomers(list);
+        setSelectedEmails(new Set(list.map(c => c.email)));
+      })
+      .catch(() => {})
+      .finally(() => setLoadingCust(false));
   }, [accessToken]);
 
+  // Apply past-event filter: select only guests of that event who are in the CRM
+  async function applyEventFilter(slug: string) {
+    if (!slug) return;
+    setLoadingFilter(true);
+    try {
+      const res = await fetch(`/api/events/${slug}/guests`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      const guestEmails = new Set<string>(
+        (data.guests ?? []).map((g: { email: string }) => g.email.toLowerCase()),
+      );
+      setSelectedEmails(new Set(
+        customers
+          .filter(c => guestEmails.has(c.email.toLowerCase()))
+          .map(c => c.email),
+      ));
+    } finally {
+      setLoadingFilter(false);
+    }
+  }
+
+  function toggleOne(email: string) {
+    setSelectedEmails(prev => {
+      const next = new Set(prev);
+      if (next.has(email)) next.delete(email); else next.add(email);
+      return next;
+    });
+  }
+
+  const allSelected  = customers.length > 0 && selectedEmails.size === customers.length;
+  const noneSelected = selectedEmails.size === 0;
+
+  const displayList = customers.filter(c => {
+    if (!custSearch) return true;
+    const q = custSearch.toLowerCase();
+    return c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q);
+  });
+
   async function handleSend() {
-    if (!subject.trim() || !body.trim()) return;
+    if (!subject.trim() || !body.trim() || selectedEmails.size === 0) return;
     setStatus('sending');
+    const recipients = customers
+      .filter(c => selectedEmails.has(c.email))
+      .map(c => ({ email: c.email, name: c.name }));
     try {
       const res = await fetch('/api/events/invite', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
-        body:    JSON.stringify({ eventSlug: event.slug, subject: subject.trim(), body: body.trim() }),
+        body:    JSON.stringify({ eventSlug: event.slug, subject: subject.trim(), body: body.trim(), recipients }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error);
@@ -564,30 +632,23 @@ function EventInviteModal({
         onClick={onClose}
       />
       <motion.div
-        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden"
+        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh]"
         initial={{ opacity: 0, scale: 0.95, y: 16 }}
         animate={{ opacity: 1, scale: 1,    y: 0  }}
         exit={{    opacity: 0, scale: 0.95, y: 16 }}
         transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#eddada]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#eddada] shrink-0">
           <div>
             <div className="text-[9px] tracking-[0.4em] text-[#731515] mb-0.5">INVITA CLIENTI CRM</div>
             <h3 className="text-base font-light text-[#1a0505] truncate max-w-sm" style={{ fontFamily: 'var(--font-syne)' }}>
               {event.title}
             </h3>
           </div>
-          <div className="flex items-center gap-3">
-            {customerCount !== null && (
-              <span className="text-[10px] text-[#7a4a4a]/60" style={{ fontFamily: 'var(--font-nunito)' }}>
-                {customerCount} clienti nel CRM
-              </span>
-            )}
-            <button onClick={onClose} className="text-[#7a4a4a]/50 hover:text-[#731515] transition-colors p-1">
-              <X size={16} />
-            </button>
-          </div>
+          <button onClick={onClose} className="text-[#7a4a4a]/50 hover:text-[#731515] transition-colors p-1">
+            <X size={16} />
+          </button>
         </div>
 
         {status === 'done' ? (
@@ -609,8 +670,128 @@ function EventInviteModal({
             </button>
           </div>
         ) : (
-          <div className="px-6 py-5 space-y-4">
-            {/* Language tabs */}
+          <div className="overflow-y-auto flex-1 px-6 py-5 space-y-4">
+
+            {/* ── DESTINATARI ─────────────────────────────────────── */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Users size={12} className="text-[#731515]" />
+                  <span className="text-[9px] tracking-[0.35em] text-[#731515]">DESTINATARI</span>
+                </div>
+                <span className="text-[10px] text-[#7a4a4a]/55" style={{ fontFamily: 'var(--font-nunito)' }}>
+                  {selectedEmails.size} selezionati su {customers.length}
+                </span>
+              </div>
+
+              {/* Quick-filter chips */}
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                <button
+                  onClick={() => { setFilterSlug(''); setSelectedEmails(new Set(customers.map(c => c.email))); }}
+                  className={`px-3 py-1 text-[9px] tracking-[0.2em] rounded-full border transition-colors ${
+                    allSelected ? 'bg-[#731515] text-white border-[#731515]' : 'border-[#eddada] text-[#7a4a4a] hover:border-[#731515]/40'
+                  }`}
+                >
+                  TUTTI
+                </button>
+                <button
+                  onClick={() => { setFilterSlug(''); setSelectedEmails(new Set()); }}
+                  className={`px-3 py-1 text-[9px] tracking-[0.2em] rounded-full border transition-colors ${
+                    noneSelected ? 'bg-[#731515] text-white border-[#731515]' : 'border-[#eddada] text-[#7a4a4a] hover:border-[#731515]/40'
+                  }`}
+                >
+                  NESSUNO
+                </button>
+                {/* Past-event dropdown */}
+                <div className="flex items-center gap-1.5">
+                  <select
+                    value={filterSlug}
+                    onChange={async e => {
+                      const slug = e.target.value;
+                      setFilterSlug(slug);
+                      if (slug) await applyEventFilter(slug);
+                    }}
+                    disabled={loadingFilter}
+                    className="text-[9px] border border-[#eddada] rounded-full px-3 py-1 text-[#7a4a4a] bg-white focus:outline-none focus:border-[#731515]/50 cursor-pointer max-w-[200px] disabled:opacity-50"
+                    style={{ fontFamily: 'var(--font-nunito)' }}
+                  >
+                    <option value="">↩ Partecipanti evento…</option>
+                    {pastEvents.map(e => (
+                      <option key={e.slug} value={e.slug}>{e.title}</option>
+                    ))}
+                  </select>
+                  {loadingFilter && <Loader2 size={11} className="animate-spin text-[#731515] shrink-0" />}
+                </div>
+              </div>
+
+              {/* Search */}
+              <div className="flex items-center gap-2 bg-[#fdf6f6] border border-[#eddada] rounded-lg px-3 py-1.5 mb-2">
+                <Search size={11} className="text-[#7a4a4a]/40 shrink-0" />
+                <input
+                  type="text"
+                  placeholder="Cerca per nome o email…"
+                  value={custSearch}
+                  onChange={e => setCustSearch(e.target.value)}
+                  className="flex-1 bg-transparent text-[12px] text-[#1a0505] placeholder:text-[#7a4a4a]/30 focus:outline-none"
+                  style={{ fontFamily: 'var(--font-nunito)' }}
+                />
+                {custSearch && (
+                  <button onClick={() => setCustSearch('')} className="text-[#7a4a4a]/40 hover:text-[#731515] transition-colors">
+                    <X size={10} />
+                  </button>
+                )}
+              </div>
+
+              {/* Customer checklist */}
+              {loadingCust ? (
+                <div className="flex justify-center py-4 border border-[#eddada] rounded-lg">
+                  <Loader2 size={16} className="animate-spin text-[#731515]" />
+                </div>
+              ) : (
+                <div className="border border-[#eddada] rounded-lg overflow-hidden">
+                  {/* Select-all row */}
+                  <label className="flex items-center gap-2.5 px-3 py-2 bg-[#fdf6f6] border-b border-[#eddada] cursor-pointer hover:bg-[#fdf0f0] transition-colors select-none">
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      onChange={() => setSelectedEmails(allSelected ? new Set() : new Set(customers.map(c => c.email)))}
+                      className="w-3.5 h-3.5 cursor-pointer accent-[#731515] shrink-0"
+                    />
+                    <span className="text-[10px] font-semibold text-[#731515] tracking-[0.2em]">
+                      {allSelected ? 'DESELEZIONA TUTTI' : 'SELEZIONA TUTTI'}
+                    </span>
+                  </label>
+                  {/* Scrollable rows */}
+                  <div className="max-h-48 overflow-y-auto divide-y divide-[#f5eded]">
+                    {displayList.length === 0 ? (
+                      <p className="px-3 py-3 text-[11px] text-[#7a4a4a]/40 text-center" style={{ fontFamily: 'var(--font-nunito)' }}>
+                        Nessun risultato
+                      </p>
+                    ) : displayList.map(c => (
+                      <label
+                        key={c.email}
+                        className={`flex items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors select-none ${
+                          selectedEmails.has(c.email) ? 'bg-[#fdf8f8]' : 'hover:bg-[#fdf9f9]'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedEmails.has(c.email)}
+                          onChange={() => toggleOne(c.email)}
+                          className="w-3.5 h-3.5 cursor-pointer accent-[#731515] shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[12px] text-[#1a0505] truncate font-medium" style={{ fontFamily: 'var(--font-nunito)' }}>{c.name}</div>
+                          <div className="text-[10px] text-[#7a4a4a]/45 truncate" style={{ fontFamily: 'var(--font-nunito)' }}>{c.email}</div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ── LINGUA TEMPLATE ─────────────────────────────────── */}
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <Languages size={12} className="text-[#731515]" />
@@ -652,7 +833,7 @@ function EventInviteModal({
               </div>
               <textarea
                 className={`${inputCls} resize-none`}
-                rows={12}
+                rows={9}
                 value={body}
                 onChange={e => setBody(e.target.value)}
                 style={{ fontFamily: 'var(--font-nunito)' }}
@@ -669,15 +850,11 @@ function EventInviteModal({
             <div className="flex gap-3 pt-1">
               <button
                 onClick={handleSend}
-                disabled={status === 'sending' || !subject.trim() || !body.trim() || customerCount === 0}
+                disabled={status === 'sending' || !subject.trim() || !body.trim() || selectedEmails.size === 0}
                 className="flex items-center gap-2 px-6 py-2.5 bg-[#731515] text-white text-[10px] tracking-[0.3em] rounded-lg hover:bg-[#9b2323] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <Send size={12} />
-                {status === 'sending'
-                  ? 'INVIO IN CORSO…'
-                  : customerCount === null
-                    ? 'INVIA A TUTTI I CLIENTI CRM'
-                    : `INVIA A ${customerCount} CLIENTI CRM`}
+                {status === 'sending' ? 'INVIO IN CORSO…' : `INVIA A ${selectedEmails.size} CLIENTI CRM`}
               </button>
               <button
                 onClick={onClose}
@@ -1279,6 +1456,7 @@ export default function EventManager() {
             key="invite"
             event={inviteEvent}
             accessToken={accessToken}
+            allEvents={events}
             onClose={() => setInviteEvent(null)}
           />
         )}
