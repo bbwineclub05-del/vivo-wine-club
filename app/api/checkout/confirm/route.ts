@@ -64,6 +64,23 @@ export async function GET(request: Request) {
         partnerCode: meta.partner_code || undefined,
       });
 
+      // Track upsell conversions (non-fatal)
+      try {
+        const upsellRaw = meta.upsell_items;
+        if (upsellRaw) {
+          const upsellItemsParsed = JSON.parse(upsellRaw) as { configId: string; title: string; price: number }[];
+          const db = getSupabaseAdmin() as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+          for (const item of upsellItemsParsed) {
+            await db.from('upsell_analytics').insert({
+              upsell_config_id: item.configId,
+              event_type:       'converted',
+              checkout_context: meta.event_slug,
+              order_id:         meta.order_id,
+            });
+          }
+        }
+      } catch { /* non-fatal */ }
+
       // Referral attribution for paid events (non-blocking)
       if (meta.ref_code) {
         fetch(`${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vivowineclub.com'}/api/referral/use`, {

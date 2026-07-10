@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Mail, Users, X, Check, RefreshCw,
-  CheckSquare, Square, ChevronDown, ChevronUp,
+  CheckSquare, Square, ChevronDown, ChevronUp, DatabaseZap,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
@@ -208,11 +208,13 @@ function CustomerRow({
   selected,
   onToggle,
   onSendMail,
+  eventTitles,
 }: {
-  customer:   Customer;
-  selected:   boolean;
-  onToggle:   () => void;
-  onSendMail: () => void;
+  customer:    Customer;
+  selected:    boolean;
+  onToggle:    () => void;
+  onSendMail:  () => void;
+  eventTitles: Map<string, string>;
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -237,9 +239,9 @@ function CustomerRow({
           </div>
         </div>
 
-        {/* Events count */}
+        {/* Events count badge */}
         <div className="shrink-0 text-center hidden sm:block">
-          <div className="text-[10px] tracking-[0.25em] text-[#7a4a4a]/40 mb-0.5">EVENTI</div>
+          <div className="text-[10px] tracking-[0.25em] text-[#7a4a4a]/40 mb-0.5">SERATE</div>
           <div className="text-sm font-medium text-[#731515]" style={{ fontFamily: 'var(--font-syne)' }}>
             {customer.total_events}
           </div>
@@ -273,7 +275,7 @@ function CustomerRow({
         </div>
       </div>
 
-      {/* Expanded: event slugs */}
+      {/* Expanded: event titles */}
       <AnimatePresence>
         {expanded && (
           <motion.div
@@ -290,7 +292,7 @@ function CustomerRow({
                   className="inline-block text-[10px] bg-[#fde8e8] text-[#731515] border border-[#731515]/15 px-2.5 py-1 rounded-full"
                   style={{ fontFamily: 'var(--font-nunito)' }}
                 >
-                  {slug}
+                  {eventTitles.get(slug) ?? slug}
                 </span>
               ))}
             </div>
@@ -311,12 +313,29 @@ export default function CrmClienti() {
   const [search,       setSearch]       = useState('');
   const [selected,     setSelected]     = useState<Set<string>>(new Set());
   const [composeFor,   setComposeFor]   = useState<Customer[] | null>(null);
+  const [eventTitles,  setEventTitles]  = useState<Map<string, string>>(new Map());
+  const [syncing,      setSyncing]      = useState(false);
+  const [syncResult,   setSyncResult]   = useState<{ inserted: number; updated: number } | null>(null);
 
   // Fetch access token once
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setAccessToken(session?.access_token ?? null);
     });
+  }, []);
+
+  // Fetch event titles for slug→title mapping
+  useEffect(() => {
+    fetch('/api/events/all')
+      .then(r => r.json())
+      .then(j => {
+        const map = new Map<string, string>();
+        for (const ev of (j.events ?? [])) {
+          if (ev.slug && ev.title) map.set(ev.slug, ev.title);
+        }
+        setEventTitles(map);
+      })
+      .catch(() => { /* non-fatal */ });
   }, []);
 
   const load = () => {
@@ -332,6 +351,24 @@ export default function CrmClienti() {
   };
 
   useEffect(load, [accessToken]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function handleSync() {
+    if (!accessToken) return;
+    setSyncing(true);
+    setSyncResult(null);
+    try {
+      const res = await fetch('/api/admin/sync-guests-to-crm', {
+        method:  'POST',
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      const j = await res.json();
+      if (res.ok) {
+        setSyncResult({ inserted: j.inserted, updated: j.updated });
+        load();
+      }
+    } catch { /* non-fatal */ }
+    finally { setSyncing(false); }
+  }
 
   /* ── Derived ── */
   const filtered = customers.filter(c => {
@@ -400,14 +437,30 @@ export default function CrmClienti() {
             CRM Clienti
           </h2>
         </div>
-        <button
-          onClick={load}
-          disabled={loading}
-          className="inline-flex items-center gap-2 px-4 py-2 border border-[#eddada] bg-white text-[#7a4a4a] text-[10px] tracking-[0.25em] rounded-lg hover:border-[#731515]/40 transition-colors disabled:opacity-50"
-        >
-          <RefreshCw size={11} className={loading ? 'animate-spin' : ''} />
-          AGGIORNA
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          {syncResult && (
+            <span className="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1.5 rounded-lg" style={{ fontFamily: 'var(--font-nunito)' }}>
+              Sincronizzati: +{syncResult.inserted} nuovi, {syncResult.updated} aggiornati
+            </span>
+          )}
+          <button
+            onClick={handleSync}
+            disabled={syncing || !accessToken}
+            title="Sincronizza lista invitati eventi nel CRM Clienti"
+            className="inline-flex items-center gap-2 px-4 py-2 border border-[#eddada] bg-white text-[#7a4a4a] text-[10px] tracking-[0.25em] rounded-lg hover:border-[#731515]/40 transition-colors disabled:opacity-50"
+          >
+            <DatabaseZap size={11} className={syncing ? 'animate-pulse text-[#731515]' : ''} />
+            {syncing ? 'SINCRONIZZAZIONE…' : 'SINCRONIZZA LISTE'}
+          </button>
+          <button
+            onClick={load}
+            disabled={loading}
+            className="inline-flex items-center gap-2 px-4 py-2 border border-[#eddada] bg-white text-[#7a4a4a] text-[10px] tracking-[0.25em] rounded-lg hover:border-[#731515]/40 transition-colors disabled:opacity-50"
+          >
+            <RefreshCw size={11} className={loading ? 'animate-spin' : ''} />
+            AGGIORNA
+          </button>
+        </div>
       </div>
 
       {/* KPI strip */}
@@ -491,6 +544,7 @@ export default function CrmClienti() {
                 selected={selected.has(customer.id)}
                 onToggle={() => toggleOne(customer.id)}
                 onSendMail={() => setComposeFor([customer])}
+                eventTitles={eventTitles}
               />
             ))}
           </div>

@@ -5,12 +5,35 @@ import { pixel } from '@/lib/pixel';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, ChevronLeft, ChevronRight, Plus, Minus, ShoppingBag, Zap, ArrowLeft } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Plus, Minus, ShoppingBag, Zap, ArrowLeft, Sparkles } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useLocale } from 'next-intl';
 import type { ProductFull, ProductVariant, ProductTextVariant } from './page';
 
 const LOW_STOCK_THRESHOLD = 3;
+
+interface CrossSellProduct {
+  id:               string;
+  title:            string;
+  price:            number;
+  images:           string[];
+  slug:             string | null;
+  product_variants: { id: string; images: string[] }[];
+}
+
+const UPSELL_TITLE: Record<string, string> = {
+  it: 'Potrebbe interessarti anche',
+  en: 'You might also like',
+  fr: 'Cela pourrait aussi vous plaire',
+};
+
+/** Return the first usable image for a cross-sell product (variants take priority). */
+function getCrossSellImage(p: CrossSellProduct): string {
+  for (const v of p.product_variants ?? []) {
+    if (v.images?.length > 0) return v.images[0];
+  }
+  return p.images?.[0] ?? '';
+}
 
 const LOW_STOCK_LABELS: Record<string, (n: number) => string> = {
   it: n => n === 1 ? 'Solo 1 rimasto!' : `Solo ${n} rimasti!`,
@@ -93,6 +116,39 @@ export default function ProductDetailClient({ product }: { product: ProductFull 
     pixel.viewProduct({ content_name: product.title, value: product.price });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /* ── Cross-sell (you might also like) ── */
+  const [crossSell, setCrossSell] = useState<CrossSellProduct[]>([]);
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/merch/products/public').then(r => r.json()),
+      fetch(`/api/upsell?context=merch&slug=${product.slug}`).then(r => r.json()),
+    ]).then(([productsData, upsellData]) => {
+      const all: CrossSellProduct[] = productsData.products ?? [];
+      // Never show the product the user is currently viewing
+      const others = all.filter(p => p.id !== product.id);
+
+      // If admin configured specific products, respect that order; otherwise auto cross-sell
+      const adminIds: string[] = (upsellData.configs ?? []).map((c: { product_id: string }) => c.product_id);
+      if (adminIds.length > 0) {
+        const adminSet = new Set(adminIds);
+        const picks = others.filter(p => adminSet.has(p.id));
+        setCrossSell(picks.length > 0 ? picks.slice(0, 3) : shuffle(others).slice(0, 3));
+      } else {
+        setCrossSell(shuffle(others).slice(0, 3));
+      }
+    }).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product.id, product.slug]);
+
+  function shuffle<T>(arr: T[]): T[] {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
 
   const [selectedVariant,     setSelectedVariant]     = useState<ProductVariant | null>(null);
   const [selectedTextVariant, setSelectedTextVariant] = useState<ProductTextVariant | null>(null);
@@ -601,6 +657,79 @@ export default function ProductDetailClient({ product }: { product: ProductFull 
         </AccordionItem>
         <div className="border-t border-[#e8d5d5]" />
       </div>
+
+      {/* ── Cross-sell section ── */}
+      {crossSell.length > 0 && (
+        <div className="mt-6 mb-4 max-w-7xl mx-auto px-4 sm:px-6 lg:px-10">
+          <div className="flex items-center gap-1.5 mb-2.5">
+            <Sparkles size={10} className="text-[#731515]" />
+            <span className="text-[8px] tracking-[0.4em] text-[#731515]">
+              {(UPSELL_TITLE[locale] ?? UPSELL_TITLE.en).toUpperCase()}
+            </span>
+          </div>
+          <div className="flex justify-center gap-4">
+            {crossSell.map(p => {
+              const imgSrc = getCrossSellImage(p);
+              const href   = `/wear-the-club/${p.slug ?? p.id}`;
+              return (
+                <div
+                  key={p.id}
+                  className="group w-48 shrink-0 rounded-lg border border-[#e8d5d5] overflow-hidden bg-white hover:border-[#731515]/40 hover:shadow-sm transition-all duration-200"
+                >
+                  <Link href={href}>
+                    <div className="relative w-full h-32 bg-[#f5eded] overflow-hidden">
+                      {imgSrc ? (
+                        <Image
+                          src={imgSrc}
+                          alt={p.title}
+                          fill
+                          sizes="192px"
+                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[#e8d5d5]">
+                          <ShoppingBag size={16} />
+                        </div>
+                      )}
+                    </div>
+                  </Link>
+                  <div className="p-2.5">
+                    <Link href={href}>
+                      <p className="text-[11px] font-medium text-[#1a0505] truncate mb-0.5 hover:text-[#731515] transition-colors" style={{ fontFamily: 'var(--font-syne)' }}>
+                        {p.title}
+                      </p>
+                    </Link>
+                    <p className="text-[12px] text-[#731515] mb-2" style={{ fontFamily: 'var(--font-syne)' }}>
+                      €{Number(p.price).toFixed(2)}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        addItem({
+                          id:           p.id,
+                          cartKey:      p.id,
+                          name:         p.title,
+                          price:        p.price,
+                          icon:         '',
+                          image:        imgSrc,
+                          variantId:    null,
+                          size:         null,
+                          shippingCost: null,
+                        });
+                      }}
+                      className="w-full h-7 flex items-center justify-center gap-1 border border-[#731515] text-[#731515] text-[9px] tracking-[0.15em] rounded hover:bg-[#731515] hover:text-white transition-all duration-200"
+                      style={{ fontFamily: 'var(--font-nunito)' }}
+                    >
+                      <ShoppingBag size={10} />
+                      {locale === 'it' ? 'AGGIUNGI' : 'ADD'}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
     </div>
   );

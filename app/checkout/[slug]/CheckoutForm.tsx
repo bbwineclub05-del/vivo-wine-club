@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { pixel } from '@/lib/pixel';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { MapPin, Minus, Plus, Calendar, Tag, User, Gift } from 'lucide-react';
+import { MapPin, Minus, Plus, Calendar, Tag, User, Gift, Sparkles, ShoppingBag, Check } from 'lucide-react';
 import BackButton from '@/components/BackButton';
 import Navbar from '@/components/Navbar';
 import { type EventData } from '@/lib/events';
@@ -12,6 +12,23 @@ import { type EventData } from '@/lib/events';
 const EMAIL_MISMATCH = 'Email addresses do not match.';
 
 const MAX_TICKETS = 10;
+
+/* ── UpsellConfig type ── */
+interface UpsellConfig {
+  id: string;
+  product_id: string;
+  context: 'event' | 'merch';
+  target_slug: string | null;
+  sort_order: number;
+  active: boolean;
+  products: {
+    id: string;
+    title: string;
+    price: number;
+    images: string[];
+    slug: string;
+  };
+}
 
 /* ── Input field ── */
 function Field({
@@ -63,11 +80,56 @@ export default function CheckoutForm({ event, refCode, partnerCode, referralEnab
   const [loading,        setLoading]        = useState(false);
   const [error,          setError]          = useState('');
 
+  /* ── Upsell state ── */
+  const [upsellConfigs, setUpsellConfigs] = useState<UpsellConfig[]>([]);
+  const [upsellAdded,   setUpsellAdded]   = useState<Set<string>>(new Set());
+
   const emailsMatch = email.length > 0 && email === confirmEmail;
 
   const total = event.price * qty;
-  const dec   = () => setQty((q) => Math.max(1, q - 1));
-  const inc   = () => setQty((q) => Math.min(MAX_TICKETS, q + 1));
+
+  /* ── Upsell totals ── */
+  const upsellTotal = upsellConfigs
+    .filter(c => upsellAdded.has(c.id))
+    .reduce((sum, c) => sum + Number(c.products.price), 0);
+  const grandTotal = total + upsellTotal;
+
+  const dec = () => setQty((q) => Math.max(1, q - 1));
+  const inc = () => setQty((q) => Math.min(MAX_TICKETS, q + 1));
+
+  /* ── Fetch upsell configs on mount ── */
+  useEffect(() => {
+    fetch(`/api/upsell?context=event&slug=${event.slug}`)
+      .then(r => r.json())
+      .then(j => {
+        if (j.configs?.length > 0) {
+          setUpsellConfigs(j.configs);
+          // Track impressions (fire-and-forget)
+          for (const c of j.configs) {
+            fetch('/api/upsell/track', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ upsellConfigId: c.id, eventType: 'impression', checkoutContext: event.slug }),
+            }).catch(() => {});
+          }
+        }
+      })
+      .catch(() => {});
+  }, [event.slug]);
+
+  /* ── Toggle upsell item ── */
+  function toggleUpsell(configId: string, eventType: 'added' | 'removed') {
+    setUpsellAdded(prev => {
+      const next = new Set(prev);
+      if (next.has(configId)) next.delete(configId); else next.add(configId);
+      return next;
+    });
+    fetch('/api/upsell/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ upsellConfigId: configId, eventType, checkoutContext: event.slug }),
+    }).catch(() => {});
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,10 +138,24 @@ export default function CheckoutForm({ event, refCode, partnerCode, referralEnab
     setLoading(true);
 
     try {
+      const upsellItems = upsellConfigs
+        .filter(c => upsellAdded.has(c.id))
+        .map(c => ({ configId: c.id, title: c.products.title, price: Number(c.products.price) }));
+
       const res  = await fetch('/api/checkout/event', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ slug: event.slug, qty, firstName, lastName, email, phone, refCode: enteredRefCode.trim().toUpperCase() || undefined, partnerCode }),
+        body:    JSON.stringify({
+          slug: event.slug,
+          qty,
+          firstName,
+          lastName,
+          email,
+          phone,
+          refCode: enteredRefCode.trim().toUpperCase() || undefined,
+          partnerCode,
+          upsellItems,
+        }),
       });
       const data = await res.json();
 
@@ -87,7 +163,7 @@ export default function CheckoutForm({ event, refCode, partnerCode, referralEnab
         throw new Error(data.error ?? 'Something went wrong. Please try again.');
       }
 
-      pixel.initiateCheckout({ value: total, content_name: event.title });
+      pixel.initiateCheckout({ value: grandTotal, content_name: event.title });
       window.location.href = data.url;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.');
@@ -245,6 +321,63 @@ export default function CheckoutForm({ event, refCode, partnerCode, referralEnab
                   </p>
                 </div>
 
+                {/* ── Upsell section ── */}
+                {upsellConfigs.length > 0 && (
+                  <div className="glass-card p-5 sm:p-8 md:p-10">
+                    <div className="flex items-center gap-2 mb-5">
+                      <Sparkles size={13} className="text-[#731515]" />
+                      <div className="text-[10px] tracking-[0.4em] text-[#731515]">YOU MIGHT ALSO LIKE</div>
+                    </div>
+                    <div className="flex gap-3 overflow-x-auto pb-1 -mx-1 px-1">
+                      {upsellConfigs.map(config => {
+                        const isAdded   = upsellAdded.has(config.id);
+                        const imgSrc    = config.products.images?.[0] ?? null;
+                        const price     = Number(config.products.price);
+                        return (
+                          <div
+                            key={config.id}
+                            className={`shrink-0 w-[200px] sm:w-[220px] rounded-xl border transition-all duration-200 overflow-hidden ${isAdded ? 'border-[#731515]/60 shadow-md' : 'border-[#e8d5d5]'}`}
+                          >
+                            {/* Product image */}
+                            {imgSrc ? (
+                              <div className="relative w-full aspect-square bg-[#fdf6f6]">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={imgSrc} alt={config.products.title} className="w-full h-full object-cover" />
+                              </div>
+                            ) : (
+                              <div className="w-full aspect-square bg-[#fdf6f6] flex items-center justify-center text-[#e8d5d5]">
+                                <ShoppingBag size={32} />
+                              </div>
+                            )}
+                            <div className="p-3 bg-white">
+                              <p className="text-[12px] font-medium text-[#1a0505] leading-tight mb-1" style={{ fontFamily: 'var(--font-nunito)' }}>
+                                {config.products.title}
+                              </p>
+                              <div className="flex items-center gap-1.5 mb-2.5">
+                                <span className="text-sm font-medium text-[#731515]" style={{ fontFamily: 'var(--font-syne)' }}>
+                                  €{price.toFixed(2)}
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => toggleUpsell(config.id, isAdded ? 'removed' : 'added')}
+                                className={`w-full min-h-[44px] flex items-center justify-center gap-1.5 rounded-lg text-[11px] tracking-[0.2em] font-medium transition-all duration-200 ${
+                                  isAdded
+                                    ? 'bg-[#731515] text-white hover:bg-[#aa4848]'
+                                    : 'border border-[#731515] text-[#731515] bg-white hover:bg-[#fdf0f0]'
+                                }`}
+                                style={{ fontFamily: 'var(--font-nunito)' }}
+                              >
+                                {isAdded ? <><Check size={13} /> AGGIUNTO</> : <><Plus size={11} /> AGGIUNGI</>}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {/* ── Order summary + pay ── */}
                 <div className="glass-card p-5 sm:p-8 md:p-10">
                   <div className="text-[10px] tracking-[0.4em] text-[#731515] mb-6">
@@ -262,6 +395,21 @@ export default function CheckoutForm({ event, refCode, partnerCode, referralEnab
                           <span>Tickets</span>
                           <span>× {qty}</span>
                         </div>
+
+                        {/* Upsell items */}
+                        {Array.from(upsellAdded).map(configId => {
+                          const config = upsellConfigs.find(c => c.id === configId);
+                          if (!config) return null;
+                          return (
+                            <div key={configId} className="flex items-center justify-between text-sm text-[#7a4a4a]" style={{ fontFamily: 'var(--font-nunito)' }}>
+                              <span className="flex items-center gap-1.5">
+                                <Sparkles size={11} className="text-[#731515]" />
+                                {config.products.title}
+                              </span>
+                              <span>€{Number(config.products.price).toFixed(2)}</span>
+                            </div>
+                          );
+                        })}
                       </div>
 
                       <div className="w-full h-px bg-[#e8d5d5] mb-5" />
@@ -269,26 +417,68 @@ export default function CheckoutForm({ event, refCode, partnerCode, referralEnab
                       <div className="flex items-center justify-between mb-8">
                         <span className="text-[11px] tracking-[0.3em] text-[#7a4a4a]">TOTAL</span>
                         <motion.span
-                          key={total}
+                          key={grandTotal}
                           initial={{ opacity: 0, y: -6 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.25 }}
                           className="text-3xl font-light text-[#731515]"
                           style={{ fontFamily: 'var(--font-syne)' }}
                         >
-                          €{total.toFixed(2)}
+                          €{grandTotal.toFixed(2)}
                         </motion.span>
                       </div>
                     </>
                   ) : (
-                    <div className="flex items-center justify-between mb-8">
-                      <span className="text-sm text-[#7a4a4a]" style={{ fontFamily: 'var(--font-nunito)' }}>
-                        {event.title} × {qty}
-                      </span>
-                      <span className="text-xl font-light text-[#731515]" style={{ fontFamily: 'var(--font-syne)' }}>
-                        FREE
-                      </span>
-                    </div>
+                    <>
+                      <div className="flex flex-col gap-3 mb-6">
+                        <div className="flex items-center justify-between" style={{ fontFamily: 'var(--font-nunito)' }}>
+                          <span className="text-sm text-[#7a4a4a]">
+                            {event.title} × {qty}
+                          </span>
+                          <span className="text-xl font-light text-[#731515]" style={{ fontFamily: 'var(--font-syne)' }}>
+                            FREE
+                          </span>
+                        </div>
+
+                        {/* Upsell items for free events */}
+                        {Array.from(upsellAdded).map(configId => {
+                          const config = upsellConfigs.find(c => c.id === configId);
+                          if (!config) return null;
+                          return (
+                            <div key={configId} className="flex items-center justify-between text-sm text-[#7a4a4a]" style={{ fontFamily: 'var(--font-nunito)' }}>
+                              <span className="flex items-center gap-1.5">
+                                <Sparkles size={11} className="text-[#731515]" />
+                                {config.products.title}
+                              </span>
+                              <span>€{Number(config.products.price).toFixed(2)}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {upsellAdded.size > 0 && (
+                        <>
+                          <div className="w-full h-px bg-[#e8d5d5] mb-5" />
+                          <div className="flex items-center justify-between mb-8">
+                            <span className="text-[11px] tracking-[0.3em] text-[#7a4a4a]">TOTAL</span>
+                            <motion.span
+                              key={grandTotal}
+                              initial={{ opacity: 0, y: -6 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.25 }}
+                              className="text-3xl font-light text-[#731515]"
+                              style={{ fontFamily: 'var(--font-syne)' }}
+                            >
+                              €{grandTotal.toFixed(2)}
+                            </motion.span>
+                          </div>
+                        </>
+                      )}
+
+                      {upsellAdded.size === 0 && (
+                        <div className="mb-8" />
+                      )}
+                    </>
                   )}
 
                   {/* ── Referral code (paid events with referral enabled) ── */}
@@ -327,11 +517,15 @@ export default function CheckoutForm({ event, refCode, partnerCode, referralEnab
                     whileTap={{ scale: 0.99 }}
                     className="w-full py-4 bg-[#731515] text-white text-[11px] tracking-[0.4em] hover:bg-[#aa4848] disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-300 rounded-lg"
                   >
-                    {loading ? 'PROCESSING…' : event.price > 0 ? 'PROCEED TO PAYMENT' : 'GET YOUR FREE TICKET'}
+                    {loading
+                      ? 'PROCESSING…'
+                      : event.price > 0 || upsellAdded.size > 0
+                        ? 'PROCEED TO PAYMENT'
+                        : 'GET YOUR FREE TICKET'}
                   </motion.button>
 
                   <p className="mt-4 text-center text-[10px] text-[#7a4a4a]/50 leading-relaxed" style={{ fontFamily: 'var(--font-nunito)' }}>
-                    {event.price > 0
+                    {event.price > 0 || upsellAdded.size > 0
                       ? 'Secure payment powered by Stripe — you will not be charged yet'
                       : 'Free entry — confirm your spot and receive your QR code by email'}
                   </p>

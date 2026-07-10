@@ -197,6 +197,43 @@ export async function POST(
   const months = ['GEN','FEB','MAR','APR','MAG','GIU','LUG','AGO','SET','OTT','NOV','DIC'];
   const eventDate = `${parseInt(d)} ${months[parseInt(m) - 1]} ${y}`;
 
+  // Sync guest to customers table (non-fatal)
+  try {
+    const name = [firstName, lastName].join(' ');
+    const now  = new Date().toISOString();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: existingCustomer } = await (db as any)
+      .from('customers')
+      .select('id, events, total_events')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (existingCustomer) {
+      const existingEvents: string[] = existingCustomer.events ?? [];
+      if (!existingEvents.includes(slug)) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (db as any).from('customers').update({
+          name,
+          last_purchase_at: now,
+          total_events:     (existingCustomer.total_events ?? 0) + 1,
+          events:           [...existingEvents, slug],
+        }).eq('id', existingCustomer.id);
+      }
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (db as any).from('customers').insert({
+        email,
+        name,
+        first_purchase_at: now,
+        last_purchase_at:  now,
+        total_events:      1,
+        events:            [slug],
+      });
+    }
+  } catch (syncErr) {
+    console.error('[event guests] customers sync error:', syncErr);
+  }
+
   // Send confirmation email (non-blocking — don't fail the request if email fails)
   try {
     await resend.emails.send({

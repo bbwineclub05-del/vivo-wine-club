@@ -6,12 +6,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, Pencil, Trash2, Eye, EyeOff, ChevronDown, ChevronUp,
   CalendarDays, MapPin, Tag, Users, CheckCircle2, Clock, XCircle, Globe, ScanLine,
-  Send, X, Check, Languages, ImagePlus, Loader2, ClipboardList, UserCheck, Link2, Search,
+  Send, X, Check, ImagePlus, Loader2, ClipboardList, UserCheck, Link2, Search,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import EventScanner from '@/components/EventScanner';
 import EventGuestPanel from '@/components/EventGuestPanel';
 import EventPartnerPanel from '@/components/EventPartnerPanel';
+import EventEmailModalAdvanced, { type CustomCategoryInfo } from '@/components/EventEmailModalAdvanced';
 
 /* ─────────────────────────────────────────────
    Types
@@ -417,491 +418,6 @@ function EventForm({
         </button>
       </div>
     </motion.div>
-  );
-}
-
-/* ─────────────────────────────────────────────
-   Event invite modal
-───────────────────────────────────────────── */
-type Lang = 'IT' | 'EN' | 'FR';
-
-function buildTemplate(lang: Lang, event: DbEvent): { subject: string; body: string } {
-  const date = event.date
-    ? (() => {
-        const [y, m, d] = event.date.split('-');
-        const months: Record<Lang, string[]> = {
-          IT: ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'],
-          EN: ['January','February','March','April','May','June','July','August','September','October','November','December'],
-          FR: ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'],
-        };
-        return `${parseInt(d)} ${months[lang][parseInt(m) - 1]} ${y}`;
-      })()
-    : '';
-  const priceStr = event.price > 0 ? `€${event.price}` : lang === 'IT' ? 'Gratuito' : lang === 'FR' ? 'Gratuit' : 'Free';
-
-  if (lang === 'IT') {
-    return {
-      subject: `Sei invitato: ${event.title} — Vivo Wine Club`,
-      body:
-`Ciao [Nome],
-
-abbiamo il piacere di invitarti a un nuovo evento Vivo Wine Club.
-
-🍷 ${event.title}
-📅 ${date}
-📍 ${event.location_full || event.location}
-💰 Prezzo: ${priceStr}
-
-${event.description}
-
-Prenota il tuo posto su vivowineclub.com/checkout/${event.slug}
-
-A presto,
-Il team di Vivo Wine Club`,
-    };
-  }
-
-  if (lang === 'FR') {
-    return {
-      subject: `Vous êtes invité : ${event.title} — Vivo Wine Club`,
-      body:
-`Bonjour [Prénom],
-
-nous avons le plaisir de vous inviter à un nouvel événement Vivo Wine Club.
-
-🍷 ${event.title}
-📅 ${date}
-📍 ${event.location_full || event.location}
-💰 Prix : ${priceStr}
-
-${event.description}
-
-Réservez votre place sur vivowineclub.com/checkout/${event.slug}
-
-À bientôt,
-L'équipe Vivo Wine Club`,
-    };
-  }
-
-  // EN (default)
-  return {
-    subject: `You're invited: ${event.title} — Vivo Wine Club`,
-    body:
-`Hi [Name],
-
-we're delighted to invite you to a new Vivo Wine Club event.
-
-🍷 ${event.title}
-📅 ${date}
-📍 ${event.location_full || event.location}
-💰 Price: ${priceStr}
-
-${event.description}
-
-Book your spot at vivowineclub.com/checkout/${event.slug}
-
-See you soon,
-The Vivo Wine Club team`,
-  };
-}
-
-type CrmCustomer = { id: string; email: string; name: string };
-
-type EventWithCount = { slug: string; title: string; date: string; count: number };
-
-function EventInviteModal({
-  event,
-  accessToken,
-  onClose,
-}: {
-  event:       DbEvent;
-  accessToken: string;
-  onClose:     () => void;
-}) {
-  const [lang,    setLang]    = useState<Lang>('IT');
-  const [subject, setSubject] = useState('');
-  const [body,    setBody]    = useState('');
-  const [status,  setStatus]  = useState<'idle' | 'sending' | 'done' | 'error'>('idle');
-  const [result,  setResult]  = useState<{ sent: number; failed: number } | null>(null);
-
-  // Customer selection
-  const [customers,      setCustomers]      = useState<CrmCustomer[]>([]);
-  const [loadingCust,    setLoadingCust]    = useState(true);
-  const [selectedEmails, setSelectedEmails] = useState<Set<string>>(new Set());
-  const [custSearch,     setCustSearch]     = useState('');
-
-  // Past-event filter — loaded from API (all events with ≥1 guest, sorted newest→oldest)
-  const [pastEvents,    setPastEvents]    = useState<EventWithCount[]>([]);
-  const [filterSlug,    setFilterSlug]    = useState('');
-  const [loadingFilter, setLoadingFilter] = useState(false);
-
-  // Template
-  useEffect(() => {
-    const tpl = buildTemplate(lang, event);
-    setSubject(tpl.subject);
-    setBody(tpl.body);
-  }, [lang, event]);
-
-  // Load customers (select all by default) + events with guest counts
-  useEffect(() => {
-    setLoadingCust(true);
-    fetch('/api/crm/customers', { headers: { Authorization: `Bearer ${accessToken}` } })
-      .then(r => r.json())
-      .then(j => {
-        const list: CrmCustomer[] = Array.isArray(j.customers) ? j.customers : [];
-        setCustomers(list);
-        setSelectedEmails(new Set(list.map(c => c.email)));
-      })
-      .catch(() => {})
-      .finally(() => setLoadingCust(false));
-
-    fetch('/api/events/guest-counts', { headers: { Authorization: `Bearer ${accessToken}` } })
-      .then(r => r.json())
-      .then(j => {
-        const all: EventWithCount[] = Array.isArray(j.events) ? j.events : [];
-        // Exclude the current event
-        setPastEvents(all.filter(e => e.slug !== event.slug));
-      })
-      .catch(() => {});
-  }, [accessToken, event.slug]);
-
-  // Apply past-event filter: select only guests of that event who are in the CRM
-  async function applyEventFilter(slug: string) {
-    if (!slug) return;
-    setLoadingFilter(true);
-    try {
-      const res = await fetch(`/api/events/${slug}/participants`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      if (!res.ok) return;
-      const data = await res.json();
-      const participantEmails = new Set<string>(
-        (data.emails ?? []).map((e: string) => e.toLowerCase()),
-      );
-      setSelectedEmails(new Set(
-        customers
-          .filter(c => participantEmails.has(c.email.toLowerCase()))
-          .map(c => c.email),
-      ));
-    } finally {
-      setLoadingFilter(false);
-    }
-  }
-
-  function toggleOne(email: string) {
-    setSelectedEmails(prev => {
-      const next = new Set(prev);
-      if (next.has(email)) next.delete(email); else next.add(email);
-      return next;
-    });
-  }
-
-  const allSelected  = customers.length > 0 && selectedEmails.size === customers.length;
-  const noneSelected = selectedEmails.size === 0;
-
-  const displayList = customers.filter(c => {
-    if (!custSearch) return true;
-    const q = custSearch.toLowerCase();
-    return c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q);
-  });
-
-  // Event suggestions: past events whose title contains the search query
-  const eventSuggestions = custSearch.length >= 2
-    ? pastEvents.filter(e => e.title.toLowerCase().includes(custSearch.toLowerCase()))
-    : [];
-
-  async function handleSend() {
-    if (!subject.trim() || !body.trim() || selectedEmails.size === 0) return;
-    setStatus('sending');
-    const recipients = customers
-      .filter(c => selectedEmails.has(c.email))
-      .map(c => ({ email: c.email, name: c.name }));
-    try {
-      const res = await fetch('/api/events/invite', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
-        body:    JSON.stringify({ eventSlug: event.slug, subject: subject.trim(), body: body.trim(), recipients }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error);
-      setResult({ sent: json.sent, failed: json.failed });
-      setStatus('done');
-    } catch {
-      setStatus('error');
-    }
-  }
-
-  const LANGS: Lang[] = ['IT', 'EN', 'FR'];
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <motion.div
-        className="absolute inset-0 bg-black/50"
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        onClick={onClose}
-      />
-      <motion.div
-        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh]"
-        initial={{ opacity: 0, scale: 0.95, y: 16 }}
-        animate={{ opacity: 1, scale: 1,    y: 0  }}
-        exit={{    opacity: 0, scale: 0.95, y: 16 }}
-        transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#eddada] shrink-0">
-          <div>
-            <div className="text-[9px] tracking-[0.4em] text-[#731515] mb-0.5">INVITA CLIENTI CRM</div>
-            <h3 className="text-base font-light text-[#1a0505] truncate max-w-sm" style={{ fontFamily: 'var(--font-syne)' }}>
-              {event.title}
-            </h3>
-          </div>
-          <button onClick={onClose} className="text-[#7a4a4a]/50 hover:text-[#731515] transition-colors p-1">
-            <X size={16} />
-          </button>
-        </div>
-
-        {status === 'done' ? (
-          <div className="px-6 py-12 text-center">
-            <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-4">
-              <Check size={22} className="text-emerald-600" />
-            </div>
-            <p className="text-sm text-[#1a0505] font-medium" style={{ fontFamily: 'var(--font-nunito)' }}>
-              {result?.sent} email inviate con successo
-            </p>
-            {result?.failed ? (
-              <p className="text-xs text-[#731515] mt-1">{result.failed} fallite</p>
-            ) : null}
-            <button
-              onClick={onClose}
-              className="mt-6 px-6 py-2.5 bg-[#731515] text-white text-[10px] tracking-[0.3em] rounded-lg hover:bg-[#9b2323] transition-colors"
-            >
-              CHIUDI
-            </button>
-          </div>
-        ) : (
-          <div className="overflow-y-auto flex-1 px-6 py-5 space-y-4">
-
-            {/* ── DESTINATARI ─────────────────────────────────────── */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <Users size={12} className="text-[#731515]" />
-                  <span className="text-[9px] tracking-[0.35em] text-[#731515]">DESTINATARI</span>
-                </div>
-                <span className="text-[10px] text-[#7a4a4a]/55" style={{ fontFamily: 'var(--font-nunito)' }}>
-                  {selectedEmails.size} selezionati su {customers.length}
-                </span>
-              </div>
-
-              {/* Quick-filter chips */}
-              <div className="flex flex-wrap items-center gap-2 mb-2">
-                <button
-                  onClick={() => { setFilterSlug(''); setSelectedEmails(new Set(customers.map(c => c.email))); }}
-                  className={`px-3 py-1 text-[9px] tracking-[0.2em] rounded-full border transition-colors ${
-                    allSelected ? 'bg-[#731515] text-white border-[#731515]' : 'border-[#eddada] text-[#7a4a4a] hover:border-[#731515]/40'
-                  }`}
-                >
-                  TUTTI
-                </button>
-                <button
-                  onClick={() => { setFilterSlug(''); setSelectedEmails(new Set()); }}
-                  className={`px-3 py-1 text-[9px] tracking-[0.2em] rounded-full border transition-colors ${
-                    noneSelected ? 'bg-[#731515] text-white border-[#731515]' : 'border-[#eddada] text-[#7a4a4a] hover:border-[#731515]/40'
-                  }`}
-                >
-                  NESSUNO
-                </button>
-                {/* Past-event dropdown */}
-                <div className="flex items-center gap-1.5">
-                  <select
-                    value={filterSlug}
-                    onChange={async e => {
-                      const slug = e.target.value;
-                      setFilterSlug(slug);
-                      if (slug) await applyEventFilter(slug);
-                    }}
-                    disabled={loadingFilter}
-                    className="text-[9px] border border-[#eddada] rounded-full px-3 py-1 text-[#7a4a4a] bg-white focus:outline-none focus:border-[#731515]/50 cursor-pointer max-w-[200px] disabled:opacity-50"
-                    style={{ fontFamily: 'var(--font-nunito)' }}
-                  >
-                    <option value="">↩ Partecipanti evento…</option>
-                    {pastEvents.map(e => (
-                      <option key={e.slug} value={e.slug}>{e.title} ({e.count} partecipanti)</option>
-                    ))}
-                  </select>
-                  {loadingFilter && <Loader2 size={11} className="animate-spin text-[#731515] shrink-0" />}
-                </div>
-              </div>
-
-              {/* Search */}
-              <div className="flex items-center gap-2 bg-[#fdf6f6] border border-[#eddada] rounded-lg px-3 py-1.5 mb-2">
-                <Search size={11} className="text-[#7a4a4a]/40 shrink-0" />
-                <input
-                  type="text"
-                  placeholder="Cerca cliente per nome, email o evento…"
-                  value={custSearch}
-                  onChange={e => setCustSearch(e.target.value)}
-                  className="flex-1 bg-transparent text-[12px] text-[#1a0505] placeholder:text-[#7a4a4a]/30 focus:outline-none"
-                  style={{ fontFamily: 'var(--font-nunito)' }}
-                />
-                {custSearch && (
-                  <button onClick={() => setCustSearch('')} className="text-[#7a4a4a]/40 hover:text-[#731515] transition-colors">
-                    <X size={10} />
-                  </button>
-                )}
-              </div>
-
-              {/* Event suggestions */}
-              {eventSuggestions.length > 0 && (
-                <div className="mb-2 space-y-1">
-                  {eventSuggestions.map(ev => (
-                    <button
-                      key={ev.slug}
-                      disabled={loadingFilter}
-                      onClick={async () => {
-                        setCustSearch('');
-                        setFilterSlug(ev.slug);
-                        await applyEventFilter(ev.slug);
-                      }}
-                      className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-[#731515]/20 bg-[#731515]/5 hover:bg-[#731515]/10 transition-colors text-left disabled:opacity-50"
-                    >
-                      <span className="text-[9px] tracking-[0.25em] text-[#731515] shrink-0">EVENTO</span>
-                      <span className="flex-1 text-[11px] text-[#1a0505] truncate" style={{ fontFamily: 'var(--font-nunito)' }}>
-                        {ev.title}
-                      </span>
-                      <span className="text-[10px] text-[#7a4a4a]/55 shrink-0" style={{ fontFamily: 'var(--font-nunito)' }}>
-                        {ev.count} partecipanti →
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {/* Customer checklist */}
-              {loadingCust ? (
-                <div className="flex justify-center py-4 border border-[#eddada] rounded-lg">
-                  <Loader2 size={16} className="animate-spin text-[#731515]" />
-                </div>
-              ) : (
-                <div className="border border-[#eddada] rounded-lg overflow-hidden">
-                  {/* Select-all row */}
-                  <label className="flex items-center gap-2.5 px-3 py-2 bg-[#fdf6f6] border-b border-[#eddada] cursor-pointer hover:bg-[#fdf0f0] transition-colors select-none">
-                    <input
-                      type="checkbox"
-                      checked={allSelected}
-                      onChange={() => setSelectedEmails(allSelected ? new Set() : new Set(customers.map(c => c.email)))}
-                      className="w-3.5 h-3.5 cursor-pointer accent-[#731515] shrink-0"
-                    />
-                    <span className="text-[10px] font-semibold text-[#731515] tracking-[0.2em]">
-                      {allSelected ? 'DESELEZIONA TUTTI' : 'SELEZIONA TUTTI'}
-                    </span>
-                  </label>
-                  {/* Scrollable rows */}
-                  <div className="max-h-48 overflow-y-auto divide-y divide-[#f5eded]">
-                    {displayList.length === 0 ? (
-                      <p className="px-3 py-3 text-[11px] text-[#7a4a4a]/40 text-center" style={{ fontFamily: 'var(--font-nunito)' }}>
-                        Nessun risultato
-                      </p>
-                    ) : displayList.map(c => (
-                      <label
-                        key={c.email}
-                        className={`flex items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors select-none ${
-                          selectedEmails.has(c.email) ? 'bg-[#fdf8f8]' : 'hover:bg-[#fdf9f9]'
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedEmails.has(c.email)}
-                          onChange={() => toggleOne(c.email)}
-                          className="w-3.5 h-3.5 cursor-pointer accent-[#731515] shrink-0"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="text-[12px] text-[#1a0505] truncate font-medium" style={{ fontFamily: 'var(--font-nunito)' }}>{c.name}</div>
-                          <div className="text-[10px] text-[#7a4a4a]/45 truncate" style={{ fontFamily: 'var(--font-nunito)' }}>{c.email}</div>
-                        </div>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* ── LINGUA TEMPLATE ─────────────────────────────────── */}
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Languages size={12} className="text-[#731515]" />
-                <span className="text-[9px] tracking-[0.35em] text-[#731515]">LINGUA TEMPLATE</span>
-              </div>
-              <div className="flex gap-2">
-                {LANGS.map(l => (
-                  <button
-                    key={l}
-                    onClick={() => setLang(l)}
-                    className={`px-4 py-1.5 rounded-lg text-[10px] tracking-[0.25em] font-medium transition-colors ${
-                      lang === l
-                        ? 'bg-[#731515] text-white'
-                        : 'border border-[#eddada] bg-white text-[#7a4a4a] hover:border-[#731515]/40'
-                    }`}
-                  >
-                    {l}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Subject */}
-            <div>
-              <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">OGGETTO</label>
-              <input
-                className={inputCls}
-                value={subject}
-                onChange={e => setSubject(e.target.value)}
-                style={{ fontFamily: 'var(--font-nunito)' }}
-              />
-            </div>
-
-            {/* Body */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-[9px] tracking-[0.35em] text-[#731515]">MESSAGGIO</label>
-                <span className="text-[9px] text-[#7a4a4a]/40">[Nome] / [Name] / [Prénom] verranno personalizzati</span>
-              </div>
-              <textarea
-                className={`${inputCls} resize-none`}
-                rows={9}
-                value={body}
-                onChange={e => setBody(e.target.value)}
-                style={{ fontFamily: 'var(--font-nunito)' }}
-              />
-            </div>
-
-            {status === 'error' && (
-              <p className="text-xs text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>
-                Errore nell&apos;invio. Riprova.
-              </p>
-            )}
-
-            {/* Actions */}
-            <div className="flex gap-3 pt-1">
-              <button
-                onClick={handleSend}
-                disabled={status === 'sending' || !subject.trim() || !body.trim() || selectedEmails.size === 0}
-                className="flex items-center gap-2 px-6 py-2.5 bg-[#731515] text-white text-[10px] tracking-[0.3em] rounded-lg hover:bg-[#9b2323] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                <Send size={12} />
-                {status === 'sending' ? 'INVIO IN CORSO…' : `INVIA A ${selectedEmails.size} CLIENTI CRM`}
-              </button>
-              <button
-                onClick={onClose}
-                className="px-5 py-2.5 border border-[#eddada] bg-white text-[#7a4a4a] text-[10px] tracking-[0.3em] rounded-lg hover:border-[#731515]/40 transition-colors"
-              >
-                ANNULLA
-              </button>
-            </div>
-          </div>
-        )}
-      </motion.div>
-    </div>
   );
 }
 
@@ -1354,6 +870,7 @@ export default function EventManager() {
   const [inviteEvent,     setInviteEvent]     = useState<DbEvent | null>(null);
   const [guestListEventId, setGuestListEventId] = useState<string | null>(null);
   const [accessToken,     setAccessToken]     = useState<string | null>(null);
+  const [customCats,      setCustomCats]      = useState<CustomCategoryInfo[]>([]);
   const topRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -1361,6 +878,15 @@ export default function EventManager() {
       setAccessToken(session?.access_token ?? null);
     });
   }, []);
+
+  // Fetch custom CRM categories for the invite modal
+  useEffect(() => {
+    if (!accessToken) return;
+    fetch('/api/crm/categories', { headers: { Authorization: `Bearer ${accessToken}` } })
+      .then(r => r.json())
+      .then(j => setCustomCats(Array.isArray(j.categories) ? j.categories : []))
+      .catch(() => {});
+  }, [accessToken]);
 
   // Scroll the form into view whenever edit/create mode opens
   useEffect(() => {
@@ -1484,13 +1010,14 @@ export default function EventManager() {
         )}
       </AnimatePresence>
 
-      {/* Invite modal */}
+      {/* Invite modal — shared EventEmailModalAdvanced with event pre-filled */}
       <AnimatePresence>
         {inviteEvent && accessToken && (
-          <EventInviteModal
+          <EventEmailModalAdvanced
             key="invite"
-            event={inviteEvent}
             accessToken={accessToken}
+            customCategories={customCats}
+            prefillEvent={inviteEvent}
             onClose={() => setInviteEvent(null)}
           />
         )}

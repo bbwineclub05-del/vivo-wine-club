@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Users, Mail, CalendarPlus, X, Search, RefreshCw,
+  Users, Mail, X, Search, RefreshCw,
   ChevronDown, ChevronUp, Send, Check, AlertCircle,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
@@ -487,14 +487,6 @@ export default function MemberCRM() {
           >
             <Mail size={11} />
             {selected.size > 0 ? `INVIA A ${selected.size}` : 'INVIA A TUTTI'}
-          </button>
-          <button
-            onClick={() => { if (selected.size === 0) selectAll(); setModal('event'); }}
-            disabled={loading}
-            className="inline-flex items-center gap-1.5 text-[9px] tracking-[0.25em] border border-[#731515]/40 text-[#731515] bg-white hover:bg-[#fdf0f0] disabled:opacity-40 px-4 py-2.5 transition-colors"
-          >
-            <CalendarPlus size={11} />
-            NUOVO EVENTO
           </button>
         </div>
       </div>

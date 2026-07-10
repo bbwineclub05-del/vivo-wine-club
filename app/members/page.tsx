@@ -9,7 +9,7 @@ import {
   Mail, LogOut, KeyRound, ScanLine, Menu, X,
   Wine, Shield, ArrowUpRight, CreditCard, User, CalendarDays, Images,
   Database, ChevronDown, UsersRound, Lock, ShoppingBag, Tag, FolderOpen, Layers,
-  Camera, Loader2, Wallet, Receipt, BookOpen,
+  Camera, Loader2, Wallet, Receipt, BookOpen, Sparkles,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -32,12 +32,13 @@ import BilancioManager from '@/components/BilancioManager';
 import QuoteGenerator from '@/components/QuoteGenerator';
 import PedManager from '@/components/PedManager';
 import WineAssistant from '@/components/WineAssistant';
+import UpsellManager from '@/components/UpsellManager';
 import { isSuperAdmin, isFinanceUser } from '@/lib/admins';
 
 /* ─────────────────────────────────────────────
    Types
 ───────────────────────────────────────────── */
-type Section = 'overview' | 'settings' | 'card' | 'wine-assistant' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm' | 'media' | 'team' | 'merch' | 'discounts' | 'documents' | 'finance' | 'bilancio' | 'quotes' | 'ped';
+type Section = 'overview' | 'settings' | 'card' | 'wine-assistant' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm' | 'media' | 'team' | 'merch' | 'discounts' | 'documents' | 'finance' | 'bilancio' | 'quotes' | 'ped' | 'upsell';
 
 // Maps section IDs to the permission key in team_members.permissions
 const SECTION_PERM: Partial<Record<Section, string>> = {
@@ -50,6 +51,7 @@ const SECTION_PERM: Partial<Record<Section, string>> = {
   pipeline:  'pipeline',
   merch:     'merch',
   discounts: 'merch',
+  upsell:    'merch',
   documents: 'documents',
 };
 
@@ -73,6 +75,7 @@ const GESTIONE_ITEMS: NavItem[] = [
   { id: 'merch',     label: 'Merch',   icon: ShoppingBag  },
   { id: 'media',     label: 'Media',   icon: Images       },
   { id: 'discounts', label: 'Sconti',  icon: Tag          },
+  { id: 'upsell',    label: 'Upsell',  icon: Sparkles     },
 ];
 
 // Visible to both admin and staff
@@ -1204,6 +1207,10 @@ function MembersPageInner() {
                     <SectionHeader title="Piano Editoriale" subtitle="Pianificazione e tracciamento dei contenuti social e digitali." />
                     <PedManager />
                   </>
+                )}
+
+                {(admin || isStaff) && activeSection === 'upsell' && (
+                  canAccess('upsell') ? <UpsellManager /> : <UnauthorisedSection title="Upsell" />
                 )}
 
               </motion.div>

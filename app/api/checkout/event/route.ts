@@ -36,6 +36,7 @@ interface Body {
   phone:       string;
   refCode?:    string;
   partnerCode?: string;
+  upsellItems?: { configId: string; title: string; price: number }[];
 }
 
 // ── Email helpers ─────────────────────────────────────────────────────────────
@@ -310,7 +311,7 @@ export async function sendEventConfirmationEmails(params: {
 export async function POST(request: Request) {
   try {
   const body: Body = await request.json();
-  const { slug, qty, firstName, lastName, email, phone, refCode, partnerCode } = body;
+  const { slug, qty, firstName, lastName, email, phone, refCode, partnerCode, upsellItems: rawUpsellItems } = body;
 
   if (!slug || !qty || !firstName || !lastName || !email || !phone) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -321,14 +322,17 @@ export async function POST(request: Request) {
   if (event.status !== 'open') return NextResponse.json({ error: 'Event not available' },   { status: 400 });
   if (qty < 1 || qty > 10)     return NextResponse.json({ error: 'Invalid ticket count' },  { status: 400 });
 
-  const total   = event.price * qty;
-  const orderId = `VWC-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+  const total       = event.price * qty;
+  const upsellItems = rawUpsellItems ?? [];
+  const upsellTotal = upsellItems.reduce((sum, item) => sum + (item.price ?? 0), 0);
+  const grandTotal  = total + upsellTotal;
+  const orderId     = `VWC-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
-  // Free event — skip Stripe, save ticket + send PDF confirmation immediately.
+  // Free event (and no upsell) — skip Stripe, save ticket + send PDF confirmation immediately.
   // sendEventConfirmationEmails upserts the ticket first, then sends the email.
   // Even if the email step fails internally, the ticket is in the DB and the
   // user is redirected to the success page. The error is logged server-side.
-  if (total === 0) {
+  if (grandTotal === 0) {
     await sendEventConfirmationEmails({ orderId, event, firstName, lastName, email, phone, qty, total, partnerCode });
 
     // Referral attribution for free events (non-blocking)
@@ -348,10 +352,11 @@ export async function POST(request: Request) {
   }
 
   // Stripe session; confirmation emails sent in /api/checkout/confirm
-  const session = await stripe.checkout.sessions.create({
-    mode:           'payment',
-    customer_email: email,
-    line_items: [{
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const lineItems: any[] = [];
+
+  if (event.price > 0) {
+    lineItems.push({
       quantity: qty,
       price_data: {
         currency:     'eur',
@@ -361,7 +366,26 @@ export async function POST(request: Request) {
           description: `${event.month} ${event.day}, ${event.year} · ${event.locationFull}`,
         },
       },
-    }],
+    });
+  }
+
+  for (const item of upsellItems) {
+    if (item.price > 0) {
+      lineItems.push({
+        quantity: 1,
+        price_data: {
+          currency:     'eur',
+          unit_amount:  Math.round(item.price * 100),
+          product_data: { name: item.title, description: 'Aggiunto come upsell' },
+        },
+      });
+    }
+  }
+
+  const session = await stripe.checkout.sessions.create({
+    mode:           'payment',
+    customer_email: email,
+    line_items:     lineItems,
     success_url: `https://vivowineclub.com/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url:  `https://vivowineclub.com/checkout/${slug}`,
     billing_address_collection: 'required',
@@ -376,6 +400,7 @@ export async function POST(request: Request) {
       ticket_count:     String(qty),
       ref_code:         refCode     ?? '',
       partner_code:     partnerCode ?? '',
+      upsell_items:     upsellItems.length > 0 ? JSON.stringify(upsellItems).slice(0, 500) : '',
     },
     locale: 'auto',
   });
