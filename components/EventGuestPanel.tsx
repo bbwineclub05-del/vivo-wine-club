@@ -266,46 +266,51 @@ export default function EventGuestPanel({ event, accessToken, onGuestEnabled }: 
 
   /* ── Active ── */
   return (
-    <div className="flex flex-col h-full">
+    <div>
 
-      {/* Delete confirmation banner */}
-      <AnimatePresence>
-        {delConfirm && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.18 }}
-            className="overflow-hidden shrink-0"
-          >
-            <div className="flex items-center gap-3 px-6 py-3 bg-red-50 border-b border-red-200 flex-wrap">
-              <p className="flex-1 text-sm text-red-700" style={{ fontFamily: 'var(--font-nunito)' }}>
-                Eliminare la lista? Tutti gli iscritti verranno rimossi e il form sparirà dal sito.
-              </p>
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  onClick={deleteGuestList}
-                  disabled={deleting}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white text-[10px] tracking-[0.25em] rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
-                >
-                  {deleting ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />}
-                  {deleting ? 'ELIMINAZIONE…' : 'ELIMINA'}
-                </button>
-                <button
-                  onClick={() => setDelConfirm(false)}
-                  disabled={deleting}
-                  className="px-3 py-1.5 border border-red-200 text-red-600 text-[10px] tracking-[0.25em] rounded-lg hover:bg-red-100 disabled:opacity-50 transition-colors"
-                >
-                  ANNULLA
-                </button>
+      {/* Sticky top section: delete banner (if open) + counters + search.
+          Uses CSS sticky so it works inside the shared outer scroll container
+          in GuestListDrawer — no inner overflow-y-auto needed here. */}
+      <div className="sticky top-0 z-10 bg-white">
+
+        {/* Delete confirmation banner */}
+        <AnimatePresence>
+          {delConfirm && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              className="overflow-hidden"
+            >
+              <div className="flex items-center gap-3 px-4 sm:px-6 py-3 bg-red-50 border-b border-red-200 flex-wrap">
+                <p className="flex-1 text-sm text-red-700" style={{ fontFamily: 'var(--font-nunito)' }}>
+                  Eliminare la lista? Tutti gli iscritti verranno rimossi e il form sparirà dal sito.
+                </p>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={deleteGuestList}
+                    disabled={deleting}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white text-[10px] tracking-[0.25em] rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
+                  >
+                    {deleting ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />}
+                    {deleting ? 'ELIMINAZIONE…' : 'ELIMINA'}
+                  </button>
+                  <button
+                    onClick={() => setDelConfirm(false)}
+                    disabled={deleting}
+                    className="px-3 py-1.5 border border-red-200 text-red-600 text-[10px] tracking-[0.25em] rounded-lg hover:bg-red-100 disabled:opacity-50 transition-colors"
+                  >
+                    ANNULLA
+                  </button>
+                </div>
               </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-      {/* Counters + search bar — sticky */}
-      <div className="shrink-0 px-4 sm:px-6 py-3 sm:py-4 border-b border-[#f0e4e4] bg-[#fdf9f9]">
+        {/* Counters + search bar */}
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-[#f0e4e4] bg-[#fdf9f9]">
         {/* Counters row */}
         <div className="flex items-center gap-4 mb-3">
           <div className="flex items-center gap-2">
@@ -380,13 +385,13 @@ export default function EventGuestPanel({ event, accessToken, onGuestEnabled }: 
             </button>
           )}
         </div>
+        {/* ── end counters+search ── */}
+        </div>
+      {/* ── end sticky top ── */}
       </div>
 
-      {/* Scrollable list */}
-      <div
-        className="flex-1 overflow-y-auto"
-        style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}
-      >
+      {/* List — no inner scroll; the outer GuestListDrawer scroll container handles it */}
+      <div>
         {loading ? (
           <div className="flex justify-center py-12">
             <div className="w-6 h-6 rounded-full border-2 border-[#731515] border-t-transparent animate-spin" />

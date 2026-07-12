@@ -524,6 +524,12 @@ function CollaboratorAssignPanel({ event, accessToken }: { event: DbEvent; acces
 /* ─────────────────────────────────────────────
    Guest List — schermo intero
 ───────────────────────────────────────────── */
+const DRAWER_TABS = [
+  { id: 'guests'        as const, icon: ClipboardList, label: 'INVITATI',      short: 'INVITATI' },
+  { id: 'collaborators' as const, icon: UserCheck,     label: 'COLLABORATORI', short: 'COLLAB.'  },
+  { id: 'partners'      as const, icon: Link2,         label: 'PARTNER',       short: 'PARTNER'  },
+];
+
 function GuestListDrawer({
   event,
   accessToken,
@@ -536,6 +542,9 @@ function GuestListDrawer({
   onGuestEnabled: () => void;
 }) {
   const [tab, setTab] = useState<'guests' | 'collaborators' | 'partners'>('guests');
+  // Single stable scroll container — never remounted across tab changes.
+  // This prevents iOS Safari from losing its touch-scroll tracking.
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   // Close on Escape
   useEffect(() => {
@@ -543,6 +552,14 @@ function GuestListDrawer({
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [onClose]);
+
+  // Change tab and reset scroll position without remounting the container
+  function changeTab(t: typeof tab) {
+    setTab(t);
+    requestAnimationFrame(() => {
+      if (scrollRef.current) scrollRef.current.scrollTop = 0;
+    });
+  }
 
   return (
     <motion.div
@@ -577,55 +594,39 @@ function GuestListDrawer({
         </button>
       </div>
 
-      {/* ── Tabs ── */}
-      <div className="flex border-b border-[#eddada] bg-white shrink-0 px-3 sm:px-6 overflow-x-auto">
-        <button
-          onClick={() => setTab('guests')}
-          className={`py-3 mr-4 sm:mr-6 shrink-0 text-[10px] tracking-[0.25em] sm:tracking-[0.35em] border-b-2 transition-colors ${
-            tab === 'guests'
-              ? 'border-[#731515] text-[#731515]'
-              : 'border-transparent text-[#7a4a4a]/40 hover:text-[#7a4a4a]'
-          }`}
-          style={{ fontFamily: 'var(--font-nunito)', touchAction: 'manipulation' }}
-        >
-          <span className="flex items-center gap-1.5">
-            <ClipboardList size={11} />
-            INVITATI
-          </span>
-        </button>
-        <button
-          onClick={() => setTab('collaborators')}
-          className={`py-3 mr-4 sm:mr-6 shrink-0 text-[10px] tracking-[0.25em] sm:tracking-[0.35em] border-b-2 transition-colors ${
-            tab === 'collaborators'
-              ? 'border-[#731515] text-[#731515]'
-              : 'border-transparent text-[#7a4a4a]/40 hover:text-[#7a4a4a]'
-          }`}
-          style={{ fontFamily: 'var(--font-nunito)', touchAction: 'manipulation' }}
-        >
-          <span className="flex items-center gap-1.5">
-            <UserCheck size={11} />
-            COLLABORATORI
-          </span>
-        </button>
-        <button
-          onClick={() => setTab('partners')}
-          className={`py-3 shrink-0 text-[10px] tracking-[0.25em] sm:tracking-[0.35em] border-b-2 transition-colors ${
-            tab === 'partners'
-              ? 'border-[#731515] text-[#731515]'
-              : 'border-transparent text-[#7a4a4a]/40 hover:text-[#7a4a4a]'
-          }`}
-          style={{ fontFamily: 'var(--font-nunito)', touchAction: 'manipulation' }}
-        >
-          <span className="flex items-center gap-1.5">
-            <Link2 size={11} />
-            PARTNER
-          </span>
-        </button>
+      {/* ── Tabs — 3-column grid so each tab is perfectly centred in its cell ── */}
+      <div className="grid grid-cols-3 border-b border-[#eddada] bg-white shrink-0">
+        {DRAWER_TABS.map(({ id, icon: Icon, label, short }) => (
+          <button
+            key={id}
+            onClick={() => changeTab(id)}
+            className={`flex items-center justify-center gap-1.5 py-3.5 text-[9px] sm:text-[10px] tracking-[0.2em] sm:tracking-[0.3em] border-b-2 transition-colors ${
+              tab === id
+                ? 'border-[#731515] text-[#731515]'
+                : 'border-transparent text-[#7a4a4a]/40 hover:text-[#7a4a4a]'
+            }`}
+            style={{ fontFamily: 'var(--font-nunito)', touchAction: 'manipulation' }}
+          >
+            <Icon size={11} className="shrink-0" />
+            <span className="sm:hidden">{short}</span>
+            <span className="hidden sm:inline">{label}</span>
+          </button>
+        ))}
       </div>
 
-      {/* ── Content — fills all remaining space ── */}
-      <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-        {tab === 'guests' ? (
+      {/* ── Single stable scroll container — ALL tab content lives here ──
+           Never remounted: prevents iOS from losing touch-scroll tracking.
+           EventGuestPanel uses sticky positioning for its search header. ── */}
+      <div
+        ref={scrollRef}
+        className="flex-1 min-h-0"
+        style={{
+          overflowY:                'auto',
+          WebkitOverflowScrolling:  'touch',
+          overscrollBehavior:       'contain',
+        }}
+      >
+        {tab === 'guests' && (
           <EventGuestPanel
             event={{
               id:                 event.id,
@@ -636,17 +637,15 @@ function GuestListDrawer({
             accessToken={accessToken}
             onGuestEnabled={onGuestEnabled}
           />
-        ) : tab === 'collaborators' ? (
-          <div className="flex-1 overflow-y-auto">
-            <CollaboratorAssignPanel event={event} accessToken={accessToken} />
-          </div>
-        ) : (
-          <div className="flex-1 overflow-y-auto">
-            <EventPartnerPanel
-              event={{ id: event.id, slug: event.slug, title: event.title }}
-              accessToken={accessToken}
-            />
-          </div>
+        )}
+        {tab === 'collaborators' && (
+          <CollaboratorAssignPanel event={event} accessToken={accessToken} />
+        )}
+        {tab === 'partners' && (
+          <EventPartnerPanel
+            event={{ id: event.id, slug: event.slug, title: event.title }}
+            accessToken={accessToken}
+          />
         )}
       </div>
     </motion.div>
