@@ -305,7 +305,7 @@ export default function EventGuestPanel({ event, accessToken, onGuestEnabled }: 
       </AnimatePresence>
 
       {/* Counters + search bar — sticky */}
-      <div className="shrink-0 px-6 py-4 border-b border-[#f0e4e4] bg-[#fdf9f9]">
+      <div className="shrink-0 px-4 sm:px-6 py-3 sm:py-4 border-b border-[#f0e4e4] bg-[#fdf9f9]">
         {/* Counters row */}
         <div className="flex items-center gap-4 mb-3">
           <div className="flex items-center gap-2">
@@ -371,7 +371,7 @@ export default function EventGuestPanel({ event, accessToken, onGuestEnabled }: 
             onChange={e => setSearch(e.target.value)}
             placeholder="Cerca per nome, cognome o email…"
             className="flex-1 bg-transparent text-sm text-[#1a0505] placeholder:text-[#7a4a4a]/30 focus:outline-none"
-            style={{ fontFamily: 'var(--font-nunito)', fontSize: '15px' }}
+            style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
             autoComplete="off"
           />
           {search && (
@@ -383,7 +383,10 @@ export default function EventGuestPanel({ event, accessToken, onGuestEnabled }: 
       </div>
 
       {/* Scrollable list */}
-      <div className="flex-1 overflow-y-auto">
+      <div
+        className="flex-1 overflow-y-auto"
+        style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}
+      >
         {loading ? (
           <div className="flex justify-center py-12">
             <div className="w-6 h-6 rounded-full border-2 border-[#731515] border-t-transparent animate-spin" />
@@ -406,7 +409,7 @@ export default function EventGuestPanel({ event, accessToken, onGuestEnabled }: 
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.15, delay: i < 10 ? i * 0.018 : 0 }}
-                  className={`flex items-center gap-4 px-6 py-3.5 border-b border-[#f5eded] last:border-0 transition-colors duration-200 ${
+                  className={`flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-3.5 border-b border-[#f5eded] last:border-0 transition-colors duration-200 ${
                     guest.checked_in ? 'bg-emerald-50/60' : 'hover:bg-[#fdf9f9]'
                   }`}
                 >

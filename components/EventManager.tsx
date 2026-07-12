@@ -553,11 +553,11 @@ function GuestListDrawer({
       transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
     >
       {/* ── Header ── */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-[#eddada] bg-white shrink-0">
+      <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-[#eddada] bg-white shrink-0">
         <div className="min-w-0">
           <div className="text-[9px] tracking-[0.45em] text-[#731515] mb-0.5">LISTA INVITATI</div>
           <h2
-            className="text-xl font-light text-[#1a0505] truncate"
+            className="text-lg sm:text-xl font-light text-[#1a0505] truncate"
             style={{ fontFamily: 'var(--font-syne)' }}
             title={event.title}
           >
@@ -569,23 +569,24 @@ function GuestListDrawer({
         </div>
         <button
           onClick={onClose}
-          className="shrink-0 ml-4 w-10 h-10 flex items-center justify-center rounded-xl text-[#7a4a4a]/50 hover:text-[#731515] hover:bg-[#fdf6f6] transition-colors"
+          className="shrink-0 ml-3 w-11 h-11 flex items-center justify-center rounded-xl text-[#7a4a4a]/50 hover:text-[#731515] hover:bg-[#fdf6f6] transition-colors"
           title="Chiudi (Esc)"
+          style={{ touchAction: 'manipulation' }}
         >
           <X size={20} />
         </button>
       </div>
 
       {/* ── Tabs ── */}
-      <div className="flex border-b border-[#eddada] bg-white shrink-0 px-6">
+      <div className="flex border-b border-[#eddada] bg-white shrink-0 px-3 sm:px-6 overflow-x-auto">
         <button
           onClick={() => setTab('guests')}
-          className={`py-2.5 mr-6 text-[10px] tracking-[0.35em] border-b-2 transition-colors ${
+          className={`py-3 mr-4 sm:mr-6 shrink-0 text-[10px] tracking-[0.25em] sm:tracking-[0.35em] border-b-2 transition-colors ${
             tab === 'guests'
               ? 'border-[#731515] text-[#731515]'
               : 'border-transparent text-[#7a4a4a]/40 hover:text-[#7a4a4a]'
           }`}
-          style={{ fontFamily: 'var(--font-nunito)' }}
+          style={{ fontFamily: 'var(--font-nunito)', touchAction: 'manipulation' }}
         >
           <span className="flex items-center gap-1.5">
             <ClipboardList size={11} />
@@ -594,12 +595,12 @@ function GuestListDrawer({
         </button>
         <button
           onClick={() => setTab('collaborators')}
-          className={`py-2.5 mr-6 text-[10px] tracking-[0.35em] border-b-2 transition-colors ${
+          className={`py-3 mr-4 sm:mr-6 shrink-0 text-[10px] tracking-[0.25em] sm:tracking-[0.35em] border-b-2 transition-colors ${
             tab === 'collaborators'
               ? 'border-[#731515] text-[#731515]'
               : 'border-transparent text-[#7a4a4a]/40 hover:text-[#7a4a4a]'
           }`}
-          style={{ fontFamily: 'var(--font-nunito)' }}
+          style={{ fontFamily: 'var(--font-nunito)', touchAction: 'manipulation' }}
         >
           <span className="flex items-center gap-1.5">
             <UserCheck size={11} />
@@ -608,12 +609,12 @@ function GuestListDrawer({
         </button>
         <button
           onClick={() => setTab('partners')}
-          className={`py-2.5 text-[10px] tracking-[0.35em] border-b-2 transition-colors ${
+          className={`py-3 shrink-0 text-[10px] tracking-[0.25em] sm:tracking-[0.35em] border-b-2 transition-colors ${
             tab === 'partners'
               ? 'border-[#731515] text-[#731515]'
               : 'border-transparent text-[#7a4a4a]/40 hover:text-[#7a4a4a]'
           }`}
-          style={{ fontFamily: 'var(--font-nunito)' }}
+          style={{ fontFamily: 'var(--font-nunito)', touchAction: 'manipulation' }}
         >
           <span className="flex items-center gap-1.5">
             <Link2 size={11} />

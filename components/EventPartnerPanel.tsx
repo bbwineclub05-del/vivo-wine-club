@@ -128,39 +128,42 @@ export default function EventPartnerPanel({
   };
 
   return (
-    <div className="p-6 flex flex-col gap-6">
+    <div className="p-4 sm:p-6 flex flex-col gap-4 sm:gap-6">
 
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="min-w-0">
           <div className="text-[9px] tracking-[0.45em] text-[#731515] mb-0.5">TRACKING PARTNER</div>
-          <p className="text-sm text-[#7a4a4a]/60" style={{ fontFamily: 'var(--font-nunito)' }}>
+          <p className="text-sm text-[#7a4a4a]/60 hidden sm:block" style={{ fontFamily: 'var(--font-nunito)' }}>
             Link dedicati per ogni organizzazione — tieni traccia delle iscrizioni per calcolare le provvigioni.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={load}
             title="Aggiorna"
-            className="w-8 h-8 flex items-center justify-center rounded-lg border border-[#eddada] text-[#7a4a4a]/60 hover:text-[#731515] hover:bg-[#fdf6f6] transition-colors"
+            className="w-9 h-9 flex items-center justify-center rounded-lg border border-[#eddada] text-[#7a4a4a]/60 hover:text-[#731515] hover:bg-[#fdf6f6] transition-colors"
+            style={{ touchAction: 'manipulation' }}
           >
             <RefreshCw size={13} />
           </button>
           <button
             onClick={() => { setShowAdd(v => !v); setAddError(''); setNewName(''); }}
-            className="flex items-center gap-1.5 px-4 py-2 bg-[#731515] text-white text-[10px] tracking-[0.2em] rounded-lg hover:bg-[#9b2323] transition-colors"
-            style={{ fontFamily: 'var(--font-nunito)' }}
+            className="flex items-center gap-1.5 px-3 sm:px-4 py-2.5 bg-[#731515] text-white text-[10px] tracking-[0.2em] rounded-lg hover:bg-[#9b2323] transition-colors"
+            style={{ fontFamily: 'var(--font-nunito)', touchAction: 'manipulation' }}
           >
-            <Plus size={13} /> AGGIUNGI PARTNER
+            <Plus size={13} />
+            <span className="hidden sm:inline">AGGIUNGI PARTNER</span>
+            <span className="sm:hidden">AGGIUNGI</span>
           </button>
         </div>
       </div>
 
       {/* Add partner form */}
       {showAdd && (
-        <div className="bg-[#fdf6f6] border border-[#eddada] rounded-xl p-5 flex flex-col gap-3">
+        <div className="bg-[#fdf6f6] border border-[#eddada] rounded-xl p-4 sm:p-5 flex flex-col gap-3">
           <div className="text-[9px] tracking-[0.4em] text-[#731515] mb-1">NUOVO PARTNER</div>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <input
               value={newName}
               onChange={e => setNewName(e.target.value)}
@@ -168,22 +171,24 @@ export default function EventPartnerPanel({
               placeholder="Nome organizzazione (es. Associazione A)"
               autoFocus
               className="flex-1 border border-[#eddada] bg-white text-sm text-[#1a0505] px-4 py-2.5 rounded-lg placeholder-[#c0a0a0] focus:outline-none focus:border-[#731515] transition-colors"
-              style={{ fontFamily: 'var(--font-nunito)' }}
+              style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
             />
-            <button
-              onClick={handleAdd}
-              disabled={adding}
-              className="px-5 py-2.5 bg-[#731515] text-white text-[11px] tracking-[0.2em] rounded-lg hover:bg-[#9b2323] disabled:opacity-50 transition-colors"
-              style={{ fontFamily: 'var(--font-nunito)' }}
-            >
-              {adding ? 'CREAZIONE…' : 'CREA'}
-            </button>
-            <button
-              onClick={() => setShowAdd(false)}
-              className="w-10 flex items-center justify-center border border-[#eddada] rounded-lg text-[#7a4a4a]/50 hover:text-[#731515] transition-colors"
-            >
-              ×
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={handleAdd}
+                disabled={adding}
+                className="flex-1 sm:flex-none px-5 py-2.5 bg-[#731515] text-white text-[11px] tracking-[0.2em] rounded-lg hover:bg-[#9b2323] disabled:opacity-50 transition-colors"
+                style={{ fontFamily: 'var(--font-nunito)' }}
+              >
+                {adding ? 'CREAZIONE…' : 'CREA'}
+              </button>
+              <button
+                onClick={() => setShowAdd(false)}
+                className="w-11 h-11 flex items-center justify-center border border-[#eddada] rounded-lg text-[#7a4a4a]/50 hover:text-[#731515] transition-colors text-lg"
+              >
+                ×
+              </button>
+            </div>
           </div>
           {addError && (
             <p className="text-[11px] text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>{addError}</p>
@@ -207,33 +212,89 @@ export default function EventPartnerPanel({
         </div>
       ) : (
         <div className="flex flex-col gap-4">
-          {/* Stats summary */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <div className="bg-white border border-[#eddada] rounded-xl p-4 text-center">
-              <div className="text-2xl font-light text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>
-                {partners.length}
+          {/* Stats summary — 2×2 on mobile, 4 cols on desktop */}
+          {(() => {
+            const totalFromPartners = partners.reduce((s, p) => s + p.total_registered, 0);
+            const diretti = eventTotal - totalFromPartners;
+            return (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="bg-white border border-[#eddada] rounded-xl p-3 sm:p-4 text-center">
+                  <div className="text-2xl font-light text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>
+                    {partners.length}
+                  </div>
+                  <div className="text-[8px] sm:text-[9px] tracking-[0.3em] sm:tracking-[0.35em] text-[#7a4a4a]/60 mt-1">PARTNER</div>
+                </div>
+                <div className="bg-white border border-[#eddada] rounded-xl p-3 sm:p-4 text-center">
+                  <div className="text-2xl font-light text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>
+                    {totalFromPartners}
+                  </div>
+                  <div className="text-[8px] sm:text-[9px] tracking-[0.3em] sm:tracking-[0.35em] text-[#7a4a4a]/60 mt-1">DA PARTNER</div>
+                </div>
+                <div className="bg-white border border-[#eddada] rounded-xl p-3 sm:p-4 text-center">
+                  <div className="text-2xl font-light text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>
+                    {eventTotal > 0 ? `${Math.round((totalFromPartners / eventTotal) * 100)}%` : '—'}
+                  </div>
+                  <div className="text-[8px] sm:text-[9px] tracking-[0.3em] sm:tracking-[0.35em] text-[#7a4a4a]/60 mt-1">% TOTALE</div>
+                </div>
+                <div className="bg-white border border-[#eddada] rounded-xl p-3 sm:p-4 text-center">
+                  <div className="text-2xl font-light text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>
+                    {diretti >= 0 ? diretti : '—'}
+                  </div>
+                  <div className="text-[8px] sm:text-[9px] tracking-[0.3em] sm:tracking-[0.35em] text-[#7a4a4a]/60 mt-1">DIRETTI</div>
+                </div>
               </div>
-              <div className="text-[9px] tracking-[0.35em] text-[#7a4a4a]/60 mt-1">PARTNER</div>
-            </div>
-            <div className="bg-white border border-[#eddada] rounded-xl p-4 text-center">
-              <div className="text-2xl font-light text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>
-                {partners.reduce((s, p) => s + p.total_registered, 0)}
-              </div>
-              <div className="text-[9px] tracking-[0.35em] text-[#7a4a4a]/60 mt-1">ISCRITTI DA PARTNER</div>
-            </div>
-            <div className="bg-white border border-[#eddada] rounded-xl p-4 text-center col-span-2 sm:col-span-1">
-              <div className="text-2xl font-light text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>
-                {eventTotal > 0
-                  ? `${Math.round((partners.reduce((s, p) => s + p.total_registered, 0) / eventTotal) * 100)}%`
-                  : '—'}
-              </div>
-              <div className="text-[9px] tracking-[0.35em] text-[#7a4a4a]/60 mt-1">% SUL TOTALE EVENTO</div>
-            </div>
-          </div>
+            );
+          })()}
 
-          {/* Per-partner table */}
+          {/* Per-partner — card layout on mobile, table on desktop */}
           <div className="bg-white border border-[#eddada] rounded-xl overflow-hidden">
-            <table className="w-full text-sm border-collapse">
+
+            {/* ── Mobile card layout ── */}
+            <div className="sm:hidden divide-y divide-[#f5eded]">
+              {partners.map(p => {
+                const pct  = eventTotal > 0 ? Math.round((p.total_registered / eventTotal) * 100) : 0;
+                const link = partnerLink(event.slug, p.code);
+                return (
+                  <div key={p.id} className="p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="min-w-0">
+                        <div className="font-medium text-[14px] text-[#1a0505] truncate" style={{ fontFamily: 'var(--font-syne)' }}>
+                          {p.name}
+                        </div>
+                        <div className="text-[10px] text-[#7a4a4a]/40 font-mono mt-0.5">{p.code}</div>
+                      </div>
+                      <button
+                        onClick={() => handleDelete(p.id)}
+                        disabled={deleting === p.id}
+                        title="Elimina partner"
+                        className="ml-3 w-9 h-9 shrink-0 flex items-center justify-center text-[#7a4a4a]/30 hover:text-red-600 transition-colors disabled:opacity-30"
+                        style={{ touchAction: 'manipulation' }}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                    <div className="flex gap-5 mb-3">
+                      <div className="text-center">
+                        <div className="text-xl font-light text-[#1a0505] leading-none" style={{ fontFamily: 'var(--font-syne)' }}>{p.total_registered}</div>
+                        <div className="text-[8px] tracking-[0.25em] text-[#7a4a4a]/50 mt-1">ISCRITTI</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-xl font-light text-[#1a0505] leading-none" style={{ fontFamily: 'var(--font-syne)' }}>{p.total_checkedin}</div>
+                        <div className="text-[8px] tracking-[0.25em] text-[#7a4a4a]/50 mt-1">PRESENTI</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-xl font-medium text-[#731515] leading-none" style={{ fontFamily: 'var(--font-syne)' }}>{pct}%</div>
+                        <div className="text-[8px] tracking-[0.25em] text-[#7a4a4a]/50 mt-1">% EVENTO</div>
+                      </div>
+                    </div>
+                    <CopyButton text={link} />
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* ── Desktop table layout ── */}
+            <table className="hidden sm:table w-full text-sm border-collapse">
               <thead className="bg-[#fdf6f6] border-b border-[#eddada]">
                 <tr>
                   <th className="px-4 py-3 text-left text-[9px] tracking-[0.35em] text-[#7a4a4a]/60">PARTNER</th>
