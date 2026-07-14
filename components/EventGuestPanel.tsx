@@ -218,6 +218,7 @@ export default function EventGuestPanel({ event, accessToken, onGuestEnabled }: 
 
   /* ── Export PDF ── */
   async function exportPdf() {
+    console.log('[PDF] button clicked — guests:', guests.length, 'exporting:', exporting);
     if (exporting || guests.length === 0) return;
     setExporting(true);
     try {
@@ -225,13 +226,17 @@ export default function EventGuestPanel({ event, accessToken, onGuestEnabled }: 
         a.last_name.localeCompare(b.last_name, 'it') ||
         a.first_name.localeCompare(b.first_name, 'it'),
       );
+      console.log('[PDF] generating for', sorted.length, 'guests');
       const bytes = await generateGuestListPdf({
         eventTitle: event.title,
         eventSlug:  event.slug,
         guests:     sorted,
       });
+      console.log('[PDF] generated, bytes:', bytes.length);
       const safeName = event.title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
       downloadPdf(bytes, `lista_invitati_${safeName}.pdf`);
+    } catch (err) {
+      console.error('[PDF] generation failed:', err);
     } finally {
       setExporting(false);
     }

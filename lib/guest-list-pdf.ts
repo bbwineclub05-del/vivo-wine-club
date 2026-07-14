@@ -270,11 +270,16 @@ export async function generateGuestListPdf(input: GuestListPdfInput): Promise<Ui
 
 /** Trigger browser download of the generated PDF bytes */
 export function downloadPdf(bytes: Uint8Array, filename: string) {
-  const blob = new Blob([bytes.buffer as ArrayBuffer], { type: 'application/pdf' });
+  // Slice the exact buffer range to avoid subview offset issues (type-safe)
+  const buf  = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+  const blob = new Blob([buf], { type: 'application/pdf' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
   a.href     = url;
   a.download = filename;
+  // Must be in DOM for Safari to trigger download
+  document.body.appendChild(a);
   a.click();
+  document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
