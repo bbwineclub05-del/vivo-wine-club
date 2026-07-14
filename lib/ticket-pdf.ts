@@ -4,22 +4,40 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import type { EventData } from '@/lib/events';
 
-/** Word-wrap `text` into lines of at most `maxChars` characters. */
+/**
+ * Strip characters that pdf-lib StandardFonts (Helvetica/WinAnsiEncoding) cannot encode.
+ * WinAnsiEncoding supports codepoints 0–255 only (with Euro sign mapped from U+20AC → 0x80).
+ * Any character outside that range (emoji, CJK, arrows, etc.) is silently removed.
+ */
+function sanitizePdf(text: string): string {
+  return text
+    .replace(/€/g, 'EUR')       // Euro sign (U+20AC) → ASCII fallback
+    .replace(/[^\u0000-\u00FF]/g, ''); // drop anything outside Latin-1 range
+}
+
+/** Word-wrap `text` into lines of at most `maxChars` characters.
+ *  Splits on newlines first, then word-wraps each paragraph. */
 export function wrapText(text: string, maxChars: number): string[] {
-  const words = text.split(' ');
+  const paragraphs = text.split(/\r?\n/);
   const lines: string[] = [];
-  let current = '';
-  for (const word of words) {
-    const candidate = current ? `${current} ${word}` : word;
-    if (candidate.length <= maxChars) {
-      current = candidate;
-    } else {
-      if (current) lines.push(current);
-      // If a single word is longer than maxChars, hard-break it
-      current = word.length > maxChars ? word.slice(0, maxChars) : word;
+  for (const para of paragraphs) {
+    if (para.trim() === '') {
+      lines.push('');
+      continue;
     }
+    const words = para.split(' ');
+    let current = '';
+    for (const word of words) {
+      const candidate = current ? `${current} ${word}` : word;
+      if (candidate.length <= maxChars) {
+        current = candidate;
+      } else {
+        if (current) lines.push(current);
+        current = word.length > maxChars ? word.slice(0, maxChars) : word;
+      }
+    }
+    if (current) lines.push(current);
   }
-  if (current) lines.push(current);
   return lines;
 }
 
@@ -75,21 +93,28 @@ export async function generateTicketPdf(params: {
 
   // ── Event type + title ──
   let y = H - 122;
-  page.drawText(event.type.toUpperCase(), { x: 40, y, size: 7.5, font: bold, color: BORDEAUX });
+  page.drawText(sanitizePdf((event.type ?? 'EVENT').toUpperCase()), { x: 40, y, size: 7.5, font: bold, color: BORDEAUX });
 
   y -= 26;
-  const titleWords  = wrapText(event.title, 34); // ~34 chars at size 20 fits within margins
+  const titleWords  = wrapText(sanitizePdf(event.title ?? ''), 34);
   for (const line of titleWords) {
     page.drawText(line, { x: 40, y, size: 20, font: bold, color: DARK });
     y -= 26;
   }
 
-  // ── Description ──
-  y -= 6;
-  const descLines = wrapText(event.description, 72);
-  for (const line of descLines) {
-    page.drawText(line, { x: 40, y, size: 9, font: regular, color: GRAY });
-    y -= 14;
+  // ── Description (optional — skip block if empty) ──
+  // Sanitize non-WinAnsi characters (emoji, symbols) before drawing.
+  // Limit to first 3 lines to avoid pushing the ticket details below the page.
+  const descText = sanitizePdf(event.description ?? '').trim();
+  if (descText) {
+    y -= 6;
+    const descLines = wrapText(descText, 72).slice(0, 3);
+    for (const line of descLines) {
+      if (line.trim()) {
+        page.drawText(line, { x: 40, y, size: 9, font: regular, color: GRAY });
+        y -= 14;
+      }
+    }
   }
 
   // ── EVENT DETAILS section ──
@@ -101,12 +126,12 @@ export async function generateTicketPdf(params: {
 
   const dateStr  = `${event.month} ${event.day}, ${event.year}`;
   const dateTime = event.time ? `${dateStr}  ·  ${event.time}` : dateStr;
-  const priceStr = total === 0 ? 'Free' : `€${event.price.toFixed(2)} per ticket`;
+  const priceStr = total === 0 ? 'Free' : `EUR ${(event.price ?? 0).toFixed(2)} per ticket`;
 
   const eventRows: [string, string][] = [
     ['Date & Time', dateTime],
-    ['Location',    event.locationFull],
-    ['Type',        event.type],
+    ['Location',    sanitizePdf(event.locationFull ?? event.location ?? '')],
+    ['Type',        sanitizePdf(event.type ?? '')],
     ['Price',       priceStr],
   ];
 

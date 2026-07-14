@@ -37,7 +37,7 @@ export async function GET(request: Request) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: tickets, error } = await (getSupabaseAdmin() as any)
     .from('tickets')
-    .select('order_id, qr_code, name, email, checked_in, scanned_at, scanned_by')
+    .select('order_id, qr_code, name, email, phone, checked_in, scanned_at, scanned_by')
     .eq('event_id', eventId)
     .eq('payment_status', 'paid')      // only confirmed purchases
     .order('checked_in', { ascending: true })

@@ -31,22 +31,7 @@
     "line2italic": "grand vin",
     "line2rest": ", partagé.",
     "subtitle": "Là où les jeunes découvrent le vin : visites de caves, dégustations guidées et soirées vins avec musique, bonne ambiance et belles bouteilles.",
-    "cta": "DEVENIR MEMBRE",
-    "joinList": "Rejoins la liste",
-    "labelWhen": "QUAND",
-    "labelWhere": "OÙ",
-    "labelType": "TYPE",
-    "labelAccess": "ACCÈS",
-    "slide1Slogan": "Déguste, Partage, Lac de Garde",
-    "slide1When": "12 Juillet · 18h",
-    "slide1Where": "Cantina Bottenago, Lac de Garde",
-    "slide1Type": "Wine & DJ Set",
-    "slide1Access": "Places limitées",
-    "slide2Slogan": "Soleil, Mer, Versilia",
-    "slide2When": "11 Juillet · 19h",
-    "slide2Where": "Petra Beach Club, Versilia",
-    "slide2Type": "Wine & DJ Set",
-    "slide2Access": "Places limitées"
+    "cta": "DEVENIR MEMBRE"
   },
   "stats": {
     "eventsHosted": "Événements organisés",

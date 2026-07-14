@@ -205,6 +205,7 @@ export async function sendEventConfirmationEmails(params: {
     event_id:       event.slug,
     email:          email,
     name:           `${firstName} ${lastName}`,
+    phone:          phone || null,
     checked_in:     false,
     payment_status: 'paid',
     partner_code:   partnerCode ?? null,
@@ -242,15 +243,17 @@ export async function sendEventConfirmationEmails(params: {
   // checkout) must still redirect to the success page.
   try {
     // 3. Generate one PDF per ticket
-    console.log(`${tag} generating ${qty} PDF(s)…`);
+    console.log(`${tag} generating ${qty} PDF(s) — event.description="${event.description}" event.type="${event.type}"`);
     const attachments = await Promise.all(
       ticketIds.map(async (tid, i) => {
+        console.log(`${tag} generating PDF ${i + 1}/${qty} for ticket ${tid}`);
         const pdfBytes = await generateTicketPdf({
           event, firstName, lastName, email, total,
           ticketId:     tid,
           ticketNum:    i + 1,
           totalTickets: qty,
         });
+        console.log(`${tag} PDF ${i + 1} generated — ${pdfBytes.length} bytes`);
         const filename = qty > 1
           ? `vivo-ticket-${event.slug}-${i + 1}.pdf`
           : `vivo-ticket-${event.slug}.pdf`;

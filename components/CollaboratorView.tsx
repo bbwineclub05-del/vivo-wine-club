@@ -2,10 +2,9 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Users, CheckCheck, Check, Loader2, LogOut, Wine, ChevronDown, Link2, X, FileDown } from 'lucide-react';
+import { Search, Users, CheckCheck, Check, Loader2, LogOut, Wine, ChevronDown, Link2, X, FileDown, Phone, Mail, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import { generateGuestListPdf, downloadPdf } from '@/lib/guest-list-pdf';
 
 interface Guest {
   id:          string;
@@ -148,17 +147,52 @@ export default function CollaboratorView({ token, onLogout, name }: Props) {
     if (!activeEvent || exporting || activeEvent.guests.length === 0) return;
     setExporting(true);
     try {
+      const { default: jsPDF }     = await import('jspdf');
+      const { default: autoTable } = await import('jspdf-autotable');
+
       const sorted = [...activeEvent.guests].sort((a, b) =>
-        a.last_name.localeCompare(b.last_name, 'it') ||
-        a.first_name.localeCompare(b.first_name, 'it'),
+        (a.last_name  || '').localeCompare(b.last_name  || '', 'it') ||
+        (a.first_name || '').localeCompare(b.first_name || '', 'it'),
       );
-      const bytes = await generateGuestListPdf({
-        eventTitle: activeEvent.title,
-        eventSlug:  activeEvent.slug,
-        guests:     sorted,
+
+      const doc       = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const checkedIn = sorted.filter(g => g.checked_in).length;
+      const now       = new Date().toLocaleString('it-IT');
+      const safeName  = activeEvent.title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+
+      doc.setFontSize(16);
+      doc.text(`Lista Invitati — ${activeEvent.title}`, 14, 20);
+      doc.setFontSize(9);
+      doc.text(`Generato: ${now}`, 14, 28);
+      doc.text(`Iscritti: ${sorted.length}   Presenti: ${checkedIn}   Assenti: ${sorted.length - checkedIn}`, 14, 34);
+
+      autoTable(doc, {
+        startY: 40,
+        head: [['#', 'Cognome', 'Nome', 'Email', 'Telefono', 'Iscrizione', 'Presente']],
+        body: sorted.map((g, i) => [
+          i + 1,
+          g.last_name  || '',
+          g.first_name || '',
+          g.email      || '',
+          g.phone      || '',
+          g.created_at ? new Date(g.created_at).toLocaleDateString('it-IT') : '',
+          g.checked_in ? 'SI' : '',
+        ]),
+        styles:       { fontSize: 7.5, cellPadding: 2 },
+        headStyles:   { fillColor: [115, 21, 21], textColor: 255, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [253, 249, 249] },
+        columnStyles: {
+          0: { halign: 'center', cellWidth: 8 },
+          5: { halign: 'center', cellWidth: 22 },
+          6: { halign: 'center', cellWidth: 18 },
+        },
       });
-      const safeName = activeEvent.title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-      downloadPdf(bytes, `lista_invitati_${safeName}.pdf`);
+
+      doc.save(`lista_invitati_${safeName}.pdf`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('[PDF collaborator] error:', err);
+      alert(`Errore PDF: ${msg}`);
     } finally {
       setExporting(false);
     }
@@ -441,8 +475,21 @@ export default function CollaboratorView({ token, onLogout, name }: Props) {
                                 }`} style={{ fontFamily: 'var(--font-syne)' }}>
                                   {guest.last_name} {guest.first_name}
                                 </div>
-                                <div className="text-[11px] text-[#7a4a4a]/50 truncate mt-0.5">
-                                  {guest.email}
+                                <div className="flex flex-wrap items-center gap-x-3 mt-0.5">
+                                  <span className="flex items-center gap-1 text-[11px] text-[#7a4a4a]/55 truncate" style={{ fontFamily: 'var(--font-nunito)' }}>
+                                    <Mail size={9} className="shrink-0" />{guest.email}
+                                  </span>
+                                  {guest.phone && (
+                                    <span className="flex items-center gap-1 text-[11px] text-[#7a4a4a]/55 shrink-0" style={{ fontFamily: 'var(--font-nunito)' }}>
+                                      <Phone size={9} className="shrink-0" />{guest.phone}
+                                    </span>
+                                  )}
+                                  {guest.created_at && (
+                                    <span className="flex items-center gap-1 text-[10px] text-[#7a4a4a]/30 shrink-0" style={{ fontFamily: 'var(--font-nunito)' }}>
+                                      <Clock size={8} className="shrink-0" />
+                                      {new Date(guest.created_at).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                  )}
                                 </div>
                               </div>
 

@@ -7,7 +7,6 @@ import {
   Check, Clock, Plus, X, Loader2, Trash2, Star, FileDown,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { generateGuestListPdf, downloadPdf } from '@/lib/guest-list-pdf';
 
 interface Guest {
   id:           string;
@@ -216,27 +215,58 @@ export default function EventGuestPanel({ event, accessToken, onGuestEnabled }: 
 
   const checkedIn = guests.filter(g => g.checked_in).length;
 
-  /* ── Export PDF ── */
+  /* ── Export PDF (jsPDF + jspdf-autotable, dynamic import) ── */
   async function exportPdf() {
-    console.log('[PDF] button clicked — guests:', guests.length, 'exporting:', exporting);
     if (exporting || guests.length === 0) return;
     setExporting(true);
     try {
+      const { default: jsPDF }    = await import('jspdf');
+      const { default: autoTable } = await import('jspdf-autotable');
+
       const sorted = [...guests].sort((a, b) =>
-        a.last_name.localeCompare(b.last_name, 'it') ||
-        a.first_name.localeCompare(b.first_name, 'it'),
+        (a.last_name  || '').localeCompare(b.last_name  || '', 'it') ||
+        (a.first_name || '').localeCompare(b.first_name || '', 'it'),
       );
-      console.log('[PDF] generating for', sorted.length, 'guests');
-      const bytes = await generateGuestListPdf({
-        eventTitle: event.title,
-        eventSlug:  event.slug,
-        guests:     sorted,
+
+      const doc       = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const checkedIn = sorted.filter(g => g.checked_in).length;
+      const now       = new Date().toLocaleString('it-IT');
+      const safeName  = event.title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+
+      doc.setFontSize(16);
+      doc.text(`Lista Invitati — ${event.title}`, 14, 20);
+
+      doc.setFontSize(9);
+      doc.text(`Generato: ${now}`, 14, 28);
+      doc.text(`Iscritti: ${sorted.length}   Presenti: ${checkedIn}   Assenti: ${sorted.length - checkedIn}`, 14, 34);
+
+      autoTable(doc, {
+        startY: 40,
+        head: [['#', 'Cognome', 'Nome', 'Email', 'Telefono', 'Iscrizione', 'Presente']],
+        body: sorted.map((g, i) => [
+          i + 1,
+          g.last_name  || '',
+          g.first_name || '',
+          g.email      || '',
+          g.phone      || '',
+          g.created_at ? new Date(g.created_at).toLocaleDateString('it-IT') : '',
+          g.checked_in ? 'SI' : '',
+        ]),
+        styles:       { fontSize: 7.5, cellPadding: 2 },
+        headStyles:   { fillColor: [115, 21, 21], textColor: 255, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [253, 249, 249] },
+        columnStyles: {
+          0: { halign: 'center', cellWidth: 8 },
+          5: { halign: 'center', cellWidth: 22 },
+          6: { halign: 'center', cellWidth: 18 },
+        },
       });
-      console.log('[PDF] generated, bytes:', bytes.length);
-      const safeName = event.title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-      downloadPdf(bytes, `lista_invitati_${safeName}.pdf`);
+
+      doc.save(`lista_invitati_${safeName}.pdf`);
     } catch (err) {
-      console.error('[PDF] generation failed:', err);
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('[PDF] error:', err);
+      alert(`Errore PDF: ${msg}`);
     } finally {
       setExporting(false);
     }

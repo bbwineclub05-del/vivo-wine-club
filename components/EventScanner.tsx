@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   X, ScanLine, CheckCircle2, Circle, Users, RefreshCw,
-  Camera, CameraOff, AlertTriangle, XCircle, ArrowRight,
+  Camera, CameraOff, AlertTriangle, XCircle, ArrowRight, Phone,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
@@ -16,6 +16,7 @@ interface Ticket {
   qr_code:    string | null;
   name:       string;
   email:      string;
+  phone:      string | null;
   checked_in: boolean | null;
   scanned_at: string | null;
   scanned_by: string | null;
@@ -477,11 +478,21 @@ export default function EventScanner({
                         >
                           {ticket.name}
                         </div>
-                        <div
-                          className={`text-[11px] truncate ${ticket.checked_in ? 'text-emerald-700/60' : 'text-[#7a4a4a]/50'}`}
-                          style={{ fontFamily: 'var(--font-nunito)' }}
-                        >
-                          {ticket.email}
+                        <div className="flex flex-wrap items-center gap-x-3 mt-0.5">
+                          <span
+                            className={`text-[11px] truncate ${ticket.checked_in ? 'text-emerald-700/60' : 'text-[#7a4a4a]/50'}`}
+                            style={{ fontFamily: 'var(--font-nunito)' }}
+                          >
+                            {ticket.email}
+                          </span>
+                          {ticket.phone && (
+                            <span
+                              className={`flex items-center gap-1 text-[11px] shrink-0 ${ticket.checked_in ? 'text-emerald-700/60' : 'text-[#7a4a4a]/50'}`}
+                              style={{ fontFamily: 'var(--font-nunito)' }}
+                            >
+                              <Phone size={9} className="shrink-0" />{ticket.phone}
+                            </span>
+                          )}
                         </div>
                       </div>
 

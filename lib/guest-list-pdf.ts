@@ -58,14 +58,15 @@ function nowLabel(): string {
   });
 }
 
-/** Truncate text to fit maxWidth at given font+size */
+/** Truncate text to fit maxWidth at given font+size.
+ *  Uses '...' (3 ASCII periods) — Helvetica/WinAnsiEncoding cannot encode U+2026. */
 function truncate(text: string, font: PDFFont, size: number, maxWidth: number): string {
   if (font.widthOfTextAtSize(text, size) <= maxWidth) return text;
   let t = text;
-  while (t.length > 0 && font.widthOfTextAtSize(t + '…', size) > maxWidth) {
+  while (t.length > 0 && font.widthOfTextAtSize(t + '...', size) > maxWidth) {
     t = t.slice(0, -1);
   }
-  return t + '…';
+  return t + '...';
 }
 
 /** Draw a filled rectangle + centered-Y text label (for table header cells) */
@@ -217,22 +218,25 @@ export async function generateGuestListPdf(input: GuestListPdfInput): Promise<Ui
       let text = '';
       let color: ReturnType<typeof rgb> | undefined;
 
+      // NOTE: Helvetica uses WinAnsiEncoding (chars 0-255 only).
+      // Do NOT use Unicode symbols like ✓ (U+2713), ⭐ (U+2B50), … (U+2026),
+      // — (U+2014) etc. — they throw "WinAnsiEncoding cannot encode" at runtime.
       switch (col.key) {
         case '#':        text = String(idx + 1); break;
-        case 'cognome':  text = g.last_name; break;
+        case 'cognome':  text = g.last_name  ?? ''; break;
         case 'nome': {
-          const rewardStar = g.referral_reward_unlocked ? ' ⭐' : '';
-          text = g.first_name + rewardStar;
+          const star = g.referral_reward_unlocked ? ' *' : '';  // * replaces U+2B50
+          text = (g.first_name ?? '') + star;
           break;
         }
-        case 'email':    text = g.email; break;
-        case 'telefono': text = g.phone ?? '—'; break;
+        case 'email':    text = g.email ?? ''; break;
+        case 'telefono': text = g.phone ?? '-'; break;          // - replaces U+2014
         case 'data':     text = fmtDate(g.created_at); break;
         case 'stato':
-          text  = g.checked_in ? '✓' : '—';
+          text  = g.checked_in ? 'SI' : '-';                   // SI replaces U+2713
           color = g.checked_in ? EMERALD : GRAY_LT;
           break;
-        case 'percorso': text = g.route ?? '—'; break;
+        case 'percorso': text = g.route ?? '-'; break;          // - replaces U+2014
       }
 
       return { x: colX[ci], w: col.w, text, align: col.align, color };
