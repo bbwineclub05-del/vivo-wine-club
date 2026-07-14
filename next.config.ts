@@ -68,11 +68,10 @@ const nextConfig: NextConfig = {
   compress: true,
 
   images: {
-    // Serve WebP (and AVIF where supported) automatically
-    formats: ['image/avif', 'image/webp'],
-    // Responsive breakpoints matching our layout
-    deviceSizes: [375, 640, 750, 828, 1080, 1200, 1920],
-    imageSizes: [16, 32, 64, 96, 128, 160, 256, 384],
+    // Disable Vercel's image optimization service to avoid quota exhaustion (402 errors).
+    // Images are served directly at their original size/format.
+    // Re-enable (set to false) if the Vercel plan is upgraded to Pro or higher.
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',
