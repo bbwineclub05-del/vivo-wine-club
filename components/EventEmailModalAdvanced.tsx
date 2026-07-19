@@ -209,7 +209,7 @@ export default function EventEmailModalAdvanced({
   const [form, setForm]     = useState<EmailForm>(() => prefillEvent ? buildPrefillForm(prefillEvent) : FORM_DEFAULT);
   const [showForm, setShowForm] = useState(!!prefillEvent);
   const [status, setStatus] = useState<'idle' | 'sending' | 'done' | 'error'>('idle');
-  const [result, setResult] = useState<{ sent: number; failed: number } | null>(null);
+  const [result, setResult] = useState<{ sent: number; failed: number; failedEmails?: { email: string; error: string }[] } | null>(null);
 
   const set = (k: keyof EmailForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm(p => ({ ...p, [k]: e.target.value }));
@@ -391,7 +391,7 @@ export default function EventEmailModalAdvanced({
       });
       const j = await res.json();
       if (!res.ok) throw new Error(j.error);
-      setResult({ sent: j.sent, failed: j.failed });
+      setResult({ sent: j.sent, failed: j.failed, failedEmails: j.failedEmails });
       setStatus('done');
     } catch {
       setStatus('error');
@@ -444,13 +444,22 @@ export default function EventEmailModalAdvanced({
         </div>
 
         {status === 'done' ? (
-          <div className="flex-1 flex flex-col items-center justify-center gap-4 p-10 text-center">
-            <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center">
+          <div className="flex-1 flex flex-col items-center justify-center gap-4 p-10 text-center overflow-y-auto">
+            <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center shrink-0">
               <Check size={22} className="text-green-600" />
             </div>
             <div>
               <p className="text-sm font-medium text-[#1a0505]">{result?.sent} email inviate</p>
-              {(result?.failed ?? 0) > 0 && <p className="text-xs text-[#731515] mt-1">{result?.failed} fallite</p>}
+              {(result?.failed ?? 0) > 0 && (
+                <p className="text-xs text-[#731515] mt-1">{result?.failed} fallite</p>
+              )}
+              {result?.failedEmails && result.failedEmails.length > 0 && (
+                <div className="mt-3 text-left bg-red-50 border border-red-200 rounded-lg px-3 py-2 max-h-32 overflow-y-auto">
+                  {result.failedEmails.map(f => (
+                    <div key={f.email} className="text-[10px] text-red-600 truncate">{f.email}</div>
+                  ))}
+                </div>
+              )}
             </div>
             <button onClick={onClose} className="px-6 py-2 bg-[#731515] text-white text-xs tracking-[0.2em] hover:bg-[#aa4848] transition-colors rounded-lg">
               CHIUDI

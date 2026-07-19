@@ -13,6 +13,7 @@ interface Product {
   images: string[];
   slug: string;
   visible: boolean;
+  product_variants?: { id: string; images: string[] }[];
 }
 
 interface Event {
@@ -289,7 +290,9 @@ export default function UpsellManager() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {products.map(product => {
               const isChecked = checkedProducts.has(product.id);
-              const img = product.images?.[0];
+              // Images may live at product level or inside variants — check both
+              const img = product.images?.[0]
+                ?? product.product_variants?.find(v => v.images?.length > 0)?.images?.[0];
               return (
                 <label
                   key={product.id}

@@ -78,6 +78,13 @@ function buildEventHtml(params: {
 </div>`;
 }
 
+/** Split array into chunks of at most `size` elements */
+function chunk<T>(arr: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) chunks.push(arr.slice(i, i + size));
+  return chunks;
+}
+
 export async function POST(request: Request) {
   try {
     let body: Record<string, unknown>;
@@ -104,40 +111,80 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing recipients or subject' }, { status: 400 });
     }
 
-    const html = type === 'event' && eventParams
+    const tag = `[crm/send type=${type} total=${recipients.length}]`;
+    console.log(`${tag} start — subject="${subject}"`);
+
+    const baseHtml = type === 'event' && eventParams
       ? buildEventHtml(eventParams)
       : buildHtml(subject, text ?? '');
 
-    // Send individually (privacy: each recipient doesn't see others)
-    const results = await Promise.allSettled(
-      recipients.map(({ email, name }) =>
-        resend.emails.send({
-          from:     'Vivo Wine Club <noreply@vivowineclub.com>',
-          replyTo: 'info@vivowineclub.com',
-          to:       email,
-          subject,
-          html:     html.replace('{{name}}', name.split(' ')[0]),
-          headers: {
-            'List-Unsubscribe': '<mailto:info@vivowineclub.com?subject=Unsubscribe>',
-            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-          },
-        }),
-      ),
-    );
+    // Build one payload per recipient (personalise name)
+    const payloads = recipients.map(({ email, name }) => ({
+      from:    'Vivo Wine Club <noreply@vivowineclub.com>' as const,
+      replyTo: 'info@vivowineclub.com',
+      to:      email,
+      subject,
+      html:    baseHtml.replace('{{name}}', name.split(' ')[0]),
+      headers: {
+        'List-Unsubscribe': '<mailto:info@vivowineclub.com?subject=Unsubscribe>',
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      },
+    }));
 
-    const sent   = results.filter((r) => r.status === 'fulfilled').length;
-    const failed = results.filter((r) => r.status === 'rejected').length;
+    // ── Batch send (max 100 per Resend batch call) ──────────────────────────
+    // Using resend.batch.send() sends up to 100 emails in a single API call,
+    // completely bypassing the 10 req/sec per-call rate limit that caused
+    // Promise.allSettled() with 150+ emails to silently fail.
+    const BATCH_SIZE = 100;
+    const batches    = chunk(payloads, BATCH_SIZE);
 
-    // Log failures
-    results.forEach((r, i) => {
-      if (r.status === 'rejected') {
-        console.error(`[crm/send] Failed for ${recipients[i]?.email}:`, r.reason);
+    let sent = 0;
+    let failed = 0;
+    const failedEmails: { email: string; error: string }[] = [];
+
+    for (let bi = 0; bi < batches.length; bi++) {
+      const batch = batches[bi];
+      console.log(`${tag} batch ${bi + 1}/${batches.length} — ${batch.length} emails`);
+
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const result = await (resend.batch as any).send(batch);
+
+        if (result.error) {
+          // Whole batch failed (auth, plan limit, etc.)
+          console.error(`${tag} batch ${bi + 1} FAILED:`, JSON.stringify(result.error));
+          for (const p of batch) {
+            failedEmails.push({ email: p.to as string, error: result.error.message ?? 'Batch error' });
+            failed++;
+          }
+        } else {
+          const batchSent = Array.isArray(result.data) ? result.data.length : batch.length;
+          sent += batchSent;
+          console.log(`${tag} batch ${bi + 1} OK — ${batchSent} queued`);
+        }
+      } catch (batchErr) {
+        console.error(`${tag} batch ${bi + 1} exception:`, batchErr);
+        for (const p of batch) {
+          failedEmails.push({ email: p.to as string, error: batchErr instanceof Error ? batchErr.message : 'Unknown error' });
+          failed++;
+        }
       }
-    });
+    }
 
-    return NextResponse.json({ ok: true, sent, failed, total: recipients.length });
+    console.log(`${tag} done — sent=${sent} failed=${failed}`);
+    if (failedEmails.length > 0) {
+      console.error(`${tag} failed emails:`, failedEmails.map(f => `${f.email} (${f.error})`).join(', '));
+    }
+
+    return NextResponse.json({
+      ok: true,
+      sent,
+      failed,
+      total: recipients.length,
+      failedEmails: failedEmails.length > 0 ? failedEmails : undefined,
+    });
   } catch (err) {
-    console.error('[crm/send]', err);
+    console.error('[crm/send] Unhandled error:', err);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : 'Internal server error' },
       { status: 500 },

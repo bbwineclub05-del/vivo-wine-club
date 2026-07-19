@@ -49,7 +49,7 @@ function ComposeModal({
   const [subject, setSubject] = useState('');
   const [body,    setBody]    = useState('');
   const [status,  setStatus]  = useState<'idle' | 'sending' | 'done' | 'error'>('idle');
-  const [result,  setResult]  = useState<{ sent: number; failed: number } | null>(null);
+  const [result,  setResult]  = useState<{ sent: number; failed: number; failedEmails?: { email: string; error: string }[] } | null>(null);
 
   const previewNames = recipients
     .slice(0, 3)
@@ -81,7 +81,7 @@ function ComposeModal({
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error);
-      setResult({ sent: json.sent, failed: json.failed });
+      setResult({ sent: json.sent, failed: json.failed, failedEmails: json.failedEmails });
       setStatus('done');
     } catch {
       setStatus('error');
@@ -123,9 +123,16 @@ function ComposeModal({
             <p className="text-sm text-[#1a0505] font-medium" style={{ fontFamily: 'var(--font-nunito)' }}>
               {result?.sent} email inviate con successo
             </p>
-            {result?.failed ? (
-              <p className="text-xs text-[#731515] mt-1">{result.failed} fallite</p>
-            ) : null}
+            {(result?.failed ?? 0) > 0 && (
+              <p className="text-xs text-[#731515] mt-1">{result?.failed} fallite</p>
+            )}
+            {result?.failedEmails && result.failedEmails.length > 0 && (
+              <div className="mt-3 text-left bg-red-50 border border-red-200 rounded-lg px-3 py-2 max-h-28 overflow-y-auto">
+                {result.failedEmails.map(f => (
+                  <div key={f.email} className="text-[10px] text-red-600 truncate">{f.email}</div>
+                ))}
+              </div>
+            )}
             <button
               onClick={onClose}
               className="mt-6 px-6 py-2.5 bg-[#731515] text-white text-[10px] tracking-[0.3em] rounded-lg hover:bg-[#9b2323] transition-colors"

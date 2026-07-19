@@ -16,6 +16,7 @@ export interface UpsellConfigWithProduct {
     price: number;
     images: string[];
     slug: string;
+    product_variants?: { id: string; images: string[] }[];
   };
 }
 
@@ -29,7 +30,7 @@ export async function GET(request: Request) {
 
   let query = db
     .from('upsell_configs')
-    .select('id, product_id, context, target_slug, sort_order, active, products!product_id(id, title, price, images, slug)')
+    .select('id, product_id, context, target_slug, sort_order, active, products!product_id(id, title, price, images, slug, product_variants(id, images))')
     .eq('active', true)
     .eq('context', context)
     .order('sort_order', { ascending: true });

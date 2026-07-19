@@ -27,6 +27,7 @@ interface UpsellConfig {
     price: number;
     images: string[];
     slug: string;
+    product_variants?: { id: string; images: string[] }[];
   };
 }
 
@@ -331,7 +332,10 @@ export default function CheckoutForm({ event, refCode, partnerCode, referralEnab
                     <div className="flex gap-3 overflow-x-auto pb-1 -mx-1 px-1">
                       {upsellConfigs.map(config => {
                         const isAdded   = upsellAdded.has(config.id);
-                        const imgSrc    = config.products.images?.[0] ?? null;
+                        // Images may live at product level or inside variants — check both
+                        const imgSrc    = config.products.images?.[0]
+                          ?? config.products.product_variants?.find(v => v.images?.length > 0)?.images?.[0]
+                          ?? null;
                         const price     = Number(config.products.price);
                         return (
                           <div
