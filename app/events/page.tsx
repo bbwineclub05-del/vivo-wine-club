@@ -8,17 +8,19 @@ import EventStatusBadge from '@/components/EventStatusBadge';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import {
   dbEventToEventData,
+  getEventDisplayStatus,
   type EventData,
   type DbEvent,
+  type DisplayStatus,
 } from '@/lib/events';
 
 export const dynamic = 'force-dynamic';
 
 /* ── Event row ── */
-function EventRow({ event, isLast }: { event: EventData; isLast: boolean }) {
-  const faded      = event.status === 'completed';
+function EventRow({ event, isLast, displayStatus }: { event: EventData; isLast: boolean; displayStatus: DisplayStatus }) {
+  const faded      = displayStatus === 'past' || displayStatus === 'closed';
   const detailHref = `/events/${event.slug}`;
-  const hasDetail  = event.status !== 'completed';
+  const hasDetail  = displayStatus !== 'past';
 
   const thumbnailClass = `relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 shrink-0 overflow-hidden border rounded-lg ${
     faded ? 'border-[#e8d5d5]' : 'border-[#d4b0b0]/40'
@@ -116,13 +118,13 @@ function EventRow({ event, isLast }: { event: EventData; isLast: boolean }) {
 
           {/* Mobile badge */}
           <div className="mt-4 sm:hidden">
-            <EventStatusBadge status={event.status} slug={event.slug} isListOnly={event.isListOnly} />
+            <EventStatusBadge displayStatus={displayStatus} slug={event.slug} isListOnly={event.isListOnly} />
           </div>
         </div>
 
         {/* Desktop badge */}
         <div className="shrink-0 self-center hidden sm:block">
-          <EventStatusBadge status={event.status} slug={event.slug} isListOnly={event.isListOnly} />
+          <EventStatusBadge displayStatus={displayStatus} slug={event.slug} isListOnly={event.isListOnly} />
         </div>
       </div>
 
@@ -170,6 +172,7 @@ export default async function EventsPage() {
                 key={event.slug}
                 event={event}
                 isLast={i === events.length - 1}
+                displayStatus={getEventDisplayStatus(event, today)}
               />
             ))}
           </div>

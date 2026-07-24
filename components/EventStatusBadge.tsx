@@ -2,20 +2,20 @@
 
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { type EventStatus } from '@/lib/events';
+import { type DisplayStatus } from '@/lib/events';
 
 export default function EventStatusBadge({
-  status,
+  displayStatus,
   slug,
   isListOnly = false,
 }: {
-  status: EventStatus;
+  displayStatus: DisplayStatus;
   slug: string;
   isListOnly?: boolean;
 }) {
   const t = useTranslations('events');
 
-  if (status === 'open') {
+  if (displayStatus === 'open') {
     if (isListOnly) {
       return (
         <Link
@@ -35,20 +35,28 @@ export default function EventStatusBadge({
       </Link>
     );
   }
-  if (status === 'soldout') {
+  if (displayStatus === 'soldout') {
     return (
       <span className="inline-block text-[9px] tracking-[0.28em] px-5 py-2.5 bg-[#3a3a3a] text-white whitespace-nowrap rounded-lg">
         {t('soldOut')}
       </span>
     );
   }
-  if (status === 'soon') {
+  if (displayStatus === 'soon') {
     return (
       <span className="inline-block text-[9px] tracking-[0.28em] px-5 py-2.5 border border-[#ccc] text-[#aaa] whitespace-nowrap rounded-lg">
         {t('comingSoon')}
       </span>
     );
   }
+  if (displayStatus === 'closed') {
+    return (
+      <span className="inline-block text-[9px] tracking-[0.28em] px-5 py-2.5 border border-[#d4b0b0] text-[#9a7070] whitespace-nowrap rounded-lg">
+        {t('registrationClosed')}
+      </span>
+    );
+  }
+  // 'past' or 'completed'
   return (
     <span className="inline-block text-[9px] tracking-[0.28em] px-5 py-2.5 border border-[#ddd] text-[#bbb] whitespace-nowrap rounded-lg">
       {t('completed')}

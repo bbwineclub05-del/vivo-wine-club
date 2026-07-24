@@ -5,21 +5,21 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import { MapPin } from 'lucide-react';
-import { type EventData, type EventStatus } from '@/lib/events';
+import { getEventDisplayStatus, type EventData, type DisplayStatus } from '@/lib/events';
 import { useTranslations } from 'next-intl';
 
 const StatusBadge = memo(function StatusBadge({
-  status,
+  displayStatus,
   slug,
   isListOnly = false,
 }: {
-  status: EventStatus;
+  displayStatus: DisplayStatus;
   slug: string;
   isListOnly?: boolean;
 }) {
   const t = useTranslations('common');
   const tEvents = useTranslations('events');
-  if (status === 'open') {
+  if (displayStatus === 'open') {
     if (isListOnly) {
       return (
         <Link href={`/events/${slug}#guest-form`} className="text-[9px] tracking-[0.28em] px-4 lg:px-5 py-3 min-h-[44px] inline-flex items-center bg-[#731515] text-[#F5EEE6] border border-[#731515] hover:bg-[#aa4848] hover:border-[#aa4848] transition-all duration-300 whitespace-nowrap rounded-lg">
@@ -33,17 +33,24 @@ const StatusBadge = memo(function StatusBadge({
       </Link>
     );
   }
-  if (status === 'soldout') {
+  if (displayStatus === 'soldout') {
     return (
       <span className="text-[9px] tracking-[0.28em] px-4 lg:px-5 py-2.5 bg-[#3a3a3a] text-white whitespace-nowrap rounded-lg">
         {t('soldOut')}
       </span>
     );
   }
-  if (status === 'soon') {
+  if (displayStatus === 'soon') {
     return (
       <span className="text-[9px] tracking-[0.28em] px-4 lg:px-5 py-2.5 border border-[#ccc] text-[#aaa] whitespace-nowrap rounded-lg">
         {t('comingSoon')}
+      </span>
+    );
+  }
+  if (displayStatus === 'closed') {
+    return (
+      <span className="text-[9px] tracking-[0.28em] px-4 lg:px-5 py-2.5 border border-[#d4b0b0] text-[#9a7070] whitespace-nowrap rounded-lg">
+        {tEvents('registrationClosed')}
       </span>
     );
   }
@@ -60,7 +67,9 @@ function EventRow({
   isLast,
   reducedMotion,
 }: { event: EventData & { isListOnly?: boolean }; index: number; isLast: boolean; reducedMotion: boolean | null }) {
-  const faded = event.status === 'completed';
+  const today = new Date().toISOString().slice(0, 10);
+  const displayStatus = getEventDisplayStatus(event, today);
+  const faded = displayStatus === 'past' || displayStatus === 'closed';
 
   return (
     <motion.div
@@ -126,13 +135,13 @@ function EventRow({
 
         {/* Status badge — desktop (z-[2] so it stays above the row overlay) */}
         <div className="shrink-0 self-center hidden sm:block z-[2]">
-          <StatusBadge status={event.status} slug={event.slug} isListOnly={event.isListOnly} />
+          <StatusBadge displayStatus={displayStatus} slug={event.slug} isListOnly={event.isListOnly} />
         </div>
       </div>
 
       {/* Mobile badge — indent accounts for optional thumbnail + date column */}
       <div className={`relative sm:hidden pb-5 z-[2] ${event.image_url ? 'pl-[calc(64px+1.5rem)]' : 'pl-14'}`}>
-        <StatusBadge status={event.status} slug={event.slug} isListOnly={event.isListOnly} />
+        <StatusBadge displayStatus={displayStatus} slug={event.slug} isListOnly={event.isListOnly} />
       </div>
 
       {!isLast && <div className={`h-px ${faded ? 'bg-[#e8d5d5]' : 'bg-[#731515]/8'}`} />}

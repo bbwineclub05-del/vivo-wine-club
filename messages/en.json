@@ -197,6 +197,8 @@
     "bannerPast": "This event has already taken place. Registrations are no longer available.",
     "bannerSoldOut": "All spots are sold out. Follow us on social media for upcoming events.",
     "bannerSoon": "Registrations will open soon. Follow us so you don't miss out.",
+    "bannerClosed": "Registrations for this event are closed.",
+    "registrationClosed": "REGISTRATIONS CLOSED",
     "secureCheckout": "You'll be redirected to the secure checkout.",
     "joinTheList": "JOIN THE LIST",
     "registrationComplete": "REGISTRATION COMPLETE",

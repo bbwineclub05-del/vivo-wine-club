@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, X, TrendingUp, TrendingDown, Wallet,
   ChevronLeft, ChevronRight, Pencil, Trash2, RefreshCw,
-  Paperclip, ExternalLink, Upload,
+  Paperclip, ExternalLink, Upload, Clock, Filter,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import FounderAccounts from './FounderAccounts';
@@ -39,6 +39,7 @@ interface Transaction {
   budget_category:     string | null;
   registered_by_name:  string | null;
   assigned_to:         string;
+  status:              'confirmed' | 'forecast';
   created_by:          string | null;
   created_at:          string;
 }
@@ -105,10 +106,15 @@ function isCostLike(type: TxType) {
   return type === 'cost' || type === 'rimborso';
 }
 
-function generateMonths(count: number): { year: number; month: number }[] {
+/** Returns status based on date: future dates → forecast, today/past → confirmed */
+function statusFromDate(dateStr: string): 'confirmed' | 'forecast' {
+  return dateStr > localToday() ? 'forecast' : 'confirmed';
+}
+
+function generateMonths(pastCount: number, futureCount = 0): { year: number; month: number }[] {
   const result = [];
   const now = new Date();
-  for (let i = count - 1; i >= 0; i--) {
+  for (let i = pastCount - 1; i >= -futureCount; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     result.push({ year: d.getFullYear(), month: d.getMonth() });
   }
@@ -287,6 +293,7 @@ const EMPTY_FORM: FormData = {
   budget_category:     null,
   registered_by_name:  null,
   assigned_to:         'Club',
+  status:              'confirmed',
 };
 
 function TxModal({
@@ -310,6 +317,7 @@ function TxModal({
     ...EMPTY_FORM,
     date:               localToday(),
     registered_by_name: currentUserName,
+    status:             'confirmed',
   };
   const [form,         setForm]         = useState<FormData>(defaultForm);
   const [fileToUpload, setFileToUpload] = useState<File | null>(null);
@@ -432,7 +440,10 @@ function TxModal({
                 type="date"
                 className={inputCls}
                 value={form.date}
-                onChange={e => set('date', e.target.value)}
+                onChange={e => {
+                  set('date', e.target.value);
+                  set('status', statusFromDate(e.target.value));
+                }}
                 style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
               />
             </div>
@@ -449,6 +460,41 @@ function TxModal({
                 style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
               />
             </div>
+          </div>
+
+          {/* Stato (Confermato / Previsto) */}
+          <div>
+            <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">STATO</div>
+            <div className="grid grid-cols-2 gap-2">
+              {(['confirmed', 'forecast'] as const).map(s => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => set('status', s)}
+                  className={`py-2 rounded-lg text-[10px] tracking-[0.1em] font-medium transition-all border flex items-center justify-center gap-1.5 ${
+                    form.status === s
+                      ? s === 'confirmed'
+                        ? 'bg-emerald-500 text-white border-emerald-500'
+                        : 'bg-amber-400 text-white border-amber-400'
+                      : 'bg-white text-[#7a4a4a] border-[#eddada] hover:border-[#731515]/30'
+                  }`}
+                >
+                  {s === 'confirmed'
+                    ? <><span className="text-[11px]">✓</span> CONFERMATO</>
+                    : <><Clock size={10} /> PREVISTO</>}
+                </button>
+              ))}
+            </div>
+            {form.status === 'forecast' && (
+              <p className="text-[10px] text-amber-600 mt-1.5 leading-relaxed" style={{ fontFamily: 'var(--font-nunito)' }}>
+                Le operazioni previste non influenzano i totali confermati, ma compaiono nel cashflow previsionale.
+              </p>
+            )}
+            {form.date > localToday() && form.status === 'confirmed' && (
+              <p className="text-[10px] text-amber-600 mt-1.5" style={{ fontFamily: 'var(--font-nunito)' }}>
+                Data futura — considera di usare &ldquo;Previsto&rdquo;.
+              </p>
+            )}
           </div>
 
           {/* Descrizione */}
@@ -836,6 +882,104 @@ function CategoryBreakdown({ transactions }: { transactions: Transaction[] }) {
 /* ─────────────────────────────────────────────
    Main component
 ───────────────────────────────────────────── */
+/* ─────────────────────────────────────────────
+   Cashflow Previsionale component
+───────────────────────────────────────────── */
+function CashflowPrevisionale({ transactions, now }: { transactions: Transaction[]; now: Date }) {
+  // Build a map for the next 12 months (from current month)
+  const months = useMemo(() => {
+    const result: { year: number; month: number; key: string }[] = [];
+    for (let i = 0; i <= 11; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      result.push({
+        year:  d.getFullYear(),
+        month: d.getMonth(),
+        key:   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+      });
+    }
+    return result;
+  }, [now]);
+
+  const data = useMemo(() => {
+    return months.map(({ year, month, key }) => {
+      const mTxs = transactions.filter(tx => tx.date.startsWith(key));
+      const confirmedRev  = mTxs.filter(t => t.type === 'revenue'   && t.status === 'confirmed').reduce((s, t) => s + t.amount, 0);
+      const confirmedCost = mTxs.filter(t => isCostLike(t.type)     && t.status === 'confirmed').reduce((s, t) => s + t.amount, 0);
+      const forecastRev   = mTxs.filter(t => t.type === 'revenue'   && t.status === 'forecast').reduce((s, t) => s + t.amount, 0);
+      const forecastCost  = mTxs.filter(t => isCostLike(t.type)     && t.status === 'forecast').reduce((s, t) => s + t.amount, 0);
+      const totalRev  = confirmedRev  + forecastRev;
+      const totalCost = confirmedCost + forecastCost;
+      const saldo     = totalRev - totalCost;
+      return { year, month, key, confirmedRev, confirmedCost, forecastRev, forecastCost, totalRev, totalCost, saldo };
+    });
+  }, [months, transactions]);
+
+  const hasAnyData = data.some(d => d.totalRev > 0 || d.totalCost > 0);
+  if (!hasAnyData) return null;
+
+  return (
+    <div className="bg-white border border-amber-200 rounded-xl overflow-hidden shadow-[0_1px_4px_rgba(107,26,26,0.04)]">
+      <div className="flex items-center gap-2 px-5 py-3 bg-amber-50 border-b border-amber-200">
+        <Clock size={12} className="text-amber-600" />
+        <span className="text-[9px] tracking-[0.4em] text-amber-700">CASHFLOW PREVISIONALE — PROSSIMI 12 MESI</span>
+        <span className="ml-auto text-[9px] text-amber-500/70 normal-case tracking-normal" style={{ fontFamily: 'var(--font-nunito)' }}>
+          ✓ confermato · ~ previsto
+        </span>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-[11px]" style={{ fontFamily: 'var(--font-nunito)' }}>
+          <thead>
+            <tr className="border-b border-[#eddada]">
+              <th className="px-4 py-2 text-left text-[9px] tracking-[0.25em] text-[#7a4a4a]/50 font-normal">MESE</th>
+              <th className="px-4 py-2 text-right text-[9px] tracking-[0.25em] text-emerald-600/60 font-normal">RICAVI</th>
+              <th className="px-4 py-2 text-right text-[9px] tracking-[0.25em] text-red-500/60 font-normal">COSTI</th>
+              <th className="px-4 py-2 text-right text-[9px] tracking-[0.25em] text-[#7a4a4a]/50 font-normal">SALDO NETTO</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[#f5eded]">
+            {data.map(({ year, month, key, confirmedRev, confirmedCost, forecastRev, forecastCost, totalRev, totalCost, saldo }) => {
+              const isCurrent = key === `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+              const isEmpty   = totalRev === 0 && totalCost === 0;
+              if (isEmpty && !isCurrent) return null;
+              return (
+                <tr key={key} className={`${isCurrent ? 'bg-[#fdf6f6]' : 'hover:bg-[#fdf9f9]'} transition-colors`}>
+                  <td className="px-4 py-2.5">
+                    <span className="font-medium text-[#1a0505]">{MONTHS_SHORT[month]} {year}</span>
+                    {isCurrent && <span className="ml-1.5 text-[8px] tracking-[0.1em] text-[#731515] bg-[#fdf0f0] px-1.5 py-0.5 rounded-full">OGGI</span>}
+                  </td>
+                  <td className="px-4 py-2.5 text-right">
+                    {totalRev > 0 ? (
+                      <div>
+                        {confirmedRev > 0 && <div className="text-emerald-600">✓ {fmtEur(confirmedRev)}</div>}
+                        {forecastRev  > 0 && <div className="text-amber-500">~ {fmtEur(forecastRev)}</div>}
+                      </div>
+                    ) : <span className="text-[#7a4a4a]/20">—</span>}
+                  </td>
+                  <td className="px-4 py-2.5 text-right">
+                    {totalCost > 0 ? (
+                      <div>
+                        {confirmedCost > 0 && <div className="text-red-500">✓ {fmtEur(confirmedCost)}</div>}
+                        {forecastCost  > 0 && <div className="text-amber-500">~ {fmtEur(forecastCost)}</div>}
+                      </div>
+                    ) : <span className="text-[#7a4a4a]/20">—</span>}
+                  </td>
+                  <td className="px-4 py-2.5 text-right">
+                    {(totalRev > 0 || totalCost > 0) ? (
+                      <span className={`font-semibold ${saldo >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                        {saldo >= 0 ? '+' : ''}{fmtEur(saldo)}
+                      </span>
+                    ) : <span className="text-[#7a4a4a]/20">—</span>}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 type FinanceTab = 'transazioni' | 'conti_founder';
 
 export default function FinanceManager() {
@@ -849,10 +993,13 @@ export default function FinanceManager() {
   const [currentUserName,  setCurrentUserName]  = useState<string | null>(null);
   const [teamMembers,      setTeamMembers]      = useState<TeamMember[]>([]);
 
-  const MONTHS = useMemo(() => generateMonths(24), []);
+  const MONTHS = useMemo(() => generateMonths(24, 12), []);
   const now = new Date();
   const [selYear,  setSelYear]  = useState(now.getFullYear());
   const [selMonth, setSelMonth] = useState(now.getMonth());
+  // 'all' shows both confirmed + forecast; 'confirmed' hides forecast; 'forecast' shows only forecast
+  type StatusFilter = 'all' | 'confirmed' | 'forecast';
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
   // Ref for the active pill — used to scroll it into view
   const activePillRef = useRef<HTMLButtonElement>(null);
@@ -905,19 +1052,21 @@ export default function FinanceManager() {
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // After data loads: if the current month has no transactions, jump to the
-  // most recent month that does. Fixes the case where data is all in a past
-  // month and the default (current month) would show an empty table.
+  // After data loads: if the current month has no confirmed transactions, jump to
+  // the most recent month that does (past months only — don't auto-jump to future).
   useEffect(() => {
     if (transactions.length === 0) return;
     const currentPrefix = monthKey(now.getFullYear(), now.getMonth());
-    const hasCurrentMonth = transactions.some(tx => tx.date.startsWith(currentPrefix));
-    if (hasCurrentMonth) return; // current month has data — keep default
-    // transactions are already sorted descending by date; first entry = most recent
-    const newest = transactions[0];
+    const hasCurrentMonth = transactions.some(tx => tx.date.startsWith(currentPrefix) && tx.status === 'confirmed');
+    if (hasCurrentMonth) return;
+    // Sort confirmed transactions descending and find the most recent
+    const confirmed = transactions.filter(t => t.status === 'confirmed' && t.date <= localToday());
+    if (confirmed.length === 0) return;
+    confirmed.sort((a, b) => b.date.localeCompare(a.date));
+    const newest = confirmed[0];
     if (!newest?.date) return;
     const y = parseInt(newest.date.slice(0, 4), 10);
-    const m = parseInt(newest.date.slice(5, 7), 10) - 1; // 0-indexed
+    const m = parseInt(newest.date.slice(5, 7), 10) - 1;
     if (!isNaN(y) && !isNaN(m)) {
       setSelYear(y);
       setSelMonth(m);
@@ -933,16 +1082,20 @@ export default function FinanceManager() {
     setTransactions(prev => [data as Transaction, ...prev]);
 
     // Auto-create founder_accounts entry when assigned to a specific founder
-    console.log('[FinanceManager] assigned_to:', form.assigned_to, '| type:', form.type);
-
     if (form.assigned_to && form.assigned_to !== 'Club' && (form.type === 'cost' || form.type === 'revenue')) {
-      // Mappatura diretta nome → email (non dipende da filtri esterni)
-      const FOUNDER_EMAIL_MAP: Record<string, string> = Object.fromEntries(
-        teamMembers.map(m => [m.name, m.email])
-      );
+      // Use current teamMembers, or re-fetch if the list is empty (race condition fix)
+      let currentMembers = teamMembers;
+      if (currentMembers.length === 0 && session?.access_token) {
+        try {
+          const r = await fetch('/api/team/members', { headers: { Authorization: `Bearer ${session.access_token}` } });
+          const d = await r.json();
+          currentMembers = d.members ?? [];
+          if (currentMembers.length > 0) setTeamMembers(currentMembers);
+        } catch { /* keep empty */ }
+      }
 
-      const founderEmail = FOUNDER_EMAIL_MAP[form.assigned_to];
-      console.log('[FinanceManager] founder lookup → email:', founderEmail ?? 'NOT FOUND');
+      const founderEmail = currentMembers.find(m => m.name === form.assigned_to)?.email;
+      console.log('[FinanceManager] assigned_to:', form.assigned_to, '→ email:', founderEmail ?? 'NOT FOUND');
 
       if (founderEmail) {
         const movType  = form.type === 'cost' ? 'spesa_personale' : 'incasso_personale';
@@ -960,21 +1113,14 @@ export default function FinanceManager() {
           transaction_id: newTxId,
           created_by:     session?.user.id ?? null,
         };
-        console.log('[FinanceManager] inserting founder_accounts:', faPayload);
-
-        const { data: faData, error: faError } = await supabase
+        const { error: faError } = await supabase
           .from('founder_accounts')
-          .insert(faPayload)
-          .select()
-          .single();
-
+          .insert(faPayload);
         if (faError) {
           console.error('[FinanceManager] founder_accounts insert FAILED:', faError);
-        } else {
-          console.log('[FinanceManager] founder_accounts insert OK:', faData);
         }
       } else {
-        console.warn('[FinanceManager] no email found for assigned_to:', form.assigned_to);
+        console.warn('[FinanceManager] no email found for assigned_to:', form.assigned_to, '— skipping founder_accounts');
       }
     }
   }
@@ -994,19 +1140,22 @@ export default function FinanceManager() {
     setTransactions(prev => prev.filter(t => t.id !== deleteTarget.id));
   }
 
-  /* ── All-time KPIs ── */
-  const totalRevenue = transactions
-    .filter(t => t.type === 'revenue').reduce((s, t) => s + t.amount, 0);
-  const totalCost = transactions
-    .filter(t => isCostLike(t.type)).reduce((s, t) => s + t.amount, 0);
-  const totalSaldo = totalRevenue - totalCost;
+  /* ── All-time KPIs (confirmed only) ── */
+  const confirmedTxs = useMemo(() => transactions.filter(t => t.status === 'confirmed'), [transactions]);
+  const forecastTxs  = useMemo(() => transactions.filter(t => t.status === 'forecast'),  [transactions]);
+  const totalRevenue = confirmedTxs.filter(t => t.type === 'revenue').reduce((s, t) => s + t.amount, 0);
+  const totalCost    = confirmedTxs.filter(t => isCostLike(t.type)).reduce((s, t) => s + t.amount, 0);
+  const totalSaldo   = totalRevenue - totalCost;
+  const totalForecastRevenue = forecastTxs.filter(t => t.type === 'revenue').reduce((s, t) => s + t.amount, 0);
+  const totalForecastCost    = forecastTxs.filter(t => isCostLike(t.type)).reduce((s, t) => s + t.amount, 0);
 
-  /* ── Monthly map: key = "YYYY-MM" ── */
+  /* ── Monthly map: key = "YYYY-MM" — confirmed only for pills ── */
   const monthlyMap = useMemo(() => {
-    const map: Record<string, { revenue: number; cost: number }> = {};
+    const map: Record<string, { revenue: number; cost: number; hasForecast: boolean }> = {};
     for (const tx of transactions) {
-      const key = tx.date.slice(0, 7); // "YYYY-MM" — robust regardless of what follows
-      if (!map[key]) map[key] = { revenue: 0, cost: 0 };
+      const key = tx.date.slice(0, 7);
+      if (!map[key]) map[key] = { revenue: 0, cost: 0, hasForecast: false };
+      if (tx.status === 'forecast') { map[key].hasForecast = true; continue; }
       if (tx.type === 'revenue') map[key].revenue += tx.amount;
       else                       map[key].cost    += tx.amount;
     }
@@ -1014,15 +1163,31 @@ export default function FinanceManager() {
   }, [transactions]);
 
   /* ── Transactions for selected month ── */
-  const monthTxs = useMemo(() =>
+  const monthTxsAll = useMemo(() =>
     transactions
       .filter(tx => txInMonth(tx, selYear, selMonth))
       .sort((a, b) => b.date.localeCompare(a.date)),
   [transactions, selYear, selMonth]);
 
-  const monthRevenue = monthTxs.filter(t => t.type === 'revenue').reduce((s, t) => s + t.amount, 0);
-  const monthCost    = monthTxs.filter(t => isCostLike(t.type)).reduce((s, t)    => s + t.amount, 0);
+  // Displayed list respects statusFilter; KPIs use all transactions in month
+  const monthTxs = useMemo(() =>
+    statusFilter === 'all' ? monthTxsAll : monthTxsAll.filter(tx => tx.status === statusFilter),
+  [monthTxsAll, statusFilter]);
+
+  // Confirmed-only stats (for KPI bar)
+  const monthTxsConfirmed = useMemo(() =>
+    monthTxsAll.filter(t => t.status === 'confirmed'),
+  [monthTxsAll]);
+  const monthRevenue = monthTxsConfirmed.filter(t => t.type === 'revenue').reduce((s, t) => s + t.amount, 0);
+  const monthCost    = monthTxsConfirmed.filter(t => isCostLike(t.type)).reduce((s, t)    => s + t.amount, 0);
   const monthSaldo   = monthRevenue - monthCost;
+
+  // Forecast stats for selected month
+  const monthTxsForecast = useMemo(() =>
+    monthTxsAll.filter(t => t.status === 'forecast'),
+  [monthTxsAll]);
+  const monthForecastRevenue = monthTxsForecast.filter(t => t.type === 'revenue').reduce((s, t) => s + t.amount, 0);
+  const monthForecastCost    = monthTxsForecast.filter(t => isCostLike(t.type)).reduce((s, t) => s + t.amount, 0);
 
   /* ── Month navigation ── */
   function prevMonth() {
@@ -1035,6 +1200,7 @@ export default function FinanceManager() {
   }
   const isCurrentMonth = selYear === now.getFullYear() && selMonth === now.getMonth();
   const isFirstAvail   = selYear === MONTHS[0].year && selMonth === MONTHS[0].month;
+  const isLastAvail    = selYear === MONTHS[MONTHS.length - 1].year && selMonth === MONTHS[MONTHS.length - 1].month;
 
   return (
     <div className="space-y-6">
@@ -1063,6 +1229,7 @@ export default function FinanceManager() {
               budget_category:     editTarget.budget_category,
               registered_by_name:  editTarget.registered_by_name,
               assigned_to:         editTarget.assigned_to ?? 'Club',
+              status:              editTarget.status ?? 'confirmed',
             }}
             onSave={handleEdit}
             onClose={() => setEditTarget(null)}
@@ -1142,7 +1309,8 @@ export default function FinanceManager() {
             {fmtEur(totalRevenue)}
           </div>
           <div className="text-[10px] text-[#7a4a4a]/40 mt-1" style={{ fontFamily: 'var(--font-nunito)' }}>
-            {transactions.filter(t => t.type === 'revenue').length} entrate
+            {confirmedTxs.filter(t => t.type === 'revenue').length} entrate confermate
+            {totalForecastRevenue > 0 && <span className="ml-1 text-amber-500">+{fmtEur(totalForecastRevenue)} prev.</span>}
           </div>
         </div>
 
@@ -1157,7 +1325,8 @@ export default function FinanceManager() {
             {fmtEur(totalCost)}
           </div>
           <div className="text-[10px] text-[#7a4a4a]/40 mt-1" style={{ fontFamily: 'var(--font-nunito)' }}>
-            {transactions.filter(t => isCostLike(t.type)).length} uscite (costi + rimborsi)
+            {confirmedTxs.filter(t => isCostLike(t.type)).length} uscite confermate
+            {totalForecastCost > 0 && <span className="ml-1 text-amber-500">+{fmtEur(totalForecastCost)} prev.</span>}
           </div>
         </div>
 
@@ -1172,7 +1341,8 @@ export default function FinanceManager() {
             {totalSaldo >= 0 ? '+' : ''}{fmtEur(totalSaldo)}
           </div>
           <div className="text-[10px] text-white/40 mt-1" style={{ fontFamily: 'var(--font-nunito)' }}>
-            Revenues − Costi cumulativi
+            Revenues − Costi (solo confermati)
+            {forecastTxs.length > 0 && <span className="block text-amber-200/70">{forecastTxs.length} previsionali esclusi</span>}
           </div>
         </div>
       </div>
@@ -1192,7 +1362,7 @@ export default function FinanceManager() {
           </div>
           <button
             onClick={nextMonth}
-            disabled={isCurrentMonth}
+            disabled={isLastAvail}
             className="p-1.5 rounded-lg text-[#7a4a4a]/50 hover:text-[#731515] hover:bg-[#fdf6f6] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             <ChevronRight size={16} />
@@ -1202,10 +1372,11 @@ export default function FinanceManager() {
         <div className="flex overflow-x-auto px-4 py-3 gap-2 scrollbar-none">
           {MONTHS.map(({ year, month }) => {
             const key   = monthKey(year, month);
-            const mData = monthlyMap[key] ?? { revenue: 0, cost: 0 };
-            const mSaldo   = mData.revenue - mData.cost;
-            const isActive = year === selYear && month === selMonth;
-            const hasData  = mData.revenue > 0 || mData.cost > 0;
+            const mData = monthlyMap[key] ?? { revenue: 0, cost: 0, hasForecast: false };
+            const mSaldo       = mData.revenue - mData.cost;
+            const isActive     = year === selYear && month === selMonth;
+            const isFutureMo   = key > monthKey(now.getFullYear(), now.getMonth());
+            const hasConfirmed = mData.revenue > 0 || mData.cost > 0;
             return (
               <button
                 key={key}
@@ -1213,15 +1384,19 @@ export default function FinanceManager() {
                 onClick={() => { setSelYear(year); setSelMonth(month); }}
                 className={`shrink-0 px-3 py-2 rounded-lg text-center transition-all border min-w-[52px] ${
                   isActive
-                    ? 'bg-[#731515] border-[#731515] text-white shadow-md'
-                    : 'bg-white border-[#eddada] text-[#7a4a4a] hover:border-[#731515]/40'
+                    ? isFutureMo
+                      ? 'bg-amber-500 border-amber-500 text-white shadow-md'
+                      : 'bg-[#731515] border-[#731515] text-white shadow-md'
+                    : isFutureMo
+                      ? 'bg-amber-50 border-amber-200 text-amber-700 hover:border-amber-400'
+                      : 'bg-white border-[#eddada] text-[#7a4a4a] hover:border-[#731515]/40'
                 }`}
               >
                 <div className="text-[10px] font-medium" style={{ fontFamily: 'var(--font-nunito)' }}>
                   {MONTHS_SHORT[month]}
                 </div>
                 <div className="text-[9px] opacity-70">{year}</div>
-                {hasData && (
+                {hasConfirmed && (
                   <div className={`text-[9px] mt-0.5 font-medium ${
                     isActive
                       ? mSaldo >= 0 ? 'text-emerald-200' : 'text-red-200'
@@ -1232,6 +1407,9 @@ export default function FinanceManager() {
                       : Math.round(mSaldo)}
                   </div>
                 )}
+                {!hasConfirmed && mData.hasForecast && (
+                  <div className={`text-[9px] mt-0.5 ${isActive ? 'text-white/70' : 'text-amber-500'}`}>~</div>
+                )}
               </button>
             );
           })}
@@ -1239,10 +1417,10 @@ export default function FinanceManager() {
 
         <div className="grid grid-cols-3 divide-x divide-[#eddada] border-t border-[#eddada]">
           {[
-            { label: 'Revenues mese', value: monthRevenue, color: 'text-emerald-600' },
-            { label: 'Costi mese',    value: monthCost,    color: 'text-red-500'     },
-            { label: 'Saldo mese',    value: monthSaldo,   color: monthSaldo >= 0 ? 'text-[#731515]' : 'text-red-600' },
-          ].map(({ label, value, color }) => (
+            { label: 'Revenues',    value: monthRevenue, forecast: monthForecastRevenue, color: 'text-emerald-600' },
+            { label: 'Costi',       value: monthCost,    forecast: monthForecastCost,    color: 'text-red-500'     },
+            { label: 'Saldo mese',  value: monthSaldo,   forecast: monthForecastRevenue - monthForecastCost, color: monthSaldo >= 0 ? 'text-[#731515]' : 'text-red-600' },
+          ].map(({ label, value, forecast, color }) => (
             <div key={label} className="px-4 py-3 text-center">
               <div className="text-[8px] tracking-[0.3em] text-[#7a4a4a]/50 mb-1" style={{ fontFamily: 'var(--font-nunito)' }}>
                 {label.toUpperCase()}
@@ -1250,10 +1428,42 @@ export default function FinanceManager() {
               <div className={`text-sm font-medium ${color}`} style={{ fontFamily: 'var(--font-syne)' }}>
                 {label === 'Saldo mese' && value >= 0 ? '+' : ''}{fmtEur(value)}
               </div>
+              {forecast !== 0 && (
+                <div className="text-[9px] text-amber-500 mt-0.5" style={{ fontFamily: 'var(--font-nunito)' }}>
+                  {forecast > 0 ? '+' : ''}{fmtEur(forecast)} prev.
+                </div>
+              )}
             </div>
           ))}
         </div>
       </div>
+
+      {/* ── Status filter ── */}
+      {!loading && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <Filter size={11} className="text-[#7a4a4a]/40" />
+          {([
+            { key: 'all',       label: 'Tutti' },
+            { key: 'confirmed', label: 'Solo confermati' },
+            { key: 'forecast',  label: 'Solo previsti' },
+          ] as { key: StatusFilter; label: string }[]).map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setStatusFilter(key)}
+              className={`px-3 py-1 rounded-full text-[10px] tracking-[0.1em] border transition-all ${
+                statusFilter === key
+                  ? key === 'forecast'
+                    ? 'bg-amber-400 text-white border-amber-400'
+                    : 'bg-[#731515] text-white border-[#731515]'
+                  : 'bg-white text-[#7a4a4a] border-[#eddada] hover:border-[#731515]/40'
+              }`}
+              style={{ fontFamily: 'var(--font-nunito)' }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* ── Transactions table ── */}
       {loading ? (
@@ -1283,11 +1493,17 @@ export default function FinanceManager() {
                   return (
                     <div
                       key={tx.id}
-                      className={`grid grid-cols-[90px_1fr_110px_100px_110px_72px] gap-3 items-center px-4 py-3 transition-colors ${c.bgRow} ${c.hoverRow}`}
+                      className={`grid grid-cols-[90px_1fr_110px_100px_110px_72px] gap-3 items-center px-4 py-3 transition-colors ${tx.status === 'forecast' ? 'opacity-80 border-l-2 border-amber-300' : ''} ${c.bgRow} ${c.hoverRow}`}
                     >
                       {/* Data */}
                       <div className="text-[11px] text-[#7a4a4a]/70 font-mono tabular-nums">
                         {fmtDate(tx.date)}
+                        {tx.status === 'forecast' && (
+                          <div className="flex items-center gap-0.5 mt-0.5 text-amber-500">
+                            <Clock size={9} />
+                            <span className="text-[8px] tracking-[0.1em]">PREV.</span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Descrizione + note + rimborsato a + registrato da */}
@@ -1377,6 +1593,11 @@ export default function FinanceManager() {
       {/* ── Category breakdown ── */}
       {!loading && monthTxs.length > 0 && (
         <CategoryBreakdown transactions={monthTxs} />
+      )}
+
+      {/* ── Cashflow Previsionale ── */}
+      {!loading && forecastTxs.length > 0 && (
+        <CashflowPrevisionale transactions={transactions} now={now} />
       )}
       </>}
     </div>

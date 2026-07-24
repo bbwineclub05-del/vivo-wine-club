@@ -379,6 +379,8 @@ export default function FounderAccounts() {
   const [deleteTarget, setDeleteTarget] = useState<Movement | null>(null);
   const [filterEmail,  setFilterEmail]  = useState<string>('');
   const [settlingId,   setSettlingId]   = useState<string | null>(null);
+  const [recalculating, setRecalculating] = useState(false);
+  const [recalcMsg,     setRecalcMsg]     = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -446,6 +448,71 @@ export default function FounderAccounts() {
     if (error) throw new Error(error.message);
     setMovements(prev => prev.filter(m => m.id !== deleteTarget.id));
     setDeleteTarget(null);
+  }
+
+  /* ── Ricalcola: crea founder_accounts mancanti da transactions con assigned_to ── */
+  async function handleRecalculate() {
+    setRecalculating(true);
+    setRecalcMsg(null);
+    try {
+      // 1. Fetch all transactions with assigned_to != 'Club'
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: txData, error: txErr } = await (supabase as any)
+        .from('transactions')
+        .select('id, date, description, amount, budget_category, category, notes, receipt_url, type, assigned_to')
+        .neq('assigned_to', 'Club')
+        .neq('assigned_to', null);
+      if (txErr) throw txErr;
+
+      // 2. Fetch existing founder_accounts entries that have a transaction_id
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: faData, error: faErr } = await (supabase as any)
+        .from('founder_accounts')
+        .select('transaction_id')
+        .not('transaction_id', 'is', null);
+      if (faErr) throw faErr;
+
+      const linkedTxIds = new Set((faData ?? []).map((r: { transaction_id: string }) => r.transaction_id));
+
+      // 3. Build name → email map from loaded members
+      const nameToEmail = new Map(members.map(m => [m.name, m.email]));
+
+      // 4. For each unlinked transaction, create a founder_accounts row
+      const missing = (txData ?? []).filter((tx: { id: string }) => !linkedTxIds.has(tx.id));
+      let created = 0;
+
+      for (const tx of missing) {
+        const email = nameToEmail.get(tx.assigned_to);
+        if (!email) continue;
+        const movType = tx.type === 'cost' || tx.type === 'rimborso' ? 'spesa_personale' : 'incasso_personale';
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: insertErr } = await (supabase as any)
+          .from('founder_accounts')
+          .insert({
+            date:           tx.date,
+            founder_email:  email,
+            type:           movType,
+            description:    tx.description,
+            amount:         tx.amount,
+            category:       tx.budget_category ?? tx.category,
+            notes:          tx.notes ?? null,
+            receipt_url:    tx.receipt_url ?? null,
+            settled:        false,
+            transaction_id: tx.id,
+          });
+        if (!insertErr) created++;
+        else console.error('[Recalculate] insert failed for tx', tx.id, insertErr);
+      }
+
+      setRecalcMsg(created > 0
+        ? `${created} moviment${created === 1 ? 'o' : 'i'} recuperat${created === 1 ? 'o' : 'i'}.`
+        : 'Nessun movimento mancante trovato — i conti sono già aggiornati.');
+      if (created > 0) await load();
+    } catch (e) {
+      setRecalcMsg(`Errore: ${e instanceof Error ? e.message : 'sconosciuto'}`);
+    } finally {
+      setRecalculating(false);
+    }
   }
 
   /* ── Settle ── */
@@ -522,10 +589,26 @@ export default function FounderAccounts() {
           <div className="text-[9px] tracking-[0.42em] text-[#731515] mb-1">FINANCE · CONTI MEMBER</div>
           <h2 className="text-xl font-light text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>Conti Member</h2>
         </div>
-        <button onClick={load} disabled={loading} className="inline-flex items-center gap-2 px-4 py-2 border border-[#eddada] bg-white text-[#7a4a4a] text-[10px] tracking-[0.25em] rounded-lg hover:border-[#731515]/40 transition-colors disabled:opacity-50">
-          <RefreshCw size={11} className={loading ? 'animate-spin' : ''} />
-          AGGIORNA
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          {recalcMsg && (
+            <span className="text-[11px] text-[#731515] bg-[#fdf0f0] border border-[#eddada] px-3 py-1.5 rounded-lg" style={{ fontFamily: 'var(--font-nunito)' }}>
+              {recalcMsg}
+            </span>
+          )}
+          <button
+            onClick={handleRecalculate}
+            disabled={recalculating || members.length === 0}
+            title="Ricalcola movimenti mancanti dalle transazioni assegnate"
+            className="inline-flex items-center gap-2 px-4 py-2 border border-amber-200 bg-amber-50 text-amber-700 text-[10px] tracking-[0.25em] rounded-lg hover:border-amber-400 transition-colors disabled:opacity-50"
+          >
+            <RefreshCw size={11} className={recalculating ? 'animate-spin' : ''} />
+            RICALCOLA
+          </button>
+          <button onClick={load} disabled={loading} className="inline-flex items-center gap-2 px-4 py-2 border border-[#eddada] bg-white text-[#7a4a4a] text-[10px] tracking-[0.25em] rounded-lg hover:border-[#731515]/40 transition-colors disabled:opacity-50">
+            <RefreshCw size={11} className={loading ? 'animate-spin' : ''} />
+            AGGIORNA
+          </button>
+        </div>
       </div>
 
       {/* ── KPI strip ── */}

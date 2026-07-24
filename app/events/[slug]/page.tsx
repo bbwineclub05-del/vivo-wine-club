@@ -7,7 +7,7 @@ import { getTranslations } from 'next-intl/server';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { dbEventToEventData, type EventData, type DbEvent } from '@/lib/events';
+import { dbEventToEventData, getEventDisplayStatus, type EventData, type DbEvent, type DisplayStatus } from '@/lib/events';
 import EventGuestForm from '@/components/EventGuestForm';
 import EventViewTracker from '@/components/EventViewTracker';
 
@@ -84,26 +84,28 @@ function InfoCard({
 /* ── CTA button ── */
 function CtaButton({
   event,
-  isPast,
+  displayStatus,
   full,
   bookLabel,
   listLabel,
   endedLabel,
+  closedLabel,
   isListOnly,
   partnerCode,
 }: {
   event: EventData;
-  isPast: boolean;
+  displayStatus: DisplayStatus;
   full?: boolean;
   bookLabel: string;
   listLabel: string;
   endedLabel: string;
+  closedLabel: string;
   isListOnly?: boolean;
   partnerCode?: string;
 }) {
   const cls = full ? 'w-full justify-center' : 'sm:inline-flex';
 
-  if (isPast || event.status === 'completed') {
+  if (displayStatus === 'past') {
     return (
       <span
         className={`${cls} inline-flex items-center gap-3 px-8 py-4 bg-[#e8e8e8] text-[#aaa] text-[9px] tracking-[0.4em] rounded-lg cursor-not-allowed`}
@@ -112,7 +114,16 @@ function CtaButton({
       </span>
     );
   }
-  if (event.status === 'soldout') {
+  if (displayStatus === 'closed') {
+    return (
+      <span
+        className={`${cls} inline-flex items-center gap-3 px-8 py-4 bg-[#e8e8e8] text-[#9a7070] text-[9px] tracking-[0.4em] rounded-lg cursor-not-allowed`}
+      >
+        {closedLabel}
+      </span>
+    );
+  }
+  if (displayStatus === 'soldout') {
     return (
       <span
         className={`${cls} inline-flex items-center gap-3 px-8 py-4 bg-[#3a3a3a] text-white text-[9px] tracking-[0.4em] rounded-lg cursor-not-allowed`}
@@ -121,7 +132,7 @@ function CtaButton({
       </span>
     );
   }
-  if (event.status === 'soon') {
+  if (displayStatus === 'soon') {
     return (
       <span
         className={`${cls} inline-flex items-center gap-3 px-8 py-4 border border-[#ccc] text-[#aaa] text-[9px] tracking-[0.4em] rounded-lg`}
@@ -177,7 +188,6 @@ export default async function EventDetailPage({
   const t = await getTranslations('events');
 
   let event: EventData | undefined;
-  let rawDate: string | undefined;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let rawNotes: string | null = null;
   let guestListEnabled = false;
@@ -193,7 +203,6 @@ export default async function EventDetailPage({
       .single();
     if (data) {
       event            = dbEventToEventData(data as DbEvent);
-      rawDate          = (data as DbEvent).date;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       rawNotes         = (data as any).notes ?? null;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -207,8 +216,9 @@ export default async function EventDetailPage({
 
   if (!event) notFound();
 
-  const today  = new Date().toISOString().slice(0, 10);
-  const isPast = rawDate ? rawDate.slice(0, 10) < today : false;
+  const today         = new Date().toISOString().slice(0, 10);
+  const displayStatus = getEventDisplayStatus(event, today);
+  const isPast        = displayStatus === 'past';
 
   return (
     <>
@@ -316,18 +326,20 @@ export default async function EventDetailPage({
               )}
             </div>
 
-            {/* Status banner — sold out / past / soon */}
-            {(isPast || event.status === 'soldout' || event.status === 'soon') && (
+            {/* Status banner — sold out / past / soon / closed */}
+            {(displayStatus === 'past' || displayStatus === 'soldout' || displayStatus === 'soon' || displayStatus === 'closed') && (
               <div className={`rounded-xl px-5 py-4 mb-10 text-sm border ${
-                isPast || event.status === 'soldout'
+                displayStatus === 'past' || displayStatus === 'soldout' || displayStatus === 'closed'
                   ? 'bg-[#f5eded] border-[#eddada] text-[#731515]'
                   : 'bg-[#f5f5f0] border-[#e0e0d5] text-[#6b6b55]'
               }`} style={{ fontFamily: 'var(--font-nunito)' }}>
-                {isPast
+                {displayStatus === 'past'
                   ? t('bannerPast')
-                  : event.status === 'soldout'
+                  : displayStatus === 'soldout'
                     ? t('bannerSoldOut')
-                    : t('bannerSoon')}
+                    : displayStatus === 'closed'
+                      ? t('bannerClosed')
+                      : t('bannerSoon')}
               </div>
             )}
 
@@ -362,7 +374,7 @@ export default async function EventDetailPage({
             )}
 
             {/* Guest list registration form */}
-            {guestListEnabled && !isPast && event.status !== 'soldout' && (
+            {guestListEnabled && displayStatus === 'open' && (
               <EventGuestForm
                 eventSlug={event.slug}
                 eventTitle={event.title}
@@ -380,14 +392,15 @@ export default async function EventDetailPage({
               <div className="hidden sm:flex items-center gap-4 pt-2 mt-8">
                 <CtaButton
                   event={event}
-                  isPast={isPast}
+                  displayStatus={displayStatus}
                   bookLabel={t('bookYourSpot')}
                   listLabel={t('joinTheList')}
                   endedLabel={t('eventEnded')}
+                  closedLabel={t('registrationClosed')}
                   isListOnly={false}
                   partnerCode={partnerCode}
                 />
-                {event.status === 'open' && !isPast && (
+                {displayStatus === 'open' && (
                   <span
                     className="text-[11px] text-[#7a4a4a]/50"
                     style={{ fontFamily: 'var(--font-nunito)' }}
@@ -409,11 +422,12 @@ export default async function EventDetailPage({
           >
             <CtaButton
               event={event}
-              isPast={isPast}
+              displayStatus={displayStatus}
               full
               bookLabel={t('bookYourSpot')}
               listLabel={t('joinTheList')}
               endedLabel={t('eventEnded')}
+              closedLabel={t('registrationClosed')}
               isListOnly={false}
               partnerCode={partnerCode}
             />

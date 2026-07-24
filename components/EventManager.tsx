@@ -36,6 +36,7 @@ interface DbEvent {
   guest_list_enabled: boolean;
   is_list_only: boolean;
   referral_enabled: boolean;
+  registration_closed: boolean;
   image_url: string | null;
   stripe_product_id: string | null;
   stripe_price_id: string | null;
@@ -50,7 +51,7 @@ const BLANK: FormData = {
   location: '', location_full: '', description: '',
   price: 0, capacity: null, status: 'open',
   published: false, title_strikethrough: false, guest_list_enabled: false,
-  is_list_only: false, referral_enabled: false,
+  is_list_only: false, referral_enabled: false, registration_closed: false,
   image_url: null, sort_order: 0,
 };
 
@@ -390,6 +391,16 @@ function EventForm({
           {!f.is_list_only && f.price > 0 && (f.referral_enabled ?? false) && (
             <p className="text-[10px] text-[#731515]/60 -mt-1" style={{ fontFamily: 'var(--font-nunito)' }}>
               Widget condivisione e reward 5 inviti visibile nel checkout
+            </p>
+          )}
+          <Toggle
+            label="Iscrizioni chiuse manualmente"
+            checked={f.registration_closed ?? false}
+            onChange={v => set('registration_closed', v)}
+          />
+          {(f.registration_closed ?? false) && (
+            <p className="text-[10px] text-amber-600 -mt-1" style={{ fontFamily: 'var(--font-nunito)' }}>
+              Il pubblico vedrà &ldquo;Iscrizioni chiuse&rdquo; — nessun checkout o form disponibile
             </p>
           )}
         </div>
@@ -1116,10 +1127,11 @@ export default function EventManager() {
                   status:             mode.edit.status,
                   published:          mode.edit.published,
                   title_strikethrough: mode.edit.title_strikethrough,
-                  guest_list_enabled:  mode.edit.guest_list_enabled ?? false,
-                  is_list_only:        mode.edit.is_list_only ?? false,
-                  referral_enabled:    mode.edit.referral_enabled ?? false,
-                  image_url:          mode.edit.image_url,
+                  guest_list_enabled:   mode.edit.guest_list_enabled ?? false,
+                  is_list_only:         mode.edit.is_list_only ?? false,
+                  referral_enabled:     mode.edit.referral_enabled ?? false,
+                  registration_closed:  mode.edit.registration_closed ?? false,
+                  image_url:           mode.edit.image_url,
                   sort_order:         mode.edit.sort_order,
                   section:            mode.edit.section ?? 'general',
                 }

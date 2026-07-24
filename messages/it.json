@@ -197,6 +197,8 @@
     "bannerPast": "Questo evento si è già concluso. Le iscrizioni non sono più disponibili.",
     "bannerSoldOut": "Tutti i posti sono esauriti. Seguici sui social per i prossimi eventi.",
     "bannerSoon": "Le iscrizioni apriranno presto. Seguici per non perdere l'opportunità.",
+    "bannerClosed": "Le iscrizioni per questo evento sono chiuse.",
+    "registrationClosed": "ISCRIZIONI CHIUSE",
     "secureCheckout": "Verrai reindirizzato al checkout sicuro.",
     "joinTheList": "ISCRIVITI ALLA LISTA",
     "registrationComplete": "ISCRIZIONE COMPLETATA",

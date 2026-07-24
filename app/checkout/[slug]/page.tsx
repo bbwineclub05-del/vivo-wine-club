@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { MapPin, CalendarDays } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { dbEventToEventData, type EventData, type DbEvent } from '@/lib/events';
+import { dbEventToEventData, getEventDisplayStatus, type EventData, type DbEvent } from '@/lib/events';
 import CheckoutForm from './CheckoutForm';
 
 export const dynamic = 'force-dynamic';
@@ -73,7 +73,6 @@ export default async function CheckoutPage({
   const partnerCode = typeof sp.partner === 'string' ? sp.partner.toUpperCase() : undefined;
 
   let event: EventData | undefined;
-  let rawDate: string | undefined;
   let referralEnabled = false;
 
   // Try DB first
@@ -87,7 +86,6 @@ export default async function CheckoutPage({
       .single();
     if (data) {
       event          = dbEventToEventData(data as DbEvent);
-      rawDate        = (data as DbEvent).date;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       referralEnabled = !!(data as any).referral_enabled;
     }
@@ -95,19 +93,19 @@ export default async function CheckoutPage({
 
   if (!event) notFound();
 
-  // Past event: show "concluso" page instead of checkout form
-  const today  = new Date().toISOString().slice(0, 10);
-  const isPast = rawDate ? rawDate.slice(0, 10) < today : false;
-  if (isPast) {
-    return <EventConclusoPage event={event} />;
+  // Past or closed event: show "concluso" page instead of checkout form
+  const today         = new Date().toISOString().slice(0, 10);
+  const displayStatus = getEventDisplayStatus(event, today);
+  if (displayStatus === 'past' || displayStatus === 'closed') {
+    return <EventConclusoPage event={event} isClosed={displayStatus === 'closed'} />;
   }
 
   // Pass raw image_url from DB (dbEventToEventData already includes it)
   return <CheckoutForm event={event} refCode={refCode} partnerCode={partnerCode} referralEnabled={referralEnabled} />;
 }
 
-/* ── Evento concluso ── */
-function EventConclusoPage({ event }: { event: EventData }) {
+/* ── Evento concluso / iscrizioni chiuse ── */
+function EventConclusoPage({ event, isClosed = false }: { event: EventData; isClosed?: boolean }) {
   return (
     <>
       <Navbar />
@@ -126,7 +124,7 @@ function EventConclusoPage({ event }: { event: EventData }) {
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
               <div className="absolute bottom-5 left-6 right-6 text-left">
                 <span className="inline-block text-[8px] tracking-[0.4em] bg-[#7a4a4a]/80 text-[#f5e8e8] px-3 py-1 rounded-full mb-2">
-                  EVENTO CONCLUSO
+                  {isClosed ? 'ISCRIZIONI CHIUSE' : 'EVENTO CONCLUSO'}
                 </span>
                 <h1
                   className="text-2xl sm:text-3xl font-light text-white leading-snug"
@@ -141,7 +139,7 @@ function EventConclusoPage({ event }: { event: EventData }) {
           {!event.image_url && (
             <div className="mb-8">
               <span className="inline-block text-[8px] tracking-[0.4em] bg-[#eddada] text-[#7a4a4a] px-3 py-1.5 rounded-full mb-6">
-                EVENTO CONCLUSO
+                {isClosed ? 'ISCRIZIONI CHIUSE' : 'EVENTO CONCLUSO'}
               </span>
               <h1
                 className="text-3xl sm:text-4xl font-light text-[#1a0505] mb-4"
@@ -156,7 +154,7 @@ function EventConclusoPage({ event }: { event: EventData }) {
             className="text-xl text-[#7a4a4a] mb-3"
             style={{ fontFamily: 'var(--font-nunito)' }}
           >
-            Questo evento è già concluso.
+            {isClosed ? 'Le iscrizioni per questo evento sono chiuse.' : 'Questo evento è già concluso.'}
           </p>
           <p
             className="text-sm text-[#7a4a4a]/70 mb-8"
