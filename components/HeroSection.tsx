@@ -90,23 +90,32 @@ export default function HeroSection() {
   return (
     <section className="relative min-h-screen min-h-[100svh] flex flex-col items-center justify-center overflow-hidden">
 
-      {/* Video background */}
+      {/* Video background — source is a vertical (9:16) reel, so it's shown
+          uncropped at full height and centered rather than stretched to
+          cover the full (landscape) width */}
       <video
         autoPlay
         muted
         loop
         playsInline
-        className="absolute inset-0 w-full h-full object-cover"
+        className="absolute top-0 left-1/2 -translate-x-1/2 h-full w-auto max-w-none object-contain"
         style={{ zIndex: 0 }}
       >
-        <source src="/videosito vero.mov" type="video/mp4" />
+        <source src="/Reel 1 Vivo Petra.mp4" type="video/mp4" />
       </video>
 
       {/* Bordeaux overlay */}
       <div className="absolute inset-0 bg-[#1a0505]/50" style={{ zIndex: 1 }} />
 
-      {/* ── Content ── */}
-      <div className="relative z-[2] text-center px-6 max-w-5xl mx-auto w-full">
+      {/* ── Content ──
+          Capped to the rendered width of the (vertical) video column on
+          wide viewports, so headline/CTA don't spill past its edges onto
+          the bare background on either side. On narrow viewports the video
+          is as wide as the screen, so this cap has no effect. */}
+      <div
+        className="relative z-[2] text-center px-6 mx-auto w-full"
+        style={{ maxWidth: 'min(64rem, calc(100svh * 9 / 16))' }}
+      >
 
         <h1 className="mb-10">
           <div className="overflow-hidden">
