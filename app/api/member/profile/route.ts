@@ -12,7 +12,7 @@ export async function GET(request: Request) {
 
     const { data: profile, error } = await db
       .from('profiles')
-      .select('full_name, city, wine_interests, avatar_url')
+      .select('full_name, city, wine_interests, avatar_url, phone, date_of_birth')
       .eq('id', auth.userId)
       .maybeSingle();
 
@@ -43,6 +43,8 @@ export async function PATCH(request: Request) {
     if (body.full_name      !== undefined) fields.full_name      = body.full_name;
     if (body.city           !== undefined) fields.city           = body.city;
     if (body.wine_interests !== undefined) fields.wine_interests = body.wine_interests;
+    if (body.phone          !== undefined) fields.phone          = body.phone;
+    if (body.date_of_birth  !== undefined) fields.date_of_birth  = body.date_of_birth || null;
 
     const { data: profile, error } = await db
       .from('profiles')

@@ -37,6 +37,12 @@ export default function MembershipCard({ name, tier, memberSince, memberId, card
         background:  'linear-gradient(140deg, #8B0000 0%, #6B1010 50%, #5C0A0A 100%)',
         boxShadow:   '0 24px 60px rgba(0,0,0,0.55), 0 4px 16px rgba(0,0,0,0.35)',
         userSelect:  'none',
+        // Text below is sized in cqw (container-width %) rather than vw, so
+        // it scales with the card's own rendered size — the card looks right
+        // both full-size (dedicated Membership Card tab) and shrunk to fit a
+        // narrower grid column (Overview), instead of a fixed viewport-relative
+        // size that overflows/looks oversized in the narrower spot.
+        containerType: 'inline-size',
       }}
     >
 
@@ -81,7 +87,7 @@ export default function MembershipCard({ name, tier, memberSince, memberId, card
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <span style={{
             fontFamily:    NUNITO,
-            fontSize:      'clamp(7px, 0.85vw, 9px)',
+            fontSize:      'clamp(7px, 1.73cqw, 9px)',
             letterSpacing: '0.55em',
             color:         'rgba(245,240,235,0.72)',
             fontWeight:    400,
@@ -90,7 +96,7 @@ export default function MembershipCard({ name, tier, memberSince, memberId, card
           </span>
           <span style={{
             fontFamily:    SYNE,
-            fontSize:      'clamp(11px, 1.35vw, 15px)',
+            fontSize:      'clamp(11px, 2.88cqw, 15px)',
             letterSpacing: '0.28em',
             color:         '#F5F0EB',
             fontWeight:    400,
@@ -103,7 +109,7 @@ export default function MembershipCard({ name, tier, memberSince, memberId, card
         <div style={{ flex: '1', display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingTop: '4%' }}>
           <div style={{
             fontFamily:    SYNE,
-            fontSize:      'clamp(20px, 3.8vw, 38px)',
+            fontSize:      'clamp(20px, 7.3cqw, 38px)',
             letterSpacing: '-0.015em',
             color:         '#F5F0EB',
             fontWeight:    300,
@@ -117,7 +123,7 @@ export default function MembershipCard({ name, tier, memberSince, memberId, card
           <div style={{
             marginTop:     '2.5%',
             fontFamily:    NUNITO,
-            fontSize:      'clamp(7px, 0.85vw, 9px)',
+            fontSize:      'clamp(7px, 1.73cqw, 9px)',
             letterSpacing: '0.55em',
             color:         'rgba(245,240,235,0.82)',
             fontWeight:    400,
@@ -131,7 +137,7 @@ export default function MembershipCard({ name, tier, memberSince, memberId, card
           <div>
             <div style={{
               fontFamily:    NUNITO,
-              fontSize:      'clamp(6px, 0.7vw, 8px)',
+              fontSize:      'clamp(6px, 1.54cqw, 8px)',
               letterSpacing: '0.45em',
               color:         'rgba(245,240,235,0.70)',
               marginBottom:  '5px',
@@ -141,7 +147,7 @@ export default function MembershipCard({ name, tier, memberSince, memberId, card
             </div>
             <div style={{
               fontFamily: SYNE,
-              fontSize:   'clamp(15px, 1.85vw, 20px)',
+              fontSize:   'clamp(15px, 3.85cqw, 20px)',
               color:      '#F5F0EB',
               fontWeight: 300,
             }}>
@@ -152,7 +158,7 @@ export default function MembershipCard({ name, tier, memberSince, memberId, card
           <div style={{ textAlign: 'right' }}>
             <div style={{
               fontFamily:    NUNITO,
-              fontSize:      'clamp(6px, 0.7vw, 8px)',
+              fontSize:      'clamp(6px, 1.54cqw, 8px)',
               letterSpacing: '0.45em',
               color:         'rgba(245,240,235,0.70)',
               marginBottom:  '5px',
@@ -162,7 +168,7 @@ export default function MembershipCard({ name, tier, memberSince, memberId, card
             </div>
             <div style={{
               fontFamily:    SYNE,
-              fontSize:      'clamp(15px, 1.85vw, 20px)',
+              fontSize:      'clamp(15px, 3.85cqw, 20px)',
               color:         '#F5F0EB',
               fontWeight:    300,
               letterSpacing: '0.08em',
