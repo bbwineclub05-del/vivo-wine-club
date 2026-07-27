@@ -263,30 +263,8 @@ export async function POST(
     console.error('[event guests] confirmation email error:', emailErr);
   }
 
-  // 2. Admin notification to info@vivowineclub.com
-  try {
-    const routeLine = routeOption ? `<br><strong>Percorso:</strong> ${routeOption === '40km' ? '40 km' : '80 km'}` : '';
-    const phoneLine = phone ? `<br><strong>Telefono:</strong> ${phone}` : '';
-    const notifyHtml = emailShell(`
-      ${heading(`Nuova iscrizione — ${eventRow.title}`, 'Vivo Wine Club · Admin')}
-      ${divider('20px 0')}
-      ${para(`<strong>${firstName} ${lastName}</strong> si è appena iscritto/a alla lista.`)}
-      <p style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#3a1a1a;line-height:1.7;">
-        <strong>Email:</strong> ${email}${phoneLine}${routeLine}
-      </p>
-      ${divider('16px 0')}
-      ${para(`Evento: <strong>${eventRow.title}</strong> · ${eventDate}${eventRow.time ? ' · ' + eventRow.time : ''}`)}
-    `);
-    const notifyResult = await resend.emails.send({
-      from:    'Vivo Wine Club <noreply@vivowineclub.com>',
-      to:      'info@vivowineclub.com',
-      subject: `Nuova iscrizione lista — ${firstName} ${lastName} · ${eventRow.title}`,
-      html:    notifyHtml,
-    });
-    console.log('[event guests] admin notification sent:', notifyResult);
-  } catch (notifyErr) {
-    console.error('[event guests] admin notification error:', notifyErr);
-  }
+  // Note: no admin notification email for list signups — Vivo staff only
+  // gets notified for paid ticket purchases (see app/api/checkout/event/route.ts).
 
   return NextResponse.json({ guest }, { status: 201 });
 }
