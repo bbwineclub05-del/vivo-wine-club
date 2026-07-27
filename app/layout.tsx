@@ -88,21 +88,12 @@ export default async function RootLayout({
     >
       <head>
         <meta name="google" content="notranslate" />
-        {/* Preload desktop hero video — only fetched on wider screens */}
+        {/* Preload hero background video */}
         <link
           rel="preload"
           as="video"
-          href="/video-desktop.mp4"
+          href="/reel-vivo-petra.mp4"
           type="video/mp4"
-          media="(min-width: 769px)"
-        />
-        {/* Preload mobile hero video */}
-        <link
-          rel="preload"
-          as="video"
-          href="/video-mobile.mp4"
-          type="video/mp4"
-          media="(max-width: 768px)"
         />
       </head>
       <body className="antialiased">

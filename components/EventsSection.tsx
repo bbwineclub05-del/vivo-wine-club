@@ -22,7 +22,7 @@ const StatusBadge = memo(function StatusBadge({
   if (displayStatus === 'open') {
     if (isListOnly) {
       return (
-        <Link href={`/events/${slug}#guest-form`} className="text-[9px] tracking-[0.28em] px-4 lg:px-5 py-3 min-h-[44px] inline-flex items-center bg-[#731515] text-[#F5EEE6] border border-[#731515] hover:bg-[#aa4848] hover:border-[#aa4848] transition-all duration-300 whitespace-nowrap rounded-lg">
+        <Link href={`/events/${slug}#guest-form`} className="text-[9px] tracking-[0.28em] px-4 lg:px-5 py-2.5 inline-flex items-center bg-[#731515] text-[#F5EEE6] border border-[#731515] hover:bg-[#aa4848] hover:border-[#aa4848] transition-all duration-300 whitespace-nowrap rounded-lg">
           {tEvents('joinTheList')}
         </Link>
       );

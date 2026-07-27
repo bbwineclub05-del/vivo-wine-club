@@ -20,7 +20,7 @@ export default function EventStatusBadge({
       return (
         <Link
           href={`/events/${slug}#guest-form`}
-          className="inline-flex items-center text-[9px] tracking-[0.28em] px-5 py-3 min-h-[44px] bg-[#731515] text-white hover:bg-[#aa4848] transition-colors duration-300 whitespace-nowrap rounded-lg"
+          className="inline-flex items-center text-[9px] tracking-[0.28em] px-5 py-2.5 bg-[#731515] text-white hover:bg-[#aa4848] transition-colors duration-300 whitespace-nowrap rounded-lg"
         >
           {t('joinTheList')}
         </Link>

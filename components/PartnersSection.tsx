@@ -13,6 +13,8 @@ const PARTNERS = [
   { name: 'Bersi Serlini',         src: '/sponsors/Bersi Serlini.webp',           href: 'https://www.bersiserlini.it/'                          },
   { name: 'Alata Investment Club', src: '/sponsors/alata.png',                    href: 'https://www.alatainvestmentclub.com/'                  },
   { name: 'Cassa Rurale',          src: '/sponsors/cassarurale.png',              href: 'https://www.lacassarurale.it/privati-e-famiglie/'      },
+  { name: "Ca' del Bosco",         src: '/sponsors/ca-del-bosco.png',             href: 'https://www.cadelbosco.com/'                           },
+  { name: 'Tenuta del Buonamico',  src: '/sponsors/Tenuta del buonamico.jpg',     href: 'https://www.buonamico.it/'                             },
 ];
 
 // Logo item width + gap in px — must match the CSS values below
