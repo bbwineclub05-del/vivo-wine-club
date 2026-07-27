@@ -92,7 +92,7 @@ export default async function RootLayout({
         <link
           rel="preload"
           as="video"
-          href="/reel-vivo-petra.mp4"
+          href="/locandina-reel.mp4"
           type="video/mp4"
         />
       </head>

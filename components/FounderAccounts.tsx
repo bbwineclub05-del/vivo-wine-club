@@ -35,6 +35,7 @@ interface Movement {
   settled_date:   string | null;
   notes:          string | null;
   transaction_id: string | null;
+  settlement_transaction_id: string | null;
   created_by:     string | null;
   created_at:     string;
 }
@@ -182,6 +183,7 @@ function MovModal({
         notes:          form.notes.trim() || null,
         receipt_url,
         transaction_id: null,
+        settlement_transaction_id: null,
       });
       onClose();
     } catch (e) {
@@ -381,6 +383,7 @@ export default function FounderAccounts() {
   const [settlingId,   setSettlingId]   = useState<string | null>(null);
   const [recalculating, setRecalculating] = useState(false);
   const [recalcMsg,     setRecalcMsg]     = useState<string | null>(null);
+  const [currentUserName, setCurrentUserName] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -402,6 +405,10 @@ export default function FounderAccounts() {
   useEffect(() => {
     // Fetch team members dynamically
     supabase.auth.getSession().then(({ data: { session } }) => {
+      const meta = session?.user?.user_metadata ?? {};
+      const name = ((meta.full_name ?? meta.name ?? '') as string).trim() || null;
+      setCurrentUserName(name);
+
       const token = session?.access_token ?? '';
       if (token) {
         fetch('/api/team/members', { headers: { Authorization: `Bearer ${token}` } })
@@ -480,10 +487,11 @@ export default function FounderAccounts() {
       // 4. For each unlinked transaction, create a founder_accounts row
       const missing = (txData ?? []).filter((tx: { id: string }) => !linkedTxIds.has(tx.id));
       let created = 0;
+      const unmatched: string[] = [];
 
       for (const tx of missing) {
         const email = nameToEmail.get(tx.assigned_to);
-        if (!email) continue;
+        if (!email) { unmatched.push(`${tx.assigned_to} (${tx.description})`); continue; }
         const movType = tx.type === 'cost' || tx.type === 'rimborso' ? 'spesa_personale' : 'incasso_personale';
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { error: insertErr } = await (supabase as any)
@@ -504,10 +512,65 @@ export default function FounderAccounts() {
         else console.error('[Recalculate] insert failed for tx', tx.id, insertErr);
       }
 
-      setRecalcMsg(created > 0
+      // 5. Backfill the real cash-movement transaction for movements that were
+      // already settled before this auto-creation existed — otherwise those
+      // past reimbursements never hit the Finance saldo at all.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: unlinkedSettled, error: usErr } = await (supabase as any)
+        .from('founder_accounts')
+        .select('*')
+        .eq('settled', true)
+        .is('settlement_transaction_id', null);
+      if (usErr) throw usErr;
+
+      const { data: { session } } = await supabase.auth.getSession();
+      let backfilled = 0;
+      for (const mov of (unlinkedSettled ?? []) as Movement[]) {
+        if (mov.type !== 'spesa_personale' && mov.type !== 'incasso_personale') continue;
+        const isSpesa = mov.type === 'spesa_personale';
+        const name = memberName(mov.founder_email, members);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: txData, error: txErr2 } = await (supabase as any)
+          .from('transactions')
+          .insert({
+            date:               mov.settled_date ?? mov.date,
+            description:        mov.description,
+            category:           mov.category ?? 'Altro',
+            budget_category:    mov.category,
+            type:               isSpesa ? 'rimborso' : 'revenue',
+            amount:             mov.amount,
+            notes:              mov.notes,
+            receipt_url:        mov.receipt_url,
+            reimbursed_to:      isSpesa ? name : null,
+            registered_by_name: currentUserName,
+            assigned_to:        'Club',
+            status:             'confirmed',
+            created_by:         session?.user.id ?? null,
+          })
+          .select()
+          .single();
+        if (txErr2) { console.error('[Recalculate] settlement backfill insert failed for', mov.id, txErr2); continue; }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: linkErr } = await (supabase as any)
+          .from('founder_accounts')
+          .update({ settlement_transaction_id: txData.id })
+          .eq('id', mov.id);
+        if (linkErr) console.error('[Recalculate] settlement backfill link failed for', mov.id, linkErr);
+        else backfilled++;
+      }
+
+      const parts: string[] = [];
+      parts.push(created > 0
         ? `${created} moviment${created === 1 ? 'o' : 'i'} recuperat${created === 1 ? 'o' : 'i'}.`
-        : 'Nessun movimento mancante trovato — i conti sono già aggiornati.');
-      if (created > 0) await load();
+        : 'Nessun movimento mancante trovato.');
+      if (backfilled > 0) {
+        parts.push(`${backfilled} rimbors${backfilled === 1 ? 'o' : 'i'} saldat${backfilled === 1 ? 'o' : 'i'} in passato ora registrat${backfilled === 1 ? 'o' : 'i'} anche nel saldo.`);
+      }
+      if (unmatched.length > 0) {
+        parts.push(`⚠ ${unmatched.length} non abbinat${unmatched.length === 1 ? 'o' : 'i'} (nome non corrisponde a un membro): ${unmatched.join(', ')}`);
+      }
+      setRecalcMsg(parts.join(' '));
+      if (created > 0 || backfilled > 0) await load();
     } catch (e) {
       setRecalcMsg(`Errore: ${e instanceof Error ? e.message : 'sconosciuto'}`);
     } finally {
@@ -519,10 +582,45 @@ export default function FounderAccounts() {
   async function handleSettle(mov: Movement) {
     setSettlingId(mov.id);
     const today = localToday();
+    const { data: { session } } = await supabase.auth.getSession();
+    const name = memberName(mov.founder_email, members);
+
+    // Settling records the real Club cash movement — the actual transfer —
+    // in the main ledger, so the Finance saldo reflects it. Without this,
+    // reimbursing a member never touches the Club's cash balance.
+    const isSpesa = mov.type === 'spesa_personale';
+    const txPayload = {
+      date:               today,
+      description:        mov.description,
+      category:           mov.category ?? 'Altro',
+      budget_category:    mov.category,
+      type:               isSpesa ? 'rimborso' : 'revenue',
+      amount:              mov.amount,
+      notes:               mov.notes,
+      receipt_url:         mov.receipt_url,
+      reimbursed_to:       isSpesa ? name : null,
+      registered_by_name:  currentUserName,
+      assigned_to:         'Club',
+      status:              'confirmed',
+      created_by:          session?.user.id ?? null,
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: txData, error: txError } = await (supabase as any)
+      .from('transactions')
+      .insert(txPayload)
+      .select()
+      .single();
+
+    if (txError) {
+      console.error('[FounderAccounts] settlement transaction insert FAILED:', txError);
+      setSettlingId(null);
+      return;
+    }
 
     const { data, error } = await supabase
       .from('founder_accounts')
-      .update({ settled: true, settled_date: today })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .update({ settled: true, settled_date: today, settlement_transaction_id: (txData as any).id } as any)
       .eq('id', mov.id)
       .select()
       .single();

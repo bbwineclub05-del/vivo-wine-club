@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { requireAdminOrStaff } from '@/lib/auth-guard';
+import { sectionFromType } from '@/lib/events';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2026-04-22.dahlia',
@@ -24,6 +25,15 @@ function weekLabel(isoWeekStr: string): string {
   return monday.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }
 
+/** Last N ISO weeks up to and including the current one. */
+function lastWeeks(n: number, now: Date): string[] {
+  const weeks: string[] = [];
+  for (let i = n - 1; i >= 0; i--) {
+    weeks.push(isoWeek(new Date(now.getTime() - i * 7 * 86400000)));
+  }
+  return weeks;
+}
+
 export async function GET(request: NextRequest) {
   const auth = await requireAdminOrStaff(request);
   if (!auth.ok) return auth.response;
@@ -33,17 +43,24 @@ export async function GET(request: NextRequest) {
     const filterSlug = searchParams.get('event_slug') ?? '';
 
     const db = getSupabaseAdmin() as any; // eslint-disable-line @typescript-eslint/no-explicit-any
-    const sixMonthsAgo = Math.floor(Date.now() / 1000) - 60 * 60 * 24 * 180;
+    const now = new Date();
+    const MONTHS_BACK = 12;
+    const revenueWindowStart = new Date(now.getFullYear(), now.getMonth() - (MONTHS_BACK - 1), 1);
+    const revenueWindowStartUnix = Math.floor(revenueWindowStart.getTime() / 1000);
 
-    // Build event price/title lookup from DB
+    // Build event price/title/date/section lookup from DB
     const EVENT_PRICE: Record<string, number> = {};
     const EVENT_TITLE: Record<string, string> = {};
+    const EVENT_DATE: Record<string, string> = {};
+    const EVENT_SECTION: Record<string, string> = {};
     let eventsList: { slug: string; title: string }[] = [];
     try {
-      const { data: eventsData } = await db.from('events').select('slug, title, price').order('title', { ascending: true });
+      const { data: eventsData } = await db.from('events').select('slug, title, price, date, section, type').order('title', { ascending: true });
       for (const e of (eventsData ?? [])) {
-        EVENT_PRICE[e.slug] = e.price ?? 0;
-        EVENT_TITLE[e.slug] = e.title ?? e.slug;
+        EVENT_PRICE[e.slug]   = e.price ?? 0;
+        EVENT_TITLE[e.slug]   = e.title ?? e.slug;
+        EVENT_DATE[e.slug]    = e.date ?? '';
+        EVENT_SECTION[e.slug] = e.section ?? sectionFromType(e.type ?? '');
       }
       eventsList = (eventsData ?? []).map((e: { slug: string; title: string }) => ({
         slug: e.slug,
@@ -64,109 +81,111 @@ export async function GET(request: NextRequest) {
       ticketsQuery = ticketsQuery.eq('event_id', filterSlug);
     }
 
+    // event_guests uses event_slug (not event_id, which is the events.id uuid
+    // here) to line up with tickets.event_id / EVENT_TITLE / EVENT_PRICE, which
+    // are all keyed by slug.
+    let guestsQuery = db
+      .from('event_guests')
+      .select('event_slug, created_at')
+      .order('created_at', { ascending: false });
+    if (filterSlug) {
+      guestsQuery = guestsQuery.eq('event_slug', filterSlug);
+    }
+
     // ── Parallel fetches ──────────────────────────────────────────────────────
     const [
       ticketsRes,
-      subscribersRes,
+      guestsRes,
+      customersRes,
       applicationsRes,
-      stripeCharges,
     ] = await Promise.allSettled([
       ticketsQuery,
-      db.from('subscribers').select('created_at').order('created_at', { ascending: true }),
-      db.from('applications').select('id, created_at'),
-      stripe.charges.list({ limit: 100, created: { gte: sixMonthsAgo } }),
+      guestsQuery,
+      db.from('customers').select('created_at').order('created_at', { ascending: true }),
+      db.from('applications').select('id, status, created_at'),
     ]);
 
     // ── Tickets ───────────────────────────────────────────────────────────────
-    // Debug: log raw Supabase response to diagnose schema issues
-    if (ticketsRes.status === 'fulfilled') {
-      const { data: tData, error: tErr } = ticketsRes.value as { data: unknown; error: unknown };
-      console.log('[analytics] tickets query — error:', JSON.stringify(tErr));
-      console.log('[analytics] tickets query — row count:', Array.isArray(tData) ? tData.length : tData);
-      if (Array.isArray(tData) && tData.length > 0) {
-        console.log('[analytics] tickets first row keys:', Object.keys(tData[0] as object));
-      }
-    } else {
-      console.log('[analytics] tickets query rejected:', ticketsRes.reason);
-    }
-
     const tickets: { event_id: string; name: string; email: string; created_at: string }[] =
       ticketsRes.status === 'fulfilled' ? ((ticketsRes.value.data as typeof tickets | null) ?? []) : [];
-
-    // 1 row = 1 ticket
     const totalTickets = tickets.length;
 
-    // Group by event — each row counts as 1 ticket
-    const byEvent: Record<string, { tickets: number; revenue: number; title: string }> = {};
+    // ── Guest-list signups ───────────────────────────────────────────────────
+    const guests: { event_slug: string; created_at: string }[] =
+      guestsRes.status === 'fulfilled' ? ((guestsRes.value.data as typeof guests | null) ?? []) : [];
+    const totalGuests = guests.length;
+
+    // Group by event — tickets contribute revenue, list signups don't (free)
+    const byEvent: Record<string, { tickets: number; guests: number; revenue: number; title: string }> = {};
     for (const t of tickets) {
       const slug  = t.event_id;
       const price = EVENT_PRICE[slug] ?? 0;
-      if (!byEvent[slug]) {
-        byEvent[slug] = { tickets: 0, revenue: 0, title: EVENT_TITLE[slug] ?? slug };
-      }
-      byEvent[slug].tickets  += 1;
-      byEvent[slug].revenue  += price;
+      if (!byEvent[slug]) byEvent[slug] = { tickets: 0, guests: 0, revenue: 0, title: EVENT_TITLE[slug] ?? slug };
+      byEvent[slug].tickets += 1;
+      byEvent[slug].revenue += price;
     }
-
-    // Ensure every known event appears in the chart even if 0 tickets
+    for (const g of guests) {
+      const slug = g.event_slug;
+      if (!byEvent[slug]) byEvent[slug] = { tickets: 0, guests: 0, revenue: 0, title: EVENT_TITLE[slug] ?? slug };
+      byEvent[slug].guests += 1;
+    }
+    // Ensure every known event appears even if it has neither tickets nor guests
     for (const e of eventsList) {
-      if (!byEvent[e.slug]) {
-        byEvent[e.slug] = { tickets: 0, revenue: 0, title: e.title };
-      }
+      if (!byEvent[e.slug]) byEvent[e.slug] = { tickets: 0, guests: 0, revenue: 0, title: e.title };
     }
 
+    // Rolling window: only the 6 most recent events by date — as new events
+    // are added, older ones fall out automatically. Chronological order
+    // (oldest → newest) so the bars read left-to-right like a timeline.
+    // Only Party and Lounge events — Winery Visits are excluded from this chart.
     const ticketsByEvent = Object.entries(byEvent)
-      .map(([slug, d]) => ({ slug, ...d }))
-      .sort((a, b) => b.tickets - a.tickets);
+      .filter(([slug]) => ['wine_party', 'wine_lounge'].includes(EVENT_SECTION[slug]))
+      .map(([slug, d]) => ({ slug, ...d, participants: d.tickets + d.guests, date: EVENT_DATE[slug] ?? '' }))
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .slice(0, 6)
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map(({ date: _date, ...rest }) => rest); // eslint-disable-line @typescript-eslint/no-unused-vars
 
-    // Recent ticket activity (last 5, deduplicated by email+event)
-    const recentTickets = tickets.slice(0, 5).map((t) => ({
-      buyer: t.name,
-      event: EVENT_TITLE[t.event_id] ?? t.event_id,
-      tickets: 1,
-      date: t.created_at,
+    // ── Participants over time (tickets + list signups, last 12 weeks) ──────
+    const weeks12 = lastWeeks(12, now);
+    const ticketWeekCounts: Record<string, number> = {};
+    for (const t of tickets) ticketWeekCounts[isoWeek(new Date(t.created_at))] = (ticketWeekCounts[isoWeek(new Date(t.created_at))] || 0) + 1;
+    const guestWeekCounts: Record<string, number> = {};
+    for (const g of guests) guestWeekCounts[isoWeek(new Date(g.created_at))] = (guestWeekCounts[isoWeek(new Date(g.created_at))] || 0) + 1;
+    const participantsGrowth = weeks12.map((w) => ({
+      week: w,
+      label: weekLabel(w),
+      tickets: ticketWeekCounts[w] || 0,
+      guests: guestWeekCounts[w] || 0,
+      total: (ticketWeekCounts[w] || 0) + (guestWeekCounts[w] || 0),
     }));
 
-    // ── Subscribers ───────────────────────────────────────────────────────────
-    const subscribers: { created_at: string }[] =
-      subscribersRes.status === 'fulfilled' ? (subscribersRes.value.data ?? []) : [];
+    // ── CRM customers — cumulative growth (last 12 weeks) ────────────────────
+    const customers: { created_at: string }[] =
+      customersRes.status === 'fulfilled' ? (customersRes.value.data ?? []) : [];
+    const totalCustomers = customers.length;
 
-    const totalSubscribers = subscribers.length;
-
-    // Build weekly cumulative (last 12 weeks)
-    const weekCounts: Record<string, number> = {};
-    for (const s of subscribers) {
-      const w = isoWeek(new Date(s.created_at));
-      weekCounts[w] = (weekCounts[w] || 0) + 1;
+    const customerWeekCounts: Record<string, number> = {};
+    for (const c of customers) {
+      const w = isoWeek(new Date(c.created_at));
+      customerWeekCounts[w] = (customerWeekCounts[w] || 0) + 1;
     }
-
-    // Last 12 weeks
-    const now = new Date();
-    const weeks: string[] = [];
-    for (let i = 11; i >= 0; i--) {
-      const d = new Date(now.getTime() - i * 7 * 86400000);
-      weeks.push(isoWeek(d));
-    }
-
-    let cumulative = Math.max(0, totalSubscribers - weeks.reduce((s, w) => s + (weekCounts[w] || 0), 0));
-    const subscriberGrowth = weeks.map((w) => {
-      cumulative += weekCounts[w] || 0;
-      return { week: w, label: weekLabel(w), new: weekCounts[w] || 0, cumulative };
+    let cumulativeCustomers = Math.max(0, totalCustomers - weeks12.reduce((s, w) => s + (customerWeekCounts[w] || 0), 0));
+    const customerGrowth = weeks12.map((w) => {
+      cumulativeCustomers += customerWeekCounts[w] || 0;
+      return { week: w, label: weekLabel(w), new: customerWeekCounts[w] || 0, cumulative: cumulativeCustomers };
     });
 
     // ── Applications ──────────────────────────────────────────────────────────
-    const applications: { id: string; created_at: string }[] =
+    const applications: { id: string; status: string | null; created_at: string }[] =
       applicationsRes.status === 'fulfilled' ? (applicationsRes.value.data ?? []) : [];
-
     const totalApplications = applications.length;
-    const conversionRate = totalApplications > 0
-      ? Math.round((totalSubscribers / Math.max(totalApplications, totalSubscribers)) * 100)
-      : 0;
+    const approvedApplications = applications.filter((a) => a.status === 'approved').length;
+    const approvalRate = totalApplications > 0 ? Math.round((approvedApplications / totalApplications) * 100) : 0;
 
-    // ── Revenue ───────────────────────────────────────────────────────────────
-    // Last 6 months array (used by both paths)
+    // ── Revenue — Stripe is the source of truth, auto-paginated ─────────────
     const months: string[] = [];
-    for (let i = 5; i >= 0; i--) {
+    for (let i = MONTHS_BACK - 1; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       months.push(d.toISOString().slice(0, 7));
     }
@@ -190,18 +209,24 @@ export async function GET(request: NextRequest) {
         revenue: Math.round((monthRevenue[m] || 0) * 100) / 100,
       }));
     } else {
-      // All events: use Stripe as source of truth for revenue
-      const charges =
-        stripeCharges.status === 'fulfilled'
-          ? stripeCharges.value.data.filter((c) => c.paid && !c.refunded)
-          : [];
-
-      totalRevenue = charges.reduce((s, c) => s + c.amount, 0) / 100;
-
+      // All events: use Stripe as source of truth for revenue. Auto-paginate —
+      // a plain `.list({ limit: 100 })` silently truncates at 100 charges,
+      // which was undercounting/zeroing older months in the window.
       const monthRevenue: Record<string, number> = {};
-      for (const c of charges) {
-        const m = new Date(c.created * 1000).toISOString().slice(0, 7);
-        monthRevenue[m] = (monthRevenue[m] || 0) + c.amount / 100;
+      totalRevenue = 0;
+      try {
+        for await (const charge of stripe.charges.list({
+          limit: 100,
+          created: { gte: revenueWindowStartUnix },
+        })) {
+          if (!charge.paid || charge.refunded) continue;
+          const amount = charge.amount / 100;
+          totalRevenue += amount;
+          const m = new Date(charge.created * 1000).toISOString().slice(0, 7);
+          monthRevenue[m] = (monthRevenue[m] || 0) + amount;
+        }
+      } catch (e) {
+        console.error('[analytics] Stripe pagination error:', e);
       }
       revenueByMonth = months.map((m) => ({
         month: m,
@@ -214,16 +239,18 @@ export async function GET(request: NextRequest) {
       events: eventsList,
       kpis: {
         totalTickets,
+        totalGuests,
+        totalParticipants: totalTickets + totalGuests,
         totalRevenue: Math.round(totalRevenue * 100) / 100,
-        totalSubscribers,
+        totalCustomers,
         totalApplications,
-        conversionRate,
+        approvalRate,
       },
       selectedEventPrice: filterSlug ? (EVENT_PRICE[filterSlug] ?? null) : null,
       ticketsByEvent,
       revenueByMonth,
-      subscriberGrowth,
-      recentTickets,
+      participantsGrowth,
+      customerGrowth,
     });
   } catch (err) {
     console.error('[analytics]', err);

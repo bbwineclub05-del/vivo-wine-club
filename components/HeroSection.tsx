@@ -88,7 +88,10 @@ export default function HeroSection() {
   const d = (n: number) => (reducedMotion ? 0 : n);
 
   return (
-    <section className="relative h-screen h-[100svh] flex flex-col items-center justify-center overflow-hidden">
+    <section
+      className="relative h-screen h-[100svh] flex flex-col items-center justify-end overflow-hidden"
+      style={{ paddingBottom: 'clamp(4rem, 18vh, 9rem)' }}
+    >
 
       {/* Video background — source is a vertical (9:16) reel, so it's shown
           uncropped at full height and centered rather than stretched to
@@ -102,7 +105,7 @@ export default function HeroSection() {
         className="absolute top-0 left-1/2 -translate-x-1/2 h-full w-auto max-w-none object-contain"
         style={{ zIndex: 0 }}
       >
-        <source src="/reel-vivo-petra.mp4" type="video/mp4" />
+        <source src="/locandina-reel.mp4" type="video/mp4" />
       </video>
 
       {/* Bordeaux overlay */}
@@ -118,83 +121,8 @@ export default function HeroSection() {
         style={{ maxWidth: 'min(64rem, calc(100svh * 9 / 16))' }}
       >
 
-        <h1 style={{ marginBottom: 'clamp(0.5rem, 2.5vh, 2rem)' }}>
-          <div className="overflow-hidden">
-            <motion.div
-              initial={{ y: reducedMotion ? '0%' : '110%' }}
-              animate={{ y: '0%' }}
-              transition={{ duration: d(1.1), delay: d(0.5), ease: [0.16, 1, 0.3, 1] }}
-            >
-              <span
-                className="block font-light tracking-[-0.01em] text-white leading-tight"
-                style={{ fontFamily: 'var(--font-syne)', fontSize: 'clamp(1.6rem, 3.5vw + 2.2vh, 4.8rem)' }}
-              >
-                {t('line1')}
-              </span>
-            </motion.div>
-          </div>
-
-          <div className="overflow-hidden">
-            <motion.div
-              initial={{ y: reducedMotion ? '0%' : '110%' }}
-              animate={{ y: '0%' }}
-              transition={{ duration: d(1.1), delay: d(0.68), ease: [0.16, 1, 0.3, 1] }}
-            >
-              <span
-                className="block font-light tracking-[-0.01em] text-white leading-tight"
-                style={{ fontFamily: 'var(--font-syne)', fontSize: 'clamp(1.6rem, 3.5vw + 2.2vh, 4.8rem)' }}
-              >
-                <em className="not-italic" style={{ fontStyle: 'italic', color: '#e8b4b4' }}>
-                  {t('line2italic')}
-                </em>
-                {t('line2rest')}
-              </span>
-            </motion.div>
-          </div>
-        </h1>
-
-        {/* City strip */}
-        <motion.div
-          initial={{ opacity: reducedMotion ? 1 : 0, y: reducedMotion ? 0 : 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: d(0.9), delay: d(1.05) }}
-          className="flex items-start justify-center gap-0"
-          style={{ marginBottom: 'clamp(0.5rem, 2.2vh, 2rem)' }}
-        >
-          {CITIES.map((city, i) => (
-            <div key={city.name} className="flex items-start">
-              <div className="flex flex-col items-center gap-2 px-3 sm:px-5 md:px-7">
-                <span className="text-[7px] sm:text-[9px] tracking-[0.3em] sm:tracking-[0.45em] text-white/70 font-light">{city.name}</span>
-                <city.Icon className="w-4 h-7 sm:w-5 sm:h-8 md:w-6 md:h-9 text-white/40" />
-              </div>
-              {i < CITIES.length - 1 && (
-                <div className="flex flex-col items-center self-start pt-[7px]">
-                  <span className="text-white/25 text-xs leading-none select-none">✦</span>
-                </div>
-              )}
-            </div>
-          ))}
-        </motion.div>
-
-        {/* Divider */}
-        <motion.div
-          initial={{ scaleX: reducedMotion ? 1 : 0 }}
-          animate={{ scaleX: 1 }}
-          transition={{ duration: d(1), delay: d(1.2), ease: [0.16, 1, 0.3, 1] }}
-          className="w-32 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent mx-auto"
-          style={{ marginBottom: 'clamp(0.5rem, 2vh, 1.5rem)' }}
-        />
-
-        {/* Subtitle */}
-        <motion.p
-          initial={{ opacity: reducedMotion ? 1 : 0, y: reducedMotion ? 0 : 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: d(0.9), delay: d(1.4) }}
-          className="text-white/70 font-light tracking-wide max-w-2xl mx-auto leading-relaxed"
-          style={{ fontFamily: 'var(--font-nunito)', fontSize: 'clamp(0.8rem, 1.4vw + 0.8vh, 1.15rem)' }}
-        >
-          {t('subtitle')}
-        </motion.p>
+        {/* Headline, city strip, divider and subtitle temporarily hidden
+            per request — only the CTA button remains for now. */}
 
         {/* CTA buttons */}
         <motion.div
@@ -202,7 +130,6 @@ export default function HeroSection() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: d(0.9), delay: d(1.65) }}
           className="flex items-center justify-center"
-          style={{ marginTop: 'clamp(0.5rem, 2.5vh, 2rem)' }}
         >
           <Link
             href="/events/wine-party-versilia-edition-aug-2026"

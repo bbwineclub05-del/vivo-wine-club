@@ -106,6 +106,21 @@ function isCostLike(type: TxType) {
   return type === 'cost' || type === 'rimborso';
 }
 
+/**
+ * True if a transaction represents real cash moving in/out of the Club's own
+ * account. A cost/revenue "assigned_to" a member (not Club) means a member
+ * personally fronted/collected the money — no Club cash has moved yet, so it
+ * must not hit the cash saldo. It only becomes real Club cash when the
+ * matching Conti Member obligation is settled (see FounderAccounts), which
+ * auto-creates a 'rimborso' (or 'revenue') transaction — always assigned to
+ * Club — for the actual transfer. 'rimborso' transactions are therefore
+ * always real cash movements.
+ */
+function isClubCash(tx: Pick<Transaction, 'type' | 'assigned_to'>) {
+  if (tx.type === 'rimborso') return true;
+  return !tx.assigned_to || tx.assigned_to === 'Club';
+}
+
 /** Returns status based on date: future dates → forecast, today/past → confirmed */
 function statusFromDate(dateStr: string): 'confirmed' | 'forecast' {
   return dateStr > localToday() ? 'forecast' : 'confirmed';
@@ -903,10 +918,10 @@ function CashflowPrevisionale({ transactions, now }: { transactions: Transaction
   const data = useMemo(() => {
     return months.map(({ year, month, key }) => {
       const mTxs = transactions.filter(tx => tx.date.startsWith(key));
-      const confirmedRev  = mTxs.filter(t => t.type === 'revenue'   && t.status === 'confirmed').reduce((s, t) => s + t.amount, 0);
-      const confirmedCost = mTxs.filter(t => isCostLike(t.type)     && t.status === 'confirmed').reduce((s, t) => s + t.amount, 0);
-      const forecastRev   = mTxs.filter(t => t.type === 'revenue'   && t.status === 'forecast').reduce((s, t) => s + t.amount, 0);
-      const forecastCost  = mTxs.filter(t => isCostLike(t.type)     && t.status === 'forecast').reduce((s, t) => s + t.amount, 0);
+      const confirmedRev  = mTxs.filter(t => t.type === 'revenue'   && t.status === 'confirmed' && isClubCash(t)).reduce((s, t) => s + t.amount, 0);
+      const confirmedCost = mTxs.filter(t => isCostLike(t.type)     && t.status === 'confirmed' && isClubCash(t)).reduce((s, t) => s + t.amount, 0);
+      const forecastRev   = mTxs.filter(t => t.type === 'revenue'   && t.status === 'forecast'  && isClubCash(t)).reduce((s, t) => s + t.amount, 0);
+      const forecastCost  = mTxs.filter(t => isCostLike(t.type)     && t.status === 'forecast'  && isClubCash(t)).reduce((s, t) => s + t.amount, 0);
       const totalRev  = confirmedRev  + forecastRev;
       const totalCost = confirmedCost + forecastCost;
       const saldo     = totalRev - totalCost;
@@ -1050,6 +1065,19 @@ export default function FinanceManager() {
           .catch(() => {/* keep empty */});
       }
     });
+
+    // Realtime: pick up transactions auto-created elsewhere (e.g. settling
+    // a Conti Member obligation inserts a 'rimborso'/'revenue' row) without
+    // requiring a manual reload.
+    const channel = supabase
+      .channel('transactions_realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'transactions' },
+        () => { load(); },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // After data loads: if the current month has no confirmed transactions, jump to
@@ -1131,6 +1159,68 @@ export default function FinanceManager() {
       .from('transactions').update(form).eq('id', editTarget.id).select().single();
     if (error) throw new Error(error.message);
     setTransactions(prev => prev.map(t => t.id === editTarget.id ? data as Transaction : t));
+
+    // Keep the linked "Conti Member" obligation (founder_accounts) in sync —
+    // editing a transaction used to leave it stale or missing entirely.
+    const wasAssigned = !!editTarget.assigned_to && editTarget.assigned_to !== 'Club'
+      && (editTarget.type === 'cost' || editTarget.type === 'revenue');
+    const isAssigned = !!form.assigned_to && form.assigned_to !== 'Club'
+      && (form.type === 'cost' || form.type === 'revenue');
+    if (!wasAssigned && !isAssigned) return;
+
+    const { data: { session } } = await supabase.auth.getSession();
+    const { data: linkedRows } = await supabase
+      .from('founder_accounts')
+      .select('*')
+      .eq('transaction_id', editTarget.id);
+    const linked = (linkedRows as { id: string; settled: boolean }[] | null)?.[0] ?? null;
+
+    if (linked?.settled) {
+      // Money already moved for this obligation — never rewrite it silently.
+      console.warn('[FinanceManager] transaction edited but linked founder_accounts is already settled — left untouched:', linked.id);
+      return;
+    }
+
+    if (isAssigned) {
+      let currentMembers = teamMembers;
+      if (currentMembers.length === 0 && session?.access_token) {
+        try {
+          const r = await fetch('/api/team/members', { headers: { Authorization: `Bearer ${session.access_token}` } });
+          const d = await r.json();
+          currentMembers = d.members ?? [];
+          if (currentMembers.length > 0) setTeamMembers(currentMembers);
+        } catch { /* keep empty */ }
+      }
+      const founderEmail = currentMembers.find(m => m.name === form.assigned_to)?.email;
+      if (!founderEmail) {
+        console.warn('[FinanceManager] no email found for assigned_to:', form.assigned_to, '— skipping founder_accounts sync');
+        return;
+      }
+      const movType = form.type === 'cost' ? 'spesa_personale' : 'incasso_personale';
+      const faPayload = {
+        date:           form.date,
+        founder_email:  founderEmail,
+        type:           movType,
+        description:    form.description,
+        amount:         form.amount,
+        category:       form.budget_category ?? form.category,
+        notes:          form.notes ?? null,
+        receipt_url:    form.receipt_url ?? null,
+        transaction_id: editTarget.id,
+      };
+      if (linked) {
+        const { error: updErr } = await supabase.from('founder_accounts').update(faPayload).eq('id', linked.id);
+        if (updErr) console.error('[FinanceManager] founder_accounts update FAILED:', updErr);
+      } else {
+        const { error: insErr } = await supabase.from('founder_accounts')
+          .insert({ ...faPayload, settled: false, created_by: session?.user.id ?? null });
+        if (insErr) console.error('[FinanceManager] founder_accounts insert FAILED:', insErr);
+      }
+    } else if (linked) {
+      // No longer assigned to a member — the obligation no longer applies.
+      const { error: delErr } = await supabase.from('founder_accounts').delete().eq('id', linked.id);
+      if (delErr) console.error('[FinanceManager] founder_accounts cleanup FAILED:', delErr);
+    }
   }
 
   async function handleDelete() {
@@ -1143,11 +1233,11 @@ export default function FinanceManager() {
   /* ── All-time KPIs (confirmed only) ── */
   const confirmedTxs = useMemo(() => transactions.filter(t => t.status === 'confirmed'), [transactions]);
   const forecastTxs  = useMemo(() => transactions.filter(t => t.status === 'forecast'),  [transactions]);
-  const totalRevenue = confirmedTxs.filter(t => t.type === 'revenue').reduce((s, t) => s + t.amount, 0);
-  const totalCost    = confirmedTxs.filter(t => isCostLike(t.type)).reduce((s, t) => s + t.amount, 0);
+  const totalRevenue = confirmedTxs.filter(t => t.type === 'revenue' && isClubCash(t)).reduce((s, t) => s + t.amount, 0);
+  const totalCost    = confirmedTxs.filter(t => isCostLike(t.type) && isClubCash(t)).reduce((s, t) => s + t.amount, 0);
   const totalSaldo   = totalRevenue - totalCost;
-  const totalForecastRevenue = forecastTxs.filter(t => t.type === 'revenue').reduce((s, t) => s + t.amount, 0);
-  const totalForecastCost    = forecastTxs.filter(t => isCostLike(t.type)).reduce((s, t) => s + t.amount, 0);
+  const totalForecastRevenue = forecastTxs.filter(t => t.type === 'revenue' && isClubCash(t)).reduce((s, t) => s + t.amount, 0);
+  const totalForecastCost    = forecastTxs.filter(t => isCostLike(t.type) && isClubCash(t)).reduce((s, t) => s + t.amount, 0);
 
   /* ── Monthly map: key = "YYYY-MM" — confirmed only for pills ── */
   const monthlyMap = useMemo(() => {
@@ -1156,6 +1246,7 @@ export default function FinanceManager() {
       const key = tx.date.slice(0, 7);
       if (!map[key]) map[key] = { revenue: 0, cost: 0, hasForecast: false };
       if (tx.status === 'forecast') { map[key].hasForecast = true; continue; }
+      if (!isClubCash(tx)) continue;
       if (tx.type === 'revenue') map[key].revenue += tx.amount;
       else                       map[key].cost    += tx.amount;
     }
@@ -1178,16 +1269,16 @@ export default function FinanceManager() {
   const monthTxsConfirmed = useMemo(() =>
     monthTxsAll.filter(t => t.status === 'confirmed'),
   [monthTxsAll]);
-  const monthRevenue = monthTxsConfirmed.filter(t => t.type === 'revenue').reduce((s, t) => s + t.amount, 0);
-  const monthCost    = monthTxsConfirmed.filter(t => isCostLike(t.type)).reduce((s, t)    => s + t.amount, 0);
+  const monthRevenue = monthTxsConfirmed.filter(t => t.type === 'revenue' && isClubCash(t)).reduce((s, t) => s + t.amount, 0);
+  const monthCost    = monthTxsConfirmed.filter(t => isCostLike(t.type) && isClubCash(t)).reduce((s, t)    => s + t.amount, 0);
   const monthSaldo   = monthRevenue - monthCost;
 
   // Forecast stats for selected month
   const monthTxsForecast = useMemo(() =>
     monthTxsAll.filter(t => t.status === 'forecast'),
   [monthTxsAll]);
-  const monthForecastRevenue = monthTxsForecast.filter(t => t.type === 'revenue').reduce((s, t) => s + t.amount, 0);
-  const monthForecastCost    = monthTxsForecast.filter(t => isCostLike(t.type)).reduce((s, t) => s + t.amount, 0);
+  const monthForecastRevenue = monthTxsForecast.filter(t => t.type === 'revenue' && isClubCash(t)).reduce((s, t) => s + t.amount, 0);
+  const monthForecastCost    = monthTxsForecast.filter(t => isCostLike(t.type) && isClubCash(t)).reduce((s, t) => s + t.amount, 0);
 
   /* ── Month navigation ── */
   function prevMonth() {

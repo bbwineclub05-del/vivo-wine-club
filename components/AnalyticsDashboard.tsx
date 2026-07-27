@@ -5,20 +5,33 @@ import { motion } from 'framer-motion';
 import { TrendingUp, Ticket, Users, FileText, RefreshCw, BarChart2, ChevronDown, Globe, ExternalLink } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
+/* ─────────────────────────────────────────────
+   Chart palette — validated (dataviz skill):
+   node scripts/validate_palette.js "#aa4848,#2a78d6" --mode light → ALL PASS
+   #aa4848 is already the app's own bordeaux-hover shade (not a new color);
+   #2a78d6 is the skill's default blue. Single-series charts keep the
+   brand's primary bordeaux #731515 directly (no categorical pairing gate).
+───────────────────────────────────────────── */
+const SERIES = { tickets: '#aa4848', guests: '#2a78d6', primary: '#731515' };
+
 /* ── Types ── */
 interface KPIs {
   totalTickets: number;
+  totalGuests: number;
+  totalParticipants: number;
   totalRevenue: number;
-  totalSubscribers: number;
+  totalCustomers: number;
   totalApplications: number;
-  conversionRate: number;
+  approvalRate: number;
 }
 
 interface TicketByEvent {
   slug: string;
   title: string;
   tickets: number;
+  guests: number;
   revenue: number;
+  participants: number;
 }
 
 interface MonthRevenue {
@@ -27,18 +40,19 @@ interface MonthRevenue {
   revenue: number;
 }
 
-interface SubscriberWeek {
+interface ParticipantWeek {
+  week: string;
+  label: string;
+  tickets: number;
+  guests: number;
+  total: number;
+}
+
+interface CustomerWeek {
   week: string;
   label: string;
   new: number;
   cumulative: number;
-}
-
-interface RecentTicket {
-  buyer: string;
-  event: string;
-  tickets: number;
-  date: string;
 }
 
 interface EventOption {
@@ -52,8 +66,8 @@ interface AnalyticsData {
   selectedEventPrice: number | null;
   ticketsByEvent: TicketByEvent[];
   revenueByMonth: MonthRevenue[];
-  subscriberGrowth: SubscriberWeek[];
-  recentTickets: RecentTicket[];
+  participantsGrowth: ParticipantWeek[];
+  customerGrowth: CustomerWeek[];
 }
 
 interface VisitorWeek {
@@ -68,57 +82,84 @@ interface VisitorData {
   weeklyChart: VisitorWeek[];
 }
 
-/* ── Tiny SVG Line Chart ── */
-function LineChart({ data, color = '#731515' }: { data: number[]; color?: string }) {
+/* ── Legend dot ── */
+function LegendDot({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="flex items-center gap-1.5 text-[10px] text-[#7a4a4a]/70" style={{ fontFamily: 'var(--font-nunito)' }}>
+      <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: color }} />
+      {label}
+    </span>
+  );
+}
+
+/* ── Tiny SVG Line Chart — single series, with hover ── */
+function LineChart({ data, labels, color = SERIES.primary, valueSuffix = '' }: {
+  data: number[];
+  labels: string[];
+  color?: string;
+  valueSuffix?: string;
+}) {
+  const [hover, setHover] = useState<number | null>(null);
   if (data.length < 2) return null;
 
-  const W = 400, H = 80, PAD = 8;
-  const min = Math.min(...data);
+  const W = 400, H = 90, PAD = 8;
+  const min = Math.min(...data, 0);
   const max = Math.max(...data);
   const range = max - min || 1;
 
   const pts = data.map((v, i) => {
     const x = PAD + (i / (data.length - 1)) * (W - PAD * 2);
     const y = PAD + (1 - (v - min) / range) * (H - PAD * 2);
-    return `${x},${y}`;
+    return [x, y] as const;
   });
 
-  const area = [
-    `M ${pts[0]}`,
-    ...pts.slice(1).map((p) => `L ${p}`),
-    `L ${W - PAD},${H - PAD}`,
-    `L ${PAD},${H - PAD}`,
-    'Z',
-  ].join(' ');
-
-  const line = [`M ${pts[0]}`, ...pts.slice(1).map((p) => `L ${p}`)].join(' ');
+  const area = [`M ${pts[0][0]},${pts[0][1]}`, ...pts.slice(1).map(([x, y]) => `L ${x},${y}`), `L ${W - PAD},${H - PAD}`, `L ${PAD},${H - PAD}`, 'Z'].join(' ');
+  const line = [`M ${pts[0][0]},${pts[0][1]}`, ...pts.slice(1).map(([x, y]) => `L ${x},${y}`)].join(' ');
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-full" preserveAspectRatio="none">
-      <defs>
-        <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.15" />
-          <stop offset="100%" stopColor={color} stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path d={area} fill="url(#lineGrad)" />
-      <path d={line} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      {pts.map((p, i) => {
-        const [x, y] = p.split(',').map(Number);
-        return (
-          <circle key={i} cx={x} cy={y} r="2.5" fill={color} />
-        );
-      })}
-    </svg>
+    <div className="relative">
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-full" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity="0.15" />
+            <stop offset="100%" stopColor={color} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d={area} fill="url(#lineGrad)" />
+        <path d={line} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        {pts.map(([x, y], i) => (
+          <g key={i}>
+            {hover === i && <line x1={x} y1={PAD} x2={x} y2={H - PAD} stroke={color} strokeOpacity="0.25" strokeWidth="1" />}
+            <circle cx={x} cy={y} r={hover === i ? 4 : 2.5} fill={color} />
+            {/* generous invisible hit target */}
+            <rect
+              x={x - (W / data.length) / 2} y={0} width={W / data.length} height={H}
+              fill="transparent"
+              onMouseEnter={() => setHover(i)}
+              onMouseLeave={() => setHover(null)}
+            />
+          </g>
+        ))}
+      </svg>
+      {hover !== null && (
+        <div
+          className="absolute -top-1 -translate-x-1/2 -translate-y-full bg-[#1a0505] text-white text-[10px] px-2 py-1 rounded-lg whitespace-nowrap pointer-events-none z-10"
+          style={{ left: `${(pts[hover][0] / W) * 100}%`, fontFamily: 'var(--font-nunito)' }}
+        >
+          {labels[hover]}: <strong>{data[hover]}{valueSuffix}</strong>
+        </div>
+      )}
+    </div>
   );
 }
 
-/* ── Horizontal Bar Chart ── */
-function HBarChart({ items, maxValue, color = '#731515' }: {
-  items: { label: string; value: number; sub?: string }[];
+/* ── Horizontal Stacked Bar Chart (tickets vs guest-list, per event) ── */
+function StackedHBarChart({ items, maxValue }: {
+  items: { label: string; tickets: number; guests: number; revenue: number }[];
   maxValue: number;
-  color?: string;
 }) {
+  const [hover, setHover] = useState<{ idx: number; seg: 'tickets' | 'guests' } | null>(null);
+
   if (items.length === 0) return (
     <p className="text-xs text-[#7a4a4a]/40 italic py-4" style={{ fontFamily: 'var(--font-nunito)' }}>
       No data yet.
@@ -126,28 +167,102 @@ function HBarChart({ items, maxValue, color = '#731515' }: {
   );
 
   return (
-    <div className="flex flex-col gap-3">
-      {items.map((item) => {
-        const pct = maxValue > 0 ? (item.value / maxValue) * 100 : 0;
-        return (
-          <div key={item.label} className="flex flex-col gap-1">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs text-[#1a0505] truncate flex-1" style={{ fontFamily: 'var(--font-nunito)' }}>
-                {item.label}
-              </span>
-              <span className="text-xs font-medium text-[#731515] shrink-0" style={{ fontFamily: 'var(--font-syne)' }}>
-                {item.value}{item.sub ?? ''}
-              </span>
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center gap-4">
+        <LegendDot color={SERIES.tickets} label="Ticket" />
+        <LegendDot color={SERIES.guests} label="Lista" />
+      </div>
+      <div className="flex flex-col gap-3">
+        {items.map((item, idx) => {
+          const total = item.tickets + item.guests;
+          const pctTickets = maxValue > 0 ? (item.tickets / maxValue) * 100 : 0;
+          const pctGuests  = maxValue > 0 ? (item.guests  / maxValue) * 100 : 0;
+          const onlyTickets = item.tickets > 0 && item.guests === 0;
+          const onlyGuests  = item.guests > 0 && item.tickets === 0;
+          return (
+            <div key={item.label} className="flex flex-col gap-1">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs text-[#1a0505] truncate flex-1" style={{ fontFamily: 'var(--font-nunito)' }}>
+                  {item.label}
+                </span>
+                <span className="text-xs font-medium text-[#731515] shrink-0" style={{ fontFamily: 'var(--font-syne)' }}>
+                  {total} {item.revenue > 0 ? `· €${item.revenue}` : ''}
+                </span>
+              </div>
+              <div className="h-2.5 bg-[#f5eded] rounded-full overflow-hidden flex">
+                {item.tickets > 0 && (
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${pctTickets}%` }}
+                    transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                    className={`h-full ${onlyTickets ? 'rounded-full' : 'rounded-l-full'}`}
+                    style={{ backgroundColor: SERIES.tickets, marginRight: item.guests > 0 ? 2 : 0 }}
+                    onMouseEnter={() => setHover({ idx, seg: 'tickets' })}
+                    onMouseLeave={() => setHover(null)}
+                  />
+                )}
+                {item.guests > 0 && (
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${pctGuests}%` }}
+                    transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                    className={`h-full ${onlyGuests ? 'rounded-full' : 'rounded-r-full'}`}
+                    style={{ backgroundColor: SERIES.guests }}
+                    onMouseEnter={() => setHover({ idx, seg: 'guests' })}
+                    onMouseLeave={() => setHover(null)}
+                  />
+                )}
+              </div>
+              {hover?.idx === idx && (
+                <span className="text-[10px] text-[#7a4a4a]/70" style={{ fontFamily: 'var(--font-nunito)' }}>
+                  {hover.seg === 'tickets' ? `${item.tickets} ticket venduti` : `${item.guests} iscritti in lista`}
+                </span>
+              )}
             </div>
-            <div className="h-1.5 bg-[#e8d5d5] rounded-full overflow-hidden">
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ── Vertical Bar Chart (single series, with hover) ── */
+function VBarChart({ items, color = SERIES.primary, valuePrefix = '' }: {
+  items: { label: string; value: number }[];
+  color?: string;
+  valuePrefix?: string;
+}) {
+  const [hover, setHover] = useState<number | null>(null);
+  const max = Math.max(...items.map((i) => i.value), 1);
+
+  return (
+    <div className="flex items-end gap-1.5 h-24">
+      {items.map((item, i) => {
+        const pct = (item.value / max) * 100;
+        return (
+          <div key={item.label} className="flex-1 flex flex-col items-center gap-1 group relative">
+            {hover === i && (
+              <div className="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 bg-[#1a0505] text-white text-[10px] px-2 py-1 rounded-lg whitespace-nowrap pointer-events-none z-10" style={{ fontFamily: 'var(--font-nunito)' }}>
+                {valuePrefix}{item.value.toLocaleString('it-IT')}
+              </div>
+            )}
+            <div
+              className="w-full relative flex items-end"
+              style={{ height: '72px' }}
+              onMouseEnter={() => setHover(i)}
+              onMouseLeave={() => setHover(null)}
+            >
               <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${pct}%` }}
+                initial={{ height: 0 }}
+                animate={{ height: `${Math.max(pct, item.value > 0 ? 4 : 0)}%` }}
                 transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                className="h-full rounded-full"
-                style={{ backgroundColor: color }}
+                className="w-full rounded-sm"
+                style={{ backgroundColor: item.value > 0 ? color : '#e8d5d5' }}
               />
             </div>
+            <span className="text-[7px] text-[#7a4a4a]/50 leading-none" style={{ fontFamily: 'var(--font-nunito)' }}>
+              {item.label}
+            </span>
           </div>
         );
       })}
@@ -155,37 +270,65 @@ function HBarChart({ items, maxValue, color = '#731515' }: {
   );
 }
 
-/* ── Vertical Bar Chart (for monthly revenue) ── */
-function VBarChart({ items, color = '#731515' }: {
-  items: { label: string; value: number }[];
-  color?: string;
+/* ── Stacked Vertical Bar Chart (participants: tickets + guest-list, over time) ── */
+function StackedVBarChart({ items }: {
+  items: { label: string; tickets: number; guests: number }[];
 }) {
-  const max = Math.max(...items.map((i) => i.value), 1);
+  const [hover, setHover] = useState<number | null>(null);
+  const max = Math.max(...items.map((i) => i.tickets + i.guests), 1);
 
   return (
-    <div className="flex items-end gap-2 h-24">
-      {items.map((item) => {
-        const pct = (item.value / max) * 100;
-        return (
-          <div key={item.label} className="flex-1 flex flex-col items-center gap-1 group">
-            <div className="w-full relative flex items-end" style={{ height: '72px' }}>
-              <motion.div
-                initial={{ height: 0 }}
-                animate={{ height: `${Math.max(pct, item.value > 0 ? 4 : 0)}%` }}
-                transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-                className="w-full rounded-sm"
-                style={{ backgroundColor: item.value > 0 ? color : '#e8d5d5' }}
-              />
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center gap-4">
+        <LegendDot color={SERIES.tickets} label="Ticket" />
+        <LegendDot color={SERIES.guests} label="Lista" />
+      </div>
+      <div className="flex items-end gap-1.5 h-24">
+        {items.map((item, i) => {
+          const total = item.tickets + item.guests;
+          const pctTickets = (item.tickets / max) * 100;
+          const pctGuests  = (item.guests  / max) * 100;
+          return (
+            <div key={item.label} className="flex-1 flex flex-col items-center gap-1 group relative">
+              {hover === i && (
+                <div className="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 bg-[#1a0505] text-white text-[10px] px-2 py-1 rounded-lg whitespace-nowrap pointer-events-none z-10" style={{ fontFamily: 'var(--font-nunito)' }}>
+                  {item.tickets} ticket · {item.guests} lista
+                </div>
+              )}
+              <div
+                className="w-full relative flex flex-col justify-end gap-[2px]"
+                style={{ height: '72px' }}
+                onMouseEnter={() => setHover(i)}
+                onMouseLeave={() => setHover(null)}
+              >
+                {total === 0 ? (
+                  <div className="w-full rounded-sm" style={{ height: '3px', backgroundColor: '#e8d5d5' }} />
+                ) : (
+                  <>
+                    <motion.div
+                      initial={{ height: 0 }}
+                      animate={{ height: `${pctGuests}%` }}
+                      transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                      className="w-full rounded-t-sm"
+                      style={{ backgroundColor: SERIES.guests }}
+                    />
+                    <motion.div
+                      initial={{ height: 0 }}
+                      animate={{ height: `${Math.max(pctTickets, item.tickets > 0 ? 3 : 0)}%` }}
+                      transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                      className="w-full rounded-b-sm"
+                      style={{ backgroundColor: SERIES.tickets }}
+                    />
+                  </>
+                )}
+              </div>
+              <span className="text-[7px] text-[#7a4a4a]/50 leading-none" style={{ fontFamily: 'var(--font-nunito)' }}>
+                {item.label}
+              </span>
             </div>
-            <span
-              className="text-[8px] text-[#7a4a4a]/50 leading-none"
-              style={{ fontFamily: 'var(--font-nunito)' }}
-            >
-              {item.label}
-            </span>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -317,7 +460,8 @@ export default function AnalyticsDashboard() {
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tickets'      }, scheduleRefresh)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'tickets'      }, scheduleRefresh)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'merch_orders' }, scheduleRefresh)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'newsletter_subscribers' }, scheduleRefresh)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'event_guests' }, scheduleRefresh)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'customers'    }, scheduleRefresh)
       .subscribe((status) => {
         setLiveConnected(status === 'SUBSCRIBED');
       });
@@ -429,16 +573,14 @@ export default function AnalyticsDashboard() {
 
   if (!data) return null;
 
-  const { kpis, ticketsByEvent, revenueByMonth, subscriberGrowth, recentTickets } = data;
+  const { kpis, ticketsByEvent, revenueByMonth, participantsGrowth, customerGrowth } = data;
   const isFiltered = !!selectedEvent;
   const selectedTitle = isFiltered
     ? (data.events.find((e) => e.slug === selectedEvent)?.title ?? selectedEvent)
     : '';
   const isFreeEvent = isFiltered && data.selectedEventPrice === 0;
 
-  const maxTickets = Math.max(...ticketsByEvent.map((e) => e.tickets), 1);
-
-  const growthValues = subscriberGrowth.map((w) => w.cumulative);
+  const maxParticipants = Math.max(...ticketsByEvent.map((e) => e.participants), 1);
 
   return (
     <div className="flex flex-col gap-6">
@@ -469,54 +611,50 @@ export default function AnalyticsDashboard() {
         />
         <KpiCard
           label="TICKETS SOLD"
-          value={kpis.totalTickets}
-          sub={isFiltered ? selectedTitle : 'all events'}
+          value={kpis.totalParticipants}
+          sub={isFiltered ? selectedTitle : `${kpis.totalTickets} ticket + ${kpis.totalGuests} lista`}
           icon={Ticket}
           delay={0.06}
         />
         <KpiCard
-          label="SUBSCRIBERS"
-          value={kpis.totalSubscribers}
-          sub="newsletter"
+          label="PARTECIPANTI"
+          value={kpis.totalParticipants}
+          sub={`ticket + ${kpis.totalGuests} lista`}
           icon={Users}
           delay={0.12}
         />
         <KpiCard
           label="APPLICATIONS"
           value={kpis.totalApplications}
-          sub={`${kpis.conversionRate}% conversion`}
+          sub={`${kpis.approvalRate}% approvate`}
           icon={FileText}
           delay={0.18}
         />
       </div>
 
+      {/* Tickets + list per event */}
+      <Card title={isFiltered ? `PARTECIPANTI — ${selectedTitle.toUpperCase()}` : 'PARTECIPANTI PER EVENTO (TICKET + LISTA) — ULTIMI 6'}>
+        <StackedHBarChart
+          items={ticketsByEvent.map((e) => ({ label: e.title, tickets: e.tickets, guests: e.guests, revenue: e.revenue }))}
+          maxValue={maxParticipants}
+        />
+      </Card>
+
       {/* Charts row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
-        {/* Tickets per event */}
-        <Card title={isFiltered ? `TICKETS — ${selectedTitle.toUpperCase()}` : 'TICKETS SOLD PER EVENT'}>
-          <HBarChart
-            items={ticketsByEvent.map((e) => ({
-              label: e.title,
-              value: e.tickets,
-              sub: e.revenue > 0 ? ` · €${e.revenue}` : ' · free',
-            }))}
-            maxValue={maxTickets}
-          />
-        </Card>
-
         {/* Monthly Revenue */}
-        <Card title="MONTHLY REVENUE (EUR)">
+        <Card title="MONTHLY REVENUE (EUR) — ULTIMI 12 MESI">
           {revenueByMonth.every((m) => m.revenue === 0) ? (
             <p className="text-xs text-[#7a4a4a]/40 italic py-4" style={{ fontFamily: 'var(--font-nunito)' }}>
               No revenue recorded yet.
             </p>
           ) : (
             <>
-              <VBarChart items={revenueByMonth.map((m) => ({ label: m.label, value: m.revenue }))} />
+              <VBarChart items={revenueByMonth.map((m) => ({ label: m.label, value: m.revenue }))} valuePrefix="€" />
               <div className="flex items-center justify-between pt-2 border-t border-[#e8d5d5]">
                 <span className="text-[9px] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
-                  Last 6 months
+                  Ultimi 12 mesi
                 </span>
                 <span className="text-sm font-medium text-[#731515]" style={{ fontFamily: 'var(--font-syne)' }}>
                   €{revenueByMonth.reduce((s, m) => s + m.revenue, 0).toFixed(0)} total
@@ -525,23 +663,47 @@ export default function AnalyticsDashboard() {
             </>
           )}
         </Card>
+
+        {/* Participants growth (tickets + list, weekly) */}
+        <Card title="PARTECIPANTI — ULTIME 12 SETTIMANE">
+          {participantsGrowth.every((w) => w.total === 0) ? (
+            <p className="text-xs text-[#7a4a4a]/40 italic py-4" style={{ fontFamily: 'var(--font-nunito)' }}>
+              Nessun ticket o iscrizione lista ancora.
+            </p>
+          ) : (
+            <>
+              <StackedVBarChart items={participantsGrowth.map((w) => ({ label: w.label, tickets: w.tickets, guests: w.guests }))} />
+              <div className="flex items-center justify-between pt-2 border-t border-[#e8d5d5]">
+                <span className="text-[9px] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
+                  Nuovi in questo periodo
+                </span>
+                <span className="text-sm font-medium text-[#731515]" style={{ fontFamily: 'var(--font-syne)' }}>
+                  {participantsGrowth.reduce((s, w) => s + w.total, 0)}
+                </span>
+              </div>
+            </>
+          )}
+        </Card>
       </div>
 
-      {/* Subscriber growth */}
-      <Card title="NEWSLETTER SUBSCRIBER GROWTH (LAST 12 WEEKS)">
-        {kpis.totalSubscribers === 0 ? (
+      {/* CRM customer growth (replaces recent ticket orders) */}
+      <Card title="CRESCITA CLIENTI CRM (ULTIME 12 SETTIMANE)">
+        {kpis.totalCustomers === 0 ? (
           <p className="text-xs text-[#7a4a4a]/40 italic py-4" style={{ fontFamily: 'var(--font-nunito)' }}>
-            No subscribers yet.
+            Nessun cliente ancora.
           </p>
         ) : (
           <div className="flex flex-col gap-3">
-            <div className="h-20 w-full">
-              <LineChart data={growthValues} />
+            <div className="h-24 w-full">
+              <LineChart
+                data={customerGrowth.map((w) => w.cumulative)}
+                labels={customerGrowth.map((w) => w.label)}
+              />
             </div>
             {/* X axis labels */}
             <div className="flex justify-between px-1">
-              {subscriberGrowth
-                .filter((_, i) => i % 2 === 0 || i === subscriberGrowth.length - 1)
+              {customerGrowth
+                .filter((_, i) => i % 2 === 0 || i === customerGrowth.length - 1)
                 .map((w) => (
                   <span
                     key={w.week}
@@ -554,43 +716,15 @@ export default function AnalyticsDashboard() {
             </div>
             <div className="flex items-center justify-between pt-2 border-t border-[#e8d5d5]">
               <span className="text-[9px] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
-                New this period: +{subscriberGrowth.reduce((s, w) => s + w.new, 0)}
+                Nuovi in questo periodo: +{customerGrowth.reduce((s, w) => s + w.new, 0)}
               </span>
               <span className="text-sm font-medium text-[#731515]" style={{ fontFamily: 'var(--font-syne)' }}>
-                {kpis.totalSubscribers} total
+                {kpis.totalCustomers} totali
               </span>
             </div>
           </div>
         )}
       </Card>
-
-      {/* Recent activity */}
-      {recentTickets.length > 0 && (
-        <Card title="RECENT TICKET ORDERS">
-          <div className="flex flex-col divide-y divide-[#e8d5d5]">
-            {recentTickets.map((t, i) => (
-              <div key={i} className="py-3 flex items-center justify-between gap-4">
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-xs font-medium text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>
-                    {t.buyer}
-                  </span>
-                  <span className="text-[10px] text-[#7a4a4a]/60" style={{ fontFamily: 'var(--font-nunito)' }}>
-                    {t.event}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  <span className="text-[9px] tracking-[0.15em] px-2 py-0.5 border border-[#e8d5d5] text-[#7a4a4a]">
-                    {t.tickets} ticket{t.tickets > 1 ? 's' : ''}
-                  </span>
-                  <span className="text-[9px] text-[#7a4a4a]/40" style={{ fontFamily: 'var(--font-nunito)' }}>
-                    {new Date(t.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
 
       {/* ── Visitatori del Sito (Google Analytics) ── */}
       <Card title="VISITATORI DEL SITO — GOOGLE ANALYTICS">
@@ -639,37 +773,7 @@ export default function AnalyticsDashboard() {
             {visitors.weeklyChart.length > 0 && (
               <div className="flex flex-col gap-3">
                 <div className="text-[9px] tracking-[0.3em] text-[#7a4a4a]/50">UTENTI ATTIVI PER SETTIMANA (ULTIME 4 SETTIMANE)</div>
-                <div className="flex items-end gap-2 h-20">
-                  {(() => {
-                    const maxV = Math.max(...visitors.weeklyChart.map((w) => w.visitors), 1);
-                    return visitors.weeklyChart.map((w, i) => {
-                      const pct = (w.visitors / maxV) * 100;
-                      return (
-                        <div key={i} className="flex-1 flex flex-col items-center gap-1 group relative">
-                          {/* Tooltip */}
-                          <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center pointer-events-none z-10">
-                            <div className="bg-[#1a0505] text-white text-[9px] px-2 py-1 whitespace-nowrap rounded-lg" style={{ fontFamily: 'var(--font-nunito)' }}>
-                              {w.visitors.toLocaleString('it-IT')} utenti
-                            </div>
-                            <div className="w-1.5 h-1.5 bg-[#1a0505] rotate-45 -mt-[3px]" />
-                          </div>
-                          <div className="w-full relative flex items-end" style={{ height: '60px' }}>
-                            <motion.div
-                              initial={{ height: 0 }}
-                              animate={{ height: `${Math.max(pct, w.visitors > 0 ? 5 : 0)}%` }}
-                              transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-                              className="w-full rounded-sm"
-                              style={{ backgroundColor: w.visitors > 0 ? '#731515' : '#e8d5d5' }}
-                            />
-                          </div>
-                          <span className="text-[7px] text-[#7a4a4a]/40 leading-none text-center" style={{ fontFamily: 'var(--font-nunito)' }}>
-                            {w.label}
-                          </span>
-                        </div>
-                      );
-                    });
-                  })()}
-                </div>
+                <VBarChart items={visitors.weeklyChart.map((w) => ({ label: w.label, value: w.visitors }))} />
               </div>
             )}
 
