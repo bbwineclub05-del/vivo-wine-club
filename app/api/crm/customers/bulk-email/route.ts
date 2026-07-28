@@ -3,6 +3,12 @@ import { Resend } from 'resend';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { requireAdminOrStaff } from '@/lib/auth-guard';
 
+// Large recipient lists need several sequential batch calls (100/batch) to
+// Resend — without this, Vercel's default serverless timeout (as low as 10s)
+// kills the function partway through, silently dropping every batch after
+// the cutoff.
+export const maxDuration = 300;
+
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 if (!process.env.RESEND_API_KEY) {

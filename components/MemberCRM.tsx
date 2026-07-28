@@ -45,6 +45,7 @@ function CommunicationModal({
   const [body,    setBody]    = useState('');
   const [status,  setStatus]  = useState<'idle' | 'sending' | 'done' | 'error'>('idle');
   const [result,  setResult]  = useState<{ sent: number; failed: number } | null>(null);
+  const [failedEmails, setFailedEmails] = useState<{ email: string; error: string }[]>([]);
 
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -52,16 +53,17 @@ function CommunicationModal({
     return () => { document.body.style.overflow = prev; };
   }, []);
 
-  async function handleSend(e: React.FormEvent) {
+  async function handleSend(e: React.FormEvent, overrideRecipients?: Member[]) {
     e.preventDefault();
     setStatus('sending');
+    const targets = overrideRecipients ?? recipients;
     try {
       const res = await fetch('/api/crm/send', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({
           type:       'custom',
-          recipients: recipients.map((m) => ({ email: m.email, name: m.name })),
+          recipients: targets.map((m) => ({ email: m.email, name: m.name })),
           subject,
           text:       body,
         }),
@@ -69,10 +71,17 @@ function CommunicationModal({
       const json = await res.json();
       if (!res.ok) throw new Error(json.error);
       setResult({ sent: json.sent, failed: json.failed });
+      setFailedEmails(json.failedEmails ?? []);
       setStatus('done');
     } catch {
       setStatus('error');
     }
+  }
+
+  function handleRetryFailed() {
+    const failedSet = new Set(failedEmails.map((f) => f.email));
+    const targets = recipients.filter((m) => failedSet.has(m.email));
+    handleSend({ preventDefault() {} } as React.FormEvent, targets);
   }
 
   return (
@@ -100,20 +109,50 @@ function CommunicationModal({
         <div className="flex-1 overflow-y-auto" style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
         {status === 'done' ? (
           <div className="p-10 text-center flex flex-col items-center gap-4">
-            <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center">
-              <Check size={22} className="text-green-600" />
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${failedEmails.length > 0 ? 'bg-amber-50' : 'bg-green-50'}`}>
+              {failedEmails.length > 0 ? <AlertCircle size={22} className="text-amber-600" /> : <Check size={22} className="text-green-600" />}
             </div>
             <div>
               <p className="text-base font-medium text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>
-                Mail inviate con successo
+                {failedEmails.length > 0 ? 'Invio completato con errori' : 'Mail inviate con successo'}
               </p>
               <p className="text-sm text-[#7a4a4a] mt-1" style={{ fontFamily: 'var(--font-nunito)' }}>
                 {result?.sent} inviate · {result?.failed} fallite
               </p>
             </div>
-            <button onClick={onClose} className="text-[9px] tracking-[0.3em] text-white bg-[#731515] px-6 py-3 hover:bg-[#aa4848] transition-colors">
-              CHIUDI
-            </button>
+
+            {failedEmails.length > 0 && (
+              <div className="w-full text-left bg-[#fdf6f6] border border-[#e8d5d5] rounded-lg p-3 max-h-40 overflow-y-auto">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[9px] tracking-[0.2em] text-[#731515]">DESTINATARI FALLITI</span>
+                  <button
+                    type="button"
+                    onClick={() => navigator.clipboard.writeText(failedEmails.map((f) => f.email).join('\n'))}
+                    className="text-[9px] tracking-[0.15em] text-[#7a4a4a]/60 hover:text-[#731515] underline underline-offset-2"
+                  >
+                    COPIA LISTA
+                  </button>
+                </div>
+                <ul className="space-y-1">
+                  {failedEmails.map((f) => (
+                    <li key={f.email} className="text-[11px] text-[#7a4a4a]" style={{ fontFamily: 'var(--font-nunito)' }}>
+                      {f.email} <span className="text-[#7a4a4a]/40">— {f.error}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="flex items-center gap-3">
+              {failedEmails.length > 0 && (
+                <button onClick={handleRetryFailed} className="text-[9px] tracking-[0.3em] text-[#731515] border border-[#731515]/30 bg-white px-5 py-3 hover:bg-[#fdf0f0] transition-colors">
+                  RIPROVA I FALLITI
+                </button>
+              )}
+              <button onClick={onClose} className="text-[9px] tracking-[0.3em] text-white bg-[#731515] px-6 py-3 hover:bg-[#aa4848] transition-colors">
+                CHIUDI
+              </button>
+            </div>
           </div>
         ) : status === 'error' ? (
           <div className="p-10 text-center flex flex-col items-center gap-4">
@@ -205,6 +244,7 @@ function EventEmailModal({
   });
   const [status, setStatus]  = useState<'idle' | 'sending' | 'done' | 'error'>('idle');
   const [result, setResult]  = useState<{ sent: number; failed: number } | null>(null);
+  const [failedEmails, setFailedEmails] = useState<{ email: string; error: string }[]>([]);
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((p) => ({ ...p, [k]: e.target.value }));
@@ -215,16 +255,17 @@ function EventEmailModal({
     return () => { document.body.style.overflow = prev; };
   }, []);
 
-  async function handleSend(e: React.FormEvent) {
+  async function handleSend(e: React.FormEvent, overrideRecipients?: Member[]) {
     e.preventDefault();
     setStatus('sending');
+    const targets = overrideRecipients ?? recipients;
     try {
       const res = await fetch('/api/crm/send', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({
           type:        'event',
-          recipients:  recipients.map((m) => ({ email: m.email, name: m.name })),
+          recipients:  targets.map((m) => ({ email: m.email, name: m.name })),
           subject:     `Nuovo evento: ${form.eventTitle} — Vivo Wine Club`,
           eventParams: form,
         }),
@@ -232,10 +273,17 @@ function EventEmailModal({
       const json = await res.json();
       if (!res.ok) throw new Error(json.error);
       setResult({ sent: json.sent, failed: json.failed });
+      setFailedEmails(json.failedEmails ?? []);
       setStatus('done');
     } catch {
       setStatus('error');
     }
+  }
+
+  function handleRetryFailed() {
+    const failedSet = new Set(failedEmails.map((f) => f.email));
+    const targets = recipients.filter((m) => failedSet.has(m.email));
+    handleSend({ preventDefault() {} } as React.FormEvent, targets);
   }
 
   return (
@@ -263,20 +311,50 @@ function EventEmailModal({
         <div className="flex-1 overflow-y-auto" style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
         {status === 'done' ? (
           <div className="p-10 text-center flex flex-col items-center gap-4">
-            <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center">
-              <Check size={22} className="text-green-600" />
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${failedEmails.length > 0 ? 'bg-amber-50' : 'bg-green-50'}`}>
+              {failedEmails.length > 0 ? <AlertCircle size={22} className="text-amber-600" /> : <Check size={22} className="text-green-600" />}
             </div>
             <div>
               <p className="text-base font-medium text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>
-                Email evento inviata!
+                {failedEmails.length > 0 ? 'Invio completato con errori' : 'Email evento inviata!'}
               </p>
               <p className="text-sm text-[#7a4a4a] mt-1" style={{ fontFamily: 'var(--font-nunito)' }}>
                 {result?.sent} inviate · {result?.failed} fallite
               </p>
             </div>
-            <button onClick={onClose} className="text-[9px] tracking-[0.3em] text-white bg-[#731515] px-6 py-3 hover:bg-[#aa4848] transition-colors">
-              CHIUDI
-            </button>
+
+            {failedEmails.length > 0 && (
+              <div className="w-full text-left bg-[#fdf6f6] border border-[#e8d5d5] rounded-lg p-3 max-h-40 overflow-y-auto">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[9px] tracking-[0.2em] text-[#731515]">DESTINATARI FALLITI</span>
+                  <button
+                    type="button"
+                    onClick={() => navigator.clipboard.writeText(failedEmails.map((f) => f.email).join('\n'))}
+                    className="text-[9px] tracking-[0.15em] text-[#7a4a4a]/60 hover:text-[#731515] underline underline-offset-2"
+                  >
+                    COPIA LISTA
+                  </button>
+                </div>
+                <ul className="space-y-1">
+                  {failedEmails.map((f) => (
+                    <li key={f.email} className="text-[11px] text-[#7a4a4a]" style={{ fontFamily: 'var(--font-nunito)' }}>
+                      {f.email} <span className="text-[#7a4a4a]/40">— {f.error}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="flex items-center gap-3">
+              {failedEmails.length > 0 && (
+                <button onClick={handleRetryFailed} className="text-[9px] tracking-[0.3em] text-[#731515] border border-[#731515]/30 bg-white px-5 py-3 hover:bg-[#fdf0f0] transition-colors">
+                  RIPROVA I FALLITI
+                </button>
+              )}
+              <button onClick={onClose} className="text-[9px] tracking-[0.3em] text-white bg-[#731515] px-6 py-3 hover:bg-[#aa4848] transition-colors">
+                CHIUDI
+              </button>
+            </div>
           </div>
         ) : status === 'error' ? (
           <div className="p-10 text-center flex flex-col items-center gap-4">

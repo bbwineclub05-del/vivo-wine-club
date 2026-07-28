@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Wine } from 'lucide-react';
+import { Send, Wine, Camera, X } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import { resizeImageForUpload } from '@/lib/imageResize';
 
 /* ─────────────────────────────────────────────
    Types
@@ -12,6 +13,13 @@ interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  imageUrl?: string;
+}
+
+interface PendingImage {
+  base64:    string;
+  mediaType: string;
+  dataUrl:   string;
 }
 
 /* ─────────────────────────────────────────────
@@ -169,7 +177,21 @@ function Bubble({ msg }: { msg: Message }) {
         }`}
         style={{ fontFamily: 'var(--font-nunito)' }}
       >
-        {isUser ? msg.content : <AssistantMarkdown content={msg.content} />}
+        {isUser ? (
+          <>
+            {msg.imageUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={msg.imageUrl}
+                alt="Etichetta caricata"
+                className="w-full max-w-[220px] rounded-lg mb-2 border border-white/20"
+              />
+            )}
+            {msg.content && <span>{msg.content}</span>}
+          </>
+        ) : (
+          <AssistantMarkdown content={msg.content} />
+        )}
       </div>
     </motion.div>
   );
@@ -185,24 +207,47 @@ export default function WineAssistant() {
     content: 'Ciao! Sono il tuo sommelier virtuale. Chiedimi tutto sul vino — bottiglie, abbinamenti, regioni, annate, produttori. 🍷',
   };
 
-  const [messages,    setMessages]    = useState<Message[]>([WELCOME]);
-  const [input,       setInput]       = useState('');
-  const [loading,     setLoading]     = useState(false);
-  const [suggestions] = useState<string[]>(() => pickSuggestions());
-  const bottomRef     = useRef<HTMLDivElement>(null);
-  const inputRef      = useRef<HTMLTextAreaElement>(null);
+  const [messages,      setMessages]      = useState<Message[]>([WELCOME]);
+  const [input,         setInput]         = useState('');
+  const [loading,       setLoading]       = useState(false);
+  const [suggestions]   = useState<string[]>(() => pickSuggestions());
+  const [pendingImage,  setPendingImage]  = useState<PendingImage | null>(null);
+  const [imageError,    setImageError]    = useState<string | null>(null);
+  const bottomRef       = useRef<HTMLDivElement>(null);
+  const inputRef        = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef    = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
+  async function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-selecting the same file later
+    if (!file) return;
+    setImageError(null);
+    try {
+      const resized = await resizeImageForUpload(file);
+      setPendingImage(resized);
+    } catch {
+      setImageError('Impossibile leggere la foto. Riprova.');
+    }
+  }
+
   async function sendMessage(text: string) {
     const trimmed = text.trim();
-    if (!trimmed || loading) return;
+    const image = pendingImage;
+    if ((!trimmed && !image) || loading) return;
 
-    const userMsg: Message = { id: Date.now().toString(), role: 'user', content: trimmed };
+    const userMsg: Message = {
+      id:       Date.now().toString(),
+      role:     'user',
+      content:  trimmed,
+      imageUrl: image?.dataUrl,
+    };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
+    setPendingImage(null);
     setLoading(true);
 
     const history = messages
@@ -213,7 +258,12 @@ export default function WineAssistant() {
       const res  = await fetch('/api/wine-assistant', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ message: trimmed, history }),
+        body:    JSON.stringify({
+          message: trimmed,
+          history,
+          image:          image?.base64,
+          imageMediaType: image?.mediaType,
+        }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? 'Errore');
@@ -311,13 +361,46 @@ export default function WineAssistant() {
 
       {/* ── Input bar ── */}
       <div className="shrink-0 pt-3 border-t border-[#eddada]">
+        {imageError && (
+          <p className="text-[11px] text-[#731515] mb-2" style={{ fontFamily: 'var(--font-nunito)' }}>{imageError}</p>
+        )}
+        {pendingImage && (
+          <div className="flex items-center gap-2 mb-2 bg-[#fdf6f6] border border-[#eddada] rounded-xl px-3 py-2 w-fit">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={pendingImage.dataUrl} alt="Anteprima etichetta" className="w-10 h-10 rounded-lg object-cover" />
+            <span className="text-[11px] text-[#7a4a4a]" style={{ fontFamily: 'var(--font-nunito)' }}>Foto pronta — descrivi o invia direttamente</span>
+            <button
+              onClick={() => setPendingImage(null)}
+              className="w-6 h-6 rounded-full flex items-center justify-center text-[#7a4a4a]/50 hover:text-[#731515] hover:bg-white transition-colors"
+              aria-label="Rimuovi foto"
+            >
+              <X size={12} />
+            </button>
+          </div>
+        )}
         <div className="flex items-end gap-2 bg-[#fdf6f6] border border-[#eddada] rounded-2xl px-4 py-3 focus-within:border-[#731515]/40 transition-colors">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={handleImageSelect}
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={loading}
+            title="Scatta o carica una foto dell'etichetta"
+            className="shrink-0 w-8 h-8 rounded-xl border border-[#eddada] bg-white text-[#731515] flex items-center justify-center hover:bg-[#fdf0f0] disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150"
+          >
+            <Camera size={14} />
+          </button>
           <textarea
             ref={inputRef}
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask about a wine, region, pairing…"
+            placeholder="Ask about a wine, region, pairing… or attach a label photo"
             rows={1}
             className="flex-1 resize-none bg-transparent text-[#1a0505] text-sm placeholder:text-[#7a4a4a]/35 focus:outline-none leading-relaxed max-h-28 overflow-y-auto"
             style={{ fontFamily: 'var(--font-nunito)', height: 'auto' }}
@@ -329,7 +412,7 @@ export default function WineAssistant() {
           />
           <button
             onClick={() => sendMessage(input)}
-            disabled={!input.trim() || loading}
+            disabled={(!input.trim() && !pendingImage) || loading}
             className="shrink-0 w-8 h-8 rounded-xl bg-[#731515] text-white flex items-center justify-center hover:bg-[#9b2323] disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150"
           >
             <Send size={13} />

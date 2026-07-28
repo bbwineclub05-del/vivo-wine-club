@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Wine, X } from 'lucide-react';
+import { Send, Wine, X, Camera } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import { resizeImageForUpload } from '@/lib/imageResize';
 
 /* ─────────────────────────────────────────────
    Types
@@ -13,6 +14,13 @@ interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  imageUrl?: string;
+}
+
+interface PendingImage {
+  base64:    string;
+  mediaType: string;
+  dataUrl:   string;
 }
 
 /* ─────────────────────────────────────────────
@@ -136,7 +144,21 @@ function Bubble({ msg }: { msg: Message }) {
         }`}
         style={{ fontFamily: 'var(--font-nunito)' }}
       >
-        {isUser ? msg.content : <AssistantMarkdown content={msg.content} />}
+        {isUser ? (
+          <>
+            {msg.imageUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={msg.imageUrl}
+                alt="Etichetta caricata"
+                className="w-full max-w-[180px] rounded-lg mb-1.5 border border-white/20"
+              />
+            )}
+            {msg.content && <span>{msg.content}</span>}
+          </>
+        ) : (
+          <AssistantMarkdown content={msg.content} />
+        )}
       </div>
     </motion.div>
   );
@@ -164,8 +186,11 @@ function WidgetInner() {
   const [loading,     setLoading]     = useState(false);
   const [locale,      setLocale]      = useState<'it' | 'en' | 'fr'>('en');
   const [initialized, setInitialized] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const inputRef  = useRef<HTMLInputElement>(null);
+  const [pendingImage, setPendingImage] = useState<PendingImage | null>(null);
+  const [imageError,   setImageError]   = useState<string | null>(null);
+  const bottomRef    = useRef<HTMLDivElement>(null);
+  const inputRef      = useRef<HTMLInputElement>(null);
+  const fileInputRef  = useRef<HTMLInputElement>(null);
 
   // Detect locale on mount
   useEffect(() => {
@@ -195,13 +220,37 @@ function WidgetInner() {
     if (open) setTimeout(() => inputRef.current?.focus(), 300);
   }, [open]);
 
+  async function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setImageError(null);
+    try {
+      const resized = await resizeImageForUpload(file);
+      setPendingImage(resized);
+    } catch {
+      setImageError(
+        locale === 'it' ? 'Impossibile leggere la foto. Riprova.'
+        : locale === 'fr' ? 'Impossible de lire la photo. Réessayez.'
+        : "Couldn't read that photo. Please try again.",
+      );
+    }
+  }
+
   async function sendMessage(text: string) {
     const trimmed = text.trim();
-    if (!trimmed || loading) return;
+    const image = pendingImage;
+    if ((!trimmed && !image) || loading) return;
 
-    const userMsg: Message = { id: Date.now().toString(), role: 'user', content: trimmed };
+    const userMsg: Message = {
+      id:       Date.now().toString(),
+      role:     'user',
+      content:  trimmed,
+      imageUrl: image?.dataUrl,
+    };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
+    setPendingImage(null);
     setLoading(true);
 
     const history = messages
@@ -212,7 +261,12 @@ function WidgetInner() {
       const res  = await fetch('/api/wine-assistant', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ message: trimmed, history }),
+        body:    JSON.stringify({
+          message: trimmed,
+          history,
+          image:          image?.base64,
+          imageMediaType: image?.mediaType,
+        }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? 'Errore');
@@ -330,7 +384,42 @@ function WidgetInner() {
 
             {/* Input */}
             <div className="px-3 pb-3 shrink-0">
+              {imageError && (
+                <p className="text-[10px] text-[#731515] mb-1.5" style={{ fontFamily: 'var(--font-nunito)' }}>{imageError}</p>
+              )}
+              {pendingImage && (
+                <div className="flex items-center gap-2 mb-1.5 bg-[#fdf6f6] border border-[#eddada] rounded-lg px-2 py-1.5 w-fit">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={pendingImage.dataUrl} alt="Anteprima" className="w-8 h-8 rounded-md object-cover" />
+                  <span className="text-[10px] text-[#7a4a4a]" style={{ fontFamily: 'var(--font-nunito)' }}>
+                    {locale === 'it' ? 'Foto pronta' : locale === 'fr' ? 'Photo prête' : 'Photo ready'}
+                  </span>
+                  <button
+                    onClick={() => setPendingImage(null)}
+                    className="w-5 h-5 rounded-full flex items-center justify-center text-[#7a4a4a]/50 hover:text-[#731515] hover:bg-white transition-colors"
+                    aria-label="Remove photo"
+                  >
+                    <X size={10} />
+                  </button>
+                </div>
+              )}
               <div className="flex items-center gap-2 bg-white border border-[#eddada] rounded-xl px-3 py-2 focus-within:border-[#5b1a14]/40 transition-colors">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={handleImageSelect}
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={loading}
+                  title={locale === 'it' ? "Scatta o carica una foto dell'etichetta" : 'Attach a label photo'}
+                  className="shrink-0 w-7 h-7 rounded-lg text-[#5b1a14] flex items-center justify-center hover:bg-[#fdf0f0] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  <Camera size={13} />
+                </button>
                 <input
                   ref={inputRef}
                   value={input}
@@ -341,12 +430,12 @@ function WidgetInner() {
                     : locale === 'fr' ? 'Posez votre question…'
                     : 'Ask me anything about wine…'
                   }
-                  className="flex-1 bg-transparent text-[#1a0505] placeholder:text-[#7a4a4a]/35 focus:outline-none"
+                  className="flex-1 bg-transparent text-[#1a0505] placeholder:text-[#7a4a4a]/35 focus:outline-none min-w-0"
                   style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
                 />
                 <button
                   onClick={() => sendMessage(input)}
-                  disabled={!input.trim() || loading}
+                  disabled={(!input.trim() && !pendingImage) || loading}
                   className="w-7 h-7 rounded-lg bg-[#5b1a14] text-white flex items-center justify-center hover:bg-[#7a2020] disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
                 >
                   <Send size={12} />
