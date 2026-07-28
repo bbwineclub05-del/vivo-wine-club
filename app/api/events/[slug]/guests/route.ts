@@ -3,6 +3,7 @@ import { Resend } from 'resend';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { requireAdminOrStaff } from '@/lib/auth-guard';
 import { emailShell, heading, para, divider } from '@/lib/email-shell';
+import { getClientIp, PRIVACY_POLICY_VERSION } from '@/lib/consent';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -133,12 +134,18 @@ export async function POST(
   const routeOption = body.route_option && ['40km', '80km'].includes(String(body.route_option))
     ? String(body.route_option)
     : null;
+  const consentPrivacy   = body.consent_privacy === true;
+  const consentMarketing = body.consent_marketing === true;
 
   if (!firstName || !lastName || !email) {
     return NextResponse.json({ error: 'Nome, cognome ed email sono obbligatori.' }, { status: 422 });
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return NextResponse.json({ error: 'Indirizzo email non valido.' }, { status: 422 });
+  }
+  // Privacy Policy consent is REQUIRED — reject if not explicitly true
+  if (!consentPrivacy) {
+    return NextResponse.json({ error: 'È necessario accettare la Privacy Policy.' }, { status: 422 });
   }
 
   const db = getSupabaseAdmin();
@@ -172,6 +179,7 @@ export async function POST(
   }
 
   // Insert guest
+  const now = new Date().toISOString();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: guest, error: insertErr } = await (db as any)
     .from('event_guests')
@@ -184,6 +192,11 @@ export async function POST(
       phone,
       partner_code: partnerCode,
       route_option: routeOption,
+      consent_privacy_accepted_at:   now,
+      consent_privacy_version:       PRIVACY_POLICY_VERSION,
+      consent_marketing:             consentMarketing,
+      consent_marketing_accepted_at: consentMarketing ? now : null,
+      consent_ip:                    getClientIp(request),
     })
     .select()
     .single();

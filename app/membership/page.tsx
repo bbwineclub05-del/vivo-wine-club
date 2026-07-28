@@ -8,6 +8,7 @@ import { ArrowLeft, CheckCircle } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useTranslations } from 'next-intl';
+import ConsentCheckbox from '@/components/ConsentCheckbox';
 
 const INPUT_CLASS =
   'w-full bg-white border border-[#e8d5d5] px-4 py-3 text-[#1a0505] placeholder-[#b09090] focus:outline-none focus:border-[#731515] transition-colors duration-200 rounded-lg [font-size:16px]';
@@ -50,13 +51,20 @@ function minDobDate() {
 
 
 export default function MembershipPage() {
-  const t = useTranslations('membership');
+  const t  = useTranslations('membership');
+  const tc = useTranslations('consent');
   const [form, setForm] = useState<FormState>(INITIAL);
   const [confirmEmail, setConfirmEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const emailsMatch = form.email.length > 0 && form.email === confirmEmail;
+  // Consent — consentPrivacy and consentAge are REQUIRED (block submit); consentMarketing is OPTIONAL
+  const [consentPrivacy, setConsentPrivacy]     = useState(false);
+  const [consentAge, setConsentAge]             = useState(false);
+  const [consentMarketing, setConsentMarketing] = useState(false);
+
+  const emailsMatch  = form.email.length > 0 && form.email === confirmEmail;
+  const canSubmit    = emailsMatch && consentPrivacy && consentAge;
 
   function set(field: keyof FormState) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
@@ -65,20 +73,23 @@ export default function MembershipPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!emailsMatch) return;
+    if (!canSubmit) return;
     setLoading(true);
     await fetch('/api/apply', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        name:          form.fullName,
-        email:         form.email,
-        phone:         form.phone,
-        city:          form.city,
-        date_of_birth: form.dateOfBirth,
-        source:        form.source,
-        experience:    form.experience,
-        motivation:    form.motivation,
+        name:              form.fullName,
+        email:             form.email,
+        phone:             form.phone,
+        city:              form.city,
+        date_of_birth:     form.dateOfBirth,
+        source:            form.source,
+        experience:        form.experience,
+        motivation:        form.motivation,
+        consent_privacy:   consentPrivacy,
+        consent_age:       consentAge,
+        consent_marketing: consentMarketing,
       }),
     });
     setLoading(false);
@@ -296,10 +307,44 @@ export default function MembershipPage() {
                   />
                 </div>
 
+                {/* ── Consent ── */}
+                <div className="flex flex-col gap-3">
+                  {/* Required: Privacy Policy */}
+                  <ConsentCheckbox
+                    id="membership-consent-privacy"
+                    required
+                    checked={consentPrivacy}
+                    onChange={setConsentPrivacy}
+                    label={tc.rich('privacyRequired', {
+                      privacyLink: (chunks) => (
+                        <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline hover:text-[#731515] transition-colors">
+                          {chunks}
+                        </a>
+                      ),
+                    })}
+                  />
+                  {/* Required: 18+ declaration */}
+                  <ConsentCheckbox
+                    id="membership-consent-age"
+                    required
+                    checked={consentAge}
+                    onChange={setConsentAge}
+                    label={tc('ageConfirmation')}
+                  />
+                  {/* Optional: marketing — must never block submit */}
+                  <ConsentCheckbox
+                    id="membership-consent-marketing"
+                    required={false}
+                    checked={consentMarketing}
+                    onChange={setConsentMarketing}
+                    label={tc('marketingOptional')}
+                  />
+                </div>
+
                 {/* Submit */}
                 <button
                   type="submit"
-                  disabled={loading || !emailsMatch}
+                  disabled={loading || !canSubmit}
                   className="w-full py-4 bg-[#731515] text-white text-[11px] tracking-[0.35em] hover:bg-[#aa4848] disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-300 rounded-lg"
                   style={{ fontFamily: 'var(--font-nunito)' }}
                 >

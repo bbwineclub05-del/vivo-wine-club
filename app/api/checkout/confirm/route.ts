@@ -52,6 +52,7 @@ export async function GET(request: Request) {
       const qty   = parseInt(meta.ticket_count, 10) || 1;
       const total = event.price * qty;
 
+      const metaConsentMarketing = meta.consent_marketing === 'true';
       await sendEventConfirmationEmails({
         orderId:     meta.order_id,
         event,
@@ -62,6 +63,14 @@ export async function GET(request: Request) {
         qty,
         total,
         partnerCode: meta.partner_code || undefined,
+        consentPrivacyAcceptedAt:   meta.consent_privacy_at,
+        consentPrivacyVersion:      meta.consent_privacy_version,
+        consentTermsAcceptedAt:     meta.consent_terms_at,
+        consentTermsVersion:        meta.consent_terms_version,
+        consentMarketing:           metaConsentMarketing,
+        consentMarketingAcceptedAt: metaConsentMarketing ? meta.consent_privacy_at : null,
+        consentPhotoVideo:          meta.consent_photo_video === 'true',
+        consentIp:                  meta.consent_ip || null,
       });
 
       // Track upsell conversions (non-fatal)
@@ -167,6 +176,11 @@ export async function GET(request: Request) {
         shipping_country:  shipping?.country ?? null,
         phone,
         delivery_notes:    deliveryNotes,
+        consent_privacy_accepted_at: meta.consent_privacy_at || null,
+        consent_privacy_version:     meta.consent_privacy_version || null,
+        consent_terms_accepted_at:   meta.consent_terms_at || null,
+        consent_terms_version:       meta.consent_terms_version || null,
+        consent_ip:                  meta.consent_ip || null,
       }, { onConflict: 'stripe_session_id', ignoreDuplicates: true });
 
       // Decrement stock for each purchased item (atomic check + decrement)

@@ -5,6 +5,7 @@ import { pixel } from '@/lib/pixel';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, User, Mail, Phone, Loader2, Route } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import ConsentCheckbox from '@/components/ConsentCheckbox';
 
 interface Props {
   eventSlug:       string;
@@ -21,12 +22,17 @@ const INPUT_CLS =
   'w-full bg-white border border-[#e8d5d5] text-[#1a0505] px-4 py-3 placeholder:text-[#7a4a4a]/35 focus:outline-none focus:border-[#731515]/50 transition-colors duration-200 rounded-lg';
 
 export default function EventGuestForm({ eventSlug, eventTitle, eventDate, eventLocation, partnerCode, showRouteOption, eventPrice = 0 }: Props) {
-  const t = useTranslations('events');
+  const t  = useTranslations('events');
+  const tc = useTranslations('consent');
   const [form, setForm]           = useState({ first_name: '', last_name: '', email: '', phone: '' });
   const [routeOption, setRouteOption] = useState<'40km' | '80km' | null>(null);
   const [loading, setLoading]     = useState(false);
   const [success, setSuccess]     = useState(false);
   const [error,   setError]       = useState('');
+
+  // Consent — consentPrivacy is REQUIRED (blocks submit); consentMarketing is OPTIONAL (never blocks submit)
+  const [consentPrivacy, setConsentPrivacy]     = useState(false);
+  const [consentMarketing, setConsentMarketing] = useState(false);
 
   function set(field: keyof typeof form) {
     return (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -43,6 +49,12 @@ export default function EventGuestForm({ eventSlug, eventTitle, eventDate, event
       return;
     }
 
+    // Privacy Policy consent is REQUIRED — block submit if not checked
+    if (!consentPrivacy) {
+      setError(tc('requiredError'));
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -51,8 +63,10 @@ export default function EventGuestForm({ eventSlug, eventTitle, eventDate, event
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({
           ...form,
-          partner_code:  partnerCode ?? null,
-          route_option:  showRouteOption ? routeOption : null,
+          partner_code:      partnerCode ?? null,
+          route_option:      showRouteOption ? routeOption : null,
+          consent_privacy:   consentPrivacy,
+          consent_marketing: consentMarketing,
         }),
       });
       const json = await res.json();
@@ -264,6 +278,32 @@ export default function EventGuestForm({ eventSlug, eventTitle, eventDate, event
               </div>
             )}
 
+            {/* ── Consent ── */}
+            <div className="flex flex-col gap-3 pt-1">
+              {/* Required: Privacy Policy */}
+              <ConsentCheckbox
+                id="guest-consent-privacy"
+                required
+                checked={consentPrivacy}
+                onChange={setConsentPrivacy}
+                label={tc.rich('privacyRequired', {
+                  privacyLink: (chunks) => (
+                    <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline hover:text-[#731515] transition-colors">
+                      {chunks}
+                    </a>
+                  ),
+                })}
+              />
+              {/* Optional: newsletter — must never block submit */}
+              <ConsentCheckbox
+                id="guest-consent-marketing"
+                required={false}
+                checked={consentMarketing}
+                onChange={setConsentMarketing}
+                label={tc('newsletterOptional')}
+              />
+            </div>
+
             {error && (
               <motion.p
                 initial={{ opacity: 0, y: -4 }}
@@ -277,7 +317,7 @@ export default function EventGuestForm({ eventSlug, eventTitle, eventDate, event
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !consentPrivacy}
               className="mt-1 w-full sm:w-auto sm:self-start inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-[#731515] text-white text-[11px] tracking-[0.35em] hover:bg-[#9b2323] disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-300 rounded-lg"
               style={{ fontFamily: 'var(--font-nunito)' }}
             >

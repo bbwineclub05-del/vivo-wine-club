@@ -5,9 +5,12 @@ import Image from 'next/image';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { X, Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
+import { useTranslations } from 'next-intl';
+import ConsentCheckbox from '@/components/ConsentCheckbox';
 
 export default function CartDrawer() {
   const { items, isOpen, setIsOpen, removeItem, updateQuantity, total, clearCart } = useCart();
+  const tc = useTranslations('consent');
   const reducedMotion = useReducedMotion();
   const d = (n: number) => (reducedMotion ? 0 : n);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
@@ -18,6 +21,8 @@ export default function CartDrawer() {
   const [discountLoading, setDiscountLoading] = useState(false);
   const [globalShipping, setGlobalShipping]   = useState(0);
   const [email, setEmail]                     = useState('');
+  // Consent — REQUIRED, blocks checkout until checked
+  const [consentPrivacyTerms, setConsentPrivacyTerms] = useState(false);
 
   useEffect(() => {
     fetch('/api/merch/settings')
@@ -61,6 +66,10 @@ export default function CartDrawer() {
   }, [discountCode, items]);
 
   const handleCheckout = useCallback(async () => {
+    if (!consentPrivacyTerms) {
+      setCheckoutError(tc('requiredErrorPrivacyTerms'));
+      return;
+    }
     setCheckoutError('');
     setCheckoutLoading(true);
     try {
@@ -72,6 +81,7 @@ export default function CartDrawer() {
           discountCode:  discountApplied ? discountCode.trim().toUpperCase() : undefined,
           shippingCost:  effectiveShipping > 0 ? effectiveShipping : undefined,
           customerEmail: email.trim() ? email.trim().toLowerCase() : undefined,
+          consentPrivacyTerms,
         }),
       });
       const data = await res.json();
@@ -81,7 +91,7 @@ export default function CartDrawer() {
       setCheckoutError(err instanceof Error ? err.message : 'Checkout failed');
       setCheckoutLoading(false);
     }
-  }, [items, discountCode, discountApplied, effectiveShipping, email]);
+  }, [items, discountCode, discountApplied, effectiveShipping, email, consentPrivacyTerms, tc]);
 
   return (
     <AnimatePresence>
@@ -283,6 +293,26 @@ export default function CartDrawer() {
                   )}
                 </div>
 
+                {/* Consent — REQUIRED, blocks checkout until checked */}
+                <ConsentCheckbox
+                  id="cart-consent-privacy-terms"
+                  required
+                  checked={consentPrivacyTerms}
+                  onChange={setConsentPrivacyTerms}
+                  label={tc.rich('privacyAndTermsRequired', {
+                    privacyLink: (chunks) => (
+                      <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline hover:text-[#731515] transition-colors">
+                        {chunks}
+                      </a>
+                    ),
+                    termsLink: (chunks) => (
+                      <a href="/terms-of-service" target="_blank" rel="noopener noreferrer" className="underline hover:text-[#731515] transition-colors">
+                        {chunks}
+                      </a>
+                    ),
+                  })}
+                />
+
                 {checkoutError && (
                   <p className="text-xs text-[#731515] text-center" style={{ fontFamily: 'var(--font-nunito)' }}>
                     {checkoutError}
@@ -290,7 +320,7 @@ export default function CartDrawer() {
                 )}
                 <button
                   onClick={handleCheckout}
-                  disabled={checkoutLoading}
+                  disabled={checkoutLoading || !consentPrivacyTerms}
                   className="w-full py-4 bg-[#731515] text-white text-[11px] tracking-[0.35em] hover:bg-[#aa4848] disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-300 rounded-lg"
                 >
                   {checkoutLoading ? 'REDIRECTING…' : 'CHECKOUT'}

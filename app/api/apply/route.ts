@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { supabase } from '@/lib/supabase';
 import { emailShell, heading, para, ctaButton, divider } from '@/lib/email-shell';
+import { getClientIp, PRIVACY_POLICY_VERSION } from '@/lib/consent';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -36,10 +37,19 @@ function notificationHtml(data: Record<string, string>): string {
 export async function POST(request: Request) {
   const body = await request.json();
   const { name, email, phone, city, date_of_birth, source, experience, motivation } = body;
+  const consentPrivacy   = body.consent_privacy === true;
+  const consentAge       = body.consent_age === true;
+  const consentMarketing = body.consent_marketing === true;
 
   if (!name || !email) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
+  // Privacy Policy consent and 18+ declaration are REQUIRED — reject if not explicitly true
+  if (!consentPrivacy || !consentAge) {
+    return NextResponse.json({ error: 'Consent to the Privacy Policy and age confirmation are required.' }, { status: 400 });
+  }
+
+  const now = new Date().toISOString();
 
   // Save to Supabase
   const { error: dbError } = await supabase.from('applications').insert({
@@ -51,6 +61,12 @@ export async function POST(request: Request) {
     source:        source        || null,
     experience:    experience    || null,
     motivation:    motivation    || null,
+    consent_privacy_accepted_at:   now,
+    consent_privacy_version:       PRIVACY_POLICY_VERSION,
+    consent_age_confirmed:         consentAge,
+    consent_marketing:             consentMarketing,
+    consent_marketing_accepted_at: consentMarketing ? now : null,
+    consent_ip:                    getClientIp(request),
   });
 
   if (dbError) {

@@ -59,8 +59,8 @@ const CONTACTS_DATA = [
 ];
 
 const LEGAL_KEYS = [
-  { key: 'privacyPolicy',   href: '#' },
-  { key: 'termsOfService',  href: '#' },
+  { key: 'privacyPolicy',   href: '/privacy-policy' },
+  { key: 'termsOfService',  href: '/terms-of-service' },
   { key: 'cookiePolicy',    href: '#' },
 ];
 

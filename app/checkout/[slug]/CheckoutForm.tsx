@@ -8,6 +8,8 @@ import { MapPin, Minus, Plus, Calendar, Tag, User, Gift, Sparkles, ShoppingBag, 
 import BackButton from '@/components/BackButton';
 import Navbar from '@/components/Navbar';
 import { type EventData } from '@/lib/events';
+import { useTranslations } from 'next-intl';
+import ConsentCheckbox from '@/components/ConsentCheckbox';
 
 const EMAIL_MISMATCH = 'Email addresses do not match.';
 
@@ -71,6 +73,7 @@ function Field({
 
 /* ── Checkout form ── */
 export default function CheckoutForm({ event, refCode, partnerCode, referralEnabled }: { event: EventData; refCode?: string; partnerCode?: string; referralEnabled?: boolean }) {
+  const tc = useTranslations('consent');
   const [qty,            setQty]            = useState(1);
   const [firstName,      setFirstName]      = useState('');
   const [lastName,       setLastName]       = useState('');
@@ -80,6 +83,11 @@ export default function CheckoutForm({ event, refCode, partnerCode, referralEnab
   const [enteredRefCode, setEnteredRefCode] = useState(refCode ?? '');
   const [loading,        setLoading]        = useState(false);
   const [error,          setError]          = useState('');
+
+  // Consent — consentPrivacyTerms is REQUIRED (blocks submit); consentMarketing/consentPhotoVideo are OPTIONAL
+  const [consentPrivacyTerms, setConsentPrivacyTerms] = useState(false);
+  const [consentMarketing,    setConsentMarketing]    = useState(false);
+  const [consentPhotoVideo,   setConsentPhotoVideo]   = useState(false);
 
   /* ── Upsell state ── */
   const [upsellConfigs, setUpsellConfigs] = useState<UpsellConfig[]>([]);
@@ -135,6 +143,7 @@ export default function CheckoutForm({ event, refCode, partnerCode, referralEnab
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!emailsMatch) { setError(EMAIL_MISMATCH); return; }
+    if (!consentPrivacyTerms) { setError(tc('requiredErrorPrivacyTerms')); return; }
     setError('');
     setLoading(true);
 
@@ -156,6 +165,9 @@ export default function CheckoutForm({ event, refCode, partnerCode, referralEnab
           refCode: enteredRefCode.trim().toUpperCase() || undefined,
           partnerCode,
           upsellItems,
+          consentPrivacyTerms,
+          consentMarketing,
+          consentPhotoVideo,
         }),
       });
       const data = await res.json();
@@ -509,6 +521,45 @@ export default function CheckoutForm({ event, refCode, partnerCode, referralEnab
                     </div>
                   )}
 
+                  {/* ── Consent ── */}
+                  <div className="flex flex-col gap-3 mb-6">
+                    {/* Required: Privacy Policy + Terms of Service */}
+                    <ConsentCheckbox
+                      id="checkout-consent-privacy-terms"
+                      required
+                      checked={consentPrivacyTerms}
+                      onChange={setConsentPrivacyTerms}
+                      label={tc.rich('privacyAndTermsRequired', {
+                        privacyLink: (chunks) => (
+                          <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline hover:text-[#731515] transition-colors">
+                            {chunks}
+                          </a>
+                        ),
+                        termsLink: (chunks) => (
+                          <a href="/terms-of-service" target="_blank" rel="noopener noreferrer" className="underline hover:text-[#731515] transition-colors">
+                            {chunks}
+                          </a>
+                        ),
+                      })}
+                    />
+                    {/* Optional: marketing — must never block submit */}
+                    <ConsentCheckbox
+                      id="checkout-consent-marketing"
+                      required={false}
+                      checked={consentMarketing}
+                      onChange={setConsentMarketing}
+                      label={tc('marketingOptional')}
+                    />
+                    {/* Optional: photo/video during the event — must never block submit */}
+                    <ConsentCheckbox
+                      id="checkout-consent-photo-video"
+                      required={false}
+                      checked={consentPhotoVideo}
+                      onChange={setConsentPhotoVideo}
+                      label={tc('photoVideoOptional')}
+                    />
+                  </div>
+
                   {error && (
                     <p className="mb-4 text-center text-xs text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>
                       {error}
@@ -517,7 +568,7 @@ export default function CheckoutForm({ event, refCode, partnerCode, referralEnab
 
                   <motion.button
                     type="submit"
-                    disabled={loading || !emailsMatch}
+                    disabled={loading || !emailsMatch || !consentPrivacyTerms}
                     whileTap={{ scale: 0.99 }}
                     className="w-full py-4 bg-[#731515] text-white text-[11px] tracking-[0.4em] hover:bg-[#aa4848] disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-300 rounded-lg"
                   >

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { supabase } from '@/lib/supabase';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { getClientIp, PRIVACY_POLICY_VERSION, TERMS_OF_SERVICE_VERSION } from '@/lib/consent';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2026-04-22.dahlia',
@@ -20,8 +21,8 @@ interface CartItem {
 
 export async function POST(request: Request) {
   try {
-    const { items, discountCode, validateOnly, shippingCost, customerEmail }: {
-      items: CartItem[]; discountCode?: string; validateOnly?: boolean; shippingCost?: number; customerEmail?: string;
+    const { items, discountCode, validateOnly, shippingCost, customerEmail, consentPrivacyTerms }: {
+      items: CartItem[]; discountCode?: string; validateOnly?: boolean; shippingCost?: number; customerEmail?: string; consentPrivacyTerms?: boolean;
     } = await request.json();
 
     if (!items || items.length === 0) {
@@ -58,6 +59,13 @@ export async function POST(request: Request) {
     if (validateOnly) {
       return NextResponse.json({ ok: true, discountPercent });
     }
+
+    // Privacy Policy + Terms of Service consent is REQUIRED — reject if not explicitly true
+    if (consentPrivacyTerms !== true) {
+      return NextResponse.json({ error: 'Consent to the Privacy Policy and Terms of Service is required.' }, { status: 400 });
+    }
+    const consentNow = new Date().toISOString();
+    const consentIp  = getClientIp(request);
 
     // ── Stock check (preliminary, non-locking) ──────────────────────────────────
     if (items.some(item => item.variantId !== undefined || item.size !== undefined)) {
@@ -143,6 +151,11 @@ export async function POST(request: Request) {
           size:       item.size       ?? null,
           qty:        item.quantity,
         }))),
+        consent_privacy_at:      consentNow,
+        consent_privacy_version: PRIVACY_POLICY_VERSION,
+        consent_terms_at:        consentNow,
+        consent_terms_version:   TERMS_OF_SERVICE_VERSION,
+        consent_ip:              consentIp ?? '',
       },
       locale: 'auto',
     });

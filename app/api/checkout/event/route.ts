@@ -5,6 +5,7 @@ import { dbEventToEventData, type EventData, type DbEvent } from '@/lib/events';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { generateTicketPdf } from '@/lib/ticket-pdf';
 import { emailShell, heading, para, ctaButton, divider } from '@/lib/email-shell';
+import { getClientIp, PRIVACY_POLICY_VERSION, TERMS_OF_SERVICE_VERSION } from '@/lib/consent';
 
 /** Resolve event by slug from Supabase */
 async function resolveEvent(slug: string): Promise<EventData | undefined> {
@@ -37,6 +38,20 @@ interface Body {
   refCode?:    string;
   partnerCode?: string;
   upsellItems?: { configId: string; title: string; price: number }[];
+  consentPrivacyTerms?: boolean;
+  consentMarketing?:    boolean;
+  consentPhotoVideo?:   boolean;
+}
+
+interface ConsentParams {
+  consentPrivacyAcceptedAt:   string;
+  consentPrivacyVersion:      string;
+  consentTermsAcceptedAt:     string;
+  consentTermsVersion:        string;
+  consentMarketing:           boolean;
+  consentMarketingAcceptedAt: string | null;
+  consentPhotoVideo:          boolean;
+  consentIp:                  string | null;
 }
 
 // ── Email helpers ─────────────────────────────────────────────────────────────
@@ -188,8 +203,12 @@ export async function sendEventConfirmationEmails(params: {
   qty:          number;
   total:        number;
   partnerCode?: string;
-}) {
-  const { orderId, event, firstName, lastName, email, phone, qty, total, partnerCode } = params;
+} & ConsentParams) {
+  const {
+    orderId, event, firstName, lastName, email, phone, qty, total, partnerCode,
+    consentPrivacyAcceptedAt, consentPrivacyVersion, consentTermsAcceptedAt, consentTermsVersion,
+    consentMarketing, consentMarketingAcceptedAt, consentPhotoVideo, consentIp,
+  } = params;
   const tag = `[ticket-email order=${orderId} event=${event.slug}]`;
 
   console.log(`${tag} start — buyer=${email} qty=${qty} total=${total}`);
@@ -210,6 +229,14 @@ export async function sendEventConfirmationEmails(params: {
     payment_status: 'paid',
     partner_code:   partnerCode ?? null,
     // email_sent intentionally omitted — upsert must not overwrite an existing true
+    consent_privacy_accepted_at:   consentPrivacyAcceptedAt,
+    consent_privacy_version:       consentPrivacyVersion,
+    consent_terms_accepted_at:     consentTermsAcceptedAt,
+    consent_terms_version:         consentTermsVersion,
+    consent_marketing:             consentMarketing,
+    consent_marketing_accepted_at: consentMarketingAcceptedAt,
+    consent_photo_video:           consentPhotoVideo,
+    consent_ip:                    consentIp,
   }));
 
   const { error: ticketErr } = await db.from('tickets').upsert(ticketRows, { onConflict: 'order_id' });
@@ -315,10 +342,20 @@ export async function POST(request: Request) {
   try {
   const body: Body = await request.json();
   const { slug, qty, firstName, lastName, email, phone, refCode, partnerCode, upsellItems: rawUpsellItems } = body;
+  const consentPrivacyTerms = body.consentPrivacyTerms === true;
+  const consentMarketing    = body.consentMarketing === true;
+  const consentPhotoVideo   = body.consentPhotoVideo === true;
 
   if (!slug || !qty || !firstName || !lastName || !email || !phone) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
+  // Privacy Policy + Terms of Service consent is REQUIRED — reject if not explicitly true
+  if (!consentPrivacyTerms) {
+    return NextResponse.json({ error: 'Consent to the Privacy Policy and Terms of Service is required.' }, { status: 400 });
+  }
+
+  const consentNow = new Date().toISOString();
+  const consentIp  = getClientIp(request);
 
   const event = await resolveEvent(slug);
   if (!event)                  return NextResponse.json({ error: 'Event not found' },       { status: 404 });
@@ -336,7 +373,17 @@ export async function POST(request: Request) {
   // Even if the email step fails internally, the ticket is in the DB and the
   // user is redirected to the success page. The error is logged server-side.
   if (grandTotal === 0) {
-    await sendEventConfirmationEmails({ orderId, event, firstName, lastName, email, phone, qty, total, partnerCode });
+    await sendEventConfirmationEmails({
+      orderId, event, firstName, lastName, email, phone, qty, total, partnerCode,
+      consentPrivacyAcceptedAt:   consentNow,
+      consentPrivacyVersion:      PRIVACY_POLICY_VERSION,
+      consentTermsAcceptedAt:     consentNow,
+      consentTermsVersion:        TERMS_OF_SERVICE_VERSION,
+      consentMarketing,
+      consentMarketingAcceptedAt: consentMarketing ? consentNow : null,
+      consentPhotoVideo,
+      consentIp,
+    });
 
     // Referral attribution for free events (non-blocking)
     if (refCode) {
@@ -404,6 +451,13 @@ export async function POST(request: Request) {
       ref_code:         refCode     ?? '',
       partner_code:     partnerCode ?? '',
       upsell_items:     upsellItems.length > 0 ? JSON.stringify(upsellItems).slice(0, 500) : '',
+      consent_privacy_at:      consentNow,
+      consent_privacy_version: PRIVACY_POLICY_VERSION,
+      consent_terms_at:        consentNow,
+      consent_terms_version:   TERMS_OF_SERVICE_VERSION,
+      consent_marketing:       String(consentMarketing),
+      consent_photo_video:     String(consentPhotoVideo),
+      consent_ip:              consentIp ?? '',
     },
     locale: 'auto',
   });

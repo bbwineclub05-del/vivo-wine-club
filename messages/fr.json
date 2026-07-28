@@ -303,5 +303,22 @@
     "lowStockSingle": "Plus qu'1 en stock !",
     "lowStockPlural": "Plus que {count} en stock !",
     "soldOutSize": "Épuisé"
+  },
+  "consent": {
+    "privacyRequired": "J'ai lu et j'accepte la <privacyLink>Politique de confidentialité</privacyLink>.",
+    "privacyAndTermsRequired": "J'ai lu et j'accepte la <privacyLink>Politique de confidentialité</privacyLink> et les <termsLink>Conditions d'utilisation</termsLink>.",
+    "newsletterOptional": "Je souhaite également recevoir la newsletter avec du contenu informatif et promotionnel.",
+    "marketingOptional": "Je souhaite recevoir la newsletter et des communications promotionnelles.",
+    "photoVideoOptional": "J'accepte d'être photographié(e) ou filmé(e) pendant l'événement, pouvant être publié sur les canaux du Club.",
+    "ageConfirmation": "Je déclare avoir au moins 18 ans.",
+    "requiredError": "Vous devez accepter la Politique de confidentialité pour continuer.",
+    "requiredErrorPrivacyTerms": "Vous devez accepter la Politique de confidentialité et les Conditions d'utilisation pour continuer."
+  },
+  "legal": {
+    "privacyPolicyTitle": "Politique de confidentialité",
+    "termsOfServiceTitle": "Conditions d'utilisation",
+    "placeholderIntro": "Cette page accueillera le texte juridique complet.",
+    "placeholderNotice": "Texte juridique à ajouter.",
+    "backToHome": "Retour à l'accueil"
   }
 }

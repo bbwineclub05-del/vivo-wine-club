@@ -303,5 +303,22 @@
     "lowStockSingle": "Solo 1 rimasto!",
     "lowStockPlural": "Solo {count} rimasti!",
     "soldOutSize": "Esaurito"
+  },
+  "consent": {
+    "privacyRequired": "Ho letto e accetto la <privacyLink>Privacy Policy</privacyLink>.",
+    "privacyAndTermsRequired": "Ho letto e accetto la <privacyLink>Privacy Policy</privacyLink> e i <termsLink>Termini di Servizio</termsLink>.",
+    "newsletterOptional": "Voglio ricevere anche la newsletter con contenuti informativi e promozionali.",
+    "marketingOptional": "Voglio ricevere newsletter e comunicazioni promozionali.",
+    "photoVideoOptional": "Acconsento a essere ripreso/a in foto e video durante l'evento, eventualmente pubblicati sui canali del Club.",
+    "ageConfirmation": "Dichiaro di avere almeno 18 anni.",
+    "requiredError": "Devi accettare la Privacy Policy per continuare.",
+    "requiredErrorPrivacyTerms": "Devi accettare la Privacy Policy e i Termini di Servizio per continuare."
+  },
+  "legal": {
+    "privacyPolicyTitle": "Privacy Policy",
+    "termsOfServiceTitle": "Termini di Servizio",
+    "placeholderIntro": "Questa pagina ospiterà il testo legale completo.",
+    "placeholderNotice": "Testo legale da inserire.",
+    "backToHome": "Torna alla home"
   }
 }
