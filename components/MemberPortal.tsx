@@ -10,11 +10,12 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import DiscountsView from '@/components/DiscountsView';
+import WineVisitsMapSection from '@/components/WineVisitsMapSection';
 import type { EventData } from '@/lib/events';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
-type MemberSection = 'home' | 'my-events' | 'events' | 'discounts' | 'profile' | 'settings';
+type MemberSection = 'home' | 'my-events' | 'events' | 'discounts' | 'wine-map' | 'profile' | 'settings';
 
 export interface MemberPortalProps {
   user:            { name?: string | null; email?: string | null };
@@ -74,6 +75,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'my-events', label: 'My Events',       icon: Ticket     },
   { id: 'events',    label: 'Upcoming Events', icon: CalendarDays},
   { id: 'discounts', label: 'Deals & Perks',   icon: Tag        },
+  { id: 'wine-map',  label: 'Mappa Cantine',   icon: MapPin     },
   { id: 'profile',   label: 'My Profile',      icon: User       },
   { id: 'settings',  label: 'Settings',        icon: KeyRound   },
 ];
@@ -1208,6 +1210,8 @@ export default function MemberPortal({ user, token, onLogout, initialSection = '
                     <DiscountsView token={token} />
                   </>
                 )}
+
+                {activeSection === 'wine-map' && <WineVisitsMapSection />}
 
                 {activeSection === 'profile' && (
                   <ProfileSection user={user} token={token} />

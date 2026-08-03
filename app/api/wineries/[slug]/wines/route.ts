@@ -6,24 +6,24 @@ export const dynamic = 'force-dynamic';
 
 type Params = { params: Promise<{ slug: string }> };
 
-/** GET /api/wineries/[slug] — public */
+/** GET /api/wineries/[slug]/wines — public */
 export async function GET(_req: Request, { params }: Params) {
   const { slug } = await params;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db = getSupabaseAdmin() as any;
   const { data, error } = await db
-    .from('wineries')
+    .from('winery_wines')
     .select('*')
-    .eq('slug', slug)
-    .maybeSingle();
+    .eq('winery_slug', slug)
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: true });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  if (!data)  return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  return NextResponse.json({ winery: data });
+  return NextResponse.json({ wines: data ?? [] });
 }
 
-/** PATCH /api/wineries/[slug] — admin/staff only: update name, logo_url, region, country, description, lat, lng, coords_precise, photos */
-export async function PATCH(request: Request, { params }: Params) {
+/** POST /api/wineries/[slug]/wines — admin/staff only: add a tasted wine */
+export async function POST(request: Request, { params }: Params) {
   const auth = await requireAdminOrStaff(request);
   if (!auth.ok) return auth.response;
 
@@ -33,25 +33,26 @@ export async function PATCH(request: Request, { params }: Params) {
   try { body = await request.json(); }
   catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }
 
-  const allowed = ['name', 'logo_url', 'region', 'country', 'description', 'lat', 'lng', 'coords_precise', 'photos'] as const;
-  const patch: Record<string, unknown> = {};
-  for (const k of allowed) {
-    if (k in body) patch[k] = body[k];
-  }
-
-  if (Object.keys(patch).length === 0) {
-    return NextResponse.json({ error: 'No updatable fields provided' }, { status: 400 });
-  }
+  const name = String(body.name ?? '').trim();
+  if (!name) return NextResponse.json({ error: 'Il nome del vino è obbligatorio.' }, { status: 400 });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db = getSupabaseAdmin() as any;
   const { data, error } = await db
-    .from('wineries')
-    .update(patch)
-    .eq('slug', slug)
+    .from('winery_wines')
+    .insert({
+      winery_slug:      slug,
+      name,
+      vintage:           body.vintage           ?? null,
+      grape:             body.grape              ?? '',
+      rating:            body.rating             ?? null,
+      note:              body.note               ?? '',
+      bottle_photo_url:  body.bottle_photo_url   ?? null,
+      sort_order:        body.sort_order         ?? 0,
+    })
     .select()
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ winery: data });
+  return NextResponse.json({ wine: data }, { status: 201 });
 }

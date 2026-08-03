@@ -9,7 +9,7 @@ import {
   Mail, LogOut, KeyRound, ScanLine, Menu, X,
   Wine, Shield, ArrowUpRight, CreditCard, User, CalendarDays, Images,
   Database, ChevronDown, UsersRound, Lock, ShoppingBag, Tag, FolderOpen, Layers,
-  Camera, Loader2, Wallet, Receipt, BookOpen, Sparkles, Clock, Pencil,
+  Camera, Loader2, Wallet, Receipt, BookOpen, Sparkles, Clock, Pencil, MapPin,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -33,12 +33,13 @@ import QuoteGenerator from '@/components/QuoteGenerator';
 import PedManager from '@/components/PedManager';
 import WineAssistant from '@/components/WineAssistant';
 import UpsellManager from '@/components/UpsellManager';
+import WineriesMapManager from '@/components/WineriesMapManager';
 import { isSuperAdmin, isFinanceUser } from '@/lib/admins';
 
 /* ─────────────────────────────────────────────
    Types
 ───────────────────────────────────────────── */
-type Section = 'overview' | 'settings' | 'card' | 'wine-assistant' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm' | 'media' | 'team' | 'merch' | 'discounts' | 'documents' | 'finance' | 'bilancio' | 'quotes' | 'ped' | 'upsell';
+type Section = 'overview' | 'settings' | 'card' | 'wine-assistant' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm' | 'media' | 'team' | 'merch' | 'discounts' | 'documents' | 'finance' | 'bilancio' | 'quotes' | 'ped' | 'upsell' | 'wineries';
 
 // Maps section IDs to the permission key in team_members.permissions
 const SECTION_PERM: Partial<Record<Section, string>> = {
@@ -53,6 +54,7 @@ const SECTION_PERM: Partial<Record<Section, string>> = {
   discounts: 'merch',
   upsell:    'merch',
   documents: 'documents',
+  wineries:  'media', // reuses the Media permission — same content-curation audience
 };
 
 interface NavItem {
@@ -76,6 +78,7 @@ const GESTIONE_ITEMS: NavItem[] = [
   { id: 'media',     label: 'Media',   icon: Images       },
   { id: 'discounts', label: 'Sconti',  icon: Tag          },
   { id: 'upsell',    label: 'Upsell',  icon: Sparkles     },
+  { id: 'wineries',  label: 'Mappa Cantine', icon: MapPin },
 ];
 
 // Visible to both admin and staff
@@ -1454,6 +1457,15 @@ function MembersPageInner() {
 
                 {(admin || isStaff) && activeSection === 'upsell' && (
                   canAccess('upsell') ? <UpsellManager /> : <UnauthorisedSection title="Upsell" />
+                )}
+
+                {(admin || isStaff) && activeSection === 'wineries' && (
+                  canAccess('wineries') ? (
+                    <>
+                      <SectionHeader title="Mappa Cantine" subtitle="Posizione, foto e vini degustati per ogni cantina visitata o in catalogo." />
+                      <WineriesMapManager />
+                    </>
+                  ) : <UnauthorisedSection title="Mappa Cantine" />
                 )}
 
               </motion.div>

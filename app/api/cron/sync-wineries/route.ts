@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { geocodeTiers } from '@/lib/geocode';
 
 export const dynamic = 'force-dynamic';
+// Geocoding (Nominatim, rate-limited to ~1 req/sec) can push a run with
+// several pending wineries past the default serverless timeout.
+export const maxDuration = 60;
 
 /**
  * GET /api/cron/sync-wineries
@@ -43,7 +47,7 @@ export async function GET(request: Request) {
     // Fetch all past winery_visit events
     const { data: events, error: evErr } = await db
       .from('events')
-      .select('slug, title, date, section')
+      .select('slug, title, date, section, location_full, location')
       .eq('section', 'winery_visit')
       .lt('date', today);
 
@@ -52,7 +56,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: evErr.message }, { status: 500 });
     }
 
-    const rows = (events ?? []) as { slug: string; title: string; date: string }[];
+    const rows = (events ?? []) as { slug: string; title: string; date: string; location_full: string | null; location: string | null }[];
     if (rows.length === 0) {
       return NextResponse.json({ message: 'Nessun evento winery_visit passato trovato.', created: 0 });
     }
@@ -76,10 +80,39 @@ export async function GET(request: Request) {
 
     console.log(`[sync-wineries] Synced ${rows.length} winery entries:`, rows.map((e) => e.slug));
 
+    // Best-effort geocoding for any of these wineries still missing coordinates
+    // (newly created rows, or rows a previous run failed to place). Self-healing
+    // and idempotent — never touches rows that already have lat/lng.
+    const { data: needsGeocode } = await db
+      .from('wineries')
+      .select('slug')
+      .in('slug', rows.map((e) => e.slug))
+      .is('lat', null);
+
+    const geocoded: string[] = [];
+    for (const w of (needsGeocode ?? []) as { slug: string }[]) {
+      const ev = rows.find((e) => e.slug === w.slug);
+      if (!ev) continue;
+      const cleanedVenue = (ev.location_full ?? '').replace(/[-—]\s*ore\s*\d{1,2}[:.]\d{2}\s*$/i, '').trim();
+      const tiers = [
+        ...(cleanedVenue ? [{ q: cleanedVenue, precise: true }] : []),
+        ...(ev.location ? [{ q: ev.location, precise: false }] : []),
+      ];
+      if (tiers.length === 0) continue;
+      const result = await geocodeTiers(tiers, 'Italy'); // all Vivo Wine Club visits are in Italy
+      if (result) {
+        await db.from('wineries').update({ lat: result.lat, lng: result.lng, coords_precise: result.precise }).eq('slug', w.slug);
+        geocoded.push(w.slug);
+      }
+      // Nominatim usage policy: max 1 request/sec
+      await new Promise((r) => setTimeout(r, 1100));
+    }
+
     return NextResponse.json({
       message: `${rows.length} cantina${rows.length === 1 ? '' : 'e'} sincronizzata${rows.length === 1 ? '' : 'e'}.`,
       created: rows.length,
       wineries: rows.map((e) => ({ slug: e.slug, name: e.title })),
+      geocoded,
     });
   } catch (err) {
     console.error('[sync-wineries] Unexpected error:', err);
