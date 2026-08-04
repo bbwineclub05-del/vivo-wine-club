@@ -127,7 +127,7 @@ export default function WinePartyPage() {
                 className="text-[clamp(2.5rem,9vw,8rem)] font-light leading-none"
                 style={{ fontFamily: 'var(--font-syne)' }}
               >
-                Wine Party
+                Wine Party and Azul
               </motion.h1>
             </div>
 

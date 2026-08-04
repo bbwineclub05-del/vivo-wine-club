@@ -185,7 +185,7 @@ export default function WinePartyPage() {
                 className="text-xl md:text-2xl text-[#C4B5A0] font-light leading-relaxed"
                 style={{ fontFamily: 'var(--font-nunito)' }}
               >
-                A Party is not just an event — it&apos;s a vibe. We bring together great bottles,
+                A  Party is not just an event — it&apos;s a vibe. We bring together great bottles,
                 a carefully curated DJ set and a crowd that actually cares about what&apos;s in their glass.
                 No dress codes, no pretension. Just good wine, good music and good people.
               </p>
