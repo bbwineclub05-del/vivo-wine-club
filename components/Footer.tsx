@@ -5,6 +5,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
+import { openCookiePreferences } from '@/lib/cookieConsent';
 
 /* ── Social icon SVGs ── */
 function InstagramIcon() {
@@ -61,7 +62,7 @@ const CONTACTS_DATA = [
 const LEGAL_KEYS = [
   { key: 'privacyPolicy',   href: '/privacy-policy' },
   { key: 'termsOfService',  href: '/terms-of-service' },
-  { key: 'cookiePolicy',    href: '#' },
+  { key: 'cookiePolicy',    href: '/cookie-policy' },
 ];
 
 export default function Footer() {
@@ -185,6 +186,14 @@ export default function Footer() {
                 {i < LEGAL_KEYS.length - 1 && <span className="text-white/15">|</span>}
               </span>
             ))}
+            <span className="text-white/15">|</span>
+            <button
+              type="button"
+              onClick={openCookiePreferences}
+              className="hover:text-white/60 transition-colors duration-200"
+            >
+              {t('manageCookies')}
+            </button>
           </div>
         </div>
       </div>
