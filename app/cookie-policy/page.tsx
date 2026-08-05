@@ -3,13 +3,13 @@ import Footer from '@/components/Footer';
 import BackButton from '@/components/BackButton';
 import LegalDocumentView from '@/components/LegalDocumentView';
 import { getLocale } from 'next-intl/server';
-import { TERMS_OF_SERVICE } from '@/lib/legal/terms-of-service';
+import { COOKIE_POLICY } from '@/lib/legal/cookie-policy';
 import { resolveLegalDocument } from '@/lib/legal/types';
 import type { Locale } from '@/i18n/request';
 
-export default async function TermsOfServicePage() {
+export default async function CookiePolicyPage() {
   const locale = await getLocale();
-  const document = resolveLegalDocument(TERMS_OF_SERVICE, locale as Locale);
+  const document = resolveLegalDocument(COOKIE_POLICY, locale as Locale);
 
   return (
     <>

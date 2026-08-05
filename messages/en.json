@@ -82,7 +82,8 @@
     "emailLabel": "EMAIL",
     "instagramLabel": "INSTAGRAM",
     "linkedinLabel": "LINKEDIN",
-    "tiktokLabel": "TIKTOK"
+    "tiktokLabel": "TIKTOK",
+    "manageCookies": "Manage Cookies"
   },
   "whoWeAre": {
     "theTeamLabel": "THE TEAM",
@@ -320,5 +321,20 @@
     "placeholderIntro": "This page will host the full legal text.",
     "placeholderNotice": "Legal text to be added.",
     "backToHome": "Back to home"
+  },
+  "cookieBanner": {
+    "title": "Cookies",
+    "description": "We use cookies to make the site work and, with your consent, to understand how it's used and personalize content. You can accept everything, reject anything non-essential, or choose by category.",
+    "acceptAll": "ACCEPT ALL",
+    "rejectNonEssential": "REJECT NON-ESSENTIAL",
+    "customize": "CUSTOMIZE",
+    "save": "SAVE PREFERENCES",
+    "technicalTitle": "Technical (always active)",
+    "technicalDesc": "Necessary for the site to work, e.g. access to your personal account. Cannot be disabled.",
+    "analyticsTitle": "Analytics",
+    "analyticsDesc": "Google Analytics — helps us understand how visitors use the site.",
+    "marketingTitle": "Marketing",
+    "marketingDesc": "Meta Pixel — measures the effectiveness of our ads on Facebook and Instagram.",
+    "policyLink": "Cookie Policy"
   }
 }
