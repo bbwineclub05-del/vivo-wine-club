@@ -35,8 +35,24 @@ export async function getAuthUser(request: Request): Promise<AuthResult> {
 
   const email          = user.email ?? '';
   const isAdmin        = isAdminEmail(email);
-  const isStaff        = user.app_metadata?.role === 'staff';
+  let isStaff          = user.app_metadata?.role === 'staff' || user.app_metadata?.role === 'admin';
   const isCollaborator = user.app_metadata?.role === 'collaborator';
+
+  // Fallback to team_members — the source of truth edited in Team Management.
+  // app_metadata is only stamped when a member is invited or their role/active
+  // status changes explicitly; a member synced by other paths can otherwise be
+  // staff in team_members but still fail every authenticated API call.
+  if (!isAdmin && !isStaff) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data } = await (getSupabaseAdmin() as any)
+      .from('team_members')
+      .select('role, active')
+      .eq('email', email)
+      .maybeSingle();
+    if (data?.active && (data.role === 'staff' || data.role === 'admin')) {
+      isStaff = true;
+    }
+  }
 
   return { ok: true, userId: user.id, email, isAdmin, isStaff, isCollaborator };
 }

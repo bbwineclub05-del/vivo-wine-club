@@ -888,6 +888,13 @@ export default function EventManager() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setAccessToken(session?.access_token ?? null);
     });
+    // Keep the token in sync with Supabase's background auto-refresh —
+    // without this, a stale mount-time token can outlive its validity and
+    // every authenticated call below starts failing with 401.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAccessToken(session?.access_token ?? null);
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
   // Fetch custom CRM categories for the invite modal
@@ -960,9 +967,14 @@ export default function EventManager() {
       const url    = isEdit ? `/api/events/${slug}` : '/api/events';
       const method = isEdit ? 'PATCH' : 'POST';
 
+      // Re-fetch the session right before the call — the token snapshotted on
+      // mount can expire if the form stays open longer than the JWT's lifetime.
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token ?? accessToken;
+
       const res  = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(data),
       });
       const json = await res.json();
@@ -981,7 +993,9 @@ export default function EventManager() {
   /* ── Delete handler ── */
   async function handleDelete(slug: string) {
     try {
-      await fetch(`/api/events/${slug}`, { method: 'DELETE', headers: { Authorization: `Bearer ${accessToken}` } });
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token ?? accessToken;
+      await fetch(`/api/events/${slug}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
       load();
     } catch (err) {
       console.error('[EventManager delete]', err);
@@ -991,9 +1005,11 @@ export default function EventManager() {
   /* ── Toggle published ── */
   async function handleToggle(event: DbEvent) {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token ?? accessToken;
       await fetch(`/api/events/${event.slug}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ published: !event.published }),
       });
       load();
