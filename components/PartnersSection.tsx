@@ -15,6 +15,7 @@ const PARTNERS = [
   { name: 'Cassa Rurale',          src: '/sponsors/cassarurale.png',              href: 'https://www.lacassarurale.it/privati-e-famiglie/'      },
   { name: "Ca' del Bosco",         src: '/sponsors/ca-del-bosco.png',             href: 'https://www.cadelbosco.com/'                           },
   { name: 'Tenuta del Buonamico',  src: '/sponsors/Tenuta del buonamico.jpg',     href: 'https://www.buonamico.it/'                             },
+  { name: 'Perfect',               src: '/sponsors/perfect.png',                  href: 'https://perfect.com/'                                   },
 ];
 
 // Logo item width + gap in px — must match the CSS values below

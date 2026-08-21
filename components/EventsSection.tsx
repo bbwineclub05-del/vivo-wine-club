@@ -181,7 +181,7 @@ export default function EventsSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: reducedMotion ? 0 : 0.8 }}
-          className="mb-16"
+          className="mb-10"
         >
           <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-4">{t('featuredEvents')}</div>
           <h2
@@ -199,33 +199,60 @@ export default function EventsSection() {
         </motion.div>
 
         <div>
-          {visibleEvents.map((event, i) => (
-            <EventRow
-              key={event.slug}
-              event={event}
-              index={i}
-              isLast={i === visibleEvents.length - 1}
-              reducedMotion={reducedMotion}
-            />
-          ))}
+          {visibleEvents.length > 0 ? (
+            visibleEvents.map((event, i) => (
+              <EventRow
+                key={event.slug}
+                event={event}
+                index={i}
+                isLast={i === visibleEvents.length - 1}
+                reducedMotion={reducedMotion}
+              />
+            ))
+          ) : (
+            <div className="flex justify-center">
+              <Link href="/events" className="group block mx-auto" aria-label={t('events')}> 
+                <motion.div
+                  initial={{ opacity: reducedMotion ? 1 : 0, y: reducedMotion ? 0 : 14 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: '-30px' }}
+                  transition={{ duration: reducedMotion ? 0 : 0.55, ease: [0.16, 1, 0.3, 1] }}
+                  className="w-full max-w-xl rounded-[1.5rem] border border-[#e8d5d5] bg-white/90 px-5 py-8 sm:px-8 sm:py-10 cursor-pointer transform transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:shadow-sm"
+                >
+                  <div className="text-left">
+                    <div className="text-[10px] tracking-[0.5em] text-[#731515] uppercase mb-4" style={{ fontFamily: 'var(--font-nunito)' }}>
+                      {t('eventsComingSoonLabel')}
+                    </div>
+                    <h3
+                      className="text-2xl md:text-[2.2rem] font-medium tracking-tight text-[#1a0505] leading-tight"
+                      style={{ fontFamily: 'var(--font-syne)' }}
+                    >
+                      {t('eventsComingSoonTitle')}
+                    </h3>
+                    <p
+                      className="mt-4 text-base md:text-lg leading-7 text-[#7a4a4a] font-light max-w-md"
+                      style={{ fontFamily: 'var(--font-nunito)' }}
+                    >
+                      {t('eventsComingSoonBody')}
+                    </p>
+                  </div>
+                </motion.div>
+              </Link>
+            </div>
+          )}
         </div>
-
-        <motion.div
-          initial={{ opacity: reducedMotion ? 1 : 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: reducedMotion ? 0 : 0.5, delay: reducedMotion ? 0 : 0.3 }}
-          className="mt-10 flex justify-end"
-        >
-          <Link
-            href="/events"
-            className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] text-[#731515] hover:text-[#aa4848] transition-colors duration-300 group"
-            style={{ fontFamily: 'var(--font-nunito)' }}
-          >
-            {tCommon('exploreMore')}
-            <span className="group-hover:translate-x-0.5 transition-transform duration-300">→</span>
-          </Link>
-        </motion.div>
+        <div className="mt-4 flex justify-center">
+          <div className="w-full max-w-xl flex justify-end">
+            <Link
+              href="/events"
+              className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] text-[#731515] hover:text-[#aa4848] transition-colors duration-300 group"
+              style={{ fontFamily: 'var(--font-nunito)' }}
+            >
+              {tCommon('exploreMore')}
+              <span className="group-hover:translate-x-0.5 transition-transform duration-300">→</span>
+            </Link>
+          </div>
+        </div>
       </div>
     </section>
   );

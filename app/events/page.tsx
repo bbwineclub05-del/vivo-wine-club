@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { MapPin } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import EventsHero from '@/components/EventsHero';
@@ -154,6 +155,7 @@ export default async function EventsPage() {
   } catch {/* fall through */}
 
   const events = dbEvents;
+  const t = await getTranslations('home');
 
   return (
     <>
@@ -164,20 +166,60 @@ export default async function EventsPage() {
         <EventsHero />
 
         {/* ── Event list ── */}
-        <section className="relative overflow-hidden pb-28">
+        <section className="relative overflow-hidden pt-12 pb-20">
           <div className="fog-right" style={{ top: '10%' }} />
           <div className="max-w-5xl mx-auto px-6 lg:px-10">
-            {events.map((event, i) => (
-              <EventRow
-                key={event.slug}
-                event={event}
-                isLast={i === events.length - 1}
-                displayStatus={getEventDisplayStatus(event, today)}
-              />
-            ))}
+            {events.length > 0 ? (
+              events.map((event, i) => (
+                <EventRow
+                  key={event.slug}
+                  event={event}
+                  isLast={i === events.length - 1}
+                  displayStatus={getEventDisplayStatus(event, today)}
+                />
+              ))
+            ) : (
+              <div className="flex justify-center">
+                <div className="w-full max-w-xl rounded-[1.5rem] border border-[#e8d5d5] bg-white/90 px-6 py-10 sm:px-10 sm:py-12 mt-6">
+                  <div className="flex flex-col items-center justify-center text-center">
+                    <div className="text-[10px] tracking-[0.5em] uppercase text-[#731515] mb-3" style={{ fontFamily: 'var(--font-nunito)' }}>
+                      {t('eventPageNextExperienceLabel')}
+                    </div>
+                    <h3
+                      className="text-2xl md:text-[2.2rem] font-medium tracking-tight text-[#1a0505] leading-tight"
+                      style={{ fontFamily: 'var(--font-syne)' }}
+                    >
+                      {t('eventPageNextExperienceTitle')}
+                    </h3>
+                    <p
+                      className="mt-3 text-base md:text-lg leading-7 text-[#7a4a4a] font-light max-w-lg"
+                      style={{ fontFamily: 'var(--font-nunito)' }}
+                    >
+                      {t('eventPageNextExperienceBody')}
+                    </p>
+
+                    {/* Teaser inside the card: separator + teaser content */}
+                    <div className="w-full mt-8">
+                      <div className="mx-auto w-full max-w-xs">
+                        <div className="h-px bg-[#e8d5d5] opacity-30 mb-6" />
+                        <div className="text-[10px] tracking-[0.5em] uppercase text-[#731515] mb-2" style={{ fontFamily: 'var(--font-nunito)' }}>
+                          {t('eventPageTeaserLabel')}
+                        </div>
+                        <div className="text-2xl md:text-3xl font-semibold text-[#1a0505] mb-2" style={{ fontFamily: 'var(--font-syne)' }}>
+                          {t('eventPageTeaserDate')}
+                        </div>
+                        <div className="text-sm text-[#7a4a4a] font-light" style={{ fontFamily: 'var(--font-nunito)' }}>
+                          {t('eventPageTeaserBody')}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
           </div>
         </section>
-
       </main>
       <Footer />
     </>
