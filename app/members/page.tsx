@@ -39,7 +39,7 @@ import { isSuperAdmin, isFinanceUser } from '@/lib/admins';
 /* ─────────────────────────────────────────────
    Types
 ───────────────────────────────────────────── */
-type Section = 'overview' | 'settings' | 'card' | 'wine-assistant' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm' | 'media' | 'team' | 'merch' | 'discounts' | 'documents' | 'finance' | 'bilancio' | 'quotes' | 'ped' | 'upsell' | 'wineries';
+type Section = 'overview' | 'settings' | 'wine-assistant' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm' | 'media' | 'team' | 'merch' | 'discounts' | 'documents' | 'finance' | 'bilancio' | 'quotes' | 'ped' | 'upsell' | 'wineries';
 
 // Maps section IDs to the permission key in team_members.permissions
 const SECTION_PERM: Partial<Record<Section, string>> = {
@@ -65,10 +65,10 @@ interface NavItem {
 
 const NAV_MAIN: NavItem[] = [
   { id: 'overview',       label: 'Overview',        icon: Home       },
-  { id: 'card',           label: 'Membership Card', icon: CreditCard },
   { id: 'wine-assistant', label: 'Wine Assistant',  icon: Wine       },
-  { id: 'settings',       label: 'Impostazioni',    icon: KeyRound   },
 ];
+
+const SETTINGS_ITEM: NavItem = { id: 'settings', label: 'Impostazioni', icon: KeyRound };
 
 // Sub-items for the collapsible Gestione group
 const GESTIONE_ITEMS: NavItem[] = [
@@ -340,20 +340,6 @@ function SidebarContent({
           <NavBtn key={item.id} item={item} active={activeSection === item.id} onClick={() => navigate(item.id)} />
         ))}
 
-        {/* Event Scanner — visible to all authenticated users */}
-        <div className="pt-5 pb-1.5 px-3 flex items-center gap-1.5">
-          <ScanLine size={8} className="text-white/20" />
-          <span className="text-[8px] tracking-[0.55em] text-white/20 uppercase">Scanner</span>
-        </div>
-        <Link
-          href="/checkin"
-          className="flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-white/45 hover:text-white/75 hover:bg-white/[0.06] transition-all duration-150 text-[12.5px]"
-          style={{ fontFamily: 'var(--font-nunito)' }}
-        >
-          <ScanLine size={14} className="text-white/35" />
-          Event Scanner
-        </Link>
-
         {(admin || isStaff) && (
           <>
             <div className="pt-5 pb-1.5 px-3 flex items-center gap-1.5">
@@ -406,6 +392,17 @@ function SidebarContent({
             <FinanceGroupNav activeSection={activeSection} navigate={navigate} />
           </>
         )}
+
+        {/* Account — always last */}
+        <div className="pt-5 pb-1.5 px-3 flex items-center gap-1.5">
+          <KeyRound size={8} className="text-white/20" />
+          <span className="text-[8px] tracking-[0.55em] text-white/20 uppercase">Account</span>
+        </div>
+        <NavBtn
+          item={SETTINGS_ITEM}
+          active={activeSection === 'settings'}
+          onClick={() => navigate('settings')}
+        />
       </nav>
 
       {/* Bottom actions */}
@@ -497,116 +494,6 @@ function UnauthorisedSection({ title }: { title: string }) {
           Contatta l&apos;amministratore.
         </p>
       </div>
-    </>
-  );
-}
-
-/* ─────────────────────────────────────────────
-   Section: Membership Card
-───────────────────────────────────────────── */
-function CardSection({ token }: { token: string }) {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const [cardData, setCardData] = useState<{
-    memberId: string; name: string; tier: string; memberSince: number;
-  } | null>(null);
-  const [loading,     setLoading]     = useState(true);
-  const [downloading, setDownloading] = useState(false);
-  const [copied,      setCopied]      = useState(false);
-
-  useEffect(() => {
-    if (!token) return;
-    fetch('/api/member/card', { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.json())
-      .then(d => { if (d.memberId) setCardData(d); })
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [token]);
-
-  async function handleDownload() {
-    if (!cardRef.current || !cardData) return;
-    setDownloading(true);
-    try {
-      const { toPng } = await import('html-to-image');
-      await document.fonts.ready;
-      const dataUrl = await toPng(cardRef.current, { pixelRatio: 3, cacheBust: true });
-      const a = document.createElement('a');
-      a.href = dataUrl;
-      a.download = `vivo-card-${cardData.memberId}.png`;
-      a.click();
-    } catch (err) {
-      console.error('[CardSection] download error:', err);
-    } finally {
-      setDownloading(false);
-    }
-  }
-
-  function handleCopyLink() {
-    if (!cardData) return;
-    const url = `https://vivowineclub.com/card/${cardData.memberId}`;
-    navigator.clipboard.writeText(url).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }).catch(() => {});
-  }
-
-  return (
-    <>
-      <SectionHeader title="Membership Card" subtitle="La tua tessera digitale Vivo Wine Club." />
-
-      {loading ? (
-        <div className="flex items-center justify-center h-40">
-          <div className="w-5 h-5 rounded-full border-2 border-white/20 border-t-white/60 animate-spin" />
-        </div>
-      ) : cardData ? (
-        <div className="flex flex-col items-center gap-8 max-w-[520px] mx-auto">
-
-          {/* The card itself */}
-          <div className="w-full">
-            <MembershipCard {...cardData} cardRef={cardRef} />
-          </div>
-
-          {/* Action buttons */}
-          <div className="flex items-center gap-3 flex-wrap justify-center">
-            <button
-              onClick={handleDownload}
-              disabled={downloading}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#731515] text-white text-[10px] tracking-[0.3em] rounded-lg hover:bg-[#9b2323] disabled:opacity-50 transition-colors duration-200"
-              style={{ fontFamily: 'var(--font-nunito)' }}
-            >
-              {downloading ? 'DOWNLOADING...' : 'DOWNLOAD PNG'}
-            </button>
-
-            <button
-              onClick={handleCopyLink}
-              className="inline-flex items-center gap-2 px-5 py-2.5 border border-[#731515]/30 text-[#731515] text-[10px] tracking-[0.3em] rounded-lg hover:bg-[#fdf0f0] hover:border-[#731515]/50 transition-all duration-200"
-              style={{ fontFamily: 'var(--font-nunito)' }}
-            >
-              {copied ? 'LINK COPIATO' : 'CONDIVIDI LINK'}
-            </button>
-          </div>
-
-          {/* Share URL display */}
-          <div className="w-full">
-            <div className="text-[8px] tracking-[0.4em] text-[#7B1D1D] mb-2" style={{ fontFamily: 'var(--font-nunito)' }}>
-              URL PUBBLICA
-            </div>
-            <div
-              className="w-full bg-[#fdf6f6] border border-[#e8d5d5] rounded-lg px-4 py-3 text-[12px] text-[#1a0505] truncate"
-              style={{ fontFamily: 'var(--font-nunito)' }}
-            >
-              vivowineclub.com/card/{cardData.memberId}
-            </div>
-            <p className="mt-2 text-[10px] text-[#7a4a4a]/60 leading-relaxed" style={{ fontFamily: 'var(--font-nunito)' }}>
-              Chiunque con questo link puo vedere la tua card — nessun login richiesto.
-            </p>
-          </div>
-
-        </div>
-      ) : (
-        <p className="text-[13px] text-[#7a4a4a]/60" style={{ fontFamily: 'var(--font-nunito)' }}>
-          Impossibile caricare la card. Riprova piu tardi.
-        </p>
-      )}
     </>
   );
 }
@@ -743,6 +630,9 @@ function OverviewSection({
 
   const [cardData, setCardData] = useState<{ memberId: string; name: string; tier: string; memberSince: number } | null>(null);
   const [cardLoading, setCardLoading] = useState(true);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [cardDownloading, setCardDownloading] = useState(false);
+  const [cardLinkCopied,  setCardLinkCopied]  = useState(false);
 
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', phone: '', dob: '' });
@@ -827,6 +717,33 @@ function OverviewSection({
     setSaveError(null);
   }
 
+  async function handleDownloadCard() {
+    if (!cardRef.current || !cardData) return;
+    setCardDownloading(true);
+    try {
+      const { toPng } = await import('html-to-image');
+      await document.fonts.ready;
+      const dataUrl = await toPng(cardRef.current, { pixelRatio: 3, cacheBust: true });
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = `vivo-card-${cardData.memberId}.png`;
+      a.click();
+    } catch (err) {
+      console.error('[OverviewSection] card download error:', err);
+    } finally {
+      setCardDownloading(false);
+    }
+  }
+
+  function handleCopyCardLink() {
+    if (!cardData) return;
+    const url = `https://vivowineclub.com/card/${cardData.memberId}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCardLinkCopied(true);
+      setTimeout(() => setCardLinkCopied(false), 2000);
+    }).catch(() => {});
+  }
+
   async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -874,8 +791,36 @@ function OverviewSection({
               <div className="w-5 h-5 rounded-full border-2 border-[#731515]/20 border-t-[#731515]/60 animate-spin" />
             </div>
           ) : cardData ? (
-            <div className="max-w-[300px] mx-auto">
-              <MembershipCard {...cardData} />
+            <div className="flex flex-col items-center gap-4">
+              <div className="max-w-[300px] w-full mx-auto">
+                <MembershipCard {...cardData} cardRef={cardRef} />
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap justify-center w-full">
+                <button
+                  onClick={handleDownloadCard}
+                  disabled={cardDownloading}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#731515] text-white text-[9px] tracking-[0.2em] rounded-lg hover:bg-[#9b2323] disabled:opacity-50 transition-colors duration-200"
+                  style={{ fontFamily: 'var(--font-nunito)' }}
+                >
+                  {cardDownloading ? 'DOWNLOAD...' : 'DOWNLOAD PNG'}
+                </button>
+
+                <button
+                  onClick={handleCopyCardLink}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-[#731515]/30 text-[#731515] text-[9px] tracking-[0.2em] rounded-lg hover:bg-[#fdf0f0] hover:border-[#731515]/50 transition-all duration-200"
+                  style={{ fontFamily: 'var(--font-nunito)' }}
+                >
+                  {cardLinkCopied ? 'LINK COPIATO' : 'CONDIVIDI LINK'}
+                </button>
+              </div>
+
+              <div
+                className="w-full bg-[#fdf6f6] border border-[#e8d5d5] rounded-lg px-3 py-2 text-[10.5px] text-[#1a0505] truncate text-center"
+                style={{ fontFamily: 'var(--font-nunito)' }}
+              >
+                vivowineclub.com/card/{cardData.memberId}
+              </div>
             </div>
           ) : (
             <p className="text-[12px] text-[#7a4a4a]/50 italic py-8 text-center" style={{ fontFamily: 'var(--font-nunito)' }}>
@@ -1011,31 +956,16 @@ function OverviewSection({
         </Card>
 
         {/* Event Scanner — visible to all authenticated users */}
-        {true && (
-          <div className="lg:col-span-3 rounded-xl bg-[#0d0202] border border-white/5 p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5 shadow-[0_4px_24px_rgba(0,0,0,0.25)]">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-lg bg-white/8 flex items-center justify-center shrink-0">
-                <ScanLine size={18} className="text-white/70" />
-              </div>
-              <div>
-                <div className="text-[8px] tracking-[0.5em] text-white/30 mb-0.5 uppercase">Staff Tools</div>
-                <div className="text-[15px] font-light text-white/90" style={{ fontFamily: 'var(--font-syne)' }}>
-                  Event Check-in Scanner
-                </div>
-                <p className="text-[11px] text-white/35 mt-0.5" style={{ fontFamily: 'var(--font-nunito)' }}>
-                  Scansiona QR code o inserisci ID ordine per validare i biglietti.
-                </p>
-              </div>
-            </div>
-            <Link
-              href="/checkin"
-              className="shrink-0 inline-flex items-center gap-2 text-[9px] tracking-[0.3em] text-white bg-[#731515] px-6 py-3 rounded-lg hover:bg-[#9b2323] transition-colors duration-200 uppercase"
-            >
-              Apri Scanner
-              <ArrowUpRight size={11} />
-            </Link>
-          </div>
-        )}
+        <div className="lg:col-span-3 flex justify-center sm:justify-start">
+          <Link
+            href="/checkin"
+            className="inline-flex items-center gap-2.5 text-[10px] tracking-[0.3em] text-white bg-[#731515] px-7 py-3.5 rounded-xl hover:bg-[#9b2323] transition-colors duration-200 uppercase shadow-[0_4px_20px_rgba(115,21,21,0.25)]"
+          >
+            <ScanLine size={15} />
+            Apri Scanner Eventi
+            <ArrowUpRight size={12} />
+          </Link>
+        </div>
       </div>
 
       {/* ── Quote ── */}
@@ -1349,8 +1279,6 @@ function MembersPageInner() {
                 )}
 
                 {activeSection === 'settings' && <SettingsSection />}
-
-                {activeSection === 'card' && <CardSection token={token} />}
 
                 {activeSection === 'wine-assistant' && <WineAssistant />}
 
