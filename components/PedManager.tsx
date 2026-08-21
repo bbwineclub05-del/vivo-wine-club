@@ -27,6 +27,19 @@ interface PedEntry {
   created_at: string;
 }
 
+interface CalEvent {
+  id: string;
+  title: string;
+  date: string | null;
+  time: string | null;
+  location: string | null;
+  location_full: string | null;
+  type: string | null;
+  section: string | null;
+  status: string | null;
+  slug: string | null;
+}
+
 /* ─────────────────────────────────────────────
    Constants
 ───────────────────────────────────────────── */
@@ -47,6 +60,8 @@ const PLATFORM_COLOR: Record<string, string> = {
   TikTok:      '#010101',
   Altro:       '#7a4a4a',
 };
+
+const EVENT_BG = '#3d0d0d';
 
 const MONTHS_IT = [
   'Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno',
@@ -315,11 +330,13 @@ function EntryModal({
 ───────────────────────────────────────────── */
 function PedCalendar({
   entries,
+  events,
   onDayClick,
   onEntryClick,
   onToggleStatus,
 }: {
   entries:        PedEntry[];
+  events:         CalEvent[];
   onDayClick:     (date: string) => void;
   onEntryClick:   (entry: PedEntry) => void;
   onToggleStatus: (id: string, next: PedStatus) => void;
@@ -357,6 +374,14 @@ function PedCalendar({
     dayMap[key].push(e);
   }
 
+  const eventDayMap: Record<string, CalEvent[]> = {};
+  for (const ev of events) {
+    if (!ev.date) continue;
+    const key = ev.date.slice(0, 10);
+    if (!eventDayMap[key]) eventDayMap[key] = [];
+    eventDayMap[key].push(ev);
+  }
+
   const cells: (number | null)[] = [
     ...Array(firstDayOfWeek).fill(null),
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
@@ -364,6 +389,7 @@ function PedCalendar({
   while (cells.length % 7 !== 0) cells.push(null);
 
   const selectedEntries = selectedDay ? (dayMap[selectedDay] ?? []) : [];
+  const selectedEvents  = selectedDay ? (eventDayMap[selectedDay] ?? []) : [];
 
   function handleDayClick(dayStr: string) {
     setSelectedDay(prev => prev === dayStr ? null : dayStr);
@@ -442,7 +468,8 @@ function PedCalendar({
             {cells.map((day, i) => {
               if (!day) return <div key={i} className="min-h-[80px] bg-[#fdf6f6]/30" />;
               const dayStr = `${year}-${String(mon + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-              const items  = dayMap[dayStr] ?? [];
+              const items     = dayMap[dayStr] ?? [];
+              const dayEvents = eventDayMap[dayStr] ?? [];
               const isToday    = dayStr === todayStr;
               const isSelected = dayStr === selectedDay;
               return (
@@ -462,6 +489,15 @@ function PedCalendar({
                       onClick={ev => { ev.stopPropagation(); onEntryClick(e); }}
                     >
                       {e.status === 'published' && '✓ '}{e.title}
+                    </div>
+                  ))}
+                  {dayEvents.map(ev => (
+                    <div
+                      key={ev.id}
+                      className="w-full px-1.5 py-0.5 rounded text-[9px] truncate leading-tight"
+                      style={{ backgroundColor: EVENT_BG, color: '#fff', opacity: 0.92 }}
+                    >
+                      {ev.title}
                     </div>
                   ))}
                   {items.length === 0 && isSelected && (
@@ -503,7 +539,8 @@ function PedCalendar({
           <div className="grid grid-cols-7 divide-x divide-[#eddada]">
             {weekDays.map((d, i) => {
               const dayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-              const items  = dayMap[dayStr] ?? [];
+              const items     = dayMap[dayStr] ?? [];
+              const dayEvents = eventDayMap[dayStr] ?? [];
               const isToday    = dayStr === todayStr;
               const isSelected = dayStr === selectedDay;
               return (
@@ -525,6 +562,16 @@ function PedCalendar({
                       <div className="text-[8px] opacity-80 mt-0.5">{e.platform} · {e.content_type}</div>
                     </div>
                   ))}
+                  {dayEvents.map(ev => (
+                    <div
+                      key={ev.id}
+                      className="w-full px-2 py-1 rounded leading-tight"
+                      style={{ backgroundColor: EVENT_BG, color: '#fff' }}
+                    >
+                      <div className="text-[10px] font-medium truncate">{ev.title}</div>
+                      {ev.location && <div className="text-[8px] opacity-75 mt-0.5 truncate">📍 {ev.location}</div>}
+                    </div>
+                  ))}
                   <div
                     className="mt-auto text-[8px] tracking-[0.15em] text-[#731515]/30 flex items-center gap-1"
                     onClick={ev => { ev.stopPropagation(); onDayClick(dayStr); }}
@@ -540,7 +587,7 @@ function PedCalendar({
 
       {/* Day popup */}
       <AnimatePresence>
-        {selectedDay && selectedEntries.length > 0 && (
+        {selectedDay && (selectedEntries.length > 0 || selectedEvents.length > 0) && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -566,6 +613,24 @@ function PedCalendar({
               </div>
             </div>
             <div className="divide-y divide-[#eddada]">
+              {selectedEvents.map(ev => (
+                <div key={ev.id} className="flex items-center gap-3 px-4 py-3">
+                  {/* Event dot */}
+                  <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: EVENT_BG }} />
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[12px] font-medium leading-tight text-[#1a0505]" style={{ fontFamily: 'var(--font-nunito)' }}>
+                      {ev.title}
+                    </div>
+                    <div className="text-[10px] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
+                      Evento
+                      {ev.location && ` · 📍 ${ev.location}`}
+                      {ev.time && ` · 🕐 ${ev.time}`}
+                    </div>
+                  </div>
+                </div>
+              ))}
               {selectedEntries.map(e => (
                 <div key={e.id} className="flex items-center gap-3 px-4 py-3 hover:bg-[#fdf6f6] transition-colors">
                   {/* Publish toggle */}
@@ -600,6 +665,11 @@ function PedCalendar({
             {p}
           </div>
         ))}
+        <span className="text-[9px] text-[#7a4a4a]/40 tracking-[0.2em] ml-2">ALTRO</span>
+        <div className="flex items-center gap-1.5 text-[9px] text-[#7a4a4a]">
+          <span className="w-2 h-2 rounded-sm" style={{ backgroundColor: EVENT_BG }} />
+          Eventi
+        </div>
       </div>
     </div>
   );
@@ -880,6 +950,7 @@ function PedList({
 ───────────────────────────────────────────── */
 export default function PedManager() {
   const [entries,     setEntries]     = useState<PedEntry[]>([]);
+  const [events,      setEvents]      = useState<CalEvent[]>([]);
   const [loading,     setLoading]     = useState(true);
   const [tab,         setTab]         = useState<'calendar' | 'list'>('calendar');
   const [showModal,   setShowModal]   = useState(false);
@@ -905,7 +976,16 @@ export default function PedManager() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  const loadEvents = useCallback(async () => {
+    try {
+      const res = await fetch('/api/events/all');
+      if (!res.ok) return;
+      const json = await res.json();
+      if (Array.isArray(json.events)) setEvents(json.events as CalEvent[]);
+    } catch { /* silent */ }
+  }, []);
+
+  useEffect(() => { load(); loadEvents(); }, [load, loadEvents]);
 
   function openCreate(date?: string) {
     setEditTarget(null);
@@ -1012,6 +1092,7 @@ export default function PedManager() {
       ) : tab === 'calendar' ? (
         <PedCalendar
           entries={entries}
+          events={events}
           onDayClick={openCreate}
           onEntryClick={openEdit}
           onToggleStatus={handleToggleStatus}
