@@ -1,10 +1,12 @@
 {
   "nav": {
+    "events": "EVENTS",
     "party": "PARTY",
     "visits": "VISITE",
     "lounge": "LOUNGE",
     "wearTheClub": "WEAR THE CLUB",
     "whoWeAre": "CHI SIAMO",
+    "partners": "PARTNERS",
     "collaborate": "COLLABORA",
     "signIn": "ACCEDI",
     "myArea": "LA MIA AREA"
@@ -236,6 +238,22 @@
     "referralWhatsApp": "Ciao! Ti invito a {event} con Vivo Wine Club 🍷 Iscriviti qui: {link}",
     "referralEmailSubject": "Vieni a {event} con me — Vivo Wine Club",
     "referralEmailBody": "Ciao!\n\nTi invito a {event} con Vivo Wine Club.\nIscriviti gratuitamente qui: {link}\n\nCi vediamo lì! 🍷"
+  },
+  "partners": {
+    "label": "PARTNERS",
+    "heading": "I Nostri Partner",
+    "subtitle": "Le cantine e i locali con cui collaboriamo per portarti le migliori esperienze di vino.",
+    "filterAll": "TUTTI",
+    "filterCantina": "CANTINE",
+    "filterLocation": "LOCATION EVENTI",
+    "categoryCantina": "CANTINA",
+    "categoryLocation": "LOCATION EVENTI",
+    "badge": "PARTNER OF VIVO WINE CLUB",
+    "visitLink": "VISITA IL SITO",
+    "aboutLabel": "CHI SONO",
+    "quoteLabel": "RECENSIONE",
+    "galleryLabel": "GALLERIA",
+    "galleryHeading": "Foto"
   },
   "collaborate": {
     "getInTouch": "COLLABORA CON NOI",

@@ -64,20 +64,20 @@ function PhotoPlaceholder({ index }: { index: number }) {
   );
 }
 
-export default function WineryGallery({ slug }: { slug: string }) {
+export default function WineryGallery({ slug, folder = 'wineries' }: { slug: string; folder?: string }) {
   const [images,   setImages]   = useState<GalleryImage[]>([]);
   const [loading,  setLoading]  = useState(true);
   const [lightbox, setLightbox] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`/api/media?folder=wineries/${slug}`)
+    fetch(`/api/media?folder=${folder}/${slug}`)
       .then((r) => r.json())
       .then((data) => {
         setImages(data.images ?? []);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [slug]);
+  }, [slug, folder]);
 
   if (loading) {
     return (
