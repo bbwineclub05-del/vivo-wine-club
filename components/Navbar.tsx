@@ -12,8 +12,9 @@ import { useTranslations } from 'next-intl';
 
 const NAV_LINKS = [
   { href: '/experiences/wine-party',    key: 'party',        page: true },
-  { href: '/experiences/winery-visits', key: 'visits',       page: true },
   { href: '/experiences/wine-lounge',   key: 'lounge',       page: true },
+  { href: '/experiences/winery-visits', key: 'visits',       page: true },
+  { href: '/partners',                  key: 'partners',     page: true },
   { href: '/wear-the-club',             key: 'wearTheClub',  page: true },
   { href: '/who-we-are',                key: 'whoWeAre',     page: true },
   { href: '/collaborate',               key: 'collaborate',  page: true },
