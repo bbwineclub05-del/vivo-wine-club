@@ -1,11 +1,12 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, MapPin, Phone, Mail, ExternalLink } from 'lucide-react';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, getLocale } from 'next-intl/server';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import PartnerLogo from '@/components/PartnerLogo';
-import { getPartnerBySlug, PARTNERS } from '@/lib/partners';
+import PartnerGallery from '@/components/PartnerGallery';
+import { getPartnerBySlug, PARTNERS, localized } from '@/lib/partners';
 
 export function generateStaticParams() {
   return PARTNERS.map((p) => ({ slug: p.slug }));
@@ -15,9 +16,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const partner = getPartnerBySlug(slug);
   if (!partner) return {};
+  const locale = await getLocale();
   return {
     title: `${partner.name} — Vivo Wine Club`,
-    description: partner.shortDesc,
+    description: localized(partner.shortDesc, locale),
   };
 }
 
@@ -26,7 +28,8 @@ export default async function PartnerPage({ params }: { params: Promise<{ slug: 
   const partner = getPartnerBySlug(slug);
   if (!partner) notFound();
 
-  const t = await getTranslations('partners');
+  const t      = await getTranslations('partners');
+  const locale = await getLocale();
 
   return (
     <>
@@ -66,7 +69,7 @@ export default async function PartnerPage({ params }: { params: Promise<{ slug: 
                 {partner.subtitle && (
                   <div className="text-[10px] tracking-[0.2em] text-[#7a4a4a]/70 mb-6"
                     style={{ fontFamily: 'var(--font-nunito)' }}>
-                    {partner.subtitle}
+                    {localized(partner.subtitle, locale)}
                   </div>
                 )}
 
@@ -121,6 +124,24 @@ export default async function PartnerPage({ params }: { params: Promise<{ slug: 
           </div>
         </section>
 
+        {/* About */}
+        <section className="relative overflow-hidden pb-20 md:pb-24">
+          <div className="max-w-5xl mx-auto px-6 lg:px-10">
+            <div className="w-full h-px bg-gradient-to-r from-[#731515]/30 via-[#731515]/10 to-transparent mb-16" />
+            <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr] gap-8 lg:gap-20 items-start">
+              <div>
+                <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-3">{t('aboutLabel')}</div>
+              </div>
+              <p
+                className="text-lg md:text-xl text-[#3a1a1a] font-light leading-relaxed max-w-2xl"
+                style={{ fontFamily: 'var(--font-nunito)' }}
+              >
+                {localized(partner.shortDesc, locale)}
+              </p>
+            </div>
+          </div>
+        </section>
+
         {/* Quote — hidden until partner.quote is populated (see lib/partners.ts) */}
         {partner.quote && (
           <section className="relative overflow-hidden pb-20 md:pb-24">
@@ -144,7 +165,7 @@ export default async function PartnerPage({ params }: { params: Promise<{ slug: 
                     className="text-lg md:text-xl text-[#250719] font-light italic leading-relaxed"
                     style={{ fontFamily: 'var(--font-nunito)' }}
                   >
-                    {partner.quote}
+                    {localized(partner.quote, locale)}
                   </p>
                   {partner.quoteAuthor && (
                     <div className="mt-5 text-[11px] tracking-[0.2em] text-[#7a4a4a]/70">
@@ -158,6 +179,7 @@ export default async function PartnerPage({ params }: { params: Promise<{ slug: 
         )}
 
         {/* Gallery — hidden until partner photos are available */}
+        <PartnerGallery slug={partner.slug} name={partner.name} />
 
       </main>
       <Footer />
