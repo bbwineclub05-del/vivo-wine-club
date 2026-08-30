@@ -134,6 +134,13 @@
     "ctaText": "Unisciti a una community di 200+ appassionati di vino in Europa.",
     "ctaButton": "Diventa Membro"
   },
+  "eventsHub": {
+    "filterAll": "Tutti",
+    "filterGeneral": "Altre Esperienze",
+    "upcomingHeading": "Prossimi Eventi",
+    "estatesHeading": "Le Nostre Cantine",
+    "estatesIntro": "Le tenute che abbiamo visitato e con cui collaboriamo: l'accesso reale che rende ogni Winery Visit possibile."
+  },
   "wineParty": {
     "heroTagline": "Dove il vino diventa festa",
     "theConcept": "IL CONCETTO",

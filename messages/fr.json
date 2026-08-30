@@ -134,6 +134,13 @@
     "ctaText": "Rejoignez une communauté de 200+ amateurs de vin à travers l'Europe.",
     "ctaButton": "Devenir Membre"
   },
+  "eventsHub": {
+    "filterAll": "Tous",
+    "filterGeneral": "Autres Expériences",
+    "upcomingHeading": "Prochains Événements",
+    "estatesHeading": "Nos Domaines",
+    "estatesIntro": "Les domaines que nous avons visités et avec qui nous collaborons : l'accès réel qui rend chaque Winery Visit possible."
+  },
   "wineParty": {
     "heroTagline": "Là où le vin rencontre la nuit.",
     "theConcept": "LE CONCEPT",

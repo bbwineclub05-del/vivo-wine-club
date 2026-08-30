@@ -44,9 +44,7 @@ function MailIcon() {
 }
 
 const NAV_LINKS = [
-  { key: 'party',       href: '/experiences/wine-party'    },
-  { key: 'lounge',      href: '/experiences/wine-lounge'   },
-  { key: 'visits',      href: '/experiences/winery-visits' },
+  { key: 'events',      href: '/events'                    },
   { key: 'partners',    href: '/partners'                  },
   { key: 'wearTheClub', href: '/wear-the-club'             },
   { key: 'whoWeAre',    href: '/who-we-are'                },

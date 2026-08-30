@@ -8,9 +8,9 @@ import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 const EXPERIENCES_DATA = [
-  { id: 1, title: 'Wine Party',  descKey: 'winePartyDesc',  image: '/events/copertina.jpg',                   href: '/experiences/wine-party'    },
-  { id: 2, title: 'Wine Visits', descKey: 'wineVisitsDesc', image: '/Winery visits/pichon baron copertina.jpeg', href: '/experiences/winery-visits' },
-  { id: 3, title: 'Wine Lounge', descKey: 'wineLoungeDesc', image: '/events/bottiglie.jpg',                   href: '/experiences/wine-lounge'   },
+  { id: 1, title: 'Wine Party',  descKey: 'winePartyDesc',  image: '/events/copertina.jpg',                   href: '/events#party'    },
+  { id: 2, title: 'Wine Visits', descKey: 'wineVisitsDesc', image: '/Winery visits/pichon baron copertina.jpeg', href: '/events#visits' },
+  { id: 3, title: 'Wine Lounge', descKey: 'wineLoungeDesc', image: '/events/bottiglie.jpg',                   href: '/events#lounge'   },
 ] as const;
 
 const N = EXPERIENCES_DATA.length;
