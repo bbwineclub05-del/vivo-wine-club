@@ -38,6 +38,7 @@ interface DbEvent {
   referral_enabled: boolean;
   registration_closed: boolean;
   image_url: string | null;
+  parking_map_url: string | null;
   stripe_product_id: string | null;
   stripe_price_id: string | null;
   sort_order: number;
@@ -52,7 +53,7 @@ const BLANK: FormData = {
   price: 0, capacity: null, status: 'open',
   published: false, title_strikethrough: false, guest_list_enabled: false,
   is_list_only: false, referral_enabled: false, registration_closed: false,
-  image_url: null, sort_order: 0,
+  image_url: null, parking_map_url: null, sort_order: 0,
 };
 
 const SECTIONS = [
@@ -253,6 +254,17 @@ function EventForm({
           <input className={inputCls} value={f.location_full}
             onChange={e => set('location_full', e.target.value)}
             placeholder="Ca' del Bosco, Erbusco — ore 11:00" required />
+        </div>
+
+        {/* Parking / shuttle map link */}
+        <div className="md:col-span-2">
+          <Label>Link parcheggio &amp; navetta (opzionale)</Label>
+          <input className={inputCls} type="url" value={f.parking_map_url ?? ''}
+            onChange={e => set('parking_map_url', e.target.value || null)}
+            placeholder="https://maps.google.com/..." />
+          <p className="mt-1 text-[10px] text-[#7a4a4a]/50">
+            Se compilato, compare nell&apos;email di conferma iscrizione lista come link a Google Maps.
+          </p>
         </div>
 
         {/* Description */}
@@ -1148,6 +1160,7 @@ export default function EventManager() {
                   referral_enabled:     mode.edit.referral_enabled ?? false,
                   registration_closed:  mode.edit.registration_closed ?? false,
                   image_url:           mode.edit.image_url,
+                  parking_map_url:     mode.edit.parking_map_url ?? null,
                   sort_order:         mode.edit.sort_order,
                   section:            mode.edit.section ?? 'general',
                 }

@@ -16,9 +16,10 @@ function buildConfirmationEmail(opts: {
   eventTime: string | null;
   routeOption?: string | null;
   eventPrice?: number | null;
+  parkingMapUrl?: string | null;
 }): string {
-  const { firstName, eventTitle, eventDate, eventLocation, eventTime, routeOption, eventPrice } = opts;
-  const hasExtra = !!(routeOption || (eventPrice && eventPrice > 0));
+  const { firstName, eventTitle, eventDate, eventLocation, eventTime, routeOption, eventPrice, parkingMapUrl } = opts;
+  const hasExtra = !!(parkingMapUrl || routeOption || (eventPrice && eventPrice > 0));
 
   const body = `
 ${heading('Iscrizione confermata', 'Vivo Wine Club · Guest List')}
@@ -47,6 +48,14 @@ ${divider('20px 0')}
       <p style="margin:4px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1a0505;">${eventLocation}</p>
     </td>
   </tr>
+  ${parkingMapUrl ? `<tr>
+    <td style="padding:8px 0;border-top:1px solid #eddada;${(routeOption || (eventPrice && eventPrice > 0)) ? '' : 'border-bottom:1px solid #eddada;'}">
+      <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#7a4a4a;">Parcheggio &amp; Navetta</p>
+      <p style="margin:4px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;">
+        <a href="${parkingMapUrl}" style="color:#731515;text-decoration:none;">Apri su Google Maps →</a>
+      </p>
+    </td>
+  </tr>` : ''}
   ${routeOption ? `<tr>
     <td style="padding:8px 0;border-top:1px solid #eddada;${eventPrice && eventPrice > 0 ? '' : 'border-bottom:1px solid #eddada;'}">
       <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#7a4a4a;">Percorso scelto</p>
@@ -154,7 +163,7 @@ export async function POST(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: eventRow, error: evtErr } = await (db as any)
     .from('events')
-    .select('id, title, date, time, location, location_full, guest_list_enabled, is_list_only, price')
+    .select('id, title, date, time, location, location_full, guest_list_enabled, is_list_only, price, parking_map_url')
     .eq('slug', slug)
     .single();
 
@@ -265,6 +274,7 @@ export async function POST(
         eventTime:     eventRow.time ?? null,
         routeOption,
         eventPrice:    eventRow.is_list_only && eventRow.price > 0 ? eventRow.price : null,
+        parkingMapUrl: eventRow.parking_map_url ?? null,
       }),
       headers: {
         'List-Unsubscribe':      '<mailto:info@vivowineclub.com?subject=unsubscribe>',

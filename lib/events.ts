@@ -20,6 +20,7 @@ export interface DbEvent {
   published: boolean;
   title_strikethrough: boolean;
   image_url: string | null;
+  parking_map_url: string | null;
   stripe_product_id: string | null;
   stripe_price_id: string | null;
   sort_order: number;
