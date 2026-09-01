@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Sparkles, Download, Mail, X, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { useMobileOverlay } from '@/lib/useMobileOverlay';
 
 /* ─── Types ─────────────────────────────────────────────────────────── */
 
@@ -284,6 +285,8 @@ export default function QuoteGenerator() {
   const [aiError,    setAiError]    = useState('');
   const [pdfLoading, setPdfLoading] = useState(false);
   const [sendModal,  setSendModal]  = useState(false);
+  // SendModal has no scroll lock of its own — use the full treatment.
+  useMobileOverlay(sendModal, () => setSendModal(false));
   const [sending,    setSending]    = useState(false);
   const [sendResult, setSendResult] = useState<'ok' | 'err' | null>(null);
   const [activeTab,  setActiveTab]  = useState<'form' | 'preview'>('form');

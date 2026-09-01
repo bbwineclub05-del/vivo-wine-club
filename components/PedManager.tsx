@@ -7,6 +7,7 @@ import {
   ChevronLeft, ChevronRight, ChevronDown, Loader2, CheckCircle2, Circle,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { useOverlayBackClose } from '@/lib/useMobileOverlay';
 
 /* ─────────────────────────────────────────────
    Types
@@ -956,6 +957,8 @@ export default function PedManager() {
   const [showModal,   setShowModal]   = useState(false);
   const [editTarget,  setEditTarget]  = useState<PedEntry | null>(null);
   const [defaultDate, setDefaultDate] = useState<string | undefined>();
+  // EntryModal locks scroll on its own — only add back-close here.
+  useOverlayBackClose(showModal, () => { setShowModal(false); setEditTarget(null); });
   const [token,       setToken]       = useState('');
 
   useEffect(() => {

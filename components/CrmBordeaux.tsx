@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Search, Mail, Plus, Trash2, Edit2, Check, X, Paperclip, Calendar } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { useOverlayBackClose } from '@/lib/useMobileOverlay';
 
 /* ── Types ── */
 interface BordeauxContact {
@@ -281,6 +282,8 @@ export default function CrmBordeaux() {
   const [sortKey, setSortKey]     = useState<SortKey>('company');
   const [sortAsc, setSortAsc]     = useState(true);
   const [emailTarget, setEmailTarget] = useState<{ contact: BordeauxContact; mode: EmailMode } | null>(null);
+  // EmailModal locks scroll on its own — only add back-close here.
+  useOverlayBackClose(!!emailTarget, () => setEmailTarget(null));
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleting, setDeleting]   = useState<string | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);

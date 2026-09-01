@@ -35,6 +35,7 @@ import WineAssistant from '@/components/WineAssistant';
 import UpsellManager from '@/components/UpsellManager';
 import WineriesMapManager from '@/components/WineriesMapManager';
 import { isSuperAdmin, isFinanceUser } from '@/lib/admins';
+import { useMobileOverlay } from '@/lib/useMobileOverlay';
 
 /* ─────────────────────────────────────────────
    Types
@@ -1069,6 +1070,7 @@ function MembersPageInner() {
   const initialSection = (searchParams.get('section') as Section | null) ?? 'overview';
   const [activeSection,     setActiveSection]     = useState<Section>(initialSection);
   const [sidebarOpen,       setSidebarOpen]        = useState(false);
+  useMobileOverlay(sidebarOpen, () => setSidebarOpen(false));
   const [isStaff,           setIsStaff]            = useState(false);
   const [isMember,          setIsMember]           = useState(false);
   const [isCollaborator,    setIsCollaborator]     = useState(false);
@@ -1263,7 +1265,7 @@ function MembersPageInner() {
         </div>
 
         {/* Scrollable content area */}
-        <main className="flex-1 overflow-y-auto bg-white">
+        <main id="members-scroll-root" className="flex-1 overflow-y-auto bg-white">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-6 sm:py-10">
             <AnimatePresence mode="wait">
               <motion.div

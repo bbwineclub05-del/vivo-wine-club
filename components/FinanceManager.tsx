@@ -10,6 +10,7 @@ import {
 import { supabase } from '@/lib/supabase';
 import FounderAccounts from './FounderAccounts';
 import { FINANCE_EMAILS } from '@/lib/admins';
+import { useOverlayBackClose } from '@/lib/useMobileOverlay';
 
 /* ─────────────────────────────────────────────
    Types
@@ -340,6 +341,8 @@ function TxModal({
   const [uploadPct,    setUploadPct]    = useState<number | null>(null);
   const [error,        setError]        = useState<string | null>(null);
   const [showAddCat,   setShowAddCat]   = useState(false);
+  // AddCategoryModal locks scroll on its own — only add back-close here.
+  useOverlayBackClose(showAddCat, () => setShowAddCat(false));
 
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -1005,6 +1008,10 @@ export default function FinanceManager() {
   const [addModal,         setAddModal]         = useState(false);
   const [editTarget,       setEditTarget]       = useState<Transaction | null>(null);
   const [deleteTarget,     setDeleteTarget]     = useState<Transaction | null>(null);
+  // TxModal / DeleteModal lock scroll on their own — only add back-close here.
+  useOverlayBackClose(addModal, () => setAddModal(false));
+  useOverlayBackClose(!!editTarget, () => setEditTarget(null));
+  useOverlayBackClose(!!deleteTarget, () => setDeleteTarget(null));
   const [currentUserName,  setCurrentUserName]  = useState<string | null>(null);
   const [teamMembers,      setTeamMembers]      = useState<TeamMember[]>([]);
 

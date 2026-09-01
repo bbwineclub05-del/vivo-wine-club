@@ -382,8 +382,8 @@ export default function BilancioManager() {
             </div>
           ) : (
             <>
-              <div className="bg-white border border-[#eddada] rounded-xl overflow-hidden shadow-[0_1px_4px_rgba(107,26,26,0.06)]">
-                <table className="w-full">
+              <div className="bg-white border border-[#eddada] rounded-xl overflow-x-auto shadow-[0_1px_4px_rgba(107,26,26,0.06)]">
+                <table className="w-full min-w-[520px]">
                   <thead>
                     <tr className="bg-[#fdf6f6] border-b border-[#eddada]">
                       <th className="text-left px-5 py-3 text-[9px] tracking-[0.4em] text-[#731515] uppercase font-semibold" style={{ fontFamily: 'var(--font-nunito)' }}>Categoria</th>

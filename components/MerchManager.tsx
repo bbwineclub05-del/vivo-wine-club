@@ -8,6 +8,7 @@ import {
   Copy, Check as CheckIcon, MapPin, Phone, StickyNote,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
+import { useMobileOverlay } from '@/lib/useMobileOverlay';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -1705,6 +1706,8 @@ function OrderRow({ order, token, onUpdated }: {
 }) {
   const [saving,           setSaving]           = useState(false);
   const [showShippingModal, setShowShippingModal] = useState(false);
+  // ShippingModal has no scroll lock of its own — use the full treatment.
+  useMobileOverlay(showShippingModal, () => setShowShippingModal(false));
 
   const isSpedito = order.status === 'spedito';
   const isEvaso   = order.status === 'evaso';
@@ -2059,8 +2062,8 @@ function StockOverviewTab({ token }: { token: string }) {
       {stock.length > 0 ? (
         <div>
           <p className="text-[9px] tracking-[0.35em] text-[#731515] mb-3">DISPONIBILITÀ PRODOTTI</p>
-          <div className="border border-[#eddada] rounded-xl overflow-hidden">
-            <table className="w-full text-[12px]" style={{ fontFamily: 'var(--font-nunito)' }}>
+          <div className="border border-[#eddada] rounded-xl overflow-x-auto">
+            <table className="w-full min-w-[440px] text-[12px]" style={{ fontFamily: 'var(--font-nunito)' }}>
               <thead>
                 <tr className="bg-[#fdf6f6] border-b border-[#eddada]">
                   <th className="w-12" />
@@ -2167,8 +2170,8 @@ function StockOverviewTab({ token }: { token: string }) {
       {log.length > 0 && (
         <div>
           <p className="text-[9px] tracking-[0.35em] text-[#731515] mb-3">STORICO MODIFICHE STOCK</p>
-          <div className="border border-[#eddada] rounded-xl overflow-hidden">
-            <table className="w-full text-[11px]" style={{ fontFamily: 'var(--font-nunito)' }}>
+          <div className="border border-[#eddada] rounded-xl overflow-x-auto">
+            <table className="w-full min-w-[640px] text-[11px]" style={{ fontFamily: 'var(--font-nunito)' }}>
               <thead>
                 <tr className="bg-[#fdf6f6] border-b border-[#eddada]">
                   <th className="text-left px-4 py-2 text-[9px] tracking-[0.3em] text-[#7a4a4a]/50 font-normal">DATA</th>
@@ -2218,8 +2221,13 @@ export default function MerchManager() {
   const [token,    setToken]    = useState('');
   const [showModal,        setShowModal]        = useState(false);
   const [editing,          setEditing]          = useState<Product | null>(null);
+  // ProductModal, VariantManagerModal and TextVariantManagerModal have no
+  // scroll lock of their own — use the full treatment for all three.
+  useMobileOverlay(showModal, () => { setShowModal(false); setEditing(null); });
   const [variantModal,     setVariantModal]     = useState<Product | null>(null);
   const [textVariantModal, setTextVariantModal] = useState<Product | null>(null);
+  useMobileOverlay(!!variantModal, () => setVariantModal(null));
+  useMobileOverlay(!!textVariantModal, () => setTextVariantModal(null));
 
   // ── Global shipping setting ──
   const [globalShipping,      setGlobalShipping]      = useState<string>('');

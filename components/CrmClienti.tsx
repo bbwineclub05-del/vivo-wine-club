@@ -7,6 +7,7 @@ import {
   CheckSquare, Square, ChevronDown, ChevronUp, DatabaseZap,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { useOverlayBackClose } from '@/lib/useMobileOverlay';
 
 /* ─────────────────────────────────────────────
    Types
@@ -320,6 +321,8 @@ export default function CrmClienti() {
   const [search,       setSearch]       = useState('');
   const [selected,     setSelected]     = useState<Set<string>>(new Set());
   const [composeFor,   setComposeFor]   = useState<Customer[] | null>(null);
+  // ComposeModal locks scroll on its own — only add back-close here.
+  useOverlayBackClose(!!composeFor, () => setComposeFor(null));
   const [eventTitles,  setEventTitles]  = useState<Map<string, string>>(new Map());
   const [syncing,      setSyncing]      = useState(false);
   const [syncResult,   setSyncResult]   = useState<{ inserted: number; updated: number } | null>(null);

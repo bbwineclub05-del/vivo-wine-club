@@ -13,6 +13,7 @@ import EventScanner from '@/components/EventScanner';
 import EventGuestPanel from '@/components/EventGuestPanel';
 import EventPartnerPanel from '@/components/EventPartnerPanel';
 import EventEmailModalAdvanced, { type CustomCategoryInfo } from '@/components/EventEmailModalAdvanced';
+import { useMobileOverlay, useOverlayBackClose } from '@/lib/useMobileOverlay';
 
 /* ─────────────────────────────────────────────
    Types
@@ -893,6 +894,11 @@ export default function EventManager() {
   const [inviteEvent,     setInviteEvent]     = useState<DbEvent | null>(null);
   const [guestListEventId, setGuestListEventId] = useState<string | null>(null);
   const [accessToken,     setAccessToken]     = useState<string | null>(null);
+
+  useMobileOverlay(!!scannerEvent, () => setScannerEvent(null));
+  // EventEmailModalAdvanced already locks scroll on its own — only add back-close here.
+  useOverlayBackClose(!!inviteEvent, () => setInviteEvent(null));
+  useMobileOverlay(!!guestListEventId, () => setGuestListEventId(null));
   const [customCats,      setCustomCats]      = useState<CustomCategoryInfo[]>([]);
   const topRef = useRef<HTMLDivElement>(null);
 

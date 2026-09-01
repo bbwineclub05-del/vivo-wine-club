@@ -6,6 +6,7 @@ import {
   Search, Plus, X, Pencil, Trash2, RefreshCw, Building2,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { useMobileOverlay } from '@/lib/useMobileOverlay';
 
 /* ─────────────────────────────────────────────
    Types
@@ -279,6 +280,10 @@ export default function CrmSponsors() {
   const [addModal,    setAddModal]    = useState(false);
   const [editTarget,  setEditTarget]  = useState<Sponsor | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Sponsor | null>(null);
+  // None of these three modals lock scroll on their own — use the full treatment.
+  useMobileOverlay(addModal, () => setAddModal(false));
+  useMobileOverlay(!!editTarget, () => setEditTarget(null));
+  useMobileOverlay(!!deleteTarget, () => setDeleteTarget(null));
 
   async function load() {
     setLoading(true);

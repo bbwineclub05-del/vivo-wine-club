@@ -6,6 +6,7 @@ import {
   Plus, Pencil, Trash2, X, Loader2, Eye, EyeOff,
   Tag, ImagePlus, CheckCircle,
 } from 'lucide-react';
+import { useMobileOverlay } from '@/lib/useMobileOverlay';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -469,6 +470,8 @@ export default function DiscountManager({ token }: { token: string }) {
   const [loading,   setLoading]   = useState(true);
   const [error,     setError]     = useState('');
   const [modal,     setModal]     = useState<ModalState | null>(null);
+  // DiscountModal has no scroll lock of its own — use the full treatment.
+  useMobileOverlay(!!modal, () => setModal(null));
 
   async function loadDiscounts() {
     setLoading(true);
