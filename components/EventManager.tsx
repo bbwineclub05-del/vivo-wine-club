@@ -39,7 +39,9 @@ interface DbEvent {
   referral_enabled: boolean;
   registration_closed: boolean;
   image_url: string | null;
+  location_map_url: string | null;
   parking_map_url: string | null;
+  parking_map_url_2: string | null;
   stripe_product_id: string | null;
   stripe_price_id: string | null;
   sort_order: number;
@@ -54,7 +56,7 @@ const BLANK: FormData = {
   price: 0, capacity: null, status: 'open',
   published: false, title_strikethrough: false, guest_list_enabled: false,
   is_list_only: false, referral_enabled: false, registration_closed: false,
-  image_url: null, parking_map_url: null, sort_order: 0,
+  image_url: null, location_map_url: null, parking_map_url: null, parking_map_url_2: null, sort_order: 0,
 };
 
 const SECTIONS = [
@@ -257,16 +259,33 @@ function EventForm({
             placeholder="Ca' del Bosco, Erbusco — ore 11:00" required />
         </div>
 
-        {/* Parking / shuttle map link */}
+        {/* Location map link */}
         <div className="md:col-span-2">
-          <Label>Link parcheggio &amp; navetta (opzionale)</Label>
+          <Label>Link mappa location (opzionale)</Label>
+          <input className={inputCls} type="url" value={f.location_map_url ?? ''}
+            onChange={e => set('location_map_url', e.target.value || null)}
+            placeholder="https://maps.google.com/..." />
+          <p className="mt-1 text-[10px] text-[#7a4a4a]/50">
+            Se compilato, nell&apos;email di conferma iscrizione lista la parola &quot;Luogo&quot; diventa cliccabile e apre questa mappa.
+          </p>
+        </div>
+
+        {/* Parking / shuttle map links */}
+        <div>
+          <Label>Link parcheggio &amp; navetta 1 (opzionale)</Label>
           <input className={inputCls} type="url" value={f.parking_map_url ?? ''}
             onChange={e => set('parking_map_url', e.target.value || null)}
             placeholder="https://maps.google.com/..." />
-          <p className="mt-1 text-[10px] text-[#7a4a4a]/50">
-            Se compilato, compare nell&apos;email di conferma iscrizione lista come link a Google Maps.
-          </p>
         </div>
+        <div>
+          <Label>Link parcheggio &amp; navetta 2 (opzionale)</Label>
+          <input className={inputCls} type="url" value={f.parking_map_url_2 ?? ''}
+            onChange={e => set('parking_map_url_2', e.target.value || null)}
+            placeholder="https://maps.google.com/..." />
+        </div>
+        <p className="md:col-span-2 -mt-3 text-[10px] text-[#7a4a4a]/50">
+          Se compilati, compaiono nell&apos;email di conferma iscrizione lista come link a Google Maps.
+        </p>
 
         {/* Description */}
         <div className="md:col-span-2">
@@ -1166,7 +1185,9 @@ export default function EventManager() {
                   referral_enabled:     mode.edit.referral_enabled ?? false,
                   registration_closed:  mode.edit.registration_closed ?? false,
                   image_url:           mode.edit.image_url,
+                  location_map_url:    mode.edit.location_map_url ?? null,
                   parking_map_url:     mode.edit.parking_map_url ?? null,
+                  parking_map_url_2:   mode.edit.parking_map_url_2 ?? null,
                   sort_order:         mode.edit.sort_order,
                   section:            mode.edit.section ?? 'general',
                 }

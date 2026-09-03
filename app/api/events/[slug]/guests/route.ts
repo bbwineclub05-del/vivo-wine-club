@@ -16,56 +16,66 @@ function buildConfirmationEmail(opts: {
   eventTime: string | null;
   routeOption?: string | null;
   eventPrice?: number | null;
+  locationMapUrl?: string | null;
   parkingMapUrl?: string | null;
+  parkingMapUrl2?: string | null;
 }): string {
-  const { firstName, eventTitle, eventDate, eventLocation, eventTime, routeOption, eventPrice, parkingMapUrl } = opts;
-  const hasExtra = !!(parkingMapUrl || routeOption || (eventPrice && eventPrice > 0));
+  const {
+    firstName, eventTitle, eventDate, eventLocation, eventTime, routeOption, eventPrice,
+    locationMapUrl, parkingMapUrl, parkingMapUrl2,
+  } = opts;
+  const parkingLinks = [parkingMapUrl, parkingMapUrl2].filter((u): u is string => !!u);
+  const hasExtra = !!(parkingLinks.length > 0 || routeOption || (eventPrice && eventPrice > 0));
+
+  const locationValue = locationMapUrl
+    ? `<a href="${locationMapUrl}" style="color:#731515;text-decoration:underline;" class="em-link">${eventLocation}</a>`
+    : eventLocation;
 
   const body = `
 ${heading('Iscrizione confermata', 'Vivo Wine Club · Guest List')}
 ${divider('20px 0')}
-<p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#3a1a1a;text-align:center;line-height:1.7;">
+<p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#3a1a1a;text-align:center;line-height:1.7;" class="em-p">
   Ciao <strong>${firstName}</strong>,
 </p>
 ${para('la tua iscrizione alla lista è confermata. Ci vediamo all&apos;evento! 🍷')}
 ${divider('20px 0')}
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
   <tr>
-    <td style="padding:8px 0;border-top:1px solid #eddada;">
-      <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#7a4a4a;">Evento</p>
-      <p style="margin:4px 0 0;font-family:Georgia,serif;font-size:17px;color:#1a0505;font-weight:400;">${eventTitle}</p>
+    <td style="padding:8px 0;border-top:1px solid #eddada;" class="em-row">
+      <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#7a4a4a;" class="em-label">Evento</p>
+      <p style="margin:4px 0 0;font-family:Georgia,serif;font-size:17px;color:#1a0505;font-weight:400;" class="em-value">${eventTitle}</p>
     </td>
   </tr>
   <tr>
-    <td style="padding:8px 0;border-top:1px solid #eddada;">
-      <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#7a4a4a;">Data</p>
-      <p style="margin:4px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1a0505;">${eventDate}${eventTime ? ' · ' + eventTime : ''}</p>
+    <td style="padding:8px 0;border-top:1px solid #eddada;" class="em-row">
+      <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#7a4a4a;" class="em-label">Data</p>
+      <p style="margin:4px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1a0505;" class="em-value">${eventDate}${eventTime ? ' · ' + eventTime : ''}</p>
     </td>
   </tr>
   <tr>
-    <td style="padding:8px 0;border-top:1px solid #eddada;${hasExtra ? '' : 'border-bottom:1px solid #eddada;'}">
-      <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#7a4a4a;">Luogo</p>
-      <p style="margin:4px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1a0505;">${eventLocation}</p>
+    <td style="padding:8px 0;border-top:1px solid #eddada;${hasExtra ? '' : 'border-bottom:1px solid #eddada;'}" class="em-row">
+      <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#7a4a4a;" class="em-label">Luogo</p>
+      <p style="margin:4px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1a0505;" class="em-value">${locationValue}</p>
     </td>
   </tr>
-  ${parkingMapUrl ? `<tr>
-    <td style="padding:8px 0;border-top:1px solid #eddada;${(routeOption || (eventPrice && eventPrice > 0)) ? '' : 'border-bottom:1px solid #eddada;'}">
-      <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#7a4a4a;">Parcheggio &amp; Navetta</p>
-      <p style="margin:4px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;">
-        <a href="${parkingMapUrl}" style="color:#731515;text-decoration:none;">Apri su Google Maps →</a>
-      </p>
+  ${parkingLinks.length > 0 ? `<tr>
+    <td style="padding:8px 0;border-top:1px solid #eddada;${(routeOption || (eventPrice && eventPrice > 0)) ? '' : 'border-bottom:1px solid #eddada;'}" class="em-row">
+      <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#7a4a4a;" class="em-label">Parcheggio &amp; Navetta</p>
+      ${parkingLinks.map((url, i) => `<p style="margin:4px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;">
+        <a href="${url}" style="color:#731515;text-decoration:none;" class="em-link">${parkingLinks.length > 1 ? `Parcheggio ${i + 1}` : 'Apri su Google Maps'} →</a>
+      </p>`).join('')}
     </td>
   </tr>` : ''}
   ${routeOption ? `<tr>
-    <td style="padding:8px 0;border-top:1px solid #eddada;${eventPrice && eventPrice > 0 ? '' : 'border-bottom:1px solid #eddada;'}">
-      <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#7a4a4a;">Percorso scelto</p>
-      <p style="margin:4px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:bold;color:#731515;">${routeOption === '40km' ? '40 km' : '80 km'} 🚴</p>
+    <td style="padding:8px 0;border-top:1px solid #eddada;${eventPrice && eventPrice > 0 ? '' : 'border-bottom:1px solid #eddada;'}" class="em-row">
+      <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#7a4a4a;" class="em-label">Percorso scelto</p>
+      <p style="margin:4px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:bold;color:#731515;" class="em-link">${routeOption === '40km' ? '40 km' : '80 km'} 🚴</p>
     </td>
   </tr>` : ''}
   ${eventPrice && eventPrice > 0 ? `<tr>
-    <td style="padding:8px 0;border-top:1px solid #eddada;border-bottom:1px solid #eddada;">
-      <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#7a4a4a;">Ingresso</p>
-      <p style="margin:4px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1a0505;">€${eventPrice} — pagamento all&apos;ingresso</p>
+    <td style="padding:8px 0;border-top:1px solid #eddada;border-bottom:1px solid #eddada;" class="em-row">
+      <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#7a4a4a;" class="em-label">Ingresso</p>
+      <p style="margin:4px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1a0505;" class="em-value">€${eventPrice} — pagamento all&apos;ingresso</p>
     </td>
   </tr>` : ''}
 </table>
@@ -163,7 +173,7 @@ export async function POST(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: eventRow, error: evtErr } = await (db as any)
     .from('events')
-    .select('id, title, date, time, location, location_full, guest_list_enabled, is_list_only, price, parking_map_url')
+    .select('id, title, date, time, location, location_full, guest_list_enabled, is_list_only, price, location_map_url, parking_map_url, parking_map_url_2')
     .eq('slug', slug)
     .single();
 
@@ -274,7 +284,9 @@ export async function POST(
         eventTime:     eventRow.time ?? null,
         routeOption,
         eventPrice:    eventRow.is_list_only && eventRow.price > 0 ? eventRow.price : null,
-        parkingMapUrl: eventRow.parking_map_url ?? null,
+        locationMapUrl: eventRow.location_map_url ?? null,
+        parkingMapUrl:  eventRow.parking_map_url ?? null,
+        parkingMapUrl2: eventRow.parking_map_url_2 ?? null,
       }),
       headers: {
         'List-Unsubscribe':      '<mailto:info@vivowineclub.com?subject=unsubscribe>',

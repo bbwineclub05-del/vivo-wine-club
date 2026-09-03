@@ -39,6 +39,8 @@ export function emailShell(body: string): string {
       .em-divider td     { border-top-color: #3d1010 !important; }
       .em-row-even       { background-color: #300a0a !important; }
       .em-label          { color: #c07070 !important; }
+      .em-value          { color: #f0dcdc !important; }
+      .em-row            { border-top-color: #3d1010 !important; }
     }
   </style>
 </head>
