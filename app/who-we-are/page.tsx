@@ -25,10 +25,14 @@ function LinkedInIcon() {
 const TEAM_MEMBERS = [
   { name: 'Carolina Maria Carra', initials: 'CC', role: 'Team Media',             linkedin: 'https://www.linkedin.com/in/carolina-maria-carra/' },
   { name: 'Elena Catellani',      initials: 'EC', role: 'Team Media',             linkedin: 'https://www.linkedin.com/in/elena-catellani-a70aa72b0/' },
-  { name: 'Gabriele Lisanti',     initials: 'GL', role: 'Team Events',            linkedin: 'https://www.linkedin.com/in/gabrielelisanti/' },
   { name: 'Marcello Abbadati',    initials: 'MA', role: 'Team Events · Sommelier',linkedin: 'https://www.linkedin.com/in/marcelloabbadati/' },
   { name: 'Giovanni Giachino',    initials: 'GG', role: 'Team Events · Sommelier',linkedin: 'https://www.linkedin.com/in/giovanni-giachino-/' },
-  { name: 'Francesco Basile',     initials: 'FB', role: 'Team Events',            linkedin: null },
+  { name: 'Francesco Basile',     initials: 'FB', role: 'Team Sponsorship',       linkedin: 'https://www.linkedin.com/in/francesco-basile-a3b670265/' },
+  { name: 'Federico Paroli',      initials: 'FP', role: 'Team Events',            linkedin: 'https://www.linkedin.com/in/federico-paroli-a10793378/' },
+  { name: 'Giulia Fascella',      initials: 'GF', role: 'Team Media',             linkedin: 'https://www.linkedin.com/in/giulia-fascella-4a0772366/' },
+  { name: 'Daniele Natalini',     initials: 'DN', role: 'Team Media',             linkedin: 'https://www.linkedin.com/in/daniele-natalini-076190381/' },
+  { name: 'Lorenzo Fioretti',     initials: 'LF', role: 'Team Sponsorship',       linkedin: 'https://www.linkedin.com/in/lorenzo-fioretti-a6726a258/' },
+  { name: 'Edoardo Piceni',       initials: 'EP', role: 'Team Tech',              linkedin: 'https://www.linkedin.com/in/edoardo-antonio-piceni-89a132212/' },
 ] as const;
 
 const FOUNDERS_DATA = [
