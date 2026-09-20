@@ -3,10 +3,12 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
+import { Users, Megaphone } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import BackButton from '@/components/BackButton';
+import { SLOGAN } from '@/lib/brand';
 
 /* ─────────────────────────────────────────────
    Shared icon
@@ -38,7 +40,7 @@ const TEAM_MEMBERS = [
 const FOUNDERS_DATA = [
   { name: 'Giacomo Gallo',       city: 'Turin',    role: 'Co-Founder', image: '/giacomo2.png',  bioKey: 'bioGiacomo'    as const, taglineKey: 'taglineGiacomo'   as const, linkedin: 'https://www.linkedin.com/in/giacomo-gallo-520a85286/' },
   { name: 'Filippo Lombardi',    city: 'Brescia',  role: 'Co-Founder', image: '/filippo.png',   bioKey: 'bioFilippo'    as const, taglineKey: 'taglineFilippo'   as const, linkedin: 'https://www.linkedin.com/in/filippolombardiofficial/' },
-  { name: 'Cristiano Michelotti',city: 'Florence', role: 'Co-Founder', image: '/cristiano.png', bioKey: 'bioCristiano'  as const, taglineKey: 'taglineCristiano' as const, linkedin: 'https://www.linkedin.com/in/cristiano-michelotti-799a49299/' },
+  { name: 'Cristiano Michelotti',city: 'Florence', role: 'Co-Founder', image: '/cristiano.png', bioKey: 'bioCristiano'  as const, linkedin: 'https://www.linkedin.com/in/cristiano-michelotti-799a49299/' },
 ];
 
 const STATS = [
@@ -46,6 +48,19 @@ const STATS = [
   { value: '+5',   labelKey: 'statCities'  as const },
   { value: '15+',  labelKey: 'statEvents'  as const },
   { value: '70+',  labelKey: 'statWineries'as const },
+];
+
+const PILLARS = [
+  { Icon: Users,     tagKey: 'pillar1Tag' as const, titleKey: 'pillar1Title' as const, bodyKey: 'pillar1Body' as const },
+  { Icon: Megaphone, tagKey: 'pillar2Tag' as const, titleKey: 'pillar2Title' as const, bodyKey: 'pillar2Body' as const },
+];
+
+/** Last checkpoint (`next`) is the open-ended goal: lighter, pulsing marker and a line that fades out. */
+const TIMELINE = [
+  { next: false, placeKey: 'timeline1Place' as const, textKey: 'timeline1Text' as const, detailKey: 'timeline1Detail' as const },
+  { next: false, placeKey: 'timeline2Place' as const, textKey: 'timeline2Text' as const, detailKey: 'timeline2Detail' as const },
+  { next: false, placeKey: 'timeline3Place' as const, textKey: 'timeline3Text' as const, detailKey: 'timeline3Detail' as const },
+  { next: true,  placeKey: 'timeline4Place' as const, textKey: null, detailKey: 'timeline4Detail' as const },
 ];
 
 /* ─────────────────────────────────────────────
@@ -57,7 +72,6 @@ function FounderCard({
   role,
   image,
   bio,
-  tagline,
   linkedin,
   index,
 }: {
@@ -66,7 +80,6 @@ function FounderCard({
   role: string;
   image: string;
   bio: string;
-  tagline: string;
   linkedin: string;
   index: number;
 }) {
@@ -88,7 +101,7 @@ function FounderCard({
         className="flex flex-col h-full"
       >
         {/* Photo */}
-        <div className="relative overflow-hidden rounded-2xl mb-5 aspect-square bg-white shadow-sm border border-[#e8d5d5]">
+        <div className="relative overflow-hidden rounded-2xl mb-4 aspect-square w-full max-w-[240px] sm:max-w-none sm:w-[78%] bg-white shadow-sm border border-[#e8d5d5]">
           <Image
             src={image}
             alt={name}
@@ -106,13 +119,6 @@ function FounderCard({
           >
             {name}
           </h3>
-          {/* Personal tagline */}
-          <p
-            className="text-xs italic text-[#7a4a4a]/80 leading-snug"
-            style={{ fontFamily: 'var(--font-nunito)' }}
-          >
-            {tagline}
-          </p>
           <p
             className="text-[10px] tracking-[0.2em] text-[#731515] mt-1"
             style={{ fontFamily: 'var(--font-nunito)' }}
@@ -151,22 +157,14 @@ export default function WhoWeArePage() {
   const FOUNDERS = FOUNDERS_DATA.map(f => ({
     ...f,
     bio: t(f.bioKey),
-    tagline: t(f.taglineKey),
   }));
-
-  const TIMELINE = [
-    { placeKey: 'timeline1Place' as const, textKey: 'timeline1Text' as const, detailKey: 'timeline1Detail' as const },
-    { placeKey: 'timeline2Place' as const, textKey: 'timeline2Text' as const, detailKey: 'timeline2Detail' as const },
-    { placeKey: 'timeline3Place' as const, textKey: 'timeline3Text' as const, detailKey: 'timeline3Detail' as const },
-    { placeKey: 'timeline4Place' as const, textKey: 'timeline4Text' as const, detailKey: 'timeline4Detail' as const },
-  ];
 
   return (
     <>
       <Navbar />
       <main className="min-h-screen">
 
-        {/* ── 1. HERO — full screen ── */}
+        {/* ── 1. HERO: what VIVO is, in one line ── */}
         <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
           {/* Background image via img tag */}
           <img
@@ -176,7 +174,7 @@ export default function WhoWeArePage() {
             className="absolute inset-0 w-full h-full object-cover"
           />
           {/* Dark overlay */}
-          <div className="absolute inset-0 bg-[#1a0505]/70" />
+          <div className="absolute inset-0 bg-[#1a0505]/75" />
 
           {/* Back button */}
           <div className="absolute top-24 left-6 md:left-10 z-10">
@@ -184,7 +182,7 @@ export default function WhoWeArePage() {
           </div>
 
           {/* Content */}
-          <div className="relative z-10 flex flex-col items-center text-center px-6 max-w-3xl mx-auto">
+          <div className="relative z-10 flex flex-col items-center text-center px-6 max-w-4xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
@@ -192,13 +190,13 @@ export default function WhoWeArePage() {
               className="text-[10px] tracking-[0.5em] text-white/50 mb-6"
               style={{ fontFamily: 'var(--font-nunito)' }}
             >
-              {t('theTeamLabel')}
+              {t('heading').toUpperCase()}
             </motion.div>
             <motion.h1
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.9, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-              className="text-[clamp(2.8rem,7vw,5.5rem)] font-light text-white leading-[1.05] tracking-[-0.01em]"
+              className="text-[clamp(2.6rem,6.5vw,5rem)] font-light text-white leading-[1.08] tracking-[-0.01em]"
               style={{ fontFamily: 'var(--font-syne)' }}
             >
               {t('heroTitle')}
@@ -207,7 +205,7 @@ export default function WhoWeArePage() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.25 }}
-              className="mt-6 text-base md:text-lg text-white/65 font-light italic leading-relaxed max-w-xl"
+              className="mt-8 text-base md:text-xl text-white/80 font-light leading-relaxed max-w-2xl"
               style={{ fontFamily: 'var(--font-nunito)' }}
             >
               {t('heroSubtitle')}
@@ -226,22 +224,93 @@ export default function WhoWeArePage() {
           </motion.div>
         </section>
 
-        {/* ── 2. STORY TIMELINE — dark bg ── */}
-        <section className="relative bg-[#1a0505] py-14 md:py-18 overflow-hidden">
+        {/* ── 2. WHAT WE DO: problem, answer, two pillars ── */}
+        <section className="relative bg-[#fdf6f6] py-16 md:py-24 overflow-hidden">
+          <div className="fog-left" style={{ top: '10%' }} />
+
+          <div className="relative max-w-5xl mx-auto px-6 lg:px-10">
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+              className="text-center max-w-3xl mx-auto mb-12 md:mb-16"
+            >
+              <div
+                className="text-[10px] tracking-[0.5em] text-[#731515] mb-6"
+                style={{ fontFamily: 'var(--font-nunito)' }}
+              >
+                {t('whatWeDoLabel')}
+              </div>
+              <p
+                className="text-[clamp(1.2rem,2.5vw,1.8rem)] font-light text-[#7a4a4a] leading-snug"
+                style={{ fontFamily: 'var(--font-syne)' }}
+              >
+                {t('whatWeDoProblem')}
+              </p>
+              <p
+                className="mt-5 text-[clamp(1.8rem,4.2vw,3.2rem)] font-light text-[#731515] leading-tight"
+                style={{ fontFamily: 'var(--font-syne)' }}
+              >
+                {t('whatWeDoAnswer')}
+              </p>
+            </motion.div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+              {PILLARS.map((pillar, i) => (
+                <motion.div
+                  key={pillar.titleKey}
+                  initial={{ opacity: 0, y: 24 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: '-40px' }}
+                  transition={{ duration: 0.7, delay: i * 0.12, ease: [0.16, 1, 0.3, 1] }}
+                  className="flex flex-col gap-4 bg-white border border-[#eddada] rounded-lg p-7 md:p-9"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="w-10 h-10 rounded-full border border-[#731515]/30 flex items-center justify-center text-[#731515] shrink-0">
+                      <pillar.Icon size={18} strokeWidth={1.5} />
+                    </span>
+                    <span
+                      className="text-[10px] tracking-[0.4em] text-[#731515]"
+                      style={{ fontFamily: 'var(--font-nunito)' }}
+                    >
+                      {t(pillar.tagKey)}
+                    </span>
+                  </div>
+                  <h3
+                    className="text-xl md:text-2xl font-light text-[#1a0505] leading-tight"
+                    style={{ fontFamily: 'var(--font-syne)' }}
+                  >
+                    {t(pillar.titleKey)}
+                  </h3>
+                  <p
+                    className="text-sm md:text-base text-[#7a4a4a] font-light leading-relaxed"
+                    style={{ fontFamily: 'var(--font-nunito)' }}
+                  >
+                    {t(pillar.bodyKey)}
+                  </p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── 3. JOURNEY: horizontal timeline ── */}
+        <section className="relative bg-[#1a0505] py-16 md:py-24 overflow-hidden">
           {/* Subtle radial glow */}
           <div
             className="absolute inset-0 pointer-events-none"
             style={{ background: 'radial-gradient(ellipse 60% 50% at 50% 0%, rgba(115,21,21,0.25) 0%, transparent 70%)' }}
           />
 
-          <div className="max-w-4xl mx-auto px-6 lg:px-10">
+          <div className="relative max-w-6xl mx-auto px-6 lg:px-10">
             {/* Label */}
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="text-center mb-10 md:mb-12"
+              className="text-center mb-12 md:mb-16"
             >
               <div
                 className="text-[10px] tracking-[0.5em] text-[#e8d5d5]/50 mb-4"
@@ -259,68 +328,73 @@ export default function WhoWeArePage() {
               </h2>
             </motion.div>
 
-            {/* Timeline */}
-            <div className="relative">
-              {/* Center vertical line — hidden on mobile */}
-              <div className="hidden md:block absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-[#731515]/60 via-[#731515]/40 to-transparent" />
+            {/* Horizontal on desktop; swipeable row on phones */}
+            <div className="-mx-6 px-6 md:mx-0 md:px-0 py-4 overflow-x-auto md:overflow-visible snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="flex md:grid md:grid-cols-4">
+                {TIMELINE.map((item, i) => (
+                  <motion.div
+                    key={item.placeKey}
+                    initial={{ opacity: 0, y: 24 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: '-40px' }}
+                    transition={{ duration: 0.7, delay: i * 0.12, ease: [0.16, 1, 0.3, 1] }}
+                    className="group relative shrink-0 w-[78vw] sm:w-[46vw] md:w-auto snap-center text-center"
+                  >
+                    {/* Date: fixed height, bottom-aligned, so markers stay on one line even if a label wraps */}
+                    <div className="h-10 px-4 md:px-5 mb-3 flex items-end justify-center">
+                      <p
+                        className={`text-[10px] tracking-[0.4em] ${item.next ? 'text-[#e8b4b4]' : 'text-[#c84040]'}`}
+                        style={{ fontFamily: 'var(--font-nunito)' }}
+                      >
+                        {t(item.placeKey).toUpperCase()}
+                      </p>
+                    </div>
 
-              <div className="flex flex-col gap-0">
-                {TIMELINE.map((item, i) => {
-                  const isLeft = i % 2 === 0;
-                  return (
-                    <motion.div
-                      key={i}
-                      initial={{ opacity: 0, x: isLeft ? -32 : 32 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      viewport={{ once: true, margin: '-60px' }}
-                      transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-                      className={`relative flex items-start md:items-center gap-6 md:gap-0 pb-8 last:pb-0 ${
-                        isLeft ? 'md:flex-row' : 'md:flex-row-reverse'
-                      }`}
-                    >
-                      {/* Content side */}
-                      <div className={`flex-1 ${isLeft ? 'md:pr-14 md:text-right' : 'md:pl-14 md:text-left'} pl-8 md:pl-0`}>
-                        <p
-                          className="text-[10px] tracking-[0.4em] text-[#731515] mb-2"
-                          style={{ fontFamily: 'var(--font-nunito)' }}
-                        >
-                          {t(item.placeKey).toUpperCase()}
-                        </p>
-                        <h3
-                          className="text-xl md:text-2xl font-light text-white/90 leading-tight mb-3"
-                          style={{ fontFamily: 'var(--font-syne)' }}
-                        >
-                          {t(item.textKey)}
-                        </h3>
-                        <p
-                          className="text-sm text-[#e8d5d5]/55 leading-relaxed max-w-xs"
-                          style={{ fontFamily: 'var(--font-nunito)' }}
-                        >
-                          {t(item.detailKey)}
-                        </p>
+                    {/* Marker row: line segments run edge to edge so the line is continuous */}
+                    <div className="relative h-12 flex items-center justify-center">
+                      {i > 0 && <span className="absolute left-0 top-1/2 w-1/2 h-px bg-[#731515]/60" />}
+                      {i < TIMELINE.length - 1
+                        ? <span className="absolute right-0 top-1/2 w-1/2 h-px bg-[#731515]/60" />
+                        : <span className="absolute right-0 top-1/2 w-1/2 h-px bg-gradient-to-r from-[#731515]/60 to-transparent" />}
+                      <div className="relative z-10 w-7 h-7 transition-transform duration-300 ease-out group-hover:scale-[1.35]">
+                        {item.next && (
+                          <span className="absolute inset-0 rounded-full bg-[#c84040]/50 motion-safe:animate-ping" />
+                        )}
+                        <span
+                          className={`relative block w-full h-full rounded-full transition-all duration-300 ease-out group-hover:bg-[#c84040] group-hover:shadow-[0_0_0_8px_rgba(200,64,64,0.22),0_0_26px_rgba(200,64,64,0.5)] ${
+                            item.next
+                              ? 'bg-[#e8b4b4] shadow-[0_0_0_6px_rgba(232,180,180,0.16)]'
+                              : 'bg-[#731515] shadow-[0_0_0_6px_rgba(115,21,21,0.3)]'
+                          }`}
+                        />
                       </div>
+                    </div>
 
-                      {/* Center dot */}
-                      <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 w-4 h-4 rounded-full border-2 border-[#731515] bg-[#1a0505] items-center justify-center shrink-0 z-10">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#731515]" />
-                      </div>
-
-                      {/* Mobile dot */}
-                      <div className="absolute left-0 top-1 md:hidden w-3 h-3 rounded-full border border-[#731515] bg-[#1a0505] flex items-center justify-center shrink-0">
-                        <div className="w-1 h-1 rounded-full bg-[#731515]" />
-                      </div>
-
-                      {/* Empty spacer for zig-zag other side */}
-                      <div className="hidden md:block flex-1" />
-                    </motion.div>
-                  );
-                })}
+                    {/* Text */}
+                    <div className="px-4 md:px-5 mt-5">
+                      <h3
+                        className={`text-xl leading-tight mb-3 ${
+                          item.next ? 'italic font-normal text-[#e8b4b4]' : 'font-light text-white/90'
+                        }`}
+                        style={{ fontFamily: 'var(--font-syne)' }}
+                      >
+                        {item.textKey ? t(item.textKey) : SLOGAN}
+                      </h3>
+                      <p
+                        className="text-sm text-[#e8d5d5]/60 leading-relaxed"
+                        style={{ fontFamily: 'var(--font-nunito)' }}
+                      >
+                        {t(item.detailKey)}
+                      </p>
+                    </div>
+                  </motion.div>
+                ))}
               </div>
             </div>
           </div>
         </section>
 
-        {/* ── 3. STATS BAR ── */}
+        {/* ── 4. STATS BAR ── */}
         <section className="bg-[#731515] py-8 md:py-10">
           <div className="max-w-3xl mx-auto px-6 lg:px-10">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-4">
@@ -351,7 +425,7 @@ export default function WhoWeArePage() {
           </div>
         </section>
 
-        {/* ── 4. FOUNDERS ── */}
+        {/* ── 5. FOUNDERS ── */}
         <section className="relative bg-[#fdf6f6] pt-12 md:pt-14 pb-8 overflow-hidden">
           <div className="fog-right" style={{ top: '10%' }} />
 
@@ -386,7 +460,7 @@ export default function WhoWeArePage() {
           </div>
         </section>
 
-        {/* ── 5. TEAM ── */}
+        {/* ── 6. TEAM ── */}
         <section className="relative bg-[#fdf6f6] pt-4 pb-12 md:pb-14 overflow-hidden">
           <div className="fog-left" style={{ top: '10%' }} />
 
@@ -471,8 +545,8 @@ export default function WhoWeArePage() {
           </div>
         </section>
 
-        {/* ── 6. MISSION ── */}
-        <section className="relative bg-[#1a0505] py-16 md:py-20 overflow-hidden">
+        {/* ── 7. CLOSING: mission + join ── */}
+        <section className="relative bg-[#1a0505] py-16 md:py-24 overflow-hidden">
           {/* Radial glow */}
           <div
             className="absolute inset-0 pointer-events-none"
@@ -485,6 +559,7 @@ export default function WhoWeArePage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.7 }}
+              className="flex flex-col items-center"
             >
               <div
                 className="text-[10px] tracking-[0.5em] text-[#731515]/80 mb-6"
@@ -499,44 +574,20 @@ export default function WhoWeArePage() {
                 &ldquo;{t('missionQuote')}&rdquo;
               </blockquote>
               <p
-                className="text-base text-[#e8d5d5]/55 font-light leading-relaxed max-w-xl mx-auto"
+                className="text-base text-[#e8d5d5]/60 font-light leading-relaxed max-w-xl mx-auto"
                 style={{ fontFamily: 'var(--font-nunito)' }}
               >
-                {t('missionBody')}
+                {t('ctaText')}
               </p>
+              <Link
+                href="/membership"
+                className="mt-8 inline-flex items-center gap-3 px-8 py-3.5 bg-[#731515] text-white text-[11px] tracking-[0.4em] hover:bg-[#8f2020] transition-colors duration-300 rounded-lg"
+                style={{ fontFamily: 'var(--font-nunito)' }}
+              >
+                {t('ctaButton').toUpperCase()}
+              </Link>
             </motion.div>
           </div>
-        </section>
-
-        {/* ── 7. CTA ── */}
-        <section className="bg-[#fdf6f6] py-14 md:py-16">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-            className="max-w-xl mx-auto px-6 flex flex-col items-center text-center gap-6"
-          >
-            <div
-              className="text-[10px] tracking-[0.5em] text-[#731515]/70"
-              style={{ fontFamily: 'var(--font-nunito)' }}
-            >
-              {t('ctaLabel')}
-            </div>
-            <p
-              className="text-lg md:text-xl font-light text-[#1a0505] leading-relaxed"
-              style={{ fontFamily: 'var(--font-syne)' }}
-            >
-              {t('ctaText')}
-            </p>
-            <Link
-              href="/membership"
-              className="mt-2 inline-flex items-center gap-3 px-8 py-3.5 bg-[#731515] text-white text-[11px] tracking-[0.4em] hover:bg-[#8f2020] transition-colors duration-300 rounded-lg"
-              style={{ fontFamily: 'var(--font-nunito)' }}
-            >
-              {t('ctaButton').toUpperCase()}
-            </Link>
-          </motion.div>
         </section>
 
       </main>
