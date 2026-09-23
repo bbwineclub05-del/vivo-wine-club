@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
+import { requireAdminOrStaff } from '@/lib/auth-guard';
 
 // Large recipient lists need several sequential batch calls (100/batch) to
 // Resend — without this, Vercel's default serverless timeout (as low as 10s)
@@ -92,6 +93,9 @@ function chunk<T>(arr: T[], size: number): T[][] {
 }
 
 export async function POST(request: Request) {
+  const auth = await requireAdminOrStaff(request);
+  if (!auth.ok) return auth.response;
+
   try {
     let body: Record<string, unknown>;
     try { body = await request.json(); } catch {

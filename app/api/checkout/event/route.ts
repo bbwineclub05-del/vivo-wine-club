@@ -180,6 +180,74 @@ async function upsertCustomer({
   }
 }
 
+// ── "VIVO x LA Macchia" CRM category auto-sync ──────────────────────────────────
+// One-off hook: every paid lunch ticket for x-oct-2026 also gets mirrored into
+// the crm_custom_contacts rubrica, one row per ticket (not per person) — a
+// buyer with qty=2 shows up as two rows, since each is a distinct seat sold.
+// Dedup key is source_ticket_id (= the individual tickets.order_id), enforced
+// by a unique constraint, so a repeated /checkout/confirm call never creates
+// duplicate rows.
+const MACCHIA_EVENT_SLUG    = 'x-oct-2026';
+const MACCHIA_CATEGORY_NAME = 'VIVO x LA Macchia';
+
+async function syncMacchiaContacts({
+  ticketIds,
+  firstName,
+  lastName,
+  email,
+  phone,
+  orderId,
+}: {
+  ticketIds: string[];
+  firstName: string;
+  lastName:  string;
+  email:     string;
+  phone:     string;
+  orderId:   string;
+}) {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = getSupabaseAdmin() as any;
+
+    const { data: category, error: catErr } = await db
+      .from('crm_custom_categories')
+      .select('id')
+      .eq('name', MACCHIA_CATEGORY_NAME)
+      .maybeSingle();
+
+    if (catErr) {
+      console.error('[syncMacchiaContacts] category lookup error:', catErr);
+      return;
+    }
+    if (!category) {
+      console.error(`[syncMacchiaContacts] category "${MACCHIA_CATEGORY_NAME}" not found — skipping sync`);
+      return;
+    }
+
+    const rows = ticketIds.map((tid) => ({
+      category_id:      category.id,
+      source_ticket_id: tid,
+      first_name:       firstName,
+      last_name:        lastName,
+      email:            email,
+      phone:            phone || '',
+      notes:            `Auto — biglietto pranzo ${MACCHIA_EVENT_SLUG} (order ${orderId})`,
+    }));
+
+    const { error: insertErr } = await db
+      .from('crm_custom_contacts')
+      .upsert(rows, { onConflict: 'source_ticket_id', ignoreDuplicates: true });
+
+    if (insertErr) {
+      console.error('[syncMacchiaContacts] upsert error:', insertErr);
+    } else {
+      console.log(`[syncMacchiaContacts] synced ${rows.length} contact row(s) for order ${orderId}`);
+    }
+  } catch (err) {
+    console.error('[syncMacchiaContacts] error:', err);
+  }
+}
+
 // ── Main email sender (exported so /confirm can reuse it) ─────────────────────
 //
 // Operation order matters:
@@ -263,6 +331,11 @@ export async function sendEventConfirmationEmails(params: {
 
   // ── 2. Upsert CRM customer ────────────────────────────────────────────────────
   await upsertCustomer({ email, name: `${firstName} ${lastName}`, eventSlug: event.slug });
+
+  // ── 2b. "VIVO x LA Macchia" CRM category auto-sync (this event only) ─────────
+  if (event.slug === MACCHIA_EVENT_SLUG) {
+    await syncMacchiaContacts({ ticketIds, firstName, lastName, email, phone, orderId });
+  }
 
   // ── 3-5. Generate PDFs + send emails ─────────────────────────────────────────
   // Non-fatal block: if PDF generation or Resend fails, the ticket records are
