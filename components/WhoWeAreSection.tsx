@@ -14,7 +14,7 @@ const FOUNDERS = [
     name: 'Filippo Lombardi',
     city: 'Brescia',
     bio: 'ESCP student and passionate wine lover. Also studied in Bordeaux, where his appreciation for great wine deepened alongside his love for the people and stories behind each bottle.',
-    image: '/filippo.jpeg',
+    image: '/filippo.png',
   },
   {
     name: 'Cristiano Michelotti',
