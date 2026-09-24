@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
+import { SLOGAN_LINES } from '@/lib/brand';
 
 /* ─── Line-art landmark SVGs ─── */
 
@@ -120,7 +121,7 @@ export default function HeroSection() {
                 className="block font-light tracking-[-0.01em] text-white leading-tight"
                 style={{ fontFamily: 'var(--font-syne)', fontSize: 'clamp(1.6rem, 3.5vw + 2.2vh, 4.8rem)' }}
               >
-                {t('line1')}
+                {SLOGAN_LINES[0]}
               </span>
             </motion.div>
           </div>
@@ -136,9 +137,8 @@ export default function HeroSection() {
                 style={{ fontFamily: 'var(--font-syne)', fontSize: 'clamp(1.6rem, 3.5vw + 2.2vh, 4.8rem)' }}
               >
                 <em className="not-italic" style={{ fontStyle: 'italic', color: '#e8b4b4' }}>
-                  {t('line2italic')}
+                  {SLOGAN_LINES[1]}
                 </em>
-                {t('line2rest')}
               </span>
             </motion.div>
           </div>

@@ -7,6 +7,7 @@ import {
   RefreshCw, TrendingUp, TrendingDown, Wallet, Trash2, Pencil,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { useMobileOverlay, useOverlayBackClose } from '@/lib/useMobileOverlay';
 
 /* ─────────────────────────────────────────────
    Types for dynamic member list
@@ -379,6 +380,10 @@ export default function FounderAccounts() {
   const [loading,      setLoading]      = useState(true);
   const [editTarget,   setEditTarget]   = useState<Movement | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Movement | null>(null);
+  // MovModal locks scroll on its own — only add back-close here.
+  useOverlayBackClose(!!editTarget, () => setEditTarget(null));
+  // DeleteModal has no scroll lock of its own — use the full treatment.
+  useMobileOverlay(!!deleteTarget, () => setDeleteTarget(null));
   const [filterEmail,  setFilterEmail]  = useState<string>('');
   const [settlingId,   setSettlingId]   = useState<string | null>(null);
   const [recalculating, setRecalculating] = useState(false);

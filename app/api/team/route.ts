@@ -5,7 +5,7 @@ import { isSuperAdmin, isAdminEmail, FOUNDERS } from '@/lib/admins';
 
 const DEFAULT_PERMISSIONS = {
   tasks: true, events: true, news: true, crm: true,
-  media: true, scanner: true, analytics: false, pipeline: false,
+  media: true, scanner: true, analytics: true, pipeline: true,
   merch: true, documents: true,
 };
 

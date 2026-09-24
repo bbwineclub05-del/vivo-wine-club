@@ -12,6 +12,7 @@ import CrmBordeaux from '@/components/CrmBordeaux';
 import CrmInfluencer from '@/components/CrmInfluencer';
 import CrmCustomCategory from '@/components/CrmCustomCategory';
 import EventEmailModalAdvanced from '@/components/EventEmailModalAdvanced';
+import { useMobileOverlay, useOverlayBackClose } from '@/lib/useMobileOverlay';
 
 /* ── Types ── */
 type BuiltinTab = 'membri' | 'clienti' | 'sponsors' | 'vino' | 'bordeaux' | 'influencer';
@@ -111,6 +112,10 @@ export default function CrmHub() {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [showEventModal,    setShowEventModal]    = useState(false);
   const [showAddCatModal,   setShowAddCatModal]   = useState(false);
+  // EventEmailModalAdvanced already locks scroll on its own — only add back-close.
+  useOverlayBackClose(showEventModal, () => setShowEventModal(false));
+  // AddCategoryModal has no scroll lock of its own — use the full treatment.
+  useMobileOverlay(showAddCatModal, () => setShowAddCatModal(false));
   const [deletingCat,       setDeletingCat]       = useState<string | null>(null);
 
   useEffect(() => {

@@ -84,6 +84,17 @@ const nextConfig: NextConfig = {
     ],
   },
 
+  // Wine Party / Wine Lounge / Winery Visits are now merged into the single
+  // "/events" hub page (anchored sections) instead of three standalone pages.
+  async redirects() {
+    return [
+      { source: '/experiences/wine-party',    destination: '/events#party',  permanent: true },
+      { source: '/experiences/wine-lounge',   destination: '/events#lounge', permanent: true },
+      { source: '/experiences/winery-visits', destination: '/events#visits', permanent: true },
+      { source: '/events/wine-party',         destination: '/events#party',  permanent: true },
+    ];
+  },
+
   // Cache static assets for one year
   async headers() {
     return [

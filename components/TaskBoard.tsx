@@ -7,6 +7,7 @@ import {
   Check, Trash2, CalendarDays, ClipboardList,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { useOverlayBackClose } from '@/lib/useMobileOverlay';
 
 /* ─────────────────────────────────────────────
    Types
@@ -1063,6 +1064,9 @@ export default function TaskBoard({ currentEmail }: { currentEmail: string }) {
   const [doneOpen,      setDoneOpen]      = useState(false);
   const [showNewTask,   setShowNewTask]   = useState(false);
   const [token,         setToken]         = useState('');
+  // NewTaskModal locks scroll on its own — only add back-close here.
+  useOverlayBackClose(showNewTask, () => setShowNewTask(false));
+  useOverlayBackClose(!!editTarget, () => setEditTarget(null));
   const [liveConnected, setLiveConnected] = useState(false);
   const localInsertIds = useRef<Set<string>>(new Set());
 

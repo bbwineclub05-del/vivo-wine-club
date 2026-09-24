@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { ADMIN_EMAILS, SUPER_ADMIN_EMAIL } from '@/lib/admins';
+import { useMobileOverlay } from '@/lib/useMobileOverlay';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -373,6 +374,8 @@ export default function TeamManagement() {
   const [loading,   setLoading]   = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [token,     setToken]     = useState('');
+  // AddMemberModal has no scroll lock of its own — use the full treatment.
+  useMobileOverlay(showModal, () => setShowModal(false));
   const [error,     setError]     = useState('');
 
   const fetchMembers = useCallback(async (accessToken: string) => {

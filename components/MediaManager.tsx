@@ -6,9 +6,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Images, Upload, Trash2, ChevronDown, X, RefreshCw, Plus } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { WINERIES } from '@/lib/wineries';
+import { PARTNERS } from '@/lib/partners';
 
 /* ── Types ── */
-type DestType = 'wine-party' | 'wine-lounge' | 'winery-visit' | 'winery';
+type DestType = 'wine-party' | 'wine-lounge' | 'winery-visit' | 'winery' | 'partner';
 
 interface DbWinery {
   slug:        string;
@@ -38,8 +39,10 @@ interface PreviewFile {
 }
 
 /* ── Helpers ── */
-function folderFromDest(type: DestType, winerySlug: string): string {
-  return type === 'winery' ? `wineries/${winerySlug}` : type;
+function folderFromDest(type: DestType, slug: string): string {
+  if (type === 'winery')  return `wineries/${slug}`;
+  if (type === 'partner') return `partners/${slug}`;
+  return type;
 }
 
 const DEST_LABELS: Record<DestType, string> = {
@@ -47,6 +50,7 @@ const DEST_LABELS: Record<DestType, string> = {
   'wine-lounge':  'Wine Lounge',
   'winery-visit': 'Winery Visit',
   'winery':       'Cantina',
+  'partner':      'Partner',
 };
 
 const inputClass =
@@ -100,8 +104,9 @@ function GalleryTile({
 /* ── Main component ── */
 export default function MediaManager() {
   /* destination */
-  const [destType,   setDestType]   = useState<DestType>('wine-party');
-  const [winerySlug, setWinerySlug] = useState(WINERIES[0]?.slug ?? '');
+  const [destType,    setDestType]    = useState<DestType>('wine-party');
+  const [winerySlug,  setWinerySlug]  = useState(WINERIES[0]?.slug ?? '');
+  const [partnerSlug, setPartnerSlug] = useState(PARTNERS[0]?.slug ?? '');
 
   /* DB wineries (auto-created from past visits) */
   const [dbWineries, setDbWineries] = useState<DbWinery[]>([]);
@@ -162,7 +167,7 @@ export default function MediaManager() {
     });
   }, []);
 
-  const folder = folderFromDest(destType, winerySlug);
+  const folder = folderFromDest(destType, destType === 'partner' ? partnerSlug : winerySlug);
 
   /* ── Load gallery ── */
   const loadGallery = useCallback(async (f: string) => {
@@ -413,6 +418,26 @@ export default function MediaManager() {
           </div>
         )}
 
+        {/* Partner dropdown (only if type === 'partner') */}
+        {destType === 'partner' && (
+          <div className="relative max-w-xs">
+            <label className="text-[9px] tracking-[0.3em] text-[#731515] mb-1.5 block">PARTNER</label>
+            <div className="relative">
+              <select
+                value={partnerSlug}
+                onChange={(e) => setPartnerSlug(e.target.value)}
+                className={`${inputClass} appearance-none cursor-pointer pr-10`}
+                style={{ fontFamily: 'var(--font-nunito)' }}
+              >
+                {PARTNERS.map((p) => (
+                  <option key={p.slug} value={p.slug}>{p.name}</option>
+                ))}
+              </select>
+              <ChevronDown size={12} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#731515]" />
+            </div>
+          </div>
+        )}
+
         <p className="text-[9px] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
           Cartella: <code className="font-mono text-[#731515]">media/{folder}</code>
         </p>
@@ -516,6 +541,11 @@ export default function MediaManager() {
             {destType === 'winery' && (
               <span className="ml-2 text-[#7a4a4a]/50">
                 · {WINERIES.find((w) => w.slug === winerySlug)?.name}
+              </span>
+            )}
+            {destType === 'partner' && (
+              <span className="ml-2 text-[#7a4a4a]/50">
+                · {PARTNERS.find((p) => p.slug === partnerSlug)?.name}
               </span>
             )}
           </div>

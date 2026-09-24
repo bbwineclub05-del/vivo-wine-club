@@ -13,6 +13,7 @@ import EventScanner from '@/components/EventScanner';
 import EventGuestPanel from '@/components/EventGuestPanel';
 import EventPartnerPanel from '@/components/EventPartnerPanel';
 import EventEmailModalAdvanced, { type CustomCategoryInfo } from '@/components/EventEmailModalAdvanced';
+import { useMobileOverlay, useOverlayBackClose } from '@/lib/useMobileOverlay';
 
 /* ─────────────────────────────────────────────
    Types
@@ -38,6 +39,9 @@ interface DbEvent {
   referral_enabled: boolean;
   registration_closed: boolean;
   image_url: string | null;
+  location_map_url: string | null;
+  parking_map_url: string | null;
+  parking_map_url_2: string | null;
   stripe_product_id: string | null;
   stripe_price_id: string | null;
   sort_order: number;
@@ -52,7 +56,7 @@ const BLANK: FormData = {
   price: 0, capacity: null, status: 'open',
   published: false, title_strikethrough: false, guest_list_enabled: false,
   is_list_only: false, referral_enabled: false, registration_closed: false,
-  image_url: null, sort_order: 0,
+  image_url: null, location_map_url: null, parking_map_url: null, parking_map_url_2: null, sort_order: 0,
 };
 
 const SECTIONS = [
@@ -254,6 +258,34 @@ function EventForm({
             onChange={e => set('location_full', e.target.value)}
             placeholder="Ca' del Bosco, Erbusco — ore 11:00" required />
         </div>
+
+        {/* Location map link */}
+        <div className="md:col-span-2">
+          <Label>Link mappa location (opzionale)</Label>
+          <input className={inputCls} type="url" value={f.location_map_url ?? ''}
+            onChange={e => set('location_map_url', e.target.value || null)}
+            placeholder="https://maps.google.com/..." />
+          <p className="mt-1 text-[10px] text-[#7a4a4a]/50">
+            Se compilato, nell&apos;email di conferma iscrizione lista la parola &quot;Luogo&quot; diventa cliccabile e apre questa mappa.
+          </p>
+        </div>
+
+        {/* Parking / shuttle map links */}
+        <div>
+          <Label>Link parcheggio &amp; navetta 1 (opzionale)</Label>
+          <input className={inputCls} type="url" value={f.parking_map_url ?? ''}
+            onChange={e => set('parking_map_url', e.target.value || null)}
+            placeholder="https://maps.google.com/..." />
+        </div>
+        <div>
+          <Label>Link parcheggio &amp; navetta 2 (opzionale)</Label>
+          <input className={inputCls} type="url" value={f.parking_map_url_2 ?? ''}
+            onChange={e => set('parking_map_url_2', e.target.value || null)}
+            placeholder="https://maps.google.com/..." />
+        </div>
+        <p className="md:col-span-2 -mt-3 text-[10px] text-[#7a4a4a]/50">
+          Se compilati, compaiono nell&apos;email di conferma iscrizione lista come link a Google Maps.
+        </p>
 
         {/* Description */}
         <div className="md:col-span-2">
@@ -881,6 +913,11 @@ export default function EventManager() {
   const [inviteEvent,     setInviteEvent]     = useState<DbEvent | null>(null);
   const [guestListEventId, setGuestListEventId] = useState<string | null>(null);
   const [accessToken,     setAccessToken]     = useState<string | null>(null);
+
+  useMobileOverlay(!!scannerEvent, () => setScannerEvent(null));
+  // EventEmailModalAdvanced already locks scroll on its own — only add back-close here.
+  useOverlayBackClose(!!inviteEvent, () => setInviteEvent(null));
+  useMobileOverlay(!!guestListEventId, () => setGuestListEventId(null));
   const [customCats,      setCustomCats]      = useState<CustomCategoryInfo[]>([]);
   const topRef = useRef<HTMLDivElement>(null);
 
@@ -888,6 +925,13 @@ export default function EventManager() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setAccessToken(session?.access_token ?? null);
     });
+    // Keep the token in sync with Supabase's background auto-refresh —
+    // without this, a stale mount-time token can outlive its validity and
+    // every authenticated call below starts failing with 401.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAccessToken(session?.access_token ?? null);
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
   // Fetch custom CRM categories for the invite modal
@@ -960,9 +1004,14 @@ export default function EventManager() {
       const url    = isEdit ? `/api/events/${slug}` : '/api/events';
       const method = isEdit ? 'PATCH' : 'POST';
 
+      // Re-fetch the session right before the call — the token snapshotted on
+      // mount can expire if the form stays open longer than the JWT's lifetime.
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token ?? accessToken;
+
       const res  = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(data),
       });
       const json = await res.json();
@@ -981,7 +1030,9 @@ export default function EventManager() {
   /* ── Delete handler ── */
   async function handleDelete(slug: string) {
     try {
-      await fetch(`/api/events/${slug}`, { method: 'DELETE', headers: { Authorization: `Bearer ${accessToken}` } });
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token ?? accessToken;
+      await fetch(`/api/events/${slug}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
       load();
     } catch (err) {
       console.error('[EventManager delete]', err);
@@ -991,9 +1042,11 @@ export default function EventManager() {
   /* ── Toggle published ── */
   async function handleToggle(event: DbEvent) {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token ?? accessToken;
       await fetch(`/api/events/${event.slug}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ published: !event.published }),
       });
       load();
@@ -1132,6 +1185,9 @@ export default function EventManager() {
                   referral_enabled:     mode.edit.referral_enabled ?? false,
                   registration_closed:  mode.edit.registration_closed ?? false,
                   image_url:           mode.edit.image_url,
+                  location_map_url:    mode.edit.location_map_url ?? null,
+                  parking_map_url:     mode.edit.parking_map_url ?? null,
+                  parking_map_url_2:   mode.edit.parking_map_url_2 ?? null,
                   sort_order:         mode.edit.sort_order,
                   section:            mode.edit.section ?? 'general',
                 }

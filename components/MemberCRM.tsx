@@ -7,6 +7,7 @@ import {
   ChevronDown, ChevronUp, Send, Check, AlertCircle,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { useOverlayBackClose } from '@/lib/useMobileOverlay';
 
 /* ── Types ── */
 interface Member {
@@ -454,6 +455,8 @@ export default function MemberCRM() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [modal,   setModal]     = useState<'comm' | 'event' | null>(null);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+  // Both modal branches lock scroll on their own — only add back-close here.
+  useOverlayBackClose(modal !== null, () => setModal(null));
   const [accessToken, setAccessToken] = useState<string | null>(null);
 
   useEffect(() => {

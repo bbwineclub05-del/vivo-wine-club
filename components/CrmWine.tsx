@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Search, Mail, Plus, Trash2, Edit2, Check, X, Paperclip } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { useOverlayBackClose } from '@/lib/useMobileOverlay';
 
 /* ── Types ── */
 interface WineContact {
@@ -244,6 +245,8 @@ export default function CrmWine() {
   const [sortKey, setSortKey]       = useState<SortKey>('applied');
   const [sortAsc, setSortAsc]       = useState(false);
   const [emailTarget, setEmailTarget] = useState<WineContact | null>(null);
+  // EmailModal locks scroll on its own — only add back-close here.
+  useOverlayBackClose(!!emailTarget, () => setEmailTarget(null));
   const [editingId, setEditingId]   = useState<string | null>(null);  // null = none, 'new' = new row
   const [deleting, setDeleting]     = useState<string | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);

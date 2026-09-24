@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { generateMemberId, tierLabel } from '@/lib/member-id';
+import { FOUNDERS } from '@/lib/admins';
+
+const FOUNDER_NAME: Record<string, string> = Object.fromEntries(
+  FOUNDERS.map((f) => [f.email, f.name]),
+);
 
 /**
  * GET /api/member/card
@@ -44,14 +49,20 @@ export async function GET(request: Request) {
       .eq('id', user.id)
       .maybeSingle();
 
-    const name = profile?.full_name
+    // Founders/admins always show their real Nome Cognome on the card, never
+    // a nickname set on their profile or auth metadata (e.g. "Pippo", "Cris").
+    const founderName = user.email ? FOUNDER_NAME[user.email] : undefined;
+
+    const name = founderName
+      ?? profile?.full_name
       ?? user.user_metadata?.full_name
       ?? user.user_metadata?.name
       ?? user.email?.split('@')[0]
       ?? 'Vivo Member';
 
     // Persist card fields so the public share route can read them without
-    // needing access to auth.admin
+    // needing access to auth.admin. For founders this also self-heals
+    // profiles.full_name if it was ever set to a nickname.
     await db.from('profiles').upsert(
       {
         id:           user.id,
@@ -59,6 +70,7 @@ export async function GET(request: Request) {
         tier,
         member_since: memberSince,
         updated_at:   new Date().toISOString(),
+        ...(founderName ? { full_name: founderName } : {}),
       },
       { onConflict: 'id' },
     );

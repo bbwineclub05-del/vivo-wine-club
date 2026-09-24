@@ -21,7 +21,7 @@ export default function VisionMissionSection() {
           >{t('heading')}</h3>
           <div className="w-8 h-px bg-[#731515]/30" />
           <p
-            className="text-lg font-normal text-[#7a4a4a] leading-relaxed max-w-2xl"
+            className="text-lg font-normal text-[#7a4a4a] leading-relaxed max-w-2xl text-balance"
             style={{ fontFamily: 'var(--font-nunito)' }}
           >
             {t('body')}

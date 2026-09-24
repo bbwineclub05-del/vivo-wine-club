@@ -43,8 +43,8 @@ export default function Home() {
         <HeroSection />
         <StatsSection />
         <VisionMissionSection />
-        <ExperiencesSection />
         <EventsSection />
+        <ExperiencesSection />
         <LinkedInSection />
         <MembershipSection />
         <PartnersSection />
