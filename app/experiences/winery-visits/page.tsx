@@ -51,7 +51,7 @@ export default function WineryVisitsPage() {
   const hardcodedSlugs = new Set(WINERIES.map(w => w.slug));
   const extraDbWineries = dbWineries.filter(w => !hardcodedSlugs.has(w.slug));
   return (
-    <div className="bg-[#1A2E5C] min-h-screen text-[#F5EEE6]">
+    <div className="bg-[#421414] min-h-screen text-[#F5EEE6]">
 
       {/* ── 1. HERO ── */}
       <section className="relative h-screen flex flex-col justify-end overflow-hidden">
@@ -85,7 +85,7 @@ export default function WineryVisitsPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.4 }}
-            className="text-[10px] tracking-[0.55em] text-[#C9A84C] mb-4"
+            className="text-[10px] tracking-[0.55em] text-[#5a1010] mb-4"
           >
             VIVO WINE CLUB · EXPERIENCE
           </motion.div>
@@ -125,13 +125,13 @@ export default function WineryVisitsPage() {
             animate={{ y: [0, 7, 0] }}
             transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
           >
-            <ChevronDown size={18} className="text-[#731515]" />
+            <ChevronDown size={18} className="text-[#5a1010]" />
           </motion.div>
         </motion.div>
       </section>
 
       {/* ── 2. UPCOMING VISITS ── */}
-      <section className="py-16 md:py-22 bg-[#101D3A]">
+      <section className="py-16 md:py-22 bg-[#301010]">
         <div className="max-w-4xl mx-auto px-8 md:px-16">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -140,7 +140,7 @@ export default function WineryVisitsPage() {
             transition={{ duration: 0.8 }}
             className="mb-10"
           >
-            <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-3">{t('upcoming')}</div>
+            <div className="text-[10px] tracking-[0.5em] text-[#5a1010] mb-3">{t('upcoming')}</div>
             <h2
               className="text-[clamp(2rem,5vw,4rem)] font-light text-[#F5EEE6] leading-none"
               style={{ fontFamily: 'var(--font-syne)' }}
@@ -151,7 +151,7 @@ export default function WineryVisitsPage() {
 
           <ExperienceUpcoming
             section="winery_visit"
-            accentColor="#C9A84C"
+            accentColor="#5a1010"
             mutedColor="light"
             btnBg="#731515"
             btnText="#F5EEE6"
@@ -163,11 +163,11 @@ export default function WineryVisitsPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="mt-10 pt-8 border-t border-[#C9A84C]/15"
+            className="mt-10 pt-8 border-t border-[#5a1010]/15"
           >
             <Link
               href="/events"
-              className="inline-flex items-center gap-3 text-[11px] tracking-[0.35em] text-[#C9A84C] hover:text-[#F5EEE6] transition-colors duration-300"
+              className="inline-flex items-center gap-3 text-[11px] tracking-[0.35em] text-[#5a1010] hover:text-[#F5EEE6] transition-colors duration-300"
               style={{ fontFamily: 'var(--font-nunito)' }}
             >
               {t('exploreMoreEvents')}
@@ -178,7 +178,7 @@ export default function WineryVisitsPage() {
       </section>
 
       {/* ── 3. CONCEPT ── */}
-      <section className="py-16 md:py-22 bg-[#162549]">
+      <section className="py-16 md:py-22 bg-[#381212]">
         <div className="max-w-4xl mx-auto px-8 md:px-16">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -186,7 +186,7 @@ export default function WineryVisitsPage() {
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
           >
-            <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-5">{t('theConcept')}</div>
+            <div className="text-[10px] tracking-[0.5em] text-[#5a1010] mb-5">{t('theConcept')}</div>
             <p
               className="text-xl md:text-2xl text-[#C4B5A0] font-light leading-relaxed"
               style={{ fontFamily: 'var(--font-nunito)' }}
@@ -203,7 +203,7 @@ export default function WineryVisitsPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: i * 0.12, ease: [0.16, 1, 0.3, 1] }}
-                className="px-6 py-3 border border-[#731515]/40 text-[#731515] text-[11px] tracking-[0.35em] rounded-full"
+                className="px-6 py-3 border border-[#5a1010]/40 text-[#5a1010] text-[11px] tracking-[0.35em] rounded-full"
               >
                 {t(key)}
               </motion.div>
@@ -213,7 +213,7 @@ export default function WineryVisitsPage() {
       </section>
 
       {/* ── 4. PAST VISITS ── */}
-      <section className="py-16 md:py-22 bg-[#162549]">
+      <section className="py-16 md:py-22 bg-[#381212]">
         <div className="max-w-7xl mx-auto px-8 md:px-10">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -222,7 +222,7 @@ export default function WineryVisitsPage() {
             transition={{ duration: 0.8 }}
             className="mb-10"
           >
-            <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-3">{t('theEstates')}</div>
+            <div className="text-[10px] tracking-[0.5em] text-[#5a1010] mb-3">{t('theEstates')}</div>
             <h2
               className="text-[clamp(2rem,5vw,4rem)] font-light text-[#F5EEE6] leading-none"
               style={{ fontFamily: 'var(--font-syne)' }}
@@ -245,10 +245,10 @@ export default function WineryVisitsPage() {
                   >
                     <Link
                       href={`/events/${visit.slug}`}
-                      className="group flex flex-col bg-[#1A2E5C] border border-[#C9A84C]/20 rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:border-[#C9A84C]/50 transition-all duration-300"
+                      className="group flex flex-col bg-[#421414] border border-[#5a1010]/20 rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:border-[#5a1010]/50 transition-all duration-300"
                     >
                       {/* Image area */}
-                      <div className="relative h-28 bg-[#101D3A] overflow-hidden">
+                      <div className="relative h-28 bg-[#301010] overflow-hidden">
                         {visit.image_url ? (
                           <Image
                             src={visit.image_url}
@@ -258,28 +258,28 @@ export default function WineryVisitsPage() {
                             sizes="(max-width: 768px) 45vw, 200px"
                           />
                         ) : (
-                          <div className="flex items-center justify-center h-full text-[#C9A84C]/40 text-3xl font-light"
+                          <div className="flex items-center justify-center h-full text-[#5a1010]/40 text-3xl font-light"
                             style={{ fontFamily: 'var(--font-syne)' }}
                           >
                             {visit.title.slice(0, 2).toUpperCase()}
                           </div>
                         )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#1A2E5C]/60 to-transparent" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#421414]/60 to-transparent" />
                       </div>
 
                       {/* Info area */}
                       <div className="flex flex-col gap-1 px-4 py-3">
                         <p
-                          className="text-[#F5EEE6] text-sm font-medium leading-tight group-hover:text-[#C9A84C] transition-colors"
+                          className="text-[#F5EEE6] text-sm font-medium leading-tight group-hover:text-[#5a1010] transition-colors"
                           style={{ fontFamily: 'var(--font-syne)' }}
                         >
                           {visit.title}
                         </p>
                         <p className="flex items-center gap-1 text-[#C4B5A0] text-[11px] tracking-wide">
-                          <MapPin size={9} className="text-[#C9A84C] shrink-0" />
+                          <MapPin size={9} className="text-[#5a1010] shrink-0" />
                           {visit.location}
                         </p>
-                        <p className="flex items-center gap-1 text-[#C9A84C]/70 text-[10px] tracking-wide mt-0.5">
+                        <p className="flex items-center gap-1 text-[#5a1010]/70 text-[10px] tracking-wide mt-0.5">
                           <CalendarDays size={9} className="shrink-0" />
                           {visit.day} {visit.month} {visit.year}
                         </p>
@@ -290,7 +290,7 @@ export default function WineryVisitsPage() {
               </div>
 
               {/* Divider between event cards and estates grid */}
-              <div className="h-px bg-[#C9A84C]/10 mb-12" />
+              <div className="h-px bg-[#5a1010]/10 mb-12" />
             </>
           )}
 
@@ -306,7 +306,7 @@ export default function WineryVisitsPage() {
               >
                 <Link
                   href={`/wineries/${winery.slug}`}
-                  className="group flex flex-col bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:border-[#C9A84C]/50 transition-all duration-300"
+                  className="group flex flex-col bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:border-[#5a1010]/50 transition-all duration-300"
                 >
                   <div className="flex items-center justify-center h-28 px-6 bg-gray-50 group-hover:bg-white transition-colors duration-300">
                     {winery.logo ? (
@@ -354,7 +354,7 @@ export default function WineryVisitsPage() {
               >
                 <Link
                   href={`/wineries/${winery.slug}`}
-                  className="group flex flex-col bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:border-[#C9A84C]/50 transition-all duration-300"
+                  className="group flex flex-col bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:border-[#5a1010]/50 transition-all duration-300"
                 >
                   <div className="flex items-center justify-center h-28 px-6 bg-gray-50 group-hover:bg-white transition-colors duration-300">
                     {winery.logo_url ? (
@@ -392,8 +392,8 @@ export default function WineryVisitsPage() {
       </section>
 
       {/* ── 5. CLOSING ── */}
-      <section className="py-10 md:py-14 bg-[#101D3A] relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_60%,rgba(115,21,21,0.12),transparent_65%)] pointer-events-none" />
+      <section className="py-10 md:py-14 bg-[#301010] relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_60%,rgba(90,16,16,0.12),transparent_65%)] pointer-events-none" />
         <div className="max-w-5xl mx-auto px-8 md:px-16 relative z-10 flex flex-col lg:flex-row items-start lg:items-center gap-6">
           <motion.h2
             initial={{ opacity: 0, y: 24 }}

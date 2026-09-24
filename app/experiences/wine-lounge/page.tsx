@@ -34,7 +34,7 @@ export default function WineLoungeePage() {
   }, []);
 
   return (
-    <div className="bg-[#3d1010] min-h-screen text-[#F5EEE6]">
+    <div className="bg-[#2a0a0a] min-h-screen text-[#F5EEE6]">
 
       {/* ── 1. HERO ── */}
       <section className="relative h-screen flex flex-col justify-end overflow-hidden">
@@ -62,7 +62,7 @@ export default function WineLoungeePage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.4 }}
-            className="text-[10px] tracking-[0.55em] text-[#C9A84C] mb-4"
+            className="text-[10px] tracking-[0.55em] text-[#9b2323] mb-4"
           >
             VIVO WINE CLUB · EXPERIENCE
           </motion.div>
@@ -108,7 +108,7 @@ export default function WineLoungeePage() {
       </section>
 
       {/* ── 2. UPCOMING LOUNGE EVENTS ── */}
-      <section className="py-16 md:py-22 bg-[#2e0c0c]">
+      <section className="py-16 md:py-22 bg-[#210808]">
         <div className="max-w-4xl mx-auto px-8 md:px-16">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -117,7 +117,7 @@ export default function WineLoungeePage() {
             transition={{ duration: 0.8 }}
             className="mb-10"
           >
-            <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-3">{t('upcoming')}</div>
+            <div className="text-[10px] tracking-[0.5em] text-[#9b2323] mb-3">{t('upcoming')}</div>
             <h2
               className="text-[clamp(2rem,5vw,4rem)] font-light text-[#F5EEE6] leading-none mb-8"
               style={{ fontFamily: 'var(--font-syne)' }}
@@ -127,7 +127,7 @@ export default function WineLoungeePage() {
             <div className="h-px bg-white/10 mb-8" />
             <ExperienceUpcoming
               section="wine_lounge"
-              accentColor="#C9A84C"
+              accentColor="#9b2323"
               mutedColor="light"
               btnBg="#731515"
               btnText="#F5EEE6"
@@ -137,7 +137,7 @@ export default function WineLoungeePage() {
       </section>
 
       {/* ── 3. CONCEPT ── */}
-      <section className="py-16 md:py-22 bg-[#2e0c0c]">
+      <section className="py-16 md:py-22 bg-[#210808]">
         <div className="max-w-4xl mx-auto px-8 md:px-16">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -145,7 +145,7 @@ export default function WineLoungeePage() {
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
           >
-            <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-5">{t('theConcept')}</div>
+            <div className="text-[10px] tracking-[0.5em] text-[#9b2323] mb-5">{t('theConcept')}</div>
             <p
               className="text-xl md:text-2xl text-[#C4B5A0] font-light leading-relaxed"
               style={{ fontFamily: 'var(--font-nunito)' }}
@@ -162,7 +162,7 @@ export default function WineLoungeePage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: i * 0.12, ease: [0.16, 1, 0.3, 1] }}
-                className="px-6 py-3 border border-white/20 text-white/60 text-[11px] tracking-[0.35em] rounded-full"
+                className="px-6 py-3 border border-[#9b2323]/40 text-[#9b2323] text-[11px] tracking-[0.35em] rounded-full"
               >
                 {t(key)}
               </motion.div>
@@ -172,7 +172,7 @@ export default function WineLoungeePage() {
       </section>
 
       {/* ── 4. GALLERY ── */}
-      <section className="py-10 bg-[#2e0c0c]">
+      <section className="py-10 bg-[#210808]">
         <div className="max-w-4xl mx-auto px-8 md:px-16">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {gallery.map((src, i) => (
@@ -198,8 +198,8 @@ export default function WineLoungeePage() {
       </section>
 
       {/* ── 5. CLOSING ── */}
-      <section className="py-10 md:py-14 bg-[#240909] relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_60%,rgba(201,168,76,0.06),transparent_65%)] pointer-events-none" />
+      <section className="py-10 md:py-14 bg-[#190606] relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_60%,rgba(155,35,35,0.06),transparent_65%)] pointer-events-none" />
         <div className="max-w-5xl mx-auto px-8 md:px-16 relative z-10 flex flex-col lg:flex-row items-start lg:items-center gap-6">
           <motion.h2
             initial={{ opacity: 0, y: 24 }}
