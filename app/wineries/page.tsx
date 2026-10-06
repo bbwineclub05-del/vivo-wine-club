@@ -26,7 +26,7 @@ function WineriesContent() {
       </Link>
 
       <div className="mb-10 max-w-2xl">
-        <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-3">{t('estatesHeading').toUpperCase()}</div>
+        <div className="text-[10px] tracking-[0.5em] text-[#5a1010] mb-3">{t('estatesHeading').toUpperCase()}</div>
         <h1 className="text-[clamp(2.2rem,5vw,4rem)] font-light leading-none mb-4" style={{ fontFamily: 'var(--font-syne)' }}>
           {t('estatesHeading')}
         </h1>
@@ -44,7 +44,7 @@ export default function WineriesIndexPage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen pt-16 bg-[#162549] text-[#F5EEE6]">
+      <main className="min-h-screen pt-16 bg-[#381212] text-[#F5EEE6]">
         <Suspense fallback={null}>
           <WineriesContent />
         </Suspense>

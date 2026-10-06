@@ -267,10 +267,10 @@ function WineLoungeSection() {
   const t = useTranslations('wineLounge');
 
   return (
-    <section id="lounge" className="bg-[#3d1010] text-[#F5EEE6] scroll-mt-16">
+    <section id="lounge" className="bg-[#2a0a0a] text-[#F5EEE6] scroll-mt-16">
       <div className="py-16 md:py-20 max-w-4xl mx-auto px-8 md:px-16">
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.7 }}>
-          <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-3">VIVO WINE CLUB</div>
+          <div className="text-[10px] tracking-[0.5em] text-[#9b2323] mb-3">VIVO WINE CLUB</div>
           <h2 className="text-[clamp(2.2rem,5vw,4rem)] font-light leading-none mb-1" style={{ fontFamily: 'var(--font-syne)' }}>
             Wine Lounge
           </h2>
@@ -278,7 +278,7 @@ function WineLoungeSection() {
             {t('heroTagline')}
           </p>
 
-          <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-5">{t('theConcept')}</div>
+          <div className="text-[10px] tracking-[0.5em] text-[#9b2323] mb-5">{t('theConcept')}</div>
           <p className="text-xl md:text-2xl text-[#C4B5A0] font-light leading-relaxed" style={{ fontFamily: 'var(--font-nunito)' }}>
             {t('conceptBody')}
           </p>
@@ -292,7 +292,7 @@ function WineLoungeSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: i * 0.1 }}
-              className="px-6 py-3 border border-white/20 text-white/60 text-[11px] tracking-[0.35em] rounded-full"
+              className="px-6 py-3 border border-[#9b2323]/40 text-[#9b2323] text-[11px] tracking-[0.35em] rounded-full"
             >
               {t(key)}
             </motion.div>
@@ -314,10 +314,10 @@ function WineryVisitsSection() {
   const t = useTranslations('wineryVisits');
 
   return (
-    <section id="visits" className="bg-[#1A2E5C] text-[#F5EEE6] scroll-mt-16">
+    <section id="visits" className="bg-[#421414] text-[#F5EEE6] scroll-mt-16">
       <div className="py-16 md:py-20 max-w-4xl mx-auto px-8 md:px-16">
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.7 }}>
-          <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-3">VIVO WINE CLUB</div>
+          <div className="text-[10px] tracking-[0.5em] text-[#5a1010] mb-3">VIVO WINE CLUB</div>
           <h2 className="text-[clamp(2.2rem,5vw,4rem)] font-light leading-none mb-1" style={{ fontFamily: 'var(--font-syne)' }}>
             Winery Visits
           </h2>
@@ -325,7 +325,7 @@ function WineryVisitsSection() {
             {t('heroTagline')}
           </p>
 
-          <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-5">{t('theConcept')}</div>
+          <div className="text-[10px] tracking-[0.5em] text-[#5a1010] mb-5">{t('theConcept')}</div>
           <p className="text-xl md:text-2xl text-[#C4B5A0] font-light leading-relaxed" style={{ fontFamily: 'var(--font-nunito)' }}>
             {t('conceptBody')}
           </p>
@@ -339,7 +339,7 @@ function WineryVisitsSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: i * 0.1 }}
-              className="px-6 py-3 border border-[#C9A84C]/40 text-[#C9A84C] text-[11px] tracking-[0.35em] rounded-full"
+              className="px-6 py-3 border border-[#5a1010]/40 text-[#5a1010] text-[11px] tracking-[0.35em] rounded-full"
             >
               {t(key)}
             </motion.div>
@@ -354,10 +354,10 @@ function EstatesSection() {
   const t = useTranslations('eventsHub');
 
   return (
-    <section id="estates" className="bg-[#162549] text-[#F5EEE6] py-16 md:py-20 scroll-mt-16">
+    <section id="estates" className="bg-[#381212] text-[#F5EEE6] py-16 md:py-20 scroll-mt-16">
       <div className="max-w-7xl mx-auto px-8 md:px-10">
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.7 }} className="mb-10 max-w-2xl">
-          <div className="text-[10px] tracking-[0.5em] text-[#C9A84C] mb-3">{t('estatesHeading').toUpperCase()}</div>
+          <div className="text-[10px] tracking-[0.5em] text-[#5a1010] mb-3">{t('estatesHeading').toUpperCase()}</div>
           <h2 className="text-[clamp(2rem,4vw,3.2rem)] font-light leading-none mb-4" style={{ fontFamily: 'var(--font-syne)' }}>
             {t('estatesHeading')}
           </h2>
@@ -380,7 +380,7 @@ function ClosingSection() {
   const tCommon = useTranslations('common');
 
   return (
-    <section className="py-10 md:py-14 bg-[#101D3A] relative overflow-hidden">
+    <section className="py-10 md:py-14 bg-[#080103] relative overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_60%,rgba(115,21,21,0.12),transparent_65%)] pointer-events-none" />
       <div className="max-w-5xl mx-auto px-8 md:px-16 relative z-10 flex flex-col lg:flex-row items-start lg:items-center gap-6">
         <motion.h2
