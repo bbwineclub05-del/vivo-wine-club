@@ -161,9 +161,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'rate_limited' }, { status: 429 });
   }
 
+  // `status` is left to the column default ('pending') so this insert works
+  // regardless of whether the status migration has been applied yet.
   const { error: dbError } = await db.from(TABLE).insert({
     ...data,
-    status:                      'new',
     consent_privacy_accepted_at: new Date().toISOString(),
     consent_privacy_version:     PRIVACY_POLICY_VERSION,
     consent_age_confirmed:       true,
