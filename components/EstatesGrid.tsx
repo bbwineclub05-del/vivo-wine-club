@@ -81,8 +81,8 @@ export default function EstatesGrid({ limit, initialRegion }: { limit?: number; 
             onClick={() => setRegionFilter(r)}
             className={`px-4 py-2 text-[9px] tracking-[0.25em] rounded-full border transition-all duration-200 ${
               regionFilter === r
-                ? 'bg-[#C9A84C] border-[#C9A84C] text-[#162549]'
-                : 'border-white/20 text-white/60 hover:border-[#C9A84C]/50 hover:text-[#C9A84C]'
+                ? 'bg-[#5a1010] border-[#5a1010] text-[#F5EEE6]'
+                : 'border-white/20 text-white/60 hover:border-[#5a1010]/50 hover:text-[#5a1010]'
             }`}
             style={{ fontFamily: 'var(--font-nunito)' }}
           >
@@ -102,7 +102,7 @@ export default function EstatesGrid({ limit, initialRegion }: { limit?: number; 
           >
             <Link
               href={`/wineries/${winery.slug}`}
-              className="group flex flex-col bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:border-[#C9A84C]/50 transition-all duration-300"
+              className="group flex flex-col bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:border-[#5a1010]/50 transition-all duration-300"
             >
               <div className="flex items-center justify-center h-28 px-6 bg-gray-50 group-hover:bg-white transition-colors duration-300">
                 {winery.logo ? (
@@ -147,7 +147,7 @@ export default function EstatesGrid({ limit, initialRegion }: { limit?: number; 
           >
             <Link
               href={`/wineries/${winery.slug}`}
-              className="group flex flex-col bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:border-[#C9A84C]/50 transition-all duration-300"
+              className="group flex flex-col bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:border-[#5a1010]/50 transition-all duration-300"
             >
               <div className="flex items-center justify-center h-28 px-6 bg-gray-50 group-hover:bg-white transition-colors duration-300">
                 {winery.logo_url ? (

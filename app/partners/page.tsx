@@ -7,9 +7,10 @@ import { useTranslations } from 'next-intl';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import PartnerLogo from '@/components/PartnerLogo';
-import { PARTNERS, type Partner, type PartnerCategory } from '@/lib/partners';
+import EstatesGrid from '@/components/EstatesGrid';
+import { PARTNERS, type Partner } from '@/lib/partners';
 
-type FilterKey = 'all' | PartnerCategory;
+type TabKey = 'all' | 'estate';
 
 function PartnerCard({ partner, index, reducedMotion }: { partner: Partner; index: number; reducedMotion: boolean | null }) {
   const t = useTranslations('partners');
@@ -27,9 +28,6 @@ function PartnerCard({ partner, index, reducedMotion }: { partner: Partner; inde
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300" />
         </div>
         <div className="mt-4 px-0.5">
-          <div className="text-[9px] tracking-[0.25em] text-[#9a6060] mb-1.5">
-            {partner.category === 'cantina' ? t('categoryCantina') : t('categoryLocation')}
-          </div>
           <h3
             className="text-base font-medium text-[#1a0505] group-hover:text-[#731515] transition-colors duration-300 mb-2"
             style={{ fontFamily: 'var(--font-syne)' }}
@@ -48,16 +46,14 @@ function PartnerCard({ partner, index, reducedMotion }: { partner: Partner; inde
 
 export default function PartnersPage() {
   const t = useTranslations('partners');
+  const tHub = useTranslations('eventsHub');
   const reducedMotion = useReducedMotion();
-  const [filter, setFilter] = useState<FilterKey>('all');
+  const [tab, setTab] = useState<TabKey>('all');
 
-  const FILTERS: { key: FilterKey; label: string }[] = [
-    { key: 'all',      label: t('filterAll') },
-    { key: 'cantina',  label: t('filterCantina') },
-    { key: 'location', label: t('filterLocation') },
+  const TABS: { key: TabKey; label: string }[] = [
+    { key: 'all',    label: t('filterAll') },
+    { key: 'estate', label: t('filterEstate') },
   ];
-
-  const filtered = filter === 'all' ? PARTNERS : PARTNERS.filter((p) => p.category === filter);
 
   return (
     <>
@@ -85,29 +81,45 @@ export default function PartnersPage() {
               </p>
             </motion.div>
 
-            {/* Filter toggle */}
+            {/* Tab toggle */}
             <div className="flex flex-wrap gap-3 mb-14">
-              {FILTERS.map((f) => (
+              {TABS.map((tb) => (
                 <button
-                  key={f.key}
-                  onClick={() => setFilter(f.key)}
+                  key={tb.key}
+                  onClick={() => setTab(tb.key)}
                   className={`text-[10px] tracking-[0.25em] px-5 py-2.5 rounded-lg border transition-colors duration-300 ${
-                    filter === f.key
+                    tab === tb.key
                       ? 'bg-[#731515] text-white border-[#731515]'
                       : 'border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515]/40 hover:text-[#731515]'
                   }`}
                 >
-                  {f.label}
+                  {tb.label}
                 </button>
               ))}
             </div>
 
-            {/* Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 sm:gap-10">
-              {filtered.map((partner, i) => (
-                <PartnerCard key={partner.slug} partner={partner} index={i} reducedMotion={reducedMotion} />
-              ))}
-            </div>
+            {tab === 'all' ? (
+              /* Grid — all partners, no category distinction */
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 sm:gap-10">
+                {PARTNERS.map((partner, i) => (
+                  <PartnerCard key={partner.slug} partner={partner} index={i} reducedMotion={reducedMotion} />
+                ))}
+              </div>
+            ) : (
+              /* Our Estate — same content/layout as /wineries, same component */
+              <div className="-mx-6 lg:-mx-10 px-6 lg:px-10 py-12 bg-[#381212] text-[#F5EEE6] rounded-2xl">
+                <div className="mb-10 max-w-2xl">
+                  <div className="text-[10px] tracking-[0.5em] text-[#5a1010] mb-3">{tHub('estatesHeading').toUpperCase()}</div>
+                  <h2 className="text-[clamp(2rem,4vw,3.2rem)] font-light leading-none mb-4" style={{ fontFamily: 'var(--font-syne)' }}>
+                    {tHub('estatesHeading')}
+                  </h2>
+                  <p className="text-[#C4B5A0] text-sm leading-relaxed" style={{ fontFamily: 'var(--font-nunito)' }}>
+                    {tHub('estatesIntro')}
+                  </p>
+                </div>
+                <EstatesGrid />
+              </div>
+            )}
           </div>
         </section>
       </main>

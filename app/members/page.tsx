@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, Suspense } from 'react';
+import { useCallback, useEffect, useRef, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,7 +9,7 @@ import {
   Mail, LogOut, KeyRound, ScanLine, Menu, X,
   Wine, Shield, ArrowUpRight, CreditCard, User, CalendarDays, Images,
   Database, ChevronDown, UsersRound, Lock, ShoppingBag, Tag, FolderOpen, Layers,
-  Camera, Loader2, Wallet, Receipt, BookOpen, Sparkles, Clock, Pencil, MapPin,
+  Camera, Loader2, Wallet, Receipt, BookOpen, Sparkles, Clock, Pencil, MapPin, Inbox,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -34,13 +34,14 @@ import PedManager from '@/components/PedManager';
 import WineAssistant from '@/components/WineAssistant';
 import UpsellManager from '@/components/UpsellManager';
 import WineriesMapManager from '@/components/WineriesMapManager';
+import ApplicationsManager from '@/components/ApplicationsManager';
 import { isSuperAdmin, isFinanceUser } from '@/lib/admins';
 import { useMobileOverlay } from '@/lib/useMobileOverlay';
 
 /* ─────────────────────────────────────────────
    Types
 ───────────────────────────────────────────── */
-type Section = 'overview' | 'settings' | 'wine-assistant' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm' | 'media' | 'team' | 'merch' | 'discounts' | 'documents' | 'finance' | 'bilancio' | 'quotes' | 'ped' | 'upsell' | 'wineries';
+type Section = 'overview' | 'settings' | 'wine-assistant' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm' | 'media' | 'team' | 'merch' | 'discounts' | 'documents' | 'finance' | 'bilancio' | 'quotes' | 'ped' | 'upsell' | 'wineries' | 'applications';
 
 // Maps section IDs to the permission key in team_members.permissions
 const SECTION_PERM: Partial<Record<Section, string>> = {
@@ -133,10 +134,13 @@ function NavBtn({
   item,
   active,
   onClick,
+  badge,
 }: {
   item: NavItem;
   active: boolean;
   onClick: () => void;
+  /** Optional counter shown on the right (hidden when 0/undefined). */
+  badge?: number;
 }) {
   const Icon = item.icon;
   return (
@@ -154,6 +158,14 @@ function NavBtn({
       )}
       <Icon size={14} className={active ? 'text-[#c84040]' : 'text-white/35'} />
       {item.label}
+      {!!badge && badge > 0 && (
+        <span
+          className="ml-auto min-w-[18px] h-[18px] px-1.5 rounded-full bg-[#c84040] text-white text-[10px] leading-[18px] text-center font-semibold"
+          aria-label={`${badge} da gestire`}
+        >
+          {badge > 99 ? '99+' : badge}
+        </span>
+      )}
     </button>
   );
 }
@@ -284,6 +296,7 @@ function SidebarContent({
   canAccess,
   superAdmin,
   financeUser,
+  pendingApplications,
 }: {
   displayName: string;
   email: string;
@@ -295,6 +308,7 @@ function SidebarContent({
   canAccess: (section: Section) => boolean;
   superAdmin: boolean;
   financeUser: boolean;
+  pendingApplications: number;
 }) {
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -359,6 +373,12 @@ function SidebarContent({
             {NAV_ADMIN_ONLY.map(item => (
               <NavBtn key={item.id} item={item} active={activeSection === item.id} onClick={() => navigate(item.id)} />
             ))}
+            <NavBtn
+              item={{ id: 'applications', label: 'Application', icon: Inbox }}
+              active={activeSection === 'applications'}
+              onClick={() => navigate('applications')}
+              badge={pendingApplications}
+            />
             <NavBtn
               item={{ id: 'crm', label: 'CRM', icon: Database }}
               active={activeSection === 'crm'}
@@ -1058,6 +1078,20 @@ function SettingsSection() {
   );
 }
 
+/** Total pending applications across all types (sidebar badge). null on failure. */
+async function fetchPendingApplications(token: string): Promise<number | null> {
+  try {
+    const res = await fetch('/api/admin/applications?summary=1', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return typeof data.total === 'number' ? data.total : null;
+  } catch {
+    return null; // non-fatal — badge only
+  }
+}
+
 /* ─────────────────────────────────────────────
    Page root
 ───────────────────────────────────────────── */
@@ -1076,6 +1110,7 @@ function MembersPageInner() {
   const [isCollaborator,    setIsCollaborator]     = useState(false);
   const [token,             setToken]              = useState('');
   const [staffPermissions,  setStaffPermissions]   = useState<Record<string, boolean> | null>(null);
+  const [pendingApplications, setPendingApplications] = useState(0);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -1129,6 +1164,27 @@ function MembersPageInner() {
       document.removeEventListener('visibilitychange', onVisibility);
     };
   }, [token, isStaff]);
+
+  // Pending applications badge (sidebar → Application). Refreshed on focus and
+  // after a status change in ApplicationsManager.
+  const canManage = isStaff || isAdmin(user?.email ?? '');
+  const refreshPendingApplications = useCallback(() => {
+    if (!token || !canManage) return;
+    fetchPendingApplications(token).then((n) => { if (n !== null) setPendingApplications(n); });
+  }, [token, canManage]);
+
+  useEffect(() => {
+    if (!token || !canManage) return;
+    fetchPendingApplications(token).then((n) => { if (n !== null) setPendingApplications(n); });
+    const onFocus      = () => refreshPendingApplications();
+    const onVisibility = () => { if (!document.hidden) refreshPendingApplications(); };
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [token, canManage, refreshPendingApplications]);
 
   useEffect(() => {
     if (user === null) {
@@ -1197,6 +1253,7 @@ function MembersPageInner() {
     canAccess,
     superAdmin,
     financeUser,
+    pendingApplications,
   };
 
   return (
@@ -1309,6 +1366,13 @@ function MembersPageInner() {
                       <MembershipPipeline />
                     </>
                   ) : <UnauthorisedSection title="Pipeline Membership" />
+                )}
+
+                {(admin || isStaff) && activeSection === 'applications' && (
+                  <>
+                    <SectionHeader title="Application" subtitle="Candidature ricevute dal sito." />
+                    <ApplicationsManager token={token} onChanged={refreshPendingApplications} />
+                  </>
                 )}
 
                 {(admin || isStaff) && activeSection === 'events' && (
