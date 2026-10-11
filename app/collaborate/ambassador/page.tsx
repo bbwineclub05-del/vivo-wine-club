@@ -54,12 +54,12 @@ export default async function AmbassadorPage() {
               {tCommon('back')}
             </Link>
           </div>
-          <div className="max-w-4xl mx-auto px-6 lg:px-10 py-20 md:py-28">
+          <div className="max-w-4xl mx-auto px-6 lg:px-10 py-14 md:py-20">
             <Eyebrow light>{t('eyebrow')}</Eyebrow>
-            <h1 className="text-[clamp(2.4rem,6vw,5rem)] font-light leading-[1.05] mb-6" style={syne}>
+            <h1 className="text-[clamp(2.4rem,6vw,5rem)] font-light leading-[1.05] mb-4" style={syne}>
               {t('heroTitle')}
             </h1>
-            <p className="text-lg md:text-xl text-[#C4B5A0] font-light leading-relaxed max-w-2xl mb-10" style={font}>
+            <p className="text-lg md:text-xl text-[#C4B5A0] font-light leading-relaxed max-w-2xl mb-6" style={font}>
               {t('heroSubtitle')}
             </p>
             <a
@@ -72,25 +72,25 @@ export default async function AmbassadorPage() {
         </section>
 
         {/* ── The role ── */}
-        <section className="py-16 md:py-24">
+        <section className="py-10 md:py-14">
           <div className="max-w-3xl mx-auto px-6 lg:px-10">
             <Eyebrow>{t('roleEyebrow')}</Eyebrow>
-            <h2 className="text-[clamp(1.8rem,4vw,3rem)] font-light text-[#1a0505] leading-tight mb-6" style={syne}>
+            <h2 className="text-[clamp(1.8rem,4vw,3rem)] font-light text-[#1a0505] leading-tight mb-4" style={syne}>
               {t('roleTitle')}
             </h2>
-            <p className="text-base md:text-lg text-[#4a2a2a] font-light leading-relaxed mb-4" style={font}>{t('roleBody')}</p>
+            <p className="text-base md:text-lg text-[#4a2a2a] font-light leading-relaxed mb-3" style={font}>{t('roleBody')}</p>
             <p className="text-base md:text-lg text-[#4a2a2a] font-light leading-relaxed" style={font}>{t('roleDetails')}</p>
           </div>
         </section>
 
         {/* ── What you can organise ── */}
-        <section className="pb-16 md:pb-24">
+        <section className="pb-10 md:pb-14">
           <div className="max-w-5xl mx-auto px-6 lg:px-10">
             <Eyebrow>{t('organizeEyebrow')}</Eyebrow>
-            <h2 className="text-[clamp(1.8rem,4vw,3rem)] font-light text-[#1a0505] leading-tight mb-4" style={syne}>
+            <h2 className="text-[clamp(1.8rem,4vw,3rem)] font-light text-[#1a0505] leading-tight mb-3" style={syne}>
               {t('organizeTitle')}
             </h2>
-            <p className="text-base md:text-lg text-[#4a2a2a] font-light leading-relaxed max-w-2xl mb-10" style={font}>
+            <p className="text-base md:text-lg text-[#4a2a2a] font-light leading-relaxed max-w-2xl mb-6" style={font}>
               {t('organizeBody')}
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -98,7 +98,7 @@ export default async function AmbassadorPage() {
                 <Link
                   key={f.href}
                   href={f.href}
-                  className={`group ${f.bg} text-[#F5EEE6] rounded-lg p-7 flex flex-col justify-between min-h-[220px] hover:-translate-y-0.5 transition-transform duration-300`}
+                  className={`group ${f.bg} text-[#F5EEE6] rounded-lg p-6 flex flex-col justify-between min-h-[180px] hover:-translate-y-0.5 transition-transform duration-300`}
                 >
                   <div>
                     <div className="text-[10px] tracking-[0.5em] text-[#9b2323] mb-3">VIVO WINE CLUB</div>
@@ -115,10 +115,10 @@ export default async function AmbassadorPage() {
         </section>
 
         {/* ── What you get ── */}
-        <section className="bg-[#2a0a0a] text-[#F5EEE6] py-16 md:py-24">
+        <section className="bg-[#2a0a0a] text-[#F5EEE6] py-10 md:py-14">
           <div className="max-w-3xl mx-auto px-6 lg:px-10">
             <Eyebrow light>{t('benefitsEyebrow')}</Eyebrow>
-            <h2 className="text-[clamp(1.8rem,4vw,3rem)] font-light leading-tight mb-6" style={syne}>
+            <h2 className="text-[clamp(1.8rem,4vw,3rem)] font-light leading-tight mb-4" style={syne}>
               {t('benefitsTitle')}
             </h2>
             <p className="text-base md:text-lg text-[#C4B5A0] font-light leading-relaxed" style={font}>{t('benefitsBody')}</p>
@@ -126,13 +126,13 @@ export default async function AmbassadorPage() {
         </section>
 
         {/* ── What we look for ── */}
-        <section className="py-16 md:py-24">
+        <section className="py-10 md:py-14">
           <div className="max-w-3xl mx-auto px-6 lg:px-10">
             <Eyebrow>{t('lookingEyebrow')}</Eyebrow>
-            <h2 className="text-[clamp(1.8rem,4vw,3rem)] font-light text-[#1a0505] leading-tight mb-8" style={syne}>
+            <h2 className="text-[clamp(1.8rem,4vw,3rem)] font-light text-[#1a0505] leading-tight mb-5" style={syne}>
               {t('lookingTitle')}
             </h2>
-            <ul className="flex flex-col gap-4">
+            <ul className="flex flex-col gap-3">
               {LOOKING_FOR_KEYS.map((key) => (
                 <li key={key} className="flex items-start gap-4 text-base md:text-lg text-[#4a2a2a] font-light leading-relaxed" style={font}>
                   <span aria-hidden="true" className="mt-3 w-6 h-px bg-[#731515] shrink-0" />
@@ -144,17 +144,17 @@ export default async function AmbassadorPage() {
         </section>
 
         {/* ── Selection process ── */}
-        <section className="pb-16 md:pb-24">
+        <section className="pb-10 md:pb-14">
           <div className="max-w-5xl mx-auto px-6 lg:px-10">
             <Eyebrow>{t('selectionEyebrow')}</Eyebrow>
-            <h2 className="text-[clamp(1.8rem,4vw,3rem)] font-light text-[#1a0505] leading-tight mb-10" style={syne}>
+            <h2 className="text-[clamp(1.8rem,4vw,3rem)] font-light text-[#1a0505] leading-tight mb-6" style={syne}>
               {t('selectionTitle')}
             </h2>
             <ol className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {SELECTION_STEPS.map((step, i) => (
-                <li key={step.title} className="bg-white/60 border border-[#e8d5d5] rounded-lg p-7">
-                  <div className="text-3xl font-light text-[#731515] mb-4" style={syne}>{String(i + 1).padStart(2, '0')}</div>
-                  <h3 className="text-[11px] tracking-[0.35em] text-[#1a0505] mb-3">{t(step.title)}</h3>
+                <li key={step.title} className="bg-white/60 border border-[#e8d5d5] rounded-lg p-6">
+                  <div className="text-3xl font-light text-[#731515] mb-3" style={syne}>{String(i + 1).padStart(2, '0')}</div>
+                  <h3 className="text-[11px] tracking-[0.35em] text-[#1a0505] mb-2">{t(step.title)}</h3>
                   <p className="text-sm text-[#4a2a2a] font-light leading-relaxed" style={font}>{t(step.body)}</p>
                 </li>
               ))}
@@ -163,13 +163,13 @@ export default async function AmbassadorPage() {
         </section>
 
         {/* ── Form ── */}
-        <section id="apply" className="relative pb-20 md:pb-28 scroll-mt-20">
+        <section id="apply" className="relative pb-14 md:pb-20 scroll-mt-20">
           <div className="max-w-3xl mx-auto px-6 lg:px-10">
             <Eyebrow>{t('formEyebrow')}</Eyebrow>
-            <h2 className="text-[clamp(1.8rem,4vw,3rem)] font-light text-[#1a0505] leading-tight mb-4" style={syne}>
+            <h2 className="text-[clamp(1.8rem,4vw,3rem)] font-light text-[#1a0505] leading-tight mb-3" style={syne}>
               {t('formTitle')}
             </h2>
-            <p className="text-base text-[#7a4a4a] font-light leading-relaxed max-w-xl mb-10" style={font}>
+            <p className="text-base text-[#7a4a4a] font-light leading-relaxed max-w-xl mb-6" style={font}>
               {t('formSubtitle')}
             </p>
             <AmbassadorForm />

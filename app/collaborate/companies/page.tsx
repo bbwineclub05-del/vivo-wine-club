@@ -71,7 +71,7 @@ export default function CollaborateCompaniesPage() {
           </Link>
         </div>
 
-        <section className="relative overflow-hidden py-16 md:py-24">
+        <section className="relative overflow-hidden py-10 md:py-14">
           <div className="fog-right" style={{ top: '10%' }} />
 
           <div className="max-w-3xl mx-auto px-6 lg:px-10">
@@ -81,7 +81,7 @@ export default function CollaborateCompaniesPage() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
-              className="mb-14"
+              className="mb-8"
             >
               <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-4">
                 {t('getInTouch')}

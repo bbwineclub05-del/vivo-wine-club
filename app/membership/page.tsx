@@ -136,12 +136,11 @@ export default function MembershipPage() {
         </div>
 
         {/* ── FORM / CONFIRMATION ── */}
-        <section className="relative overflow-hidden pb-32">
+        <section className="relative overflow-hidden pt-10 pb-16">
           <div className="fog-left" style={{ top: '10%' }} />
           <div className="fog-right" style={{ top: '40%' }} />
 
           <div className="max-w-2xl mx-auto px-6 lg:px-10">
-            <div className="w-full h-px bg-gradient-to-r from-[#731515]/30 via-[#731515]/10 to-transparent mb-14" />
 
             {submitted ? (
               /* ── Confirmation ── */
@@ -172,7 +171,7 @@ export default function MembershipPage() {
               </div>
             ) : (
               /* ── Form ── */
-              <form onSubmit={handleSubmit} className="glass-card p-8 md:p-12 flex flex-col gap-7">
+              <form onSubmit={handleSubmit} className="glass-card p-7 md:p-10 flex flex-col gap-5">
 
                 {/* Full Name */}
                 <div>
@@ -188,7 +187,7 @@ export default function MembershipPage() {
                 </div>
 
                 {/* Email + Confirm Email */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className={LABEL_CLASS}>{t('labelEmail')}</label>
                     <input
@@ -220,7 +219,7 @@ export default function MembershipPage() {
                 </div>
 
                 {/* Row: Phone + City */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className={LABEL_CLASS}>{t('labelPhone')}</label>
                     <input
@@ -245,7 +244,7 @@ export default function MembershipPage() {
                 </div>
 
                 {/* Row: Date of Birth + How did you hear */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className={LABEL_CLASS}>{t('labelDob')}</label>
                     <input

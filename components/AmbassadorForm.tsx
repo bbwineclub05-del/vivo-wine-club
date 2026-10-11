@@ -8,11 +8,15 @@ import ConsentCheckbox from '@/components/ConsentCheckbox';
 import {
   AMBASSADOR_AREAS,
   AMBASSADOR_AREA_OTHER,
+  AMBASSADOR_COUNTRIES,
   AMBASSADOR_EVENT_TYPES,
   AMBASSADOR_LIMITS as L,
   normalizeAmbassadorLocale,
+  type AmbassadorCountry,
   type AmbassadorEventType,
 } from '@/lib/ambassador';
+
+type CountrySelection = AmbassadorCountry | typeof AMBASSADOR_AREA_OTHER | '';
 
 interface FormState {
   first_name: string;
@@ -63,6 +67,7 @@ export default function AmbassadorForm() {
   const locale = normalizeAmbassadorLocale(useLocale());
 
   const [form, setForm] = useState<FormState>(EMPTY);
+  const [country, setCountry] = useState<CountrySelection>('');
   const [eventTypes, setEventTypes] = useState<AmbassadorEventType[]>([]);
   const [consentPrivacy, setConsentPrivacy] = useState(false);
   const [consentAge, setConsentAge] = useState(false);
@@ -73,6 +78,22 @@ export default function AmbassadorForm() {
   const set = (field: keyof FormState) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
       setForm((prev) => ({ ...prev, [field]: e.target.value }));
+
+  // Changing the country clears whatever region/free-text area was picked
+  // for the previous one, so a stale value never gets submitted.
+  const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value as CountrySelection;
+    setCountry(value);
+    setForm((prev) => ({
+      ...prev,
+      area: value === AMBASSADOR_AREA_OTHER ? AMBASSADOR_AREA_OTHER : '',
+      area_other: '',
+    }));
+  };
+
+  const regionsForCountry = country === 'france' || country === 'italy'
+    ? AMBASSADOR_AREAS.filter((a) => a.country === country)
+    : [];
 
   const toggleEventType = (type: AmbassadorEventType) =>
     setEventTypes((prev) => (prev.includes(type) ? prev.filter((v) => v !== type) : [...prev, type]));
@@ -129,7 +150,7 @@ export default function AmbassadorForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       {/* Honeypot — hidden from people, left empty by real users */}
       <div aria-hidden="true" className="absolute -left-[9999px] w-px h-px overflow-hidden">
         <label htmlFor="amb-website">Website</label>
@@ -164,17 +185,17 @@ export default function AmbassadorForm() {
         </div>
       </div>
 
-      {/* Area */}
+      {/* Country */}
       <div>
-        <Label htmlFor="amb-area">{t('fieldArea')} *</Label>
+        <Label htmlFor="amb-country">{t('fieldCountry')} *</Label>
         <div className="relative">
-          <select id="amb-area" required value={form.area} onChange={set('area')}
-            className={`${inputBase} appearance-none cursor-pointer ${form.area === '' ? 'text-[#7a4a4a]/50' : 'text-[#1a0505]'}`}
+          <select id="amb-country" required value={country} onChange={handleCountryChange}
+            className={`${inputBase} appearance-none cursor-pointer ${country === '' ? 'text-[#7a4a4a]/50' : 'text-[#1a0505]'}`}
             style={font}
           >
-            <option value="" disabled>{t('areaPlaceholder')}</option>
-            {AMBASSADOR_AREAS.map((a) => (
-              <option key={a.value} value={a.value} className="bg-white text-[#1a0505]">{a.label[locale]}</option>
+            <option value="" disabled>{t('countryPlaceholder')}</option>
+            {AMBASSADOR_COUNTRIES.map((c) => (
+              <option key={c.value} value={c.value} className="bg-white text-[#1a0505]">{c.label[locale]}</option>
             ))}
             <option value={AMBASSADOR_AREA_OTHER} className="bg-white text-[#1a0505]">{t('areaOther')}</option>
           </select>
@@ -184,12 +205,37 @@ export default function AmbassadorForm() {
             </svg>
           </div>
         </div>
-        {form.area === AMBASSADOR_AREA_OTHER && (
-          <input type="text" required maxLength={L.areaOther} aria-label={t('areaOtherPlaceholder')}
-            placeholder={t('areaOtherPlaceholder')} value={form.area_other} onChange={set('area_other')}
-            className={`${inputBase} mt-3`} style={font} />
-        )}
       </div>
+
+      {/* Region — only once France or Italy is picked above */}
+      {regionsForCountry.length > 0 && (
+        <div>
+          <Label htmlFor="amb-area">{t('fieldArea')} *</Label>
+          <div className="relative">
+            <select id="amb-area" required value={form.area} onChange={set('area')}
+              className={`${inputBase} appearance-none cursor-pointer ${form.area === '' ? 'text-[#7a4a4a]/50' : 'text-[#1a0505]'}`}
+              style={font}
+            >
+              <option value="" disabled>{t('areaPlaceholder')}</option>
+              {regionsForCountry.map((a) => (
+                <option key={a.value} value={a.value} className="bg-white text-[#1a0505]">{a.region}</option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2">
+              <svg width="10" height="6" viewBox="0 0 10 6" fill="none">
+                <path d="M1 1l4 4 4-4" stroke="#731515" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Other country — free text */}
+      {country === AMBASSADOR_AREA_OTHER && (
+        <input type="text" required maxLength={L.areaOther} aria-label={t('areaOtherPlaceholder')}
+          placeholder={t('areaOtherPlaceholder')} value={form.area_other} onChange={set('area_other')}
+          className={inputBase} style={font} />
+      )}
 
       {/* Event types */}
       <fieldset>
