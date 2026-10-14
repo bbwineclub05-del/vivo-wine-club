@@ -4,8 +4,10 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
+import { SiteNav } from '@/components/ui/SiteNav';
+import { Chapter } from '@/components/ui/Chapter';
+import { Section } from '@/components/ui/Section';
+import CartDrawer from '@/components/CartDrawer';
 import PartnerLogo from '@/components/PartnerLogo';
 import EstatesGrid from '@/components/EstatesGrid';
 import { PARTNERS, type Partner } from '@/lib/partners';
@@ -23,19 +25,19 @@ function PartnerCard({ partner, index, reducedMotion }: { partner: Partner; inde
       transition={{ duration: reducedMotion ? 0 : 0.6, delay: reducedMotion ? 0 : index * 0.06, ease: [0.16, 1, 0.3, 1] }}
     >
       <Link href={`/partners/${partner.slug}`} className="group flex flex-col">
-        <div className="relative aspect-square bg-white border border-[#e8d5d5] rounded-lg overflow-hidden">
+        <div className="relative aspect-square bg-white border border-[var(--color-rule-paper)] rounded-lg overflow-hidden">
           <PartnerLogo name={partner.name} logo={partner.logo} sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" />
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300" />
         </div>
         <div className="mt-4 px-0.5">
           <h3
-            className="text-base font-medium text-[#1a0505] group-hover:text-[#731515] transition-colors duration-300 mb-2"
+            className="text-base font-medium text-[var(--color-ink)] group-hover:text-[var(--color-accent)] transition-colors duration-300 mb-2"
             style={{ fontFamily: 'var(--font-syne)' }}
           >
             {partner.name}
           </h3>
-          <span className="inline-flex items-center gap-1.5 text-[8px] tracking-[0.25em] px-3 py-1.5 border border-[#731515]/25 text-[#731515] rounded-full whitespace-nowrap">
-            <span className="w-1 h-1 rounded-full bg-[#731515] inline-block" />
+          <span className="inline-flex items-center gap-1.5 text-[8px] tracking-[0.25em] px-3 py-1.5 border border-[var(--color-accent)]/25 text-[var(--color-accent)] rounded-full whitespace-nowrap">
+            <span className="w-1 h-1 rounded-full bg-[var(--color-accent)] inline-block" />
             {t('badge')}
           </span>
         </div>
@@ -57,29 +59,17 @@ export default function PartnersPage() {
 
   return (
     <>
-      <Navbar />
-      <main className="min-h-screen pt-16">
-        <section className="relative overflow-hidden py-20 md:py-28">
-          <div className="fog-center" />
-          <div className="max-w-5xl mx-auto px-6 lg:px-10">
-            <motion.div
-              initial={{ opacity: reducedMotion ? 1 : 0, y: reducedMotion ? 0 : 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: reducedMotion ? 0 : 0.8 }}
-              className="mb-14"
-            >
-              <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-4">{t('label')}</div>
-              <h1
-                className="text-[clamp(2.5rem,7vw,5.5rem)] font-light text-[#1a0505] leading-none section-title mb-6"
-                style={{ fontFamily: 'var(--font-syne)' }}
-              >
-                {t('heading')}
-              </h1>
-              <p className="text-lg text-[#7a4a4a] font-light italic max-w-md" style={{ fontFamily: 'var(--font-nunito)' }}>
-                {t('subtitle')}
-              </p>
-            </motion.div>
+      <SiteNav />
+      <main className="ds bg-paper text-on-paper">
+
+        <Section bleed width="full" tight className="pt-band">
+          <Chapter as="h1" lines={['Partner']} accent={[0, 0]} />
+        </Section>
+
+        <section className="relative">
+          <div className="mx-auto max-w-[1180px] px-gutter md:px-10">
+            <p className="max-w-[62ch] text-lead text-on-paper-muted">{t('subtitle')}</p>
+            <div className="mt-12" />
 
             {/* Tab toggle */}
             <div className="flex flex-wrap gap-3 mb-14">
@@ -87,10 +77,10 @@ export default function PartnersPage() {
                 <button
                   key={tb.key}
                   onClick={() => setTab(tb.key)}
-                  className={`text-[10px] tracking-[0.25em] px-5 py-2.5 rounded-lg border transition-colors duration-300 ${
+                  className={`min-h-[48px] px-5 text-[13px] font-medium rounded-full border transition-colors duration-300 ${
                     tab === tb.key
-                      ? 'bg-[#731515] text-white border-[#731515]'
-                      : 'border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515]/40 hover:text-[#731515]'
+                      ? 'bg-[var(--color-accent)] text-white border-[var(--color-accent)]'
+                      : 'border-[var(--color-rule-paper)] text-[var(--color-on-paper-muted)] hover:border-[var(--color-accent)]/40 hover:text-[var(--color-accent)]'
                   }`}
                 >
                   {tb.label}
@@ -113,7 +103,7 @@ export default function PartnersPage() {
                   <h2 className="text-[clamp(2rem,4vw,3.2rem)] font-light leading-none mb-4" style={{ fontFamily: 'var(--font-syne)' }}>
                     {tHub('estatesHeading')}
                   </h2>
-                  <p className="text-[#C4B5A0] text-sm leading-relaxed" style={{ fontFamily: 'var(--font-nunito)' }}>
+                  <p className="text-[#C4B5A0] text-sm leading-relaxed" style={{ fontFamily: 'var(--font-geist)' }}>
                     {tHub('estatesIntro')}
                   </p>
                 </div>
@@ -123,7 +113,7 @@ export default function PartnersPage() {
           </div>
         </section>
       </main>
-      <Footer />
+      <CartDrawer />
     </>
   );
 }

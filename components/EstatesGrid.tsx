@@ -79,12 +79,12 @@ export default function EstatesGrid({ limit, initialRegion }: { limit?: number; 
           <button
             key={r}
             onClick={() => setRegionFilter(r)}
-            className={`px-4 py-2 text-[9px] tracking-[0.25em] rounded-full border transition-all duration-200 ${
+            className={`min-h-[44px] px-5 text-[12px] font-medium rounded-full border transition-all duration-200 ${
               regionFilter === r
-                ? 'bg-[#5a1010] border-[#5a1010] text-[#F5EEE6]'
-                : 'border-white/20 text-white/60 hover:border-[#5a1010]/50 hover:text-[#5a1010]'
+                ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-[var(--color-paper)]'
+                : 'border-[var(--color-rule-paper)] text-[var(--color-on-paper-muted)] hover:border-[var(--color-accent)]/50 hover:text-[var(--color-accent)]'
             }`}
-            style={{ fontFamily: 'var(--font-nunito)' }}
+            style={{ fontFamily: 'var(--font-geist)' }}
           >
             {(r === 'all' ? t('filterAll') : r).toUpperCase()}
           </button>
@@ -102,7 +102,7 @@ export default function EstatesGrid({ limit, initialRegion }: { limit?: number; 
           >
             <Link
               href={`/wineries/${winery.slug}`}
-              className="group flex flex-col bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:border-[#5a1010]/50 transition-all duration-300"
+              className="group flex flex-col bg-white border border-[var(--color-rule-paper)] rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:border-[var(--color-accent)]/50 transition-all duration-300"
             >
               <div className="flex items-center justify-center h-28 px-6 bg-gray-50 group-hover:bg-white transition-colors duration-300">
                 {winery.logo ? (
@@ -115,20 +115,20 @@ export default function EstatesGrid({ limit, initialRegion }: { limit?: number; 
                     sizes="(max-width: 768px) 45vw, 200px"
                   />
                 ) : (
-                  <div className="text-[#731515] text-2xl font-light tracking-widest opacity-50 group-hover:opacity-80 transition-opacity" style={{ fontFamily: 'var(--font-syne)' }}>
+                  <div className="text-[var(--color-accent)] text-2xl font-light tracking-widest opacity-50 group-hover:opacity-80 transition-opacity" style={{ fontFamily: 'var(--font-syne)' }}>
                     {winery.name.slice(0, 2).toUpperCase()}
                   </div>
                 )}
               </div>
               <div className="flex flex-col gap-1 px-4 py-4">
-                <p className="text-[#1a0505] text-sm font-medium leading-tight group-hover:text-[#731515] transition-colors" style={{ fontFamily: 'var(--font-syne)' }}>
+                <p className="text-[var(--color-ink)] text-sm font-medium leading-tight group-hover:text-[var(--color-accent)] transition-colors" style={{ fontFamily: 'var(--font-syne)' }}>
                   {winery.name}
                 </p>
-                <p className="text-[#7a4a4a] text-[11px] tracking-wide">
+                <p className="text-[var(--color-on-paper-muted)] text-[11px] tracking-wide">
                   {winery.region} · {winery.country}
                 </p>
                 {winery.classification && (
-                  <p className="text-[#731515]/60 text-[10px] tracking-wide mt-0.5 leading-tight line-clamp-1">
+                  <p className="text-[var(--color-accent)]/60 text-[10px] tracking-wide mt-0.5 leading-tight line-clamp-1">
                     {winery.classification}
                   </p>
                 )}
@@ -147,7 +147,7 @@ export default function EstatesGrid({ limit, initialRegion }: { limit?: number; 
           >
             <Link
               href={`/wineries/${winery.slug}`}
-              className="group flex flex-col bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:border-[#5a1010]/50 transition-all duration-300"
+              className="group flex flex-col bg-white border border-[var(--color-rule-paper)] rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:border-[var(--color-accent)]/50 transition-all duration-300"
             >
               <div className="flex items-center justify-center h-28 px-6 bg-gray-50 group-hover:bg-white transition-colors duration-300">
                 {winery.logo_url ? (
@@ -160,17 +160,17 @@ export default function EstatesGrid({ limit, initialRegion }: { limit?: number; 
                     sizes="(max-width: 768px) 45vw, 200px"
                   />
                 ) : (
-                  <div className="text-[#731515] text-2xl font-light tracking-widest opacity-50 group-hover:opacity-80 transition-opacity" style={{ fontFamily: 'var(--font-syne)' }}>
+                  <div className="text-[var(--color-accent)] text-2xl font-light tracking-widest opacity-50 group-hover:opacity-80 transition-opacity" style={{ fontFamily: 'var(--font-syne)' }}>
                     {winery.name.slice(0, 2).toUpperCase()}
                   </div>
                 )}
               </div>
               <div className="flex flex-col gap-1 px-4 py-4">
-                <p className="text-[#1a0505] text-sm font-medium leading-tight group-hover:text-[#731515] transition-colors" style={{ fontFamily: 'var(--font-syne)' }}>
+                <p className="text-[var(--color-ink)] text-sm font-medium leading-tight group-hover:text-[var(--color-accent)] transition-colors" style={{ fontFamily: 'var(--font-syne)' }}>
                   {winery.name}
                 </p>
                 {(winery.region || winery.country) && (
-                  <p className="text-[#7a4a4a] text-[11px] tracking-wide">
+                  <p className="text-[var(--color-on-paper-muted)] text-[11px] tracking-wide">
                     {[winery.region, winery.country].filter(Boolean).join(' · ')}
                   </p>
                 )}
@@ -184,8 +184,8 @@ export default function EstatesGrid({ limit, initialRegion }: { limit?: number; 
         <div className="flex justify-center mt-10">
           <Link
             href={seeMoreHref}
-            className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] text-white border border-white/20 px-6 py-3 rounded-lg hover:bg-white/10 hover:border-white/50 transition-all duration-300"
-            style={{ fontFamily: 'var(--font-nunito)' }}
+            className="inline-flex min-h-[48px] items-center gap-2 rounded-full border border-[var(--color-rule-paper)] px-6 text-[13px] font-medium text-[var(--color-ink)] transition-colors duration-200 hover:border-[var(--color-accent)]/50 hover:text-[var(--color-accent)]"
+            style={{ fontFamily: 'var(--font-geist)' }}
           >
             {tCommon('exploreMore')}
             <ArrowRight size={12} />

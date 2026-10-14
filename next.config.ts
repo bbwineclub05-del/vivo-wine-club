@@ -92,6 +92,13 @@ const nextConfig: NextConfig = {
       { source: '/experiences/wine-lounge',   destination: '/events#lounge', permanent: true },
       { source: '/experiences/winery-visits', destination: '/events#visits', permanent: true },
       { source: '/events/wine-party',         destination: '/events#party',  permanent: true },
+
+      // 2026 redesign. Only pages with no live dependency are renamed:
+      // every URL printed on a ticket, sent in an email or used as a
+      // Stripe return keeps its original path untouched.
+      { source: '/who-we-are',                destination: '/manifesto',     permanent: true },
+      { source: '/collaborate',               destination: '/brands',        permanent: true },
+      { source: '/collaborate/companies',     destination: '/brands',        permanent: true },
     ];
   },
 

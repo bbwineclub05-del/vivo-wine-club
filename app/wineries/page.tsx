@@ -5,10 +5,15 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
-import EstatesGrid from '@/components/EstatesGrid';
 
+import EstatesGrid from '@/components/EstatesGrid';
+import { Chapter } from '@/components/ui/Chapter';
+import { Section } from '@/components/ui/Section';
+import { SiteNav } from '@/components/ui/SiteNav';
+import CartDrawer from '@/components/CartDrawer';
+
+// Stays a client page: the region filter is read from `?region=`, which
+// the wine map links into.
 function WineriesContent() {
   const t = useTranslations('eventsHub');
   const tCommon = useTranslations('common');
@@ -16,40 +21,44 @@ function WineriesContent() {
   const initialRegion = searchParams.get('region') ?? undefined;
 
   return (
-    <div className="max-w-7xl mx-auto px-8 md:px-10 py-12">
-      <Link
-        href="/events#estates"
-        className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] text-[#C4B5A0] hover:text-[#F5EEE6] transition-colors duration-300 group mb-10"
-      >
-        <ArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform duration-300" />
-        {tCommon('back')}
-      </Link>
+    <>
+      <Section bleed width="full" tight className="pt-band">
+        <Chapter as="h1" lines={['Cantine']} accent={[0, 0]} />
+      </Section>
 
-      <div className="mb-10 max-w-2xl">
-        <div className="text-[10px] tracking-[0.5em] text-[#5a1010] mb-3">{t('estatesHeading').toUpperCase()}</div>
-        <h1 className="text-[clamp(2.2rem,5vw,4rem)] font-light leading-none mb-4" style={{ fontFamily: 'var(--font-syne)' }}>
-          {t('estatesHeading')}
-        </h1>
-        <p className="text-[#C4B5A0] text-sm leading-relaxed" style={{ fontFamily: 'var(--font-nunito)' }}>
-          {t('estatesIntro')}
-        </p>
-      </div>
+      <Section className="pt-0">
+        <Link
+          href="/events#estates"
+          className="ds-link group inline-flex min-h-[48px] items-center gap-2 text-body no-underline hover:text-accent"
+        >
+          <ArrowLeft
+            size={16}
+            strokeWidth={1.75}
+            className="transition-transform duration-300 group-hover:-translate-x-0.5"
+          />
+          {tCommon('back')}
+        </Link>
 
-      <EstatesGrid initialRegion={initialRegion} />
-    </div>
+        <p className="mt-6 max-w-[62ch] text-lead text-on-paper-muted">{t('estatesIntro')}</p>
+
+        <div className="mt-12">
+          <EstatesGrid initialRegion={initialRegion} />
+        </div>
+      </Section>
+    </>
   );
 }
 
 export default function WineriesIndexPage() {
   return (
     <>
-      <Navbar />
-      <main className="min-h-screen pt-16 bg-[#381212] text-[#F5EEE6]">
-        <Suspense fallback={null}>
+      <SiteNav />
+      <main className="ds bg-paper text-on-paper">
+        <Suspense fallback={<div className="min-h-[60vh]" />}>
           <WineriesContent />
         </Suspense>
       </main>
-      <Footer />
+      <CartDrawer />
     </>
   );
 }

@@ -7,8 +7,10 @@ import BackButton from '@/components/BackButton';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence, useReducedMotion, useMotionValue, useTransform, animate, useInView } from 'framer-motion';
 import { ArrowLeft, ArrowRight, MapPin, X } from 'lucide-react';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
+import { SiteNav } from '@/components/ui/SiteNav';
+import { Chapter } from '@/components/ui/Chapter';
+import { Section } from '@/components/ui/Section';
+import CartDrawer from '@/components/CartDrawer';
 import { WINE_REGIONS, type WineRegion } from '@/lib/wineRegions';
 
 const WineriesMap = dynamic(() => import('@/components/WineriesMap'), { ssr: false });
@@ -52,14 +54,14 @@ function RankRow({ estate, index, reducedMotion }: {
       >
         {/* Rank number */}
         <span
-          className="text-[2.2rem] md:text-[2.8rem] font-light tabular-nums leading-none text-[#731515]/15 group-hover:text-[#731515]/30 transition-colors duration-300 shrink-0 w-12 md:w-16 text-right"
+          className="text-[2.2rem] md:text-[2.8rem] font-light tabular-nums leading-none text-[var(--color-accent)]/15 group-hover:text-[var(--color-accent)]/30 transition-colors duration-300 shrink-0 w-12 md:w-16 text-right"
           style={{ fontFamily: 'var(--font-syne)' }}
         >
           {estate.rank}
         </span>
 
         {/* Logo thumbnail */}
-        <div className="relative bg-white border border-[#e8d5d5] group-hover:border-[#731515]/30 transition-colors duration-300 shrink-0 flex items-center justify-center"
+        <div className="relative bg-white border border-[var(--color-rule-paper)] group-hover:border-[var(--color-accent)]/30 transition-colors duration-300 shrink-0 flex items-center justify-center"
           style={{ width: 64, height: 48 }}>
           {estate.logo ? (
             <Image
@@ -70,7 +72,7 @@ function RankRow({ estate, index, reducedMotion }: {
               sizes="64px"
             />
           ) : (
-            <span className="text-[#731515]/30 group-hover:text-[#731515]/50 transition-colors duration-300">
+            <span className="text-[var(--color-accent)]/30 group-hover:text-[var(--color-accent)]/50 transition-colors duration-300">
               <BottleIcon />
             </span>
           )}
@@ -79,14 +81,14 @@ function RankRow({ estate, index, reducedMotion }: {
         {/* Name + location */}
         <div className="flex-1 min-w-0">
           <div
-            className="text-base md:text-lg font-medium text-[#1a0505] group-hover:text-[#731515] transition-colors duration-300 leading-snug truncate"
+            className="text-base md:text-lg font-medium text-[var(--color-ink)] group-hover:text-[var(--color-accent)] transition-colors duration-300 leading-snug truncate"
             style={{ fontFamily: 'var(--font-syne)' }}
           >
             {estate.name}
           </div>
           <div
-            className="text-[11px] tracking-[0.15em] text-[#7a4a4a]/60 mt-0.5"
-            style={{ fontFamily: 'var(--font-nunito)' }}
+            className="text-[11px] tracking-[0.15em] text-[var(--color-on-paper-muted)]/60 mt-0.5"
+            style={{ fontFamily: 'var(--font-geist)' }}
           >
             {estate.location}
           </div>
@@ -95,7 +97,7 @@ function RankRow({ estate, index, reducedMotion }: {
         {/* Arrow */}
         <ArrowRight
           size={16}
-          className="shrink-0 text-[#731515]/30 group-hover:text-[#731515] group-hover:translate-x-0.5 transition-all duration-300"
+          className="shrink-0 text-[var(--color-accent)]/30 group-hover:text-[var(--color-accent)] group-hover:translate-x-0.5 transition-all duration-300"
         />
       </Link>
     </motion.div>
@@ -160,15 +162,15 @@ function CounterStat({ to, suffix = '', label, sub, delay = 0 }: {
     <div ref={ref} className="flex flex-col items-center text-center px-4 sm:px-8 py-6 sm:py-8">
       <div className="h-[clamp(2.4rem,5vw,4rem)] flex items-center justify-center mb-2">
         <span
-          className="text-[clamp(2.4rem,5vw,4rem)] font-medium text-[#731515] leading-none tabular-nums"
+          className="text-[clamp(2.4rem,5vw,4rem)] font-medium text-[var(--color-accent)] leading-none tabular-nums"
           style={{ fontFamily: 'var(--font-syne)' }}
         >
           <motion.span>{disp}</motion.span>{suffix}
         </span>
       </div>
-      <div className="text-[9px] tracking-[0.4em] text-[#1a0505] mb-1">{label}</div>
+      <div className="text-[9px] tracking-[0.4em] text-[var(--color-ink)] mb-1">{label}</div>
       {sub && (
-        <div className="text-[11px] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
+        <div className="text-[11px] text-[var(--color-on-paper-muted)]/50" style={{ fontFamily: 'var(--font-geist)' }}>
           {sub}
         </div>
       )}
@@ -194,15 +196,15 @@ function TextStat({ value, label, sub, delay = 0 }: {
     >
       <div className="h-[clamp(2.4rem,5vw,4rem)] flex items-center justify-center mb-2">
         <span
-          className="text-[clamp(2.4rem,5vw,4rem)] font-medium text-[#731515] leading-none whitespace-nowrap"
+          className="text-[clamp(2.4rem,5vw,4rem)] font-medium text-[var(--color-accent)] leading-none whitespace-nowrap"
           style={{ fontFamily: 'var(--font-syne)' }}
         >
           {value}
         </span>
       </div>
-      <div className="text-[9px] tracking-[0.4em] text-[#1a0505] mb-1">{label}</div>
+      <div className="text-[9px] tracking-[0.4em] text-[var(--color-ink)] mb-1">{label}</div>
       {sub && (
-        <div className="text-[11px] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
+        <div className="text-[11px] text-[var(--color-on-paper-muted)]/50" style={{ fontFamily: 'var(--font-geist)' }}>
           {sub}
         </div>
       )}
@@ -221,39 +223,25 @@ export default function WineMapPage() {
 
   return (
     <>
-      <Navbar />
-      <main className="min-h-screen pt-16">
+      <SiteNav />
+      <main className="ds bg-paper text-on-paper">
 
-        {/* ── HERO IMAGE ── */}
-        <div className="relative w-full h-[220px] sm:h-[280px] md:h-[350px]">
-          <Image
-            src="/castello.jpg"
-            alt="Wine Map — Vivo Wine Club"
-            fill
-            className="object-cover"
-            priority
-            sizes="100vw"
-          />
-          <div className="absolute inset-0 bg-[#731515]/60" />
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6">
-            <div className="text-[10px] tracking-[0.5em] text-white/70 mb-4">EXPLORE</div>
-            <h1
-              className="text-[clamp(2rem,5vw,4rem)] font-light text-white leading-tight"
-              style={{ fontFamily: 'var(--font-syne)' }}
-            >
-              Wine Visits
-            </h1>
-            <p
-              className="mt-4 text-sm md:text-base text-white/75 font-light italic max-w-lg leading-relaxed"
-              style={{ fontFamily: 'var(--font-nunito)' }}
-            >
-              Every pin tells a story. Explore the regions we&apos;ve visited and the estates that left a mark.
-            </p>
-          </div>
-          <div className="absolute top-6 left-6 md:left-10 z-10">
-            <BackButton className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] text-white/70 hover:text-white transition-colors duration-300" />
-          </div>
-        </div>
+        <Section bleed width="full" tight className="pt-band">
+          <Chapter as="h1" lines={['Wine', 'Map']} accent={[1, 0]} />
+        </Section>
+
+        <Section className="pt-0 pb-0">
+          <Link
+            href="/events#estates"
+            className="ds-link group inline-flex min-h-[48px] items-center gap-2 text-body no-underline hover:text-accent"
+          >
+            <ArrowLeft size={16} strokeWidth={1.75} className="transition-transform duration-300 group-hover:-translate-x-0.5" />
+            Club
+          </Link>
+          <p className="mt-6 max-w-[62ch] text-lead text-on-paper-muted">
+            Ogni segnaposto è una visita che abbiamo fatto davvero. Scegli una regione e guarda le cantine che ci hanno lasciato qualcosa.
+          </p>
+        </Section>
 
         {/* ── INTERACTIVE MAP ── */}
         <section className="relative overflow-hidden pb-24">
@@ -266,7 +254,7 @@ export default function WineMapPage() {
               whileInView={{ scaleX: 1 }}
               viewport={{ once: true }}
               transition={{ duration: d(0.9), ease: [0.16, 1, 0.3, 1] }}
-              className="origin-left w-full h-px bg-gradient-to-r from-[#731515]/30 via-[#731515]/10 to-transparent mb-14"
+              className="origin-left w-full h-px bg-gradient-to-r from-[var(--color-accent)]/30 via-[var(--color-accent)]/10 to-transparent mb-14"
             />
           </div>
 
@@ -288,7 +276,7 @@ export default function WineMapPage() {
                     selected={selected}
                   />
                 </div>
-                <p className="text-center text-[10px] tracking-[0.3em] text-[#7a4a4a]/50 mt-3 px-6">
+                <p className="text-center text-[10px] tracking-[0.3em] text-[var(--color-on-paper-muted)]/50 mt-3 px-6">
                   CLICK A MARKER TO EXPLORE THE REGION
                 </p>
               </motion.div>
@@ -307,43 +295,43 @@ export default function WineMapPage() {
                     >
                       <button
                         onClick={handleDeselect}
-                        className="absolute top-5 right-5 text-[#7a4a4a]/40 hover:text-[#731515] transition-colors"
+                        className="absolute top-5 right-5 text-[var(--color-on-paper-muted)]/40 hover:text-[var(--color-accent)] transition-colors"
                         aria-label="Close"
                       >
                         <X size={16} />
                       </button>
 
-                      <div className="text-[9px] tracking-[0.4em] text-[#731515] mb-2">
+                      <div className="text-[9px] tracking-[0.4em] text-[var(--color-accent)] mb-2">
                         {selected.country.toUpperCase()}
                       </div>
                       <h3
-                        className="text-2xl font-medium text-[#1a0505] mb-3"
+                        className="text-2xl font-medium text-[var(--color-ink)] mb-3"
                         style={{ fontFamily: 'var(--font-syne)' }}
                       >
                         {selected.name}
                       </h3>
-                      <div className="flex items-center gap-1.5 text-[#7a4a4a] text-xs mb-6">
-                        <MapPin size={11} className="text-[#731515] shrink-0" />
+                      <div className="flex items-center gap-1.5 text-[var(--color-on-paper-muted)] text-xs mb-6">
+                        <MapPin size={11} className="text-[var(--color-accent)] shrink-0" />
                         <span>{selected.name}, {selected.country}</span>
                       </div>
 
-                      <div className="w-10 h-px bg-[#731515]/25 mb-6" />
+                      <div className="w-10 h-px bg-[var(--color-accent)]/25 mb-6" />
 
                       <p
-                        className="text-[#7a4a4a] text-sm leading-relaxed mb-6"
-                        style={{ fontFamily: 'var(--font-nunito)' }}
+                        className="text-[var(--color-on-paper-muted)] text-sm leading-relaxed mb-6"
+                        style={{ fontFamily: 'var(--font-geist)' }}
                       >
                         {selected.shortDesc}
                       </p>
 
                       <div className="mb-7">
-                        <div className="text-[9px] tracking-[0.4em] text-[#731515] mb-2">KEY GRAPES</div>
+                        <div className="text-[9px] tracking-[0.4em] text-[var(--color-accent)] mb-2">KEY GRAPES</div>
                         <div className="flex flex-wrap gap-2">
                           {selected.grapes.map((g) => (
                             <span
                               key={g}
-                              className="text-[10px] tracking-[0.15em] px-3 py-1 border border-[#731515]/20 text-[#7a4a4a] rounded-full"
-                              style={{ fontFamily: 'var(--font-nunito)' }}
+                              className="text-[10px] tracking-[0.15em] px-3 py-1 border border-[var(--color-accent)]/20 text-[var(--color-on-paper-muted)] rounded-full"
+                              style={{ fontFamily: 'var(--font-geist)' }}
                             >
                               {g}
                             </span>
@@ -353,7 +341,7 @@ export default function WineMapPage() {
 
                       <Link
                         href={`/wine-regions/${selected.slug}`}
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-[#731515] text-white text-[10px] tracking-[0.3em] hover:bg-[#aa4848] transition-colors duration-300 group"
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--color-accent)] text-white text-[10px] tracking-[0.3em] hover:bg-[#aa4848] transition-colors duration-300 group"
                       >
                         DISCOVER MORE
                         <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform duration-300" />
@@ -370,10 +358,10 @@ export default function WineMapPage() {
                     >
                       {/* Panel header */}
                       <div className="mb-6">
-                        <div className="text-[9px] tracking-[0.5em] text-[#731515] mb-2">WINE MAP</div>
+                        <div className="text-[9px] tracking-[0.5em] text-[var(--color-accent)] mb-2">WINE MAP</div>
                         <p
-                          className="text-xs text-[#7a4a4a]/70 leading-relaxed"
-                          style={{ fontFamily: 'var(--font-nunito)' }}
+                          className="text-xs text-[var(--color-on-paper-muted)]/70 leading-relaxed"
+                          style={{ fontFamily: 'var(--font-geist)' }}
                         >
                           Select a marker or a region below.
                         </p>
@@ -395,12 +383,12 @@ export default function WineMapPage() {
                               <div className="flex items-center gap-2.5 mb-3">
                                 {Flag && <Flag />}
                                 <span
-                                  className="text-[9px] tracking-[0.4em] text-[#7a4a4a]/60 uppercase"
-                                  style={{ fontFamily: 'var(--font-nunito)' }}
+                                  className="text-[9px] tracking-[0.4em] text-[var(--color-on-paper-muted)]/60 uppercase"
+                                  style={{ fontFamily: 'var(--font-geist)' }}
                                 >
                                   {meta?.label ?? country}
                                 </span>
-                                <div className="flex-1 h-px bg-[#e8d5d5]" />
+                                <div className="flex-1 h-px bg-[var(--color-rule-paper)]" />
                               </div>
 
                               {/* Region rows */}
@@ -409,23 +397,23 @@ export default function WineMapPage() {
                                   <button
                                     key={r.id}
                                     onClick={() => handleSelect(r)}
-                                    className={`group relative text-left flex items-center justify-between gap-3 py-3 px-3 -mx-3 transition-all duration-200 hover:bg-[#731515]/5 ${
+                                    className={`group relative text-left flex items-center justify-between gap-3 py-3 px-3 -mx-3 transition-all duration-200 hover:bg-[var(--color-accent)]/5 ${
                                       i < regions.length - 1 ? 'border-b border-[#f0e4e4]' : ''
                                     }`}
                                   >
                                     {/* Left accent line on hover */}
-                                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-0 bg-[#731515] group-hover:h-5 transition-all duration-200 rounded-full" />
+                                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-0 bg-[var(--color-accent)] group-hover:h-5 transition-all duration-200 rounded-full" />
 
                                     <div className="min-w-0">
                                       <div
-                                        className="text-sm font-medium text-[#1a0505] group-hover:text-[#731515] transition-colors duration-200 leading-snug"
+                                        className="text-sm font-medium text-[var(--color-ink)] group-hover:text-[var(--color-accent)] transition-colors duration-200 leading-snug"
                                         style={{ fontFamily: 'var(--font-syne)' }}
                                       >
                                         {r.name}
                                       </div>
                                       <div
-                                        className="text-[10px] text-[#7a4a4a]/50 mt-0.5 truncate"
-                                        style={{ fontFamily: 'var(--font-nunito)' }}
+                                        className="text-[10px] text-[var(--color-on-paper-muted)]/50 mt-0.5 truncate"
+                                        style={{ fontFamily: 'var(--font-geist)' }}
                                       >
                                         {r.grapes[0]}
                                       </div>
@@ -433,7 +421,7 @@ export default function WineMapPage() {
 
                                     <ArrowRight
                                       size={13}
-                                      className="shrink-0 text-[#731515]/20 group-hover:text-[#731515] group-hover:translate-x-0.5 transition-all duration-200"
+                                      className="shrink-0 text-[var(--color-accent)]/20 group-hover:text-[var(--color-accent)] group-hover:translate-x-0.5 transition-all duration-200"
                                     />
                                   </button>
                                 ))}
@@ -441,7 +429,7 @@ export default function WineMapPage() {
 
                               {/* Separator between country groups */}
                               {groupIdx < Object.keys(WINE_REGIONS.reduce((a, r) => ({ ...a, [r.country]: true }), {})).length - 1 && (
-                                <div className="mt-2 h-px bg-gradient-to-r from-[#731515]/15 via-[#731515]/5 to-transparent" />
+                                <div className="mt-2 h-px bg-gradient-to-r from-[var(--color-accent)]/15 via-[var(--color-accent)]/5 to-transparent" />
                               )}
                             </div>
                           );
@@ -465,7 +453,7 @@ export default function WineMapPage() {
               whileInView={{ scaleX: 1 }}
               viewport={{ once: true }}
               transition={{ duration: d(0.9), ease: [0.16, 1, 0.3, 1] }}
-              className="origin-left w-full h-px bg-gradient-to-r from-[#731515]/30 via-[#731515]/10 to-transparent mb-14"
+              className="origin-left w-full h-px bg-gradient-to-r from-[var(--color-accent)]/30 via-[var(--color-accent)]/10 to-transparent mb-14"
             />
 
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-12 lg:gap-20 items-start">
@@ -477,16 +465,16 @@ export default function WineMapPage() {
                 viewport={{ once: true }}
                 transition={{ duration: d(0.7) }}
               >
-                <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-3">OUR FINEST VISITS</div>
+                <div className="text-[10px] tracking-[0.5em] text-[var(--color-accent)] mb-3">OUR FINEST VISITS</div>
                 <h2
-                  className="text-[clamp(2rem,5vw,3.5rem)] font-light text-[#1a0505] leading-tight"
+                  className="text-[clamp(2rem,5vw,3.5rem)] font-light text-[var(--color-ink)] leading-tight"
                   style={{ fontFamily: 'var(--font-syne)' }}
                 >
                   Top<br />Estates
                 </h2>
                 <p
-                  className="mt-5 text-sm text-[#7a4a4a] font-light leading-relaxed max-w-xs"
-                  style={{ fontFamily: 'var(--font-nunito)' }}
+                  className="mt-5 text-sm text-[var(--color-on-paper-muted)] font-light leading-relaxed max-w-xs"
+                  style={{ fontFamily: 'var(--font-geist)' }}
                 >
                   The five estates that defined our journey so far — ranked by the depth of the impression they left.
                 </p>
@@ -498,7 +486,7 @@ export default function WineMapPage() {
                   <div key={estate.slug}>
                     <RankRow estate={estate} index={i} reducedMotion={reducedMotion} />
                     {i < TOP_ESTATES.length - 1 && (
-                      <div className="h-px bg-[#731515]/8" />
+                      <div className="h-px bg-[var(--color-accent)]/8" />
                     )}
                   </div>
                 ))}
@@ -519,10 +507,10 @@ export default function WineMapPage() {
               whileInView={{ scaleX: 1 }}
               viewport={{ once: true }}
               transition={{ duration: d(0.9), ease: [0.16, 1, 0.3, 1] }}
-              className="origin-left w-full h-px bg-gradient-to-r from-[#731515]/30 via-[#731515]/10 to-transparent mb-10"
+              className="origin-left w-full h-px bg-gradient-to-r from-[var(--color-accent)]/30 via-[var(--color-accent)]/10 to-transparent mb-10"
             />
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#e8d5d5]">
+            <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[var(--color-rule-paper)]">
               <CounterStat to={10} suffix="+" label="REGIONS VISITED" sub="Across Europe" delay={0} />
               <CounterStat to={80} suffix="+" label="ESTATES VISITED"  sub="And counting"  delay={0.1} />
               <TextStat    value="FR · IT · PT" label="COUNTRIES"      sub="France, Italy and Portugal" delay={0.2} />
@@ -532,7 +520,7 @@ export default function WineMapPage() {
         </section>
 
       </main>
-      <Footer />
+      <CartDrawer />
     </>
   );
 }

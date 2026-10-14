@@ -1,55 +1,155 @@
-import dynamic from 'next/dynamic';
-import Navbar from '@/components/Navbar';
-import HeroSection from '@/components/HeroSection';
+import { getTranslations } from 'next-intl/server';
+
+import { SLOGAN_LINES } from '@/lib/brand';
+import { ButtonLink } from '@/components/ui/Button';
+import { Chapter, Statement } from '@/components/ui/Chapter';
+import { DoorCard } from '@/components/ui/DoorCard';
+import { Marquee } from '@/components/ui/Marquee';
+import { Section } from '@/components/ui/Section';
+import { VideoCard } from '@/components/ui/VideoCard';
+import { SiteFooter } from '@/components/ui/SiteFooter';
+import { SiteNav } from '@/components/ui/SiteNav';
 import CartDrawer from '@/components/CartDrawer';
 
-// Skeleton placeholder — matches section height to avoid layout shift
-function SectionSkeleton({ height = 'h-[500px]' }: { height?: string }) {
-  return <div className={`w-full ${height} bg-transparent`} aria-hidden="true" />;
-}
+// Placeholder reels. Swap `src` for the finished vertical clips; the row
+// reads the same whatever lands here, as long as the clips are 9:16.
+const REELS = [
+  { src: '/videosito-corto.mp4', poster: '/vigna.jpg' },
+  { src: '/videosito-corto.mp4', poster: '/vigna.jpg' },
+  { src: '/videosito-corto.mp4', poster: '/vigna.jpg' },
+  { src: '/videosito-corto.mp4', poster: '/vigna.jpg' },
+  { src: '/videosito-corto.mp4', poster: '/vigna.jpg' },
+  { src: '/videosito-corto.mp4', poster: '/vigna.jpg' },
+];
 
-// Every section below the fold is lazy-loaded in its own JS chunk.
-// This keeps the initial bundle small and lets the hero paint immediately.
-const MembershipSection = dynamic(() => import('@/components/MembershipSection'), {
-  loading: () => <SectionSkeleton height="h-[680px]" />,
-});
-const StatsSection = dynamic(() => import('@/components/StatsSection'), {
-  loading: () => <SectionSkeleton height="h-[220px]" />,
-});
-const VisionMissionSection = dynamic(() => import('@/components/VisionMissionSection'), {
-  loading: () => <SectionSkeleton height="h-[260px]" />,
-});
-const ExperiencesSection = dynamic(() => import('@/components/ExperiencesSection'), {
-  loading: () => <SectionSkeleton height="h-[680px]" />,
-});
-const EventsSection = dynamic(() => import('@/components/EventsSection'), {
-  loading: () => <SectionSkeleton height="h-[600px]" />,
-});
-const LinkedInSection = dynamic(() => import('@/components/LinkedInSection'), {
-  loading: () => <SectionSkeleton height="h-[500px]" />,
-});
-const PartnersSection = dynamic(() => import('@/components/PartnersSection'), {
-  loading: () => <SectionSkeleton height="h-[240px]" />,
-});
-const Footer = dynamic(() => import('@/components/Footer'), {
-  loading: () => <SectionSkeleton height="h-[400px]" />,
-});
+export default async function Home() {
+  const t = await getTranslations('site');
 
-export default function Home() {
   return (
     <>
-      <Navbar />
-      <main>
-        <HeroSection />
-        <StatsSection />
-        <VisionMissionSection />
-        <EventsSection />
-        <ExperiencesSection />
-        <LinkedInSection />
-        <MembershipSection />
-        <PartnersSection />
+      <SiteNav />
+
+      <main className="ds bg-paper text-on-paper">
+        {/* ── Hero ──────────────────────────────────────────────────
+            The headline, the promise and both doors sit above the fold;
+            the film is the second beat, not the backdrop. */}
+        <Section width="wide" className="pb-0">
+          <Chapter
+            as="h1"
+            size="statement"
+            align="left"
+            lines={SLOGAN_LINES as unknown as [string, string]}
+          />
+
+          <div className="mt-10 flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
+            <p className="max-w-[46ch] text-lead text-on-paper-muted">{t('hero.lead')}</p>
+            <div className="flex flex-wrap gap-3">
+              <ButtonLink href="/membership" size="lg">
+                {t('hero.ctaPrimary')}
+              </ButtonLink>
+              <ButtonLink href="/brands" variant="outline" size="lg">
+                {t('hero.ctaSecondary')}
+              </ButtonLink>
+            </div>
+          </div>
+        </Section>
+
+        {/* Intro film, then the reels drifting past underneath it. */}
+        <Section width="wide" tight className="pt-10">
+          <VideoCard
+            priority
+            aspect="cinema"
+            rounded="rounded-3xl"
+            source={{ src: '/videosito-corto.mp4', poster: '/vigna.jpg' }}
+          />
+        </Section>
+
+        <Section bleed width="full" tight className="pt-0">
+          <Marquee speed={56}>
+            {REELS.map((r, i) => (
+              <VideoCard key={i} source={r} className="w-[172px] md:w-[216px]" />
+            ))}
+          </Marquee>
+        </Section>
+
+        {/* ── Thesis ────────────────────────────────────────────────
+            The sentence the whole business rests on, before any offer. */}
+        <Section ground="paper-soft">
+          <Statement className="max-w-[18ch]">{t('statement.line')}</Statement>
+        </Section>
+
+        {/* ── Three doors ───────────────────────────────────────── */}
+        <Section>
+          <div className="grid gap-5 md:grid-cols-3">
+            <DoorCard
+              index={0}
+              href="/events"
+              title={t('doors.eventsTitle')}
+              body={t('doors.eventsBody')}
+              cta={t('doors.eventsCta')}
+            />
+            <DoorCard
+              index={1}
+              ground="ink"
+              href="/talents"
+              title={t('doors.creatorsTitle')}
+              body={t('doors.creatorsBody')}
+              cta={t('doors.creatorsCta')}
+            />
+            <DoorCard
+              index={2}
+              ground="accent"
+              href="/brands"
+              title={t('doors.brandsTitle')}
+              body={t('doors.brandsBody')}
+              cta={t('doors.brandsCta')}
+            />
+          </div>
+        </Section>
+
+        {/* ── Vivo Studio ───────────────────────────────────────── */}
+        <Section bleed width="full" tight>
+          <Chapter lines={['Vivo', 'Studio']} accent={[1, 3]} />
+        </Section>
+
+        <Section className="pt-0">
+          <Statement align="left" className="max-w-[22ch]">
+            {t('studio.statement')}
+          </Statement>
+          <div className="mt-10 max-w-[62ch] space-y-5 text-lead text-on-paper-muted">
+            <p>{t('studio.body1')}</p>
+            <p>{t('studio.body2')}</p>
+          </div>
+          <ButtonLink href="/brands" size="lg" className="mt-10">
+            {t('studio.cta')}
+          </ButtonLink>
+        </Section>
+
+        {/* ── Vivo Club ─────────────────────────────────────────── */}
+        <Section ground="ink" bleed width="full" tight>
+          <Chapter lines={['Vivo', 'Club']} accent={[1, 1]} />
+        </Section>
+
+        <Section ground="ink" className="pt-0">
+          <div className="mx-auto max-w-[62ch] text-center">
+            <Statement>{t('club.statement')}</Statement>
+            <div className="mt-10 space-y-5 text-lead text-on-ink-muted">
+              <p>{t('club.body1')}</p>
+              <p>{t('club.body2')}</p>
+            </div>
+            <div className="mt-10 flex flex-wrap justify-center gap-3">
+              <ButtonLink href="/events" variant="paper" size="lg">
+                {t('club.ctaEvents')}
+              </ButtonLink>
+              <ButtonLink href="/membership" variant="outline" size="lg" className="text-on-ink">
+                {t('club.ctaJoin')}
+              </ButtonLink>
+            </div>
+          </div>
+        </Section>
       </main>
-      <Footer />
+
+      <SiteFooter />
       <CartDrawer />
     </>
   );

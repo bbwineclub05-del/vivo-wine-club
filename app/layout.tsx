@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Syne, Nunito } from "next/font/google";
+import { Syne, Nunito, Geist } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/contexts/CartContext";
 import { AuthProvider } from "@/lib/auth";
@@ -27,6 +27,14 @@ const nunito = Nunito({
   variable: "--font-nunito",
   display: "swap",
   weight: ["300", "400", "500", "600", "700"],
+});
+
+// Text and UI face for the 2026 redesign. Replaces Nunito page by page;
+// Nunito stays loaded until the last legacy surface is converted.
+const geist = Geist({
+  subsets: ["latin"],
+  variable: "--font-geist",
+  display: "swap",
 });
 
 export const viewport: Viewport = {
@@ -82,7 +90,7 @@ export default async function RootLayout({
     <html
       lang={locale}
       translate="no"
-      className={`${syne.variable} ${nunito.variable} notranslate`}
+      className={`${syne.variable} ${nunito.variable} ${geist.variable} notranslate`}
     >
       <head>
         <meta name="google" content="notranslate" />

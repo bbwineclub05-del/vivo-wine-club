@@ -54,45 +54,45 @@ function AssistantMarkdown({ content }: { content: string }) {
     <ReactMarkdown
       components={{
         h1: ({ children }) => (
-          <p className="text-[13px] font-semibold text-[#1a0505] mt-2 mb-1 leading-snug first:mt-0" style={{ fontFamily: 'var(--font-syne)' }}>{children}</p>
+          <p className="text-[13px] font-semibold text-[var(--color-ink)] mt-2 mb-1 leading-snug first:mt-0" style={{ fontFamily: 'var(--font-syne)' }}>{children}</p>
         ),
         h2: ({ children }) => (
-          <p className="text-[12px] font-semibold text-[#1a0505] mt-2 mb-0.5 leading-snug first:mt-0" style={{ fontFamily: 'var(--font-syne)' }}>{children}</p>
+          <p className="text-[12px] font-semibold text-[var(--color-ink)] mt-2 mb-0.5 leading-snug first:mt-0" style={{ fontFamily: 'var(--font-syne)' }}>{children}</p>
         ),
         h3: ({ children }) => (
-          <p className="text-[11px] font-semibold text-[#3d0808] mt-1.5 mb-0.5 leading-snug first:mt-0">{children}</p>
+          <p className="text-[11px] font-semibold text-[var(--color-ink)] mt-1.5 mb-0.5 leading-snug first:mt-0">{children}</p>
         ),
         p: ({ children }) => (
-          <p className="text-[13px] leading-relaxed text-[#1a0505] mb-1.5 last:mb-0">{children}</p>
+          <p className="text-[13px] leading-relaxed text-[var(--color-ink)] mb-1.5 last:mb-0">{children}</p>
         ),
-        strong: ({ children }) => <strong className="font-semibold text-[#1a0505]">{children}</strong>,
-        em: ({ children }) => <em className="italic text-[#5a2020]">{children}</em>,
+        strong: ({ children }) => <strong className="font-semibold text-[var(--color-ink)]">{children}</strong>,
+        em: ({ children }) => <em className="italic text-[var(--color-on-paper-muted)]">{children}</em>,
         ul: ({ children }) => <ul className="my-1 space-y-0.5 pl-0.5">{children}</ul>,
         ol: ({ children }) => <ol className="my-1 space-y-0.5 pl-1 list-decimal list-inside">{children}</ol>,
         li: ({ children }) => (
-          <li className="flex gap-1.5 items-start text-[13px] leading-relaxed text-[#1a0505]">
-            <span className="mt-[5px] text-[#c84040] shrink-0 text-[7px]">●</span>
+          <li className="flex gap-1.5 items-start text-[13px] leading-relaxed text-[var(--color-ink)]">
+            <span className="mt-[5px] text-[var(--color-accent-soft)] shrink-0 text-[7px]">●</span>
             <span>{children}</span>
           </li>
         ),
-        hr: () => <div className="my-1.5 h-px bg-[#eddada]" />,
+        hr: () => <div className="my-1.5 h-px bg-[var(--color-rule-paper)]" />,
         blockquote: ({ children }) => (
-          <div className="border-l-2 border-[#731515]/30 pl-2.5 my-1.5 text-[#5a2020] italic text-[13px]">{children}</div>
+          <div className="border-l-2 border-[var(--color-accent)]/30 pl-2.5 my-1.5 text-[var(--color-on-paper-muted)] italic text-[13px]">{children}</div>
         ),
         code: ({ children }) => (
-          <code className="bg-[#fdf6f6] border border-[#eddada] text-[#731515] text-[10px] px-1 py-0.5 rounded">{children}</code>
+          <code className="bg-[var(--color-paper-soft)] border border-[var(--color-rule-paper)] text-[var(--color-accent)] text-[10px] px-1 py-0.5 rounded">{children}</code>
         ),
         table: ({ children }) => (
           <div className="overflow-x-auto my-1.5">
             <table className="text-[11px] border-collapse w-full">{children}</table>
           </div>
         ),
-        thead: ({ children }) => <thead className="bg-[#fdf6f6]">{children}</thead>,
+        thead: ({ children }) => <thead className="bg-[var(--color-paper-soft)]">{children}</thead>,
         th: ({ children }) => (
-          <th className="border border-[#eddada] px-2 py-1 text-left font-semibold text-[#1a0505]">{children}</th>
+          <th className="border border-[var(--color-rule-paper)] px-2 py-1 text-left font-semibold text-[var(--color-ink)]">{children}</th>
         ),
         td: ({ children }) => (
-          <td className="border border-[#eddada] px-2 py-1 text-[#3a1a1a]">{children}</td>
+          <td className="border border-[var(--color-rule-paper)] px-2 py-1 text-[var(--color-on-paper-muted)]">{children}</td>
         ),
       }}
     >
@@ -110,7 +110,7 @@ function TypingDots() {
       {[0, 1, 2].map(i => (
         <motion.span
           key={i}
-          className="w-1.5 h-1.5 rounded-full bg-[#7a4a4a]/40"
+          className="w-1.5 h-1.5 rounded-full bg-[var(--color-on-paper-muted)]/40"
           animate={{ opacity: [0.3, 1, 0.3], y: [0, -3, 0] }}
           transition={{ duration: 1.1, repeat: Infinity, delay: i * 0.18, ease: 'easeInOut' }}
         />
@@ -132,17 +132,17 @@ function Bubble({ msg }: { msg: Message }) {
       className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-2.5`}
     >
       {!isUser && (
-        <div className="w-6 h-6 rounded-full bg-[#5b1a14] flex items-center justify-center shrink-0 mr-2 mt-0.5 shadow-sm">
+        <div className="w-6 h-6 rounded-full bg-[var(--color-accent)] flex items-center justify-center shrink-0 mr-2 mt-0.5 shadow-sm">
           <Wine size={11} className="text-white" />
         </div>
       )}
       <div
         className={`max-w-[82%] px-3 py-2 rounded-xl shadow-sm text-[13px] leading-relaxed ${
           isUser
-            ? 'bg-[#5b1a14] text-white rounded-tr-sm'
-            : 'bg-white border border-[#eddada] text-[#1a0505] rounded-tl-sm'
+            ? 'bg-[var(--color-accent)] text-white rounded-tr-md'
+            : 'bg-white border border-[var(--color-rule-paper)] text-[var(--color-ink)] rounded-tl-md'
         }`}
-        style={{ fontFamily: 'var(--font-nunito)' }}
+        style={{ fontFamily: 'var(--font-geist)' }}
       >
         {isUser ? (
           <>
@@ -310,7 +310,7 @@ function WidgetInner() {
             transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
             className={`
               fixed z-[9998] shadow-2xl rounded-2xl overflow-hidden flex flex-col
-              bg-[#fdf9f9] border border-[#eddada]
+              bg-[var(--color-paper)] border border-[var(--color-rule-paper)] ds
               bottom-[76px] left-3 right-3
               w-auto max-w-[380px]
               h-[min(440px,calc(100dvh-140px))]
@@ -319,7 +319,7 @@ function WidgetInner() {
             style={{ transformOrigin: 'bottom left' }}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 bg-[#5b1a14] shrink-0">
+            <div className="flex items-center justify-between px-4 py-3 bg-[var(--color-accent)] shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="w-7 h-7 rounded-full bg-white/15 flex items-center justify-center">
                   <Wine size={14} className="text-white" />
@@ -328,14 +328,14 @@ function WidgetInner() {
                   <p className="text-white text-[13px] font-medium leading-none" style={{ fontFamily: 'var(--font-syne)' }}>
                     Wine Assistant
                   </p>
-                  <p className="text-white/55 text-[10px] mt-0.5" style={{ fontFamily: 'var(--font-nunito)' }}>
+                  <p className="text-white/55 text-[10px] mt-0.5" style={{ fontFamily: 'var(--font-geist)' }}>
                     Vivo Wine Club · Sommelier AI
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setOpen(false)}
-                className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+                className="grid h-11 w-11 place-items-center rounded-full bg-white/10 transition-colors hover:bg-white/20"
               >
                 <X size={14} className="text-white" />
               </button>
@@ -354,10 +354,10 @@ function WidgetInner() {
                   exit={{ opacity: 0 }}
                   className="flex justify-start mb-2.5"
                 >
-                  <div className="w-6 h-6 rounded-full bg-[#5b1a14] flex items-center justify-center shrink-0 mr-2 mt-0.5 shadow-sm">
+                  <div className="w-6 h-6 rounded-full bg-[var(--color-accent)] flex items-center justify-center shrink-0 mr-2 mt-0.5 shadow-sm">
                     <Wine size={11} className="text-white" />
                   </div>
-                  <div className="bg-white border border-[#eddada] rounded-xl rounded-tl-sm px-3 py-2 shadow-sm">
+                  <div className="bg-white border border-[var(--color-rule-paper)] rounded-xl rounded-tl-sm px-3 py-2 shadow-sm">
                     <TypingDots />
                   </div>
                 </motion.div>
@@ -373,8 +373,8 @@ function WidgetInner() {
                   <button
                     key={chip}
                     onClick={() => sendMessage(chip)}
-                    className="px-2.5 py-1 bg-white border border-[#eddada] text-[#5b1a14] text-[10px] tracking-wide rounded-full hover:bg-[#fdf6f6] hover:border-[#731515]/30 transition-colors"
-                    style={{ fontFamily: 'var(--font-nunito)' }}
+                    className="min-h-[36px] rounded-full border border-[var(--color-rule-paper)] bg-white px-3.5 text-[11px] text-[var(--color-accent)] transition-colors hover:border-[var(--color-accent)]/40 hover:bg-[var(--color-paper-soft)]"
+                    style={{ fontFamily: 'var(--font-geist)' }}
                   >
                     {chip}
                   </button>
@@ -385,25 +385,25 @@ function WidgetInner() {
             {/* Input */}
             <div className="px-3 pb-3 shrink-0">
               {imageError && (
-                <p className="text-[10px] text-[#731515] mb-1.5" style={{ fontFamily: 'var(--font-nunito)' }}>{imageError}</p>
+                <p className="text-[10px] text-[var(--color-accent)] mb-1.5" style={{ fontFamily: 'var(--font-geist)' }}>{imageError}</p>
               )}
               {pendingImage && (
-                <div className="flex items-center gap-2 mb-1.5 bg-[#fdf6f6] border border-[#eddada] rounded-lg px-2 py-1.5 w-fit">
+                <div className="flex items-center gap-2 mb-1.5 bg-[var(--color-paper-soft)] border border-[var(--color-rule-paper)] rounded-lg px-2 py-1.5 w-fit">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={pendingImage.dataUrl} alt="Anteprima" className="w-8 h-8 rounded-md object-cover" />
-                  <span className="text-[10px] text-[#7a4a4a]" style={{ fontFamily: 'var(--font-nunito)' }}>
+                  <span className="text-[10px] text-[var(--color-on-paper-muted)]" style={{ fontFamily: 'var(--font-geist)' }}>
                     {locale === 'it' ? 'Foto pronta' : locale === 'fr' ? 'Photo prête' : 'Photo ready'}
                   </span>
                   <button
                     onClick={() => setPendingImage(null)}
-                    className="w-5 h-5 rounded-full flex items-center justify-center text-[#7a4a4a]/50 hover:text-[#731515] hover:bg-white transition-colors"
+                    className="w-5 h-5 rounded-full flex items-center justify-center text-[var(--color-on-paper-muted)]/50 hover:text-[var(--color-accent)] hover:bg-white transition-colors"
                     aria-label="Remove photo"
                   >
                     <X size={10} />
                   </button>
                 </div>
               )}
-              <div className="flex items-center gap-2 bg-white border border-[#eddada] rounded-xl px-3 py-2 focus-within:border-[#5b1a14]/40 transition-colors">
+              <div className="flex items-center gap-2 bg-white border border-[var(--color-rule-paper)] rounded-2xl px-3 py-2 focus-within:border-[var(--color-accent)]/40 transition-colors">
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -416,7 +416,7 @@ function WidgetInner() {
                   onClick={() => fileInputRef.current?.click()}
                   disabled={loading}
                   title={locale === 'it' ? "Scatta o carica una foto dell'etichetta" : 'Attach a label photo'}
-                  className="shrink-0 w-7 h-7 rounded-lg text-[#5b1a14] flex items-center justify-center hover:bg-[#fdf0f0] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="shrink-0 grid h-11 w-11 place-items-center rounded-full text-[var(--color-accent)] hover:bg-[var(--color-paper-soft)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   <Camera size={13} />
                 </button>
@@ -430,13 +430,13 @@ function WidgetInner() {
                     : locale === 'fr' ? 'Posez votre question…'
                     : 'Ask me anything about wine…'
                   }
-                  className="flex-1 bg-transparent text-[#1a0505] placeholder:text-[#7a4a4a]/35 focus:outline-none min-w-0"
-                  style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
+                  className="flex-1 bg-transparent text-[var(--color-ink)] placeholder:text-[var(--color-on-paper-muted)]/35 focus:outline-none min-w-0"
+                  style={{ fontFamily: 'var(--font-geist)', fontSize: '16px' }}
                 />
                 <button
                   onClick={() => sendMessage(input)}
                   disabled={(!input.trim() && !pendingImage) || loading}
-                  className="w-7 h-7 rounded-lg bg-[#5b1a14] text-white flex items-center justify-center hover:bg-[#7a2020] disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+                  className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-lift)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   <Send size={12} />
                 </button>
@@ -448,26 +448,6 @@ function WidgetInner() {
 
       {/* ── Floating button ── */}
       <div className="fixed bottom-4 left-4 sm:bottom-6 sm:left-6 z-[9999] flex flex-col items-start gap-2">
-        {/* Hover label */}
-        <AnimatePresence>
-          {!open && (
-            <motion.div
-              initial={{ opacity: 0, x: -6 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -6 }}
-              transition={{ duration: 0.15 }}
-              className="
-                origin-left pointer-events-none
-                group-hover:opacity-100 opacity-0
-                bg-[#1a0505] text-white text-[10px] tracking-[0.25em] px-3 py-1.5 rounded-full
-                shadow-lg whitespace-nowrap
-              "
-            >
-              Ask the Sommelier
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         <div className="group relative">
           {/* Tooltip on hover */}
           {!open && (
@@ -475,7 +455,7 @@ function WidgetInner() {
               absolute bottom-full left-0 mb-2
               pointer-events-none
               opacity-0 group-hover:opacity-100 transition-opacity duration-200
-              bg-[#1a0505] text-white text-[10px] tracking-[0.2em] px-3 py-1.5 rounded-full
+              bg-[var(--color-ink)] text-white text-[10px] tracking-[0.2em] px-3 py-1.5 rounded-full
               shadow-lg whitespace-nowrap
             ">
               Ask the Sommelier
@@ -484,7 +464,7 @@ function WidgetInner() {
 
           {/* Pulse ring — plays 3 times then stops */}
           {!pulseDone && !open && (
-            <span className="absolute inset-0 rounded-full animate-ping bg-[#5b1a14] opacity-30" />
+            <span className="absolute inset-0 rounded-full animate-ping bg-[var(--color-accent)] opacity-30" />
           )}
 
           <button
@@ -493,11 +473,11 @@ function WidgetInner() {
             className={`
               relative w-12 h-12 sm:w-14 sm:h-14 rounded-full
               flex items-center justify-center
-              shadow-[0_4px_20px_rgba(91,26,20,0.45)]
+              shadow-[0_2px_6px_rgba(26,5,5,0.2),0_14px_36px_-12px_rgba(115,21,21,0.55)]
               transition-all duration-200
               ${open
-                ? 'bg-[#3d0808] scale-95'
-                : 'bg-[#5b1a14] hover:bg-[#7a2020] hover:scale-105 active:scale-95'
+                ? 'bg-[var(--color-ink)] scale-95'
+                : 'bg-[var(--color-accent)] hover:bg-[var(--color-accent-lift)] hover:scale-105 active:scale-95'
               }
             `}
           >
