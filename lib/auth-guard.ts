@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from './supabase-admin';
-import { isAdminEmail } from './admins';
+import { isAdminEmail, isFinanceUser } from './admins';
 
 interface AuthOk {
   ok: true;
@@ -72,6 +72,19 @@ export async function requireAdminOrStaff(request: Request): Promise<AuthOk | Au
   const result = await getAuthUser(request);
   if (!result.ok) return result;
   if (!result.isAdmin && !result.isStaff) {
+    return { ok: false, response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
+  }
+  return result;
+}
+
+/**
+ * Requires a Finance user (email in FINANCE_EMAILS) — the same whitelist that
+ * decides who sees the Finance section, independent of role.
+ */
+export async function requireFinanceUser(request: Request): Promise<AuthOk | AuthFail> {
+  const result = await getAuthUser(request);
+  if (!result.ok) return result;
+  if (!isFinanceUser(result.email)) {
     return { ok: false, response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
   }
   return result;
