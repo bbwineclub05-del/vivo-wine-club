@@ -50,7 +50,7 @@ type FormData = Omit<Transaction, 'id' | 'created_by' | 'created_at'>;
 /* ─────────────────────────────────────────────
    Team member type (mirrors /api/team/members)
 ───────────────────────────────────────────── */
-interface TeamMember { name: string; email: string; initials: string; }
+interface TeamMember { name: string; email: string; initials: string; accounts_hidden?: boolean; }
 
 /* ─────────────────────────────────────────────
    Revenue category groups (for grouped <select>)
@@ -609,7 +609,9 @@ function TxModal({
               style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
             >
               <option value="Club">Club (nessuna persona)</option>
-              {teamMembers.map(f => (
+              {/* Members hidden in Conti Member can't be picked for new movements;
+                  an existing assignment to one stays selectable when editing. */}
+              {teamMembers.filter(f => !f.accounts_hidden || f.name === initial?.assigned_to).map(f => (
                 <option key={f.email} value={f.name}>{f.name}</option>
               ))}
             </select>

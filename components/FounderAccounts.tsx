@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, Check, Upload, Paperclip,
-  RefreshCw, TrendingUp, TrendingDown, Wallet, Trash2, Pencil,
+  RefreshCw, TrendingUp, TrendingDown, Wallet, Trash2, Pencil, EyeOff, Eye,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useMobileOverlay, useOverlayBackClose } from '@/lib/useMobileOverlay';
@@ -12,7 +12,7 @@ import { useMobileOverlay, useOverlayBackClose } from '@/lib/useMobileOverlay';
 /* ─────────────────────────────────────────────
    Types for dynamic member list
 ───────────────────────────────────────────── */
-interface TeamMember { name: string; email: string; initials: string; }
+interface TeamMember { name: string; email: string; initials: string; accounts_hidden?: boolean; }
 
 const CATEGORIES = ['Evento', 'Membership', 'Marketing', 'Operativo', 'Merch', 'Altro'];
 
@@ -229,7 +229,8 @@ function MovModal({
               style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
             >
               <option value="">— Seleziona membro —</option>
-              {members.map(m => (
+              {/* Hidden members aren't offered, except the one already on this movement */}
+              {members.filter(m => !m.accounts_hidden || m.email === initial?.founder_email).map(m => (
                 <option key={m.email} value={m.email}>{m.name}</option>
               ))}
             </select>
@@ -389,6 +390,10 @@ export default function FounderAccounts() {
   const [recalculating, setRecalculating] = useState(false);
   const [recalcMsg,     setRecalcMsg]     = useState<string | null>(null);
   const [currentUserName, setCurrentUserName] = useState<string | null>(null);
+  const [showHidden,      setShowHidden]      = useState(false);
+  const [visConfirm,      setVisConfirm]      = useState<{ email: string; hide: boolean } | null>(null);
+  const [visBusy,         setVisBusy]         = useState(false);
+  const [visError,        setVisError]        = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -656,6 +661,35 @@ export default function FounderAccounts() {
   const totalFounderOwes = founderStats.filter(f => f.balance < 0).reduce((s, f) => s + Math.abs(f.balance), 0);
   const netBalance       = totalClubOwes - totalFounderOwes;
 
+  // Hidden members are filtered out of the cards only — totals above are
+  // computed on the full list so they keep matching the accounting.
+  const hiddenCount  = founderStats.filter(f => f.accounts_hidden).length;
+  const visibleStats = founderStats.filter(f => showHidden || !f.accounts_hidden);
+
+  /* ── Hide / restore a member card (shared via team_members.accounts_hidden) ── */
+  async function confirmVisibility() {
+    if (!visConfirm) return;
+    setVisBusy(true);
+    setVisError(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/team/members/visibility', {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token ?? ''}` },
+        body:    JSON.stringify({ email: visConfirm.email, hidden: visConfirm.hide }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error ?? 'Operazione non riuscita');
+      setMembers(prev => prev.map(m => m.email === visConfirm.email ? { ...m, accounts_hidden: visConfirm.hide } : m));
+      if (visConfirm.hide && !showHidden && filterEmail === visConfirm.email) setFilterEmail('');
+      setVisConfirm(null);
+    } catch (e) {
+      setVisError(e instanceof Error ? e.message : 'Errore');
+    } finally {
+      setVisBusy(false);
+    }
+  }
+
   const displayMovs = useMemo(() =>
     movements.filter(m => !filterEmail || m.founder_email === filterEmail),
   [movements, filterEmail]);
@@ -697,6 +731,18 @@ export default function FounderAccounts() {
             <span className="text-[11px] text-[#731515] bg-[#fdf0f0] border border-[#eddada] px-3 py-1.5 rounded-lg" style={{ fontFamily: 'var(--font-nunito)' }}>
               {recalcMsg}
             </span>
+          )}
+          {(hiddenCount > 0 || showHidden) && (
+            <button
+              onClick={() => setShowHidden(v => !v)}
+              aria-pressed={showHidden}
+              className={`inline-flex items-center gap-2 px-4 py-2 border text-[10px] tracking-[0.25em] rounded-lg transition-colors ${
+                showHidden ? 'border-[#731515]/40 bg-[#fdf0f0] text-[#731515]' : 'border-[#eddada] bg-white text-[#7a4a4a] hover:border-[#731515]/40'
+              }`}
+            >
+              {showHidden ? <Eye size={11} /> : <EyeOff size={11} />}
+              MOSTRA NASCOSTI ({hiddenCount})
+            </button>
           )}
           <button
             onClick={handleRecalculate}
@@ -756,41 +802,83 @@ export default function FounderAccounts() {
 
       {/* ── Member cards ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {founderStats.map(f => {
-          const owesClub = f.balance < 0;
-          const clubOwes = f.balance > 0;
-          const isActive = filterEmail === f.email;
+        {visibleStats.map(f => {
+          const owesClub   = f.balance < 0;
+          const clubOwes   = f.balance > 0;
+          const isActive   = filterEmail === f.email;
+          const hidden     = !!f.accounts_hidden;
+          const confirming = visConfirm?.email === f.email;
           return (
-            <button
+            <div
               key={f.email}
-              onClick={() => setFilterEmail(isActive ? '' : f.email)}
-              className={`bg-white border rounded-xl p-5 text-left transition-all duration-200 hover:shadow-md ${
-                isActive ? 'border-[#731515] shadow-md' : 'border-[#eddada]'
+              className={`bg-white border rounded-xl transition-all duration-200 hover:shadow-md flex flex-col ${
+                isActive ? 'border-[#731515] shadow-md' : hidden ? 'border-dashed border-[#d9c2c2]' : 'border-[#eddada]'
               }`}
             >
-              {/* Avatar + name */}
-              <div className="flex items-center gap-3 mb-4">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold text-white ${
-                  owesClub ? 'bg-orange-500' : clubOwes ? 'bg-blue-600' : 'bg-[#7a4a4a]/40'
-                }`} style={{ fontFamily: 'var(--font-syne)' }}>
-                  {f.initials}
-                </div>
-                <div>
-                  <div className="text-[13px] font-medium text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>{f.name}</div>
-                  <div className={`text-[9px] tracking-[0.2em] ${f.openCount > 0 ? 'text-[#731515]' : 'text-[#7a4a4a]/40'}`}>
-                    {f.openCount} {f.openCount === 1 ? 'operazione aperta' : 'operazioni aperte'}
+              <button
+                onClick={() => setFilterEmail(isActive ? '' : f.email)}
+                className={`p-5 pb-3 text-left flex-1 rounded-t-xl ${hidden ? 'opacity-55' : ''}`}
+              >
+                {/* Avatar + name */}
+                <div className="flex items-center gap-3 mb-4">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold text-white ${
+                    owesClub ? 'bg-orange-500' : clubOwes ? 'bg-blue-600' : 'bg-[#7a4a4a]/40'
+                  }`} style={{ fontFamily: 'var(--font-syne)' }}>
+                    {f.initials}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[13px] font-medium text-[#1a0505] truncate" style={{ fontFamily: 'var(--font-syne)' }}>{f.name}</div>
+                    <div className={`text-[9px] tracking-[0.2em] ${f.openCount > 0 ? 'text-[#731515]' : 'text-[#7a4a4a]/40'}`}>
+                      {f.openCount} {f.openCount === 1 ? 'operazione aperta' : 'operazioni aperte'}
+                    </div>
+                    {hidden && <div className="text-[8px] tracking-[0.3em] text-[#7a4a4a]/60 mt-0.5">NASCOSTO</div>}
                   </div>
                 </div>
-              </div>
 
-              {/* Balance */}
-              <div className={`text-xl font-light ${owesClub ? 'text-orange-600' : clubOwes ? 'text-blue-600' : 'text-[#7a4a4a]/40'}`} style={{ fontFamily: 'var(--font-syne)' }}>
-                {owesClub ? '−' : clubOwes ? '+' : ''}{fmtEur(f.balance)}
+                {/* Balance */}
+                <div className={`text-xl font-light ${owesClub ? 'text-orange-600' : clubOwes ? 'text-blue-600' : 'text-[#7a4a4a]/40'}`} style={{ fontFamily: 'var(--font-syne)' }}>
+                  {owesClub ? '−' : clubOwes ? '+' : ''}{fmtEur(f.balance)}
+                </div>
+                <div className={`text-[10px] mt-0.5 ${owesClub ? 'text-orange-500/70' : clubOwes ? 'text-blue-500/70' : 'text-[#7a4a4a]/40'}`} style={{ fontFamily: 'var(--font-nunito)' }}>
+                  {owesClub ? 'Membro deve al Club' : clubOwes ? 'Club deve al membro' : 'In pari'}
+                </div>
+              </button>
+
+              {/* Hide / restore — confirmed inline, never via confirm() */}
+              <div className="px-5 pb-4 pt-1" style={{ fontFamily: 'var(--font-nunito)' }}>
+                {confirming && visConfirm ? (
+                  <div className="border-t border-[#eddada] pt-3">
+                    <p className="text-[11px] text-[#1a0505] mb-2">
+                      {visConfirm.hide ? `Nascondere ${f.name} da Conti Member?` : `Ripristinare ${f.name} in Conti Member?`}
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={confirmVisibility}
+                        disabled={visBusy}
+                        className="px-3 py-1.5 bg-[#731515] text-white text-[9px] tracking-[0.25em] rounded-lg hover:bg-[#9b2323] disabled:opacity-50 transition-colors"
+                      >
+                        {visBusy ? '…' : 'SÌ'}
+                      </button>
+                      <button
+                        onClick={() => { setVisConfirm(null); setVisError(null); }}
+                        disabled={visBusy}
+                        className="px-3 py-1.5 border border-[#eddada] text-[#7a4a4a] text-[9px] tracking-[0.25em] rounded-lg hover:text-[#731515] disabled:opacity-50 transition-colors"
+                      >
+                        ANNULLA
+                      </button>
+                    </div>
+                    {visError && <p className="text-[10px] text-[#731515] mt-2">{visError}</p>}
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => { setVisConfirm({ email: f.email, hide: !hidden }); setVisError(null); }}
+                    className="inline-flex items-center gap-1.5 text-[9px] tracking-[0.25em] text-[#7a4a4a]/50 hover:text-[#731515] transition-colors"
+                  >
+                    {hidden ? <><Eye size={10} /> RIPRISTINA</> : <><EyeOff size={10} /> NASCONDI</>}
+                  </button>
+                )}
               </div>
-              <div className={`text-[10px] mt-0.5 ${owesClub ? 'text-orange-500/70' : clubOwes ? 'text-blue-500/70' : 'text-[#7a4a4a]/40'}`} style={{ fontFamily: 'var(--font-nunito)' }}>
-                {owesClub ? 'Membro deve al Club' : clubOwes ? 'Club deve al membro' : 'In pari'}
-              </div>
-            </button>
+            </div>
           );
         })}
       </div>
