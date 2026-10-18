@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import { useMobileOverlay } from '@/lib/useMobileOverlay';
+import { FilterPills, NewButton, PageHead } from '@/components/admin/ui';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -184,7 +185,7 @@ function ImageUploader({
 
   return (
     <div>
-      <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-2">IMMAGINI</label>
+      <label className="block text-[12px] font-medium tracking-[0.06em] text-[#731515] mb-2">IMMAGINI</label>
 
       {/* Existing images */}
       {images.length > 0 && (
@@ -210,7 +211,7 @@ function ImageUploader({
         type="button"
         onClick={() => fileRef.current?.click()}
         disabled={uploading}
-        className="flex items-center gap-2 text-[10px] tracking-[0.25em] bg-white border border-dashed border-[#eddada] text-[#7a4a4a]/60 hover:border-[#731515]/40 hover:text-[#731515]/60 px-4 py-2.5 rounded-lg transition-colors disabled:opacity-50 w-full justify-center"
+        className="flex items-center gap-2 text-[13px] font-medium tracking-normal bg-white border border-dashed border-[#eddada] text-[#7a4a4a]/60 hover:border-[#731515]/40 hover:text-[#731515]/60 px-4 py-2.5 rounded-lg transition-colors disabled:opacity-50 w-full justify-center"
       >
         {uploading ? <Loader2 size={13} className="animate-spin" /> : <ImagePlus size={13} />}
         {uploading ? 'UPLOAD IN CORSO…' : 'AGGIUNGI IMMAGINI'}
@@ -220,7 +221,7 @@ function ImageUploader({
         onChange={e => { setUploadErr(''); handleFiles(e.target.files); }}
       />
       {uploadErr && (
-        <p className="text-[10px] text-[#731515] mt-1" style={{ fontFamily: 'var(--font-nunito)' }}>{uploadErr}</p>
+        <p className="text-[13px] text-[#731515] mt-1" style={{ fontFamily: 'var(--font-geist)' }}>{uploadErr}</p>
       )}
     </div>
   );
@@ -322,11 +323,11 @@ function ProductModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6 overflow-y-auto">
+    <div className="ds fixed inset-0 z-50 flex flex-col bg-ink/55 backdrop-blur-sm lg:items-center lg:justify-center lg:p-10">
       <motion.div
         initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.96 }} transition={{ duration: 0.18 }}
-        className="bg-white rounded-xl border border-[#eddada] shadow-xl w-full max-w-lg my-auto"
+        className="mt-auto flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-3xl bg-white lg:mt-0 lg:max-w-2xl lg:rounded-3xl"
       >
         <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-[#eddada]">
           <h2 className="text-[15px] font-light text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>
@@ -335,55 +336,56 @@ function ProductModal({
           <button onClick={onClose} className="text-[#7a4a4a]/40 hover:text-[#7a4a4a]"><X size={18} /></button>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-5">
+          <div className="space-y-4">
           {/* Title */}
           <div>
-            <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">TITOLO *</label>
+            <label className="block text-[12px] font-medium tracking-[0.06em] text-[#731515] mb-1.5">TITOLO *</label>
             <input required value={title} onChange={e => handleTitleChange(e.target.value)}
-              placeholder="es. Classic Tee" className={inp} style={{ fontFamily: 'var(--font-nunito)' }} />
+              placeholder="es. Classic Tee" className={inp} style={{ fontFamily: 'var(--font-geist)' }} />
           </div>
 
           {/* Slug */}
           <div>
-            <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">SLUG URL</label>
+            <label className="block text-[12px] font-medium tracking-[0.06em] text-[#731515] mb-1.5">SLUG URL</label>
             <div className="relative">
               <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[11px] text-[#7a4a4a]/40 select-none pointer-events-none"
-                style={{ fontFamily: 'var(--font-nunito)' }}>
+                style={{ fontFamily: 'var(--font-geist)' }}>
                 /wear-the-club/
               </span>
               <input value={slug} onChange={e => setSlug(toSlug(e.target.value))}
                 placeholder="classic-tee"
                 className={`${inp} pl-[108px]`}
-                style={{ fontFamily: 'var(--font-nunito)' }} />
+                style={{ fontFamily: 'var(--font-geist)' }} />
             </div>
-            <p className="mt-1 text-[9px] text-[#7a4a4a]/45" style={{ fontFamily: 'var(--font-nunito)' }}>
+            <p className="mt-1 text-[12px] text-[#7a4a4a]/45" style={{ fontFamily: 'var(--font-geist)' }}>
               Usato nell&apos;URL della pagina prodotto. Auto-generato dal titolo.
             </p>
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">DESCRIZIONE</label>
+            <label className="block text-[12px] font-medium tracking-[0.06em] text-[#731515] mb-1.5">DESCRIZIONE</label>
             <textarea value={description} onChange={e => setDescription(e.target.value)}
               placeholder="Descrizione del prodotto…" rows={3}
-              className={`${inp} resize-none`} style={{ fontFamily: 'var(--font-nunito)' }} />
+              className={`${inp} resize-none`} style={{ fontFamily: 'var(--font-geist)' }} />
           </div>
 
           {/* Price + Shipping */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">PREZZO (€) *</label>
+              <label className="block text-[12px] font-medium tracking-[0.06em] text-[#731515] mb-1.5">PREZZO (€) *</label>
               <input type="number" required min="0" step="0.01" value={price}
                 onChange={e => setPrice(e.target.value)} placeholder="35.00"
-                className={inp} style={{ fontFamily: 'var(--font-nunito)' }} />
+                className={inp} style={{ fontFamily: 'var(--font-geist)' }} />
             </div>
             <div>
-              <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">SPEDIZIONE (€)</label>
+              <label className="block text-[12px] font-medium tracking-[0.06em] text-[#731515] mb-1.5">SPEDIZIONE (€)</label>
               <input type="number" min="0" step="0.01" value={shippingCost}
                 onChange={e => setShippingCost(e.target.value)}
                 placeholder="— globale"
-                className={inp} style={{ fontFamily: 'var(--font-nunito)' }} />
-              <p className="mt-1 text-[9px] text-[#7a4a4a]/45" style={{ fontFamily: 'var(--font-nunito)' }}>
+                className={inp} style={{ fontFamily: 'var(--font-geist)' }} />
+              <p className="mt-1 text-[12px] text-[#7a4a4a]/45" style={{ fontFamily: 'var(--font-geist)' }}>
                 Lascia vuoto per usare il costo globale
               </p>
             </div>
@@ -391,11 +393,11 @@ function ProductModal({
 
           {/* Sizes */}
           <div>
-            <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-2">TAGLIE DISPONIBILI</label>
+            <label className="block text-[12px] font-medium tracking-[0.06em] text-[#731515] mb-2">TAGLIE DISPONIBILI</label>
             <div className="flex flex-wrap gap-2">
               {ALL_SIZES.map(s => (
                 <button key={s} type="button" onClick={() => toggleSize(s)}
-                  className={`px-3 py-1.5 text-[11px] rounded-lg border transition-colors ${
+                  className={`min-h-[44px] px-4 text-[11px] rounded-lg border transition-colors ${
                     sizes.includes(s)
                       ? 'bg-[#731515] text-white border-[#731515]'
                       : 'border-[#eddada] text-[#7a4a4a]/60 hover:border-[#731515]/40'
@@ -405,7 +407,7 @@ function ProductModal({
               ))}
             </div>
             {sizes.length === 0 && (
-              <p className="text-[10px] text-[#7a4a4a]/40 mt-1" style={{ fontFamily: 'var(--font-nunito)' }}>
+              <p className="text-[13px] text-[#7a4a4a]/40 mt-1" style={{ fontFamily: 'var(--font-geist)' }}>
                 Nessuna taglia = prodotto senza taglia
               </p>
             )}
@@ -414,31 +416,31 @@ function ProductModal({
           {/* Initial stock qty (only when creating) */}
           {!editing && (
             <div>
-              <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-2">DISPONIBILITÀ INIZIALE</label>
+              <label className="block text-[12px] font-medium tracking-[0.06em] text-[#731515] mb-2">DISPONIBILITÀ INIZIALE</label>
               {sizes.length > 0 ? (
                 <div className="flex flex-wrap gap-3">
                   {sizes.map(s => (
                     <div key={s} className="flex items-center gap-1.5">
-                      <span className="text-[11px] text-[#7a4a4a] w-6 text-center" style={{ fontFamily: 'var(--font-nunito)' }}>{s}</span>
+                      <span className="text-[11px] text-[#7a4a4a] w-6 text-center" style={{ fontFamily: 'var(--font-geist)' }}>{s}</span>
                       <input
                         type="number" min="0" step="1"
                         value={sizeQty[s] ?? 0}
                         onChange={e => setSizeQty(prev => ({ ...prev, [s]: Math.max(0, parseInt(e.target.value) || 0) }))}
                         className="w-16 px-2 py-1 text-[12px] border border-[#eddada] rounded-lg text-center"
-                        style={{ fontFamily: 'var(--font-nunito)' }}
+                        style={{ fontFamily: 'var(--font-geist)' }}
                       />
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-[#7a4a4a]" style={{ fontFamily: 'var(--font-nunito)' }}>Quantità</span>
+                  <span className="text-[11px] text-[#7a4a4a]" style={{ fontFamily: 'var(--font-geist)' }}>Quantità</span>
                   <input
                     type="number" min="0" step="1"
                     value={sizeQty['_'] ?? 0}
                     onChange={e => setSizeQty({ _: Math.max(0, parseInt(e.target.value) || 0) })}
                     className="w-20 px-2 py-1 text-[12px] border border-[#eddada] rounded-lg text-center"
-                    style={{ fontFamily: 'var(--font-nunito)' }}
+                    style={{ fontFamily: 'var(--font-geist)' }}
                   />
                 </div>
               )}
@@ -448,38 +450,38 @@ function ProductModal({
           {/* Stock — only for products without color variants (stock per variant is managed in Varianti Colore) */}
           {editing && !product!.product_variants?.length && (
             <div>
-              <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-2">DISPONIBILITÀ</label>
+              <label className="block text-[12px] font-medium tracking-[0.06em] text-[#731515] mb-2">DISPONIBILITÀ</label>
               <StockSection productId={product!.id} sizes={sizes} token={token} />
             </div>
           )}
 
           {/* Details section — Additional Info */}
           <div className="border-t border-[#eddada] pt-4">
-            <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-3">ADDITIONAL INFO (pagina prodotto)</label>
+            <label className="block text-[12px] font-medium tracking-[0.06em] text-[#731515] mb-3">ADDITIONAL INFO (pagina prodotto)</label>
             <div className="space-y-3">
               <div>
-                <label className="block text-[9px] tracking-[0.3em] text-[#7a4a4a]/60 mb-1">TESSUTO / FABRIC</label>
+                <label className="block text-[12px] font-medium tracking-[0.06em] text-[#7a4a4a]/60 mb-1">TESSUTO / FABRIC</label>
                 <textarea value={detailMaterial} onChange={e => setDetailMaterial(e.target.value)}
                   placeholder="es. 100% organic cotton, 200g/m² jersey"
-                  rows={2} className={`${inp} resize-none`} style={{ fontFamily: 'var(--font-nunito)' }} />
+                  rows={2} className={`${inp} resize-none`} style={{ fontFamily: 'var(--font-geist)' }} />
               </div>
               <div>
-                <label className="block text-[9px] tracking-[0.3em] text-[#7a4a4a]/60 mb-1">DIMENSIONI / DIMENSIONS</label>
+                <label className="block text-[12px] font-medium tracking-[0.06em] text-[#7a4a4a]/60 mb-1">DIMENSIONI / DIMENSIONS</label>
                 <textarea value={detailDimensions} onChange={e => setDetailDimensions(e.target.value)}
                   placeholder="es. S: chest 96cm, length 70cm — M: chest 102cm, length 72cm"
-                  rows={2} className={`${inp} resize-none`} style={{ fontFamily: 'var(--font-nunito)' }} />
+                  rows={2} className={`${inp} resize-none`} style={{ fontFamily: 'var(--font-geist)' }} />
               </div>
               <div>
-                <label className="block text-[9px] tracking-[0.3em] text-[#7a4a4a]/60 mb-1">CURA / CARE</label>
+                <label className="block text-[12px] font-medium tracking-[0.06em] text-[#7a4a4a]/60 mb-1">CURA / CARE</label>
                 <textarea value={detailCare} onChange={e => setDetailCare(e.target.value)}
                   placeholder="es. Machine wash 30°C, do not tumble dry"
-                  rows={2} className={`${inp} resize-none`} style={{ fontFamily: 'var(--font-nunito)' }} />
+                  rows={2} className={`${inp} resize-none`} style={{ fontFamily: 'var(--font-geist)' }} />
               </div>
               <div>
-                <label className="block text-[9px] tracking-[0.3em] text-[#7a4a4a]/60 mb-1">SPEDIZIONE E RESI / SHIPPING & RETURNS</label>
+                <label className="block text-[12px] font-medium tracking-[0.06em] text-[#7a4a4a]/60 mb-1">SPEDIZIONE E RESI / SHIPPING & RETURNS</label>
                 <textarea value={detailShipping} onChange={e => setDetailShipping(e.target.value)}
                   placeholder="es. Ships in 5–7 business days. Free returns within 30 days."
-                  rows={2} className={`${inp} resize-none`} style={{ fontFamily: 'var(--font-nunito)' }} />
+                  rows={2} className={`${inp} resize-none`} style={{ fontFamily: 'var(--font-geist)' }} />
               </div>
             </div>
           </div>
@@ -487,10 +489,10 @@ function ProductModal({
           {/* Visible */}
           <div className="flex items-center justify-between py-2">
             <div>
-              <p className="text-[12px] text-[#1a0505] font-medium" style={{ fontFamily: 'var(--font-nunito)' }}>
+              <p className="text-[12px] text-[#1a0505] font-medium" style={{ fontFamily: 'var(--font-geist)' }}>
                 Visibile nello shop
               </p>
-              <p className="text-[10px] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
+              <p className="text-[13px] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-geist)' }}>
                 Se disattivato il prodotto è nascosto ai clienti
               </p>
             </div>
@@ -503,18 +505,23 @@ function ProductModal({
 
           {error && (
             <p className="text-[12px] text-[#731515] bg-[#fde8e8] border border-[#731515]/15 px-3 py-2 rounded-lg"
-              style={{ fontFamily: 'var(--font-nunito)' }}>{error}</p>
+              style={{ fontFamily: 'var(--font-geist)' }}>{error}</p>
           )}
 
-          <div className="flex gap-3 pt-1">
+          </div>
+
+          <div
+            className="sticky bottom-0 -mx-6 mt-6 flex gap-3 border-t border-[#E4D6D3] bg-white px-6 pt-4"
+            style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
+          >
             <button type="button" onClick={onClose}
-              className="flex-1 py-2.5 bg-white border border-[#eddada] text-[#7a4a4a] text-[10px] tracking-[0.25em] hover:bg-[#fdf6f6] transition-colors rounded-lg">
-              ANNULLA
+              className="min-h-[48px] flex-1 rounded-full border border-[#E4D6D3] bg-white px-5 text-[14px] font-medium text-[#1A0505] transition-colors hover:border-[#731515]/40">
+              Annulla
             </button>
             <button type="submit" disabled={saving}
-              className="flex-1 py-2.5 bg-[#731515] text-white text-[10px] tracking-[0.25em] hover:bg-[#9b2323] disabled:opacity-55 transition-colors rounded-lg flex items-center justify-center gap-2">
-              {saving && <Loader2 size={13} className="animate-spin" />}
-              {saving ? 'SALVATAGGIO…' : editing ? 'SALVA' : 'CREA'}
+              className="flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-full bg-[#731515] px-5 text-[14px] font-medium text-white transition-colors hover:bg-[#9b2323] disabled:opacity-55">
+              {saving && <Loader2 size={15} className="animate-spin" />}
+              {saving ? 'Salvataggio…' : editing ? 'Salva' : 'Crea prodotto'}
             </button>
           </div>
         </form>
@@ -586,7 +593,7 @@ function StockSection({
           <div key={key} className="flex items-center gap-3">
             {sizes.length > 0 && (
               <span className="text-[11px] text-[#7a4a4a] w-8 shrink-0 text-center"
-                style={{ fontFamily: 'var(--font-nunito)' }}>{label}</span>
+                style={{ fontFamily: 'var(--font-geist)' }}>{label}</span>
             )}
             <input
               type="number" min="0" step="1"
@@ -601,21 +608,21 @@ function StockSection({
                 typeof qty === 'number' && qty <= 3          ? 'border-orange-400 text-orange-700 bg-orange-50' :
                 ''
               }`}
-              style={{ fontFamily: 'var(--font-nunito)' }}
+              style={{ fontFamily: 'var(--font-geist)' }}
             />
             {qty === 0 && (
-              <span className="text-[10px] text-red-600 font-semibold tracking-wide"
-                style={{ fontFamily: 'var(--font-nunito)' }}>Esaurito</span>
+              <span className="text-[13px] text-red-600 font-semibold tracking-wide"
+                style={{ fontFamily: 'var(--font-geist)' }}>Esaurito</span>
             )}
             {typeof qty === 'number' && qty > 0 && qty <= 3 && (
-              <span className="text-[10px] text-orange-600 font-semibold tracking-wide"
-                style={{ fontFamily: 'var(--font-nunito)' }}>Scorte basse</span>
+              <span className="text-[13px] text-orange-600 font-semibold tracking-wide"
+                style={{ fontFamily: 'var(--font-geist)' }}>Scorte basse</span>
             )}
             <button
               type="button"
               disabled={busy || qty === ''}
               onClick={() => saveStock(vId, size, qty)}
-              className="text-[10px] tracking-[0.2em] px-3 py-2 bg-[#731515] text-white rounded-lg hover:bg-[#9b2323] disabled:opacity-40 transition-colors flex items-center gap-1"
+              className="text-[13px] font-medium tracking-normal px-3 py-2 bg-[#731515] text-white rounded-lg hover:bg-[#9b2323] disabled:opacity-40 transition-colors flex items-center gap-1"
             >
               {busy ? <Loader2 size={11} className="animate-spin" /> : 'SALVA'}
             </button>
@@ -664,11 +671,11 @@ function VariantManagerModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-4 py-6 overflow-y-auto">
+    <div className="ds fixed inset-0 z-[60] flex flex-col bg-ink/55 backdrop-blur-sm lg:items-center lg:justify-center lg:p-10">
       <motion.div
         initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.96 }} transition={{ duration: 0.18 }}
-        className="bg-white rounded-xl border border-[#eddada] shadow-xl w-full max-w-lg my-auto"
+        className="mt-auto flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-3xl bg-white lg:mt-0 lg:max-w-2xl lg:rounded-3xl"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-[#eddada]">
@@ -676,14 +683,14 @@ function VariantManagerModal({
             <h2 className="text-[15px] font-light text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>
               Varianti Colore
             </h2>
-            <p className="text-[11px] text-[#7a4a4a]/60 mt-0.5" style={{ fontFamily: 'var(--font-nunito)' }}>
+            <p className="text-[11px] text-[#7a4a4a]/60 mt-0.5" style={{ fontFamily: 'var(--font-geist)' }}>
               {product.title}
             </p>
           </div>
           <button onClick={onClose} className="text-[#7a4a4a]/40 hover:text-[#7a4a4a]"><X size={18} /></button>
         </div>
 
-        <div className="px-6 py-5 space-y-3 max-h-[70vh] overflow-y-auto">
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-6 py-5">
           {loading && (
             <div className="flex items-center justify-center py-10">
               <Loader2 size={22} className="animate-spin text-[#731515]/40" />
@@ -693,7 +700,7 @@ function VariantManagerModal({
           {!loading && variants.length === 0 && expandedId !== 'new' && (
             <div className="border border-dashed border-[#eddada] rounded-xl py-10 text-center">
               <Palette size={26} className="text-[#7a4a4a]/20 mx-auto mb-2" />
-              <p className="text-[12px] text-[#7a4a4a]/50 italic" style={{ fontFamily: 'var(--font-nunito)' }}>
+              <p className="text-[12px] text-[#7a4a4a]/50 italic" style={{ fontFamily: 'var(--font-geist)' }}>
                 Nessuna variante. Aggiungine una.
               </p>
             </div>
@@ -734,7 +741,7 @@ function VariantManagerModal({
           <button
             onClick={() => setExpandedId('new')}
             disabled={expandedId === 'new'}
-            className="w-full flex items-center justify-center gap-2 text-[10px] tracking-[0.25em] bg-white border border-dashed border-[#731515]/30 text-[#731515]/70 hover:border-[#731515] hover:text-[#731515] py-2.5 rounded-lg transition-colors disabled:opacity-40"
+            className="w-full flex items-center justify-center gap-2 text-[13px] font-medium tracking-normal bg-white border border-dashed border-[#731515]/30 text-[#731515]/70 hover:border-[#731515] hover:text-[#731515] py-2.5 rounded-lg transition-colors disabled:opacity-40"
           >
             <Plus size={12} /> NUOVA VARIANTE
           </button>
@@ -822,14 +829,14 @@ function VariantRow({
             className="w-6 h-6 rounded-full border border-black/10 shrink-0"
             style={{ background: variant!.color_hex }}
           />
-          <span className="flex-1 text-[13px] text-[#1a0505]" style={{ fontFamily: 'var(--font-nunito)' }}>
+          <span className="flex-1 text-[13px] text-[#1a0505]" style={{ fontFamily: 'var(--font-geist)' }}>
             {variant!.display_name || variant!.color_name}
             {variant!.display_name && variant!.display_name !== variant!.color_name && (
-              <span className="ml-1.5 text-[10px] text-[#7a4a4a]/40">({variant!.color_name})</span>
+              <span className="ml-1.5 text-[13px] text-[#7a4a4a]/40">({variant!.color_name})</span>
             )}
           </span>
           {variant!.images.length > 0 && (
-            <span className="text-[10px] text-[#7a4a4a]/40">
+            <span className="text-[13px] text-[#7a4a4a]/40">
               {variant!.images.length} img
             </span>
           )}
@@ -858,24 +865,24 @@ function VariantRow({
             className="overflow-hidden"
           >
             <div className={`px-4 py-4 space-y-3 ${!isNew ? 'border-t border-[#eddada] bg-[#fdf8f8]' : ''}`}>
-              <p className="text-[9px] tracking-[0.4em] text-[#731515]">
+              <p className="text-[12px] tracking-[0.4em] text-[#731515]">
                 {isNew ? 'NUOVA VARIANTE' : 'MODIFICA VARIANTE'}
               </p>
 
               {/* Name + hex */}
               <div className="flex gap-3 items-end">
                 <div className="flex-1">
-                  <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">NOME COLORE</label>
+                  <label className="block text-[12px] font-medium tracking-[0.06em] text-[#731515] mb-1.5">NOME COLORE</label>
                   <input
                     value={name}
                     onChange={e => setName(e.target.value)}
                     placeholder="es. Nero, Bordeaux…"
                     className={inp}
-                    style={{ fontFamily: 'var(--font-nunito)' }}
+                    style={{ fontFamily: 'var(--font-geist)' }}
                   />
                 </div>
                 <div>
-                  <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">COLORE</label>
+                  <label className="block text-[12px] font-medium tracking-[0.06em] text-[#731515] mb-1.5">COLORE</label>
                   <div className="relative">
                     <input
                       type="color"
@@ -890,15 +897,15 @@ function VariantRow({
 
               {/* Display name (shown in cart/checkout) */}
               <div>
-                <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">NOME NEL CARRELLO</label>
+                <label className="block text-[12px] font-medium tracking-[0.06em] text-[#731515] mb-1.5">NOME NEL CARRELLO</label>
                 <input
                   value={displayName}
                   onChange={e => setDisplayName(e.target.value)}
                   placeholder="es. Midnight Blue, Bordeaux Red… (lascia vuoto per usare il nome colore)"
                   className={inp}
-                  style={{ fontFamily: 'var(--font-nunito)' }}
+                  style={{ fontFamily: 'var(--font-geist)' }}
                 />
-                <p className="mt-1 text-[9px] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
+                <p className="mt-1 text-[12px] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-geist)' }}>
                   Appare nel carrello e nel checkout al posto del nome colore interno.
                 </p>
               </div>
@@ -909,13 +916,13 @@ function VariantRow({
               {/* Stock per size (or single qty if no sizes) — only for saved variants */}
               {!isNew && (
                 <div>
-                  <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-2">DISPONIBILITÀ</label>
+                  <label className="block text-[12px] font-medium tracking-[0.06em] text-[#731515] mb-2">DISPONIBILITÀ</label>
                   <StockSection productId={productId} sizes={sizes} token={token} variantId={variant!.id} />
                 </div>
               )}
 
               {error && (
-                <p className="text-[12px] text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>{error}</p>
+                <p className="text-[12px] text-[#731515]" style={{ fontFamily: 'var(--font-geist)' }}>{error}</p>
               )}
 
               {/* Actions */}
@@ -925,7 +932,7 @@ function VariantRow({
                     onClick={handleDelete}
                     disabled={deleting}
                     onBlur={() => setConfirm(false)}
-                    className={`px-3 py-2 text-[10px] tracking-[0.2em] rounded-lg border transition-colors ${
+                    className={`px-3 py-2 text-[13px] font-medium tracking-normal rounded-lg border transition-colors ${
                       confirm ? 'bg-red-50 border-red-200 text-red-600' : 'bg-white border-[#eddada] text-[#7a4a4a]/50 hover:text-red-500 hover:border-red-200'
                     }`}
                   >
@@ -934,14 +941,14 @@ function VariantRow({
                 )}
                 <button
                   onClick={onExpand}
-                  className="flex-1 py-2 bg-white border border-[#eddada] text-[#7a4a4a] text-[10px] tracking-[0.2em] hover:bg-[#fdf6f6] transition-colors rounded-lg"
+                  className="flex-1 py-2 bg-white border border-[#eddada] text-[#7a4a4a] text-[13px] font-medium tracking-normal hover:bg-[#fdf6f6] transition-colors rounded-lg"
                 >
                   ANNULLA
                 </button>
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="flex-1 py-2 bg-[#731515] text-white text-[10px] tracking-[0.2em] hover:bg-[#9b2323] disabled:opacity-55 transition-colors rounded-lg flex items-center justify-center gap-1.5"
+                  className="flex-1 py-2 bg-[#731515] text-white text-[13px] font-medium tracking-normal hover:bg-[#9b2323] disabled:opacity-55 transition-colors rounded-lg flex items-center justify-center gap-1.5"
                 >
                   {saving && <Loader2 size={11} className="animate-spin" />}
                   {isNew ? 'CREA' : 'SALVA'}
@@ -1014,23 +1021,23 @@ function CombinationColorRow({
     <div className="border border-[#eddada] rounded-lg p-3 space-y-2">
       <div className="flex items-center gap-2">
         <span className="w-4 h-4 rounded-full border border-black/10 shrink-0" style={{ background: colorVariant.color_hex }} />
-        <span className="text-[11px] text-[#1a0505] flex-1" style={{ fontFamily: 'var(--font-nunito)' }}>{label}</span>
+        <span className="text-[11px] text-[#1a0505] flex-1" style={{ fontFamily: 'var(--font-geist)' }}>{label}</span>
         {saving && <Loader2 size={10} className="animate-spin text-[#731515]/40" />}
         {saved && !saving && (
-          <span className="text-[9px] text-green-600 tracking-[0.2em] flex items-center gap-1">
+          <span className="text-[12px] text-green-600 tracking-[0.2em] flex items-center gap-1">
             <CheckCircle size={10} /> SALVATO
           </span>
         )}
       </div>
       <ImageUploader images={images} onChange={setImages} token={token} />
       {saveErr && (
-        <p className="text-[10px] text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>{saveErr}</p>
+        <p className="text-[13px] text-[#731515]" style={{ fontFamily: 'var(--font-geist)' }}>{saveErr}</p>
       )}
       <button
         type="button"
         disabled={saving}
         onClick={handleSave}
-        className="w-full flex items-center justify-center gap-1.5 text-[10px] tracking-[0.25em] py-2 bg-[#731515] text-white rounded-lg hover:bg-[#9b2323] disabled:opacity-50 transition-colors"
+        className="w-full flex items-center justify-center gap-1.5 text-[13px] font-medium tracking-normal py-2 bg-[#731515] text-white rounded-lg hover:bg-[#9b2323] disabled:opacity-50 transition-colors"
       >
         {saving ? <Loader2 size={10} className="animate-spin" /> : null}
         {saving ? 'SALVATAGGIO…' : 'SALVA'}
@@ -1088,11 +1095,11 @@ function TextVariantManagerModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-4 py-6 overflow-y-auto">
+    <div className="ds fixed inset-0 z-[60] flex flex-col bg-ink/55 backdrop-blur-sm lg:items-center lg:justify-center lg:p-10">
       <motion.div
         initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.96 }} transition={{ duration: 0.18 }}
-        className="bg-white rounded-xl border border-[#eddada] shadow-xl w-full max-w-lg my-auto"
+        className="mt-auto flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-3xl bg-white lg:mt-0 lg:max-w-2xl lg:rounded-3xl"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-[#eddada]">
@@ -1100,14 +1107,14 @@ function TextVariantManagerModal({
             <h2 className="text-[15px] font-light text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>
               Varianti Testo
             </h2>
-            <p className="text-[11px] text-[#7a4a4a]/60 mt-0.5" style={{ fontFamily: 'var(--font-nunito)' }}>
+            <p className="text-[11px] text-[#7a4a4a]/60 mt-0.5" style={{ fontFamily: 'var(--font-geist)' }}>
               {product.title}
             </p>
           </div>
           <button onClick={onClose} className="text-[#7a4a4a]/40 hover:text-[#7a4a4a]"><X size={18} /></button>
         </div>
 
-        <div className="px-6 py-5 space-y-3 max-h-[70vh] overflow-y-auto">
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-6 py-5">
           {loading && (
             <div className="flex items-center justify-center py-10">
               <Loader2 size={22} className="animate-spin text-[#731515]/40" />
@@ -1117,7 +1124,7 @@ function TextVariantManagerModal({
           {!loading && textVariants.length === 0 && expandedId !== 'new' && (
             <div className="border border-dashed border-[#eddada] rounded-xl py-10 text-center">
               <Type size={26} className="text-[#7a4a4a]/20 mx-auto mb-2" />
-              <p className="text-[12px] text-[#7a4a4a]/50 italic" style={{ fontFamily: 'var(--font-nunito)' }}>
+              <p className="text-[12px] text-[#7a4a4a]/50 italic" style={{ fontFamily: 'var(--font-geist)' }}>
                 Nessuna variante testo. Aggiungine una.
               </p>
             </div>
@@ -1157,7 +1164,7 @@ function TextVariantManagerModal({
           <button
             onClick={() => setExpandedId('new')}
             disabled={expandedId === 'new'}
-            className="w-full flex items-center justify-center gap-2 text-[10px] tracking-[0.25em] bg-white border border-dashed border-[#731515]/30 text-[#731515]/70 hover:border-[#731515] hover:text-[#731515] py-2.5 rounded-lg transition-colors disabled:opacity-40"
+            className="w-full flex items-center justify-center gap-2 text-[13px] font-medium tracking-normal bg-white border border-dashed border-[#731515]/30 text-[#731515]/70 hover:border-[#731515] hover:text-[#731515] py-2.5 rounded-lg transition-colors disabled:opacity-40"
           >
             <Plus size={12} /> NUOVA VARIANTE TESTO
           </button>
@@ -1240,11 +1247,11 @@ function TextVariantRow({
           onClick={onExpand}
         >
           <Type size={14} className="text-[#731515]/40 shrink-0" />
-          <span className="flex-1 text-[13px] text-[#1a0505]" style={{ fontFamily: 'var(--font-nunito)' }}>
+          <span className="flex-1 text-[13px] text-[#1a0505]" style={{ fontFamily: 'var(--font-geist)' }}>
             {textVariant!.text_label}
           </span>
           {textVariant!.images.length > 0 && (
-            <span className="text-[10px] text-[#7a4a4a]/40">{textVariant!.images.length} img</span>
+            <span className="text-[13px] text-[#7a4a4a]/40">{textVariant!.images.length} img</span>
           )}
           <div className="flex gap-1">
             {textVariant!.images.slice(0, 3).map((url, i) => (
@@ -1269,20 +1276,20 @@ function TextVariantRow({
             className="overflow-hidden"
           >
             <div className={`px-4 py-4 space-y-3 ${!isNew ? 'border-t border-[#eddada] bg-[#fdf8f8]' : ''}`}>
-              <p className="text-[9px] tracking-[0.4em] text-[#731515]">
+              <p className="text-[12px] tracking-[0.4em] text-[#731515]">
                 {isNew ? 'NUOVA VARIANTE TESTO' : 'MODIFICA VARIANTE TESTO'}
               </p>
 
               <div>
-                <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">TESTO INCISO</label>
+                <label className="block text-[12px] font-medium tracking-[0.06em] text-[#731515] mb-1.5">TESTO INCISO</label>
                 <input
                   value={label}
                   onChange={e => setLabel(e.target.value)}
                   placeholder="es. Vivo, Amore, Salute…"
                   className={inp}
-                  style={{ fontFamily: 'var(--font-nunito)' }}
+                  style={{ fontFamily: 'var(--font-geist)' }}
                 />
-                <p className="mt-1 text-[9px] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
+                <p className="mt-1 text-[12px] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-geist)' }}>
                   Questo testo apparirà come opzione selezionabile nella pagina prodotto.
                 </p>
               </div>
@@ -1292,10 +1299,10 @@ function TextVariantRow({
               {/* Per-colour combination images — only visible when editing an existing variant */}
               {!isNew && colorVariants.length > 0 && (
                 <div className="pt-2">
-                  <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-2">
+                  <label className="block text-[12px] font-medium tracking-[0.06em] text-[#731515] mb-2">
                     IMMAGINI PER COLORE
                   </label>
-                  <p className="text-[9px] text-[#7a4a4a]/50 mb-3" style={{ fontFamily: 'var(--font-nunito)' }}>
+                  <p className="text-[12px] text-[#7a4a4a]/50 mb-3" style={{ fontFamily: 'var(--font-geist)' }}>
                     Carica un&apos;immagine specifica per ogni combinazione testo+colore. Viene mostrata quando il cliente seleziona entrambi.
                   </p>
                   <div className="space-y-2">
@@ -1317,7 +1324,7 @@ function TextVariantRow({
               )}
 
               {error && (
-                <p className="text-[12px] text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>{error}</p>
+                <p className="text-[12px] text-[#731515]" style={{ fontFamily: 'var(--font-geist)' }}>{error}</p>
               )}
 
               <div className="flex gap-2 pt-1">
@@ -1326,7 +1333,7 @@ function TextVariantRow({
                     onClick={handleDelete}
                     disabled={deleting}
                     onBlur={() => setConfirm(false)}
-                    className={`px-3 py-2 text-[10px] tracking-[0.2em] rounded-lg border transition-colors ${
+                    className={`px-3 py-2 text-[13px] font-medium tracking-normal rounded-lg border transition-colors ${
                       confirm ? 'bg-red-50 border-red-200 text-red-600' : 'bg-white border-[#eddada] text-[#7a4a4a]/50 hover:text-red-500 hover:border-red-200'
                     }`}
                   >
@@ -1335,14 +1342,14 @@ function TextVariantRow({
                 )}
                 <button
                   onClick={onExpand}
-                  className="flex-1 py-2 bg-white border border-[#eddada] text-[#7a4a4a] text-[10px] tracking-[0.2em] hover:bg-[#fdf6f6] transition-colors rounded-lg"
+                  className="flex-1 py-2 bg-white border border-[#eddada] text-[#7a4a4a] text-[13px] font-medium tracking-normal hover:bg-[#fdf6f6] transition-colors rounded-lg"
                 >
                   ANNULLA
                 </button>
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="flex-1 py-2 bg-[#731515] text-white text-[10px] tracking-[0.2em] hover:bg-[#9b2323] disabled:opacity-55 transition-colors rounded-lg flex items-center justify-center gap-1.5"
+                  className="flex-1 py-2 bg-[#731515] text-white text-[13px] font-medium tracking-normal hover:bg-[#9b2323] disabled:opacity-55 transition-colors rounded-lg flex items-center justify-center gap-1.5"
                 >
                   {saving && <Loader2 size={11} className="animate-spin" />}
                   {isNew ? 'CREA' : 'SALVA'}
@@ -1411,7 +1418,7 @@ function ProductCard({
         }
         {!visible && (
           <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-            <span className="text-white text-[9px] tracking-[0.35em] font-medium">NASCOSTO</span>
+            <span className="text-white text-[12px] font-medium tracking-[0.06em] font-medium">NASCOSTO</span>
           </div>
         )}
       </div>
@@ -1419,7 +1426,7 @@ function ProductCard({
       {/* Info */}
       <div className="p-4">
         <div className="flex items-start justify-between gap-2 mb-1">
-          <p className="text-[13px] font-medium text-[#1a0505] leading-snug" style={{ fontFamily: 'var(--font-nunito)' }}>
+          <p className="text-[13px] font-medium text-[#1a0505] leading-snug" style={{ fontFamily: 'var(--font-geist)' }}>
             {product.title}
           </p>
           <p className="text-[13px] font-semibold text-[#731515] shrink-0">€{Number(product.price).toFixed(2)}</p>
@@ -1428,7 +1435,7 @@ function ProductCard({
         {product.sizes.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-2">
             {product.sizes.map(s => (
-              <span key={s} className="text-[9px] tracking-[0.2em] px-1.5 py-0.5 bg-[#e8e0e0] text-[#7a4a4a] rounded">{s}</span>
+              <span key={s} className="text-[12px] font-medium px-1.5 py-0.5 bg-[#e8e0e0] text-[#7a4a4a] rounded">{s}</span>
             ))}
           </div>
         )}
@@ -1439,7 +1446,7 @@ function ProductCard({
                 className="w-4 h-4 rounded-full border border-black/10 shrink-0"
                 style={{ background: colorHex(c) }} />
             ))}
-            <span className="text-[9px] text-[#7a4a4a]/50 ml-0.5" style={{ fontFamily: 'var(--font-nunito)' }}>
+            <span className="text-[12px] text-[#7a4a4a]/50 ml-0.5" style={{ fontFamily: 'var(--font-geist)' }}>
               {product.colors.length} colori
             </span>
           </div>
@@ -1448,7 +1455,7 @@ function ProductCard({
         {/* Actions */}
         <div className="flex items-center gap-2 mt-3">
           <button onClick={() => onEdit(product)}
-            className="flex-1 flex items-center justify-center gap-1.5 text-[10px] tracking-[0.2em] bg-white border border-[#eddada] text-[#7a4a4a] py-2 rounded-lg hover:bg-[#fdf6f6] transition-colors">
+            className="flex-1 flex items-center justify-center gap-1.5 text-[13px] font-medium tracking-normal bg-white border border-[#eddada] text-[#7a4a4a] py-2 rounded-lg hover:bg-[#fdf6f6] transition-colors">
             <Pencil size={11} /> MODIFICA
           </button>
           <button onClick={() => onVariants(product)}
@@ -1557,12 +1564,12 @@ function ShippingModal({ order, token, onClose, onSent }: {
   }
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+    <div className="ds fixed inset-0 z-[200] flex flex-col lg:items-center lg:justify-center lg:p-10" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
       {/* Panel */}
-      <div className="relative z-10 w-full max-w-md bg-white rounded-2xl shadow-xl border border-[#eddada] overflow-hidden">
+      <div className="relative z-10 mt-auto flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-3xl bg-white lg:mt-0 lg:max-w-lg lg:rounded-3xl">
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#eddada] bg-[#fdf6f6]">
@@ -1578,11 +1585,11 @@ function ShippingModal({ order, token, onClose, onSent }: {
         </div>
 
         {/* Body */}
-        <div className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-5">
 
           {/* Corriere */}
           <div>
-            <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">CORRIERE</label>
+            <label className="block text-[12px] font-medium tracking-[0.06em] text-[#731515] mb-1.5">CORRIERE</label>
             <select
               value={carrier}
               onChange={e => { setCarrier(e.target.value); setUrlManual(false); }}
@@ -1604,7 +1611,7 @@ function ShippingModal({ order, token, onClose, onSent }: {
 
           {/* Codice tracciamento */}
           <div>
-            <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">CODICE TRACCIAMENTO</label>
+            <label className="block text-[12px] font-medium tracking-[0.06em] text-[#731515] mb-1.5">CODICE TRACCIAMENTO</label>
             <input
               type="text"
               value={trackingCode}
@@ -1616,7 +1623,7 @@ function ShippingModal({ order, token, onClose, onSent }: {
 
           {/* Link tracciamento */}
           <div>
-            <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">
+            <label className="block text-[12px] font-medium tracking-[0.06em] text-[#731515] mb-1.5">
               LINK TRACCIAMENTO
               {carrier && carrier !== 'Altro' && CARRIER_TRACKING[carrier] && (
                 <span className="ml-2 normal-case tracking-normal text-[#7a4a4a]/50">— auto-generato da {carrier}</span>
@@ -1634,7 +1641,7 @@ function ShippingModal({ order, token, onClose, onSent }: {
                 href={trackingUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-1 inline-flex items-center gap-1 text-[10px] text-[#731515] hover:underline"
+                className="mt-1 inline-flex items-center gap-1 text-[13px] text-[#731515] hover:underline"
               >
                 Verifica link ↗
               </a>
@@ -1643,7 +1650,7 @@ function ShippingModal({ order, token, onClose, onSent }: {
 
           {/* Data spedizione */}
           <div>
-            <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">DATA SPEDIZIONE</label>
+            <label className="block text-[12px] font-medium tracking-[0.06em] text-[#731515] mb-1.5">DATA SPEDIZIONE</label>
             <input
               type="date"
               value={shippedAt}
@@ -1654,7 +1661,7 @@ function ShippingModal({ order, token, onClose, onSent }: {
 
           {/* Note aggiuntive */}
           <div>
-            <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">
+            <label className="block text-[12px] font-medium tracking-[0.06em] text-[#731515] mb-1.5">
               NOTE AGGIUNTIVE <span className="normal-case tracking-normal text-[#7a4a4a]/40">— opzionale</span>
             </label>
             <textarea
@@ -1753,7 +1760,7 @@ function OrderRow({ order, token, onUpdated }: {
         {/* ── Header bar: status + date ── */}
         <div className={`flex items-center justify-between gap-3 px-4 py-2.5 ${headerBg}`}>
           <button onClick={toggleStatus} disabled={saving}
-            className={`flex items-center gap-1.5 text-[9px] tracking-[0.3em] font-medium px-3 py-1.5 rounded-full transition-colors ${
+            className={`flex items-center gap-1.5 text-[12px] font-medium tracking-[0.06em] font-medium min-h-[44px] px-4 rounded-full transition-colors ${
               isSpedito
                 ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
                 : isEvaso
@@ -1768,7 +1775,7 @@ function OrderRow({ order, token, onUpdated }: {
             }
             {isSpedito ? 'SPEDITO' : isEvaso ? 'EVASO' : 'DA EVADERE'}
           </button>
-          <span className="text-[10px] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
+          <span className="text-[13px] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-geist)' }}>
             {date} · {time}
           </span>
         </div>
@@ -1779,14 +1786,14 @@ function OrderRow({ order, token, onUpdated }: {
           <div className="flex flex-wrap gap-x-6 gap-y-1">
             <div>
               <p className="text-[8px] tracking-[0.35em] text-[#7a4a4a]/40 mb-0.5">CLIENTE</p>
-              <p className="text-[13px] font-semibold text-[#1a0505]" style={{ fontFamily: 'var(--font-nunito)' }}>
+              <p className="text-[13px] font-semibold text-[#1a0505]" style={{ fontFamily: 'var(--font-geist)' }}>
                 {order.customer_name ?? '—'}
               </p>
             </div>
             {order.customer_email && (
               <div>
                 <p className="text-[8px] tracking-[0.35em] text-[#7a4a4a]/40 mb-0.5">EMAIL</p>
-                <p className="text-[12px] text-[#7a4a4a]" style={{ fontFamily: 'var(--font-nunito)' }}>
+                <p className="text-[12px] text-[#7a4a4a]" style={{ fontFamily: 'var(--font-geist)' }}>
                   {order.customer_email}
                 </p>
               </div>
@@ -1794,7 +1801,7 @@ function OrderRow({ order, token, onUpdated }: {
             {order.phone && (
               <div>
                 <p className="text-[8px] tracking-[0.35em] text-[#7a4a4a]/40 mb-0.5 flex items-center gap-1"><Phone size={8} /> TELEFONO</p>
-                <p className="text-[12px] text-[#7a4a4a]" style={{ fontFamily: 'var(--font-nunito)' }}>
+                <p className="text-[12px] text-[#7a4a4a]" style={{ fontFamily: 'var(--font-geist)' }}>
                   {order.phone}
                 </p>
               </div>
@@ -1808,7 +1815,7 @@ function OrderRow({ order, token, onUpdated }: {
                 <MapPin size={8} /> INDIRIZZO DI SPEDIZIONE
                 <CopyButton text={fullAddress} />
               </p>
-              <div className="bg-[#fdf6f6] border border-[#eddada] rounded-lg px-3 py-2.5 text-[12px] text-[#3a1a1a] leading-relaxed" style={{ fontFamily: 'var(--font-nunito)' }}>
+              <div className="bg-[#fdf6f6] border border-[#eddada] rounded-lg px-3 py-2.5 text-[12px] text-[#3a1a1a] leading-relaxed" style={{ fontFamily: 'var(--font-geist)' }}>
                 {order.shipping_line1 && <p>{order.shipping_line1}</p>}
                 {order.shipping_line2 && <p>{order.shipping_line2}</p>}
                 <p>{[order.shipping_postal, order.shipping_city, order.shipping_state].filter(Boolean).join(' ')}</p>
@@ -1818,7 +1825,7 @@ function OrderRow({ order, token, onUpdated }: {
           ) : (
             <div>
               <p className="text-[8px] tracking-[0.35em] text-[#7a4a4a]/40 mb-1 flex items-center gap-1"><MapPin size={8} /> INDIRIZZO DI SPEDIZIONE</p>
-              <p className="text-[11px] text-[#7a4a4a]/40 italic" style={{ fontFamily: 'var(--font-nunito)' }}>Non disponibile (ordine precedente all&apos;aggiornamento)</p>
+              <p className="text-[11px] text-[#7a4a4a]/40 italic" style={{ fontFamily: 'var(--font-geist)' }}>Non disponibile (ordine precedente all&apos;aggiornamento)</p>
             </div>
           )}
 
@@ -1826,7 +1833,7 @@ function OrderRow({ order, token, onUpdated }: {
           {order.delivery_notes && (
             <div>
               <p className="text-[8px] tracking-[0.35em] text-[#7a4a4a]/40 mb-1 flex items-center gap-1"><StickyNote size={8} /> NOTE CONSEGNA</p>
-              <p className="text-[12px] text-[#3a1a1a] bg-amber-50 border border-amber-200 rounded-lg px-3 py-2" style={{ fontFamily: 'var(--font-nunito)' }}>
+              <p className="text-[12px] text-[#3a1a1a] bg-amber-50 border border-amber-200 rounded-lg px-3 py-2" style={{ fontFamily: 'var(--font-geist)' }}>
                 {order.delivery_notes}
               </p>
             </div>
@@ -1836,7 +1843,7 @@ function OrderRow({ order, token, onUpdated }: {
           {isSpedito && (order.carrier || order.tracking_code) && (
             <div>
               <p className="text-[8px] tracking-[0.35em] text-blue-500/70 mb-1.5 flex items-center gap-1"><Truck size={8} /> TRACKING SPEDIZIONE</p>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5 space-y-1.5" style={{ fontFamily: 'var(--font-nunito)' }}>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5 space-y-1.5" style={{ fontFamily: 'var(--font-geist)' }}>
                 {order.carrier && (
                   <p className="text-[12px] text-[#1a0505]"><span className="text-[#7a4a4a]/50">Corriere:</span> <strong>{order.carrier}</strong></p>
                 )}
@@ -1870,7 +1877,7 @@ function OrderRow({ order, token, onUpdated }: {
             <p className="text-[8px] tracking-[0.35em] text-[#7a4a4a]/40 mb-1.5 flex items-center gap-1"><Package size={8} /> ARTICOLI</p>
             <div className="space-y-1">
               {order.items.map((item, i) => (
-                <div key={i} className="flex items-center justify-between gap-2 text-[12px]" style={{ fontFamily: 'var(--font-nunito)' }}>
+                <div key={i} className="flex items-center justify-between gap-2 text-[12px]" style={{ fontFamily: 'var(--font-geist)' }}>
                   <span className="text-[#3a1a1a]">
                     <span className="font-semibold">{item.qty}×</span> {item.name}
                   </span>
@@ -1879,7 +1886,7 @@ function OrderRow({ order, token, onUpdated }: {
               ))}
             </div>
             <div className="flex justify-end mt-2 pt-2 border-t border-[#eddada]">
-              <span className="text-[14px] font-bold text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>
+              <span className="text-[14px] font-bold text-[#731515]" style={{ fontFamily: 'var(--font-geist)' }}>
                 Totale: €{Number(order.total).toFixed(2)}
               </span>
             </div>
@@ -1892,7 +1899,7 @@ function OrderRow({ order, token, onUpdated }: {
                 onClick={() => setShowShippingModal(true)}
                 disabled={!isEvaso && !isSpedito}
                 title={!isEvaso && !isSpedito ? 'Segna come evaso prima di inviare la mail' : undefined}
-                className={`flex items-center gap-1.5 text-[9px] tracking-[0.25em] px-3 py-1.5 rounded-full border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                className={`flex items-center gap-1.5 text-[12px] font-medium tracking-[0.06em] min-h-[44px] px-4 rounded-full border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                   isSpedito
                     ? 'border-blue-300 text-blue-700 hover:bg-blue-50'
                     : 'border-green-300 text-green-700 hover:bg-green-50'
@@ -2050,26 +2057,26 @@ function StockOverviewTab({ token }: { token: string }) {
       <div className="grid grid-cols-2 gap-4">
         <div className="border border-red-200 rounded-xl p-4 bg-red-50 text-center">
           <p className="text-2xl font-light text-red-600" style={{ fontFamily: 'var(--font-syne)' }}>{noStock.length}</p>
-          <p className="text-[9px] tracking-[0.35em] text-red-400 mt-1">ESAURITI</p>
+          <p className="text-[12px] font-medium tracking-[0.06em] text-red-400 mt-1">ESAURITI</p>
         </div>
         <div className="border border-green-200 rounded-xl p-4 bg-green-50 text-center">
           <p className="text-2xl font-light text-green-600" style={{ fontFamily: 'var(--font-syne)' }}>{okStock.length}</p>
-          <p className="text-[9px] tracking-[0.35em] text-green-400 mt-1">DISPONIBILI</p>
+          <p className="text-[12px] font-medium tracking-[0.06em] text-green-400 mt-1">DISPONIBILI</p>
         </div>
       </div>
 
       {/* Stock table */}
       {stock.length > 0 ? (
         <div>
-          <p className="text-[9px] tracking-[0.35em] text-[#731515] mb-3">DISPONIBILITÀ PRODOTTI</p>
-          <div className="border border-[#eddada] rounded-xl overflow-x-auto">
-            <table className="w-full min-w-[440px] text-[12px]" style={{ fontFamily: 'var(--font-nunito)' }}>
+          <p className="text-[12px] font-medium tracking-[0.06em] text-[#731515] mb-3">DISPONIBILITÀ PRODOTTI</p>
+          <div className="rounded-xl border border-[#eddada]">
+            <table className="w-full text-[13px]" style={{ fontFamily: 'var(--font-geist)' }}>
               <thead>
                 <tr className="bg-[#fdf6f6] border-b border-[#eddada]">
                   <th className="w-12" />
-                  <th className="text-left px-3 py-2.5 text-[9px] tracking-[0.3em] text-[#7a4a4a]/50 font-normal">PRODOTTO / VARIANTE</th>
-                  <th className="text-center px-3 py-2.5 text-[9px] tracking-[0.3em] text-[#7a4a4a]/50 font-normal w-16">TAGLIA</th>
-                  <th className="text-right px-4 py-2.5 text-[9px] tracking-[0.3em] text-[#7a4a4a]/50 font-normal w-36">QUANTITÀ</th>
+                  <th className="text-left px-3 py-2.5 text-[12px] font-medium tracking-[0.06em] text-[#7a4a4a]/50 font-normal">PRODOTTO / VARIANTE</th>
+                  <th className="text-center px-3 py-2.5 text-[12px] font-medium tracking-[0.06em] text-[#7a4a4a]/50 font-normal w-16">TAGLIA</th>
+                  <th className="text-right px-4 py-2.5 text-[12px] font-medium tracking-[0.06em] text-[#7a4a4a]/50 font-normal w-36">QUANTITÀ</th>
                 </tr>
               </thead>
               <tbody>
@@ -2102,7 +2109,7 @@ function StockOverviewTab({ token }: { token: string }) {
                         </td>
 
                         {/* Name + variant */}
-                        <td className={`px-3 py-1.5 ${isFirst ? 'pt-3' : ''} ${isLast ? 'pb-3' : ''}`}>
+                        <td className={`min-h-[44px] px-4 ${isFirst ? 'pt-3' : ''} ${isLast ? 'pb-3' : ''}`}>
                           <p className="text-[12px] font-medium text-[#1a0505] leading-tight">
                             {group.title}
                             {varName && (
@@ -2112,7 +2119,7 @@ function StockOverviewTab({ token }: { token: string }) {
                         </td>
 
                         {/* Size */}
-                        <td className={`px-3 py-1.5 text-center text-[#7a4a4a] ${isFirst ? 'pt-3' : ''} ${isLast ? 'pb-3' : ''}`}>
+                        <td className={`min-h-[44px] px-4 text-center text-[#7a4a4a] ${isFirst ? 'pt-3' : ''} ${isLast ? 'pb-3' : ''}`}>
                           {row.size ?? <span className="text-[#7a4a4a]/30">—</span>}
                         </td>
 
@@ -2140,7 +2147,7 @@ function StockOverviewTab({ token }: { token: string }) {
                             {!isBusy && isDirty && (
                               <button
                                 onClick={() => saveQty(row)}
-                                className="text-[9px] tracking-[0.2em] px-2 py-1 bg-[#731515] text-white rounded-lg hover:bg-[#9b2323] transition-colors shrink-0"
+                                className="text-[12px] font-medium px-2 py-1 bg-[#731515] text-white rounded-lg hover:bg-[#9b2323] transition-colors shrink-0"
                               >
                                 OK
                               </button>
@@ -2154,13 +2161,13 @@ function StockOverviewTab({ token }: { token: string }) {
               </tbody>
             </table>
           </div>
-          <p className="text-[10px] text-[#7a4a4a]/40 mt-2 text-right" style={{ fontFamily: 'var(--font-nunito)' }}>
+          <p className="text-[13px] text-[#7a4a4a]/40 mt-2 text-right" style={{ fontFamily: 'var(--font-geist)' }}>
             Modifica il numero e premi Invio o clicca fuori per salvare
           </p>
         </div>
       ) : (
         <div className="border border-dashed border-[#eddada] rounded-xl p-12 text-center">
-          <p className="text-sm text-[#7a4a4a]/40 italic" style={{ fontFamily: 'var(--font-nunito)' }}>
+          <p className="text-sm text-[#7a4a4a]/40 italic" style={{ fontFamily: 'var(--font-geist)' }}>
             Nessun dato di stock ancora. Imposta le disponibilità nella sezione Prodotti.
           </p>
         </div>
@@ -2169,17 +2176,17 @@ function StockOverviewTab({ token }: { token: string }) {
       {/* Audit log */}
       {log.length > 0 && (
         <div>
-          <p className="text-[9px] tracking-[0.35em] text-[#731515] mb-3">STORICO MODIFICHE STOCK</p>
-          <div className="border border-[#eddada] rounded-xl overflow-x-auto">
-            <table className="w-full min-w-[640px] text-[11px]" style={{ fontFamily: 'var(--font-nunito)' }}>
+          <p className="text-[12px] font-medium tracking-[0.06em] text-[#731515] mb-3">STORICO MODIFICHE STOCK</p>
+          <div className="rounded-xl border border-[#eddada]">
+            <table className="w-full min-w-[640px] text-[11px]" style={{ fontFamily: 'var(--font-geist)' }}>
               <thead>
                 <tr className="bg-[#fdf6f6] border-b border-[#eddada]">
-                  <th className="text-left px-4 py-2 text-[9px] tracking-[0.3em] text-[#7a4a4a]/50 font-normal">DATA</th>
-                  <th className="text-left px-4 py-2 text-[9px] tracking-[0.3em] text-[#7a4a4a]/50 font-normal">TAGLIA</th>
-                  <th className="text-right px-4 py-2 text-[9px] tracking-[0.3em] text-[#7a4a4a]/50 font-normal">PRIMA</th>
-                  <th className="text-right px-4 py-2 text-[9px] tracking-[0.3em] text-[#7a4a4a]/50 font-normal">DOPO</th>
-                  <th className="text-left px-4 py-2 text-[9px] tracking-[0.3em] text-[#7a4a4a]/50 font-normal">MOTIVO</th>
-                  <th className="text-left px-4 py-2 text-[9px] tracking-[0.3em] text-[#7a4a4a]/50 font-normal">DA</th>
+                  <th className="text-left min-h-[44px] px-4 text-[12px] font-medium tracking-[0.06em] text-[#7a4a4a]/50 font-normal">DATA</th>
+                  <th className="text-left min-h-[44px] px-4 text-[12px] font-medium tracking-[0.06em] text-[#7a4a4a]/50 font-normal">TAGLIA</th>
+                  <th className="text-right min-h-[44px] px-4 text-[12px] font-medium tracking-[0.06em] text-[#7a4a4a]/50 font-normal">PRIMA</th>
+                  <th className="text-right min-h-[44px] px-4 text-[12px] font-medium tracking-[0.06em] text-[#7a4a4a]/50 font-normal">DOPO</th>
+                  <th className="text-left min-h-[44px] px-4 text-[12px] font-medium tracking-[0.06em] text-[#7a4a4a]/50 font-normal">MOTIVO</th>
+                  <th className="text-left min-h-[44px] px-4 text-[12px] font-medium tracking-[0.06em] text-[#7a4a4a]/50 font-normal">DA</th>
                 </tr>
               </thead>
               <tbody>
@@ -2188,17 +2195,17 @@ function StockOverviewTab({ token }: { token: string }) {
                   const reasonLabel = row.reason === 'sale' ? '🛒 Vendita' : row.reason === 'oversell' ? '⚠ Oversell' : '✏ Manuale';
                   return (
                     <tr key={row.id} className={`border-b border-[#eddada] last:border-0 ${row.reason === 'oversell' ? 'bg-red-50/60' : 'bg-white'}`}>
-                      <td className="px-4 py-2 text-[#7a4a4a]/60 whitespace-nowrap">
+                      <td className="min-h-[44px] px-4 text-[#7a4a4a]/60 whitespace-nowrap">
                         {new Date(row.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })}{' '}
                         {new Date(row.created_at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
                       </td>
-                      <td className="px-4 py-2 text-[#7a4a4a]">{row.size ?? '—'}</td>
-                      <td className="px-4 py-2 text-right text-[#7a4a4a]">{row.old_qty}</td>
-                      <td className={`px-4 py-2 text-right font-medium ${delta > 0 ? 'text-green-700' : delta < 0 ? 'text-red-700' : 'text-[#7a4a4a]'}`}>
+                      <td className="min-h-[44px] px-4 text-[#7a4a4a]">{row.size ?? '—'}</td>
+                      <td className="min-h-[44px] px-4 text-right text-[#7a4a4a]">{row.old_qty}</td>
+                      <td className={`min-h-[44px] px-4 text-right font-medium ${delta > 0 ? 'text-green-700' : delta < 0 ? 'text-red-700' : 'text-[#7a4a4a]'}`}>
                         {delta > 0 ? `+${delta}` : delta} → {row.new_qty}
                       </td>
-                      <td className="px-4 py-2 text-[#7a4a4a]">{reasonLabel}</td>
-                      <td className="px-4 py-2 text-[#7a4a4a]/60 truncate max-w-[120px]">{row.changed_by ?? '—'}</td>
+                      <td className="min-h-[44px] px-4 text-[#7a4a4a]">{reasonLabel}</td>
+                      <td className="min-h-[44px] px-4 text-[#7a4a4a]/60 truncate max-w-[120px]">{row.changed_by ?? '—'}</td>
                     </tr>
                   );
                 })}
@@ -2325,41 +2332,26 @@ export default function MerchManager() {
 
   return (
     <>
-      {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-[clamp(1.6rem,2.5vw,2.2rem)] font-light text-[#1a0505] leading-none tracking-tight"
-            style={{ fontFamily: 'var(--font-syne)' }}>Gestione Merch</h1>
-          <p className="mt-2 text-sm text-[#7a4a4a]/70 font-light" style={{ fontFamily: 'var(--font-nunito)' }}>
-            Prodotti dello shop e ordini ricevuti.
-          </p>
-          <div className="mt-5 h-px w-16 bg-[#731515]/30" />
-        </div>
-        {tab === 'products' && (
-          <button onClick={() => { setEditing(null); setShowModal(true); }}
-            className="flex items-center gap-2 text-[10px] tracking-[0.3em] text-white bg-[#731515] px-5 py-3 hover:bg-[#9b2323] transition-colors rounded-lg shrink-0 mt-1">
-            <Plus size={13} /> NUOVO PRODOTTO
-          </button>
-        )}
-      </div>
+      <PageHead
+        title="Merch"
+        subtitle="Prodotti dello shop, ordini ricevuti e giacenze."
+        action={
+          tab === 'products'
+            ? <NewButton label="Nuovo prodotto" onClick={() => { setEditing(null); setShowModal(true); }} />
+            : undefined
+        }
+      />
 
-      {/* Tabs */}
-      <div className="flex gap-1 mb-6 border-b border-[#eddada]">
-        {([
-          { id: 'products', label: 'PRODOTTI',           icon: <Package size={13} /> },
-          { id: 'orders',   label: `ORDINI${orders.length ? ` (${orders.length})` : ''}`, icon: <ShoppingBag size={13} /> },
-          { id: 'stock',    label: 'STOCK',              icon: <CheckCircle size={13} /> },
-        ] as const).map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)}
-            className={`flex items-center gap-2 px-4 py-2.5 text-[11px] tracking-[0.3em] transition-colors border-b-2 -mb-px ${
-              tab === t.id
-                ? 'border-[#731515] text-[#731515]'
-                : 'border-transparent text-[#7a4a4a]/50 hover:text-[#7a4a4a]'
-            }`}>
-            {t.icon}
-            {t.label}
-          </button>
-        ))}
+      <div className="mb-6">
+        <FilterPills
+          value={tab}
+          onChange={setTab}
+          options={[
+            { value: 'products' as const, label: 'Prodotti', count: products.length },
+            { value: 'orders' as const,   label: 'Ordini',   count: orders.length },
+            { value: 'stock' as const,    label: 'Giacenze' },
+          ]}
+        />
       </div>
 
       {loading && (
@@ -2388,11 +2380,11 @@ export default function MerchManager() {
                   onChange={e => setShippingEditVal(e.target.value)}
                   className={`${inp} w-24 text-center`} />
                 <button onClick={saveGlobalShipping} disabled={shippingSaving}
-                  className="px-3 py-1.5 bg-[#731515] text-white text-[10px] tracking-[0.2em] rounded-lg hover:bg-[#9b2323] disabled:opacity-50 flex items-center gap-1">
+                  className="min-h-[44px] px-4 bg-[#731515] text-white text-[13px] font-medium tracking-normal rounded-lg hover:bg-[#9b2323] disabled:opacity-50 flex items-center gap-1">
                   {shippingSaving ? <Loader2 size={11} className="animate-spin" /> : 'SALVA'}
                 </button>
                 <button onClick={() => { setShippingEditing(false); setShippingEditVal(globalShipping); }}
-                  className="px-3 py-1.5 bg-white border border-[#eddada] text-[#7a4a4a] text-[10px] rounded-lg hover:bg-[#fdf6f6]">
+                  className="min-h-[44px] px-4 bg-white border border-[#eddada] text-[#7a4a4a] text-[13px] rounded-lg hover:bg-[#fdf6f6]">
                   ANNULLA
                 </button>
               </div>
@@ -2407,7 +2399,7 @@ export default function MerchManager() {
           {products.length === 0 ? (
             <div className="border border-dashed border-[#eddada] rounded-xl p-16 text-center">
               <Package size={32} className="text-[#7a4a4a]/20 mx-auto mb-3" />
-              <p className="text-sm text-[#7a4a4a]/50 italic" style={{ fontFamily: 'var(--font-nunito)' }}>
+              <p className="text-sm text-[#7a4a4a]/50 italic" style={{ fontFamily: 'var(--font-geist)' }}>
                 Nessun prodotto. Clicca &ldquo;Nuovo prodotto&rdquo; per iniziare.
               </p>
             </div>
@@ -2439,7 +2431,7 @@ export default function MerchManager() {
             ].map(s => (
               <div key={s.label} className="border border-[#eddada] rounded-xl p-4 text-center bg-white">
                 <p className={`text-2xl font-light ${s.color}`} style={{ fontFamily: 'var(--font-syne)' }}>{s.value}</p>
-                <p className="text-[9px] tracking-[0.35em] text-[#7a4a4a]/50 mt-1 uppercase">{s.label}</p>
+                <p className="text-[12px] font-medium tracking-[0.06em] text-[#7a4a4a]/50 mt-1 uppercase">{s.label}</p>
               </div>
             ))}
           </div>
@@ -2447,7 +2439,7 @@ export default function MerchManager() {
           {orders.length === 0 ? (
             <div className="border border-dashed border-[#eddada] rounded-xl p-16 text-center">
               <ShoppingBag size={32} className="text-[#7a4a4a]/20 mx-auto mb-3" />
-              <p className="text-sm text-[#7a4a4a]/50 italic" style={{ fontFamily: 'var(--font-nunito)' }}>
+              <p className="text-sm text-[#7a4a4a]/50 italic" style={{ fontFamily: 'var(--font-geist)' }}>
                 Nessun ordine ancora. Quando arrivano appaiono qui automaticamente.
               </p>
             </div>

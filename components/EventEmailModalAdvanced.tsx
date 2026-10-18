@@ -129,7 +129,7 @@ export interface PrefillEvent {
 }
 
 /* ── Email form ── */
-const inputCls = 'w-full bg-[#fdf6f6] border border-[#e8d5d5] text-[#1a0505] px-3 py-2.5 text-sm placeholder-[#7a4a4a]/40 focus:outline-none focus:border-[#731515]/50 transition-colors';
+const inputCls = 'w-full bg-[var(--color-paper-soft)] border border-[var(--color-rule-paper)] text-[var(--color-ink)] px-3 py-2.5 text-sm placeholder-[var(--color-on-paper-muted)]/40 focus:outline-none focus:border-[var(--color-accent)]/50 transition-colors';
 
 interface EmailForm {
   eventTitle: string; eventDate: string; eventLocation: string;
@@ -207,7 +207,7 @@ export default function EventEmailModalAdvanced({
 
   /* ── Email form / sending ── */
   const [form, setForm]     = useState<EmailForm>(() => prefillEvent ? buildPrefillForm(prefillEvent) : FORM_DEFAULT);
-  const [showForm, setShowForm] = useState(!!prefillEvent);
+  const [pane, setPane] = useState<'who' | 'what'>('who');
   const [status, setStatus] = useState<'idle' | 'sending' | 'done' | 'error'>('idle');
   const [result, setResult] = useState<{ sent: number; failed: number; failedEmails?: { email: string; error: string }[] } | null>(null);
 
@@ -402,7 +402,7 @@ export default function EventEmailModalAdvanced({
 
   /* ── Source badge colors ── */
   const SOURCE_COLORS: Record<string, string> = {
-    Membri:          'bg-[#731515]/10 text-[#731515]',
+    Membri:          'bg-[var(--color-accent)]/10 text-[var(--color-accent)]',
     Clienti:         'bg-blue-50 text-blue-700',
     Sponsors:        'bg-amber-50 text-amber-700',
     'Produttori BDX': 'bg-purple-50 text-purple-700',
@@ -413,35 +413,60 @@ export default function EventEmailModalAdvanced({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
+    /* Full screen on purpose: choosing among a thousand contacts and
+       writing the email that goes to them is a job, not a dialog. */
+    <div className="ds fixed inset-0 z-[70] bg-[var(--color-paper)]">
       <motion.div
-        initial={{ opacity: 0, scale: 0.97, y: 12 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.97 }}
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
-        className="bg-white w-full max-w-2xl max-h-[92vh] flex flex-col rounded-xl shadow-2xl overflow-hidden"
-        onClick={e => e.stopPropagation()}
+        className="flex h-full w-full flex-col overflow-hidden bg-[var(--color-paper)]"
       >
         {/* ── Header ── */}
-        <div className="px-6 py-4 border-b border-[#e8d5d5] shrink-0 flex items-center justify-between">
-          <div className="min-w-0 mr-3">
-            <div className="text-[9px] tracking-[0.4em] text-[#731515]">
-              {prefillEvent ? 'INVITA CLIENTI CRM' : 'ANNUNCIO NUOVO EVENTO'}
-            </div>
-            {prefillEvent ? (
-              <div className="text-[13px] font-medium text-[#1a0505] mt-0.5 truncate" style={{ fontFamily: 'var(--font-syne)' }}>
-                {prefillEvent.title}
-              </div>
-            ) : (
-              <div className="text-[11px] text-[#7a4a4a]/60 mt-0.5" style={{ fontFamily: 'var(--font-nunito)' }}>
-                {totalSelected} contatti selezionati
-              </div>
-            )}
-          </div>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center text-[#7a4a4a]/40 hover:text-[#731515] transition-colors rounded-lg">
-            <X size={16} />
+        <div
+          className="flex shrink-0 items-center gap-3 border-b border-[var(--color-rule-paper)] bg-white px-4 py-3 lg:px-6"
+          style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}
+        >
+          <button
+            onClick={onClose}
+            aria-label="Chiudi"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-[var(--color-ink)] transition-colors hover:bg-[var(--color-paper-soft)]"
+          >
+            <X size={21} strokeWidth={1.8} />
           </button>
+          <div className="min-w-0 flex-1">
+            <h2 className="ds-display truncate text-[19px] tracking-[-0.02em] text-[var(--color-ink)]">
+              {prefillEvent ? prefillEvent.title : 'Annuncio nuovo evento'}
+            </h2>
+            <p className="mt-0.5 text-[13px] text-[var(--color-on-paper-muted)]">
+              {prefillEvent ? 'Invito ai contatti del CRM' : `${totalSelected} contatti selezionati`}
+            </p>
+          </div>
         </div>
+
+        {/* Two columns do not fit on a phone, so there they become two
+            steps: who it goes to, then what it says. */}
+        {status !== 'done' && (
+          <div className="shrink-0 border-b border-[var(--color-rule-paper)] bg-white px-4 pb-3 lg:hidden">
+            <div className="flex gap-2">
+              {([['who', `Destinatari · ${totalSelected}`], ['what', 'Messaggio']] as const).map(([id, label]) => (
+                <button
+                  key={id}
+                  onClick={() => setPane(id)}
+                  aria-pressed={pane === id}
+                  className={`min-h-[44px] flex-1 rounded-full border px-3 text-[13px] font-medium transition-colors ${
+                    pane === id
+                      ? 'border-[var(--color-accent)] bg-[var(--color-accent)] text-white'
+                      : 'border-[var(--color-rule-paper)] text-[var(--color-ink)]'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {status === 'done' ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-4 p-10 text-center overflow-y-auto">
@@ -449,37 +474,44 @@ export default function EventEmailModalAdvanced({
               <Check size={22} className="text-green-600" />
             </div>
             <div>
-              <p className="text-sm font-medium text-[#1a0505]">{result?.sent} email inviate</p>
+              <p className="text-sm font-medium text-[var(--color-ink)]">{result?.sent} email inviate</p>
               {(result?.failed ?? 0) > 0 && (
-                <p className="text-xs text-[#731515] mt-1">{result?.failed} fallite</p>
+                <p className="text-xs text-[var(--color-accent)] mt-1">{result?.failed} fallite</p>
               )}
               {result?.failedEmails && result.failedEmails.length > 0 && (
-                <div className="mt-3 text-left bg-red-50 border border-red-200 rounded-lg px-3 py-2 max-h-32 overflow-y-auto">
+                <div className="mt-3 text-left bg-red-50 border border-red-200 rounded-xl px-3 py-2 max-h-32 overflow-y-auto">
                   {result.failedEmails.map(f => (
-                    <div key={f.email} className="text-[10px] text-red-600 truncate">{f.email}</div>
+                    <div key={f.email} className="text-[13px] text-red-600 truncate">{f.email}</div>
                   ))}
                 </div>
               )}
             </div>
-            <button onClick={onClose} className="px-6 py-2 bg-[#731515] text-white text-xs tracking-[0.2em] hover:bg-[#aa4848] transition-colors rounded-lg">
+            <button onClick={onClose} className="px-6 py-2 bg-[var(--color-accent)] text-white text-xs tracking-[0.2em] hover:bg-[#aa4848] transition-colors rounded-xl">
               CHIUDI
             </button>
           </div>
         ) : (
-          <div className="flex-1 overflow-y-auto">
-            <div className="px-6 py-4 space-y-5">
+          <div className="flex min-h-0 flex-1 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,460px)]">
+
+            {/* ── A chi ── */}
+            <div
+              className={`min-h-0 flex-1 overflow-y-auto px-4 py-4 lg:block lg:border-r lg:border-[var(--color-rule-paper)] lg:px-6 ${
+                pane === 'who' ? '' : 'hidden'
+              }`}
+            >
+              <div className="space-y-5">
 
               {/* ── CRM Source selection ── */}
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <Users size={12} className="text-[#731515]" />
-                    <span className="text-[9px] tracking-[0.35em] text-[#731515]">SCEGLI CRM</span>
+                    <Users size={12} className="text-[var(--color-accent)]" />
+                    <span className="text-[13px] font-medium tracking-normal text-[var(--color-accent)]">SCEGLI CRM</span>
                   </div>
                   <button
                     onClick={toggleAllSources}
-                    className="text-[9px] tracking-[0.2em] text-[#731515] hover:underline"
-                    style={{ fontFamily: 'var(--font-nunito)' }}
+                    className="text-[13px] font-medium tracking-normal text-[var(--color-accent)] hover:underline"
+                    style={{ fontFamily: 'var(--font-geist)' }}
                   >
                     {allSourcesSelected ? 'DESELEZIONA TUTTI' : 'SELEZIONA TUTTI'}
                   </button>
@@ -491,11 +523,11 @@ export default function EventEmailModalAdvanced({
                         type="checkbox"
                         checked={selectedSources.has(s.id)}
                         onChange={() => toggleSource(s.id)}
-                        className="w-3 h-3 accent-[#731515] cursor-pointer"
+                        className="w-3 h-3 accent-[var(--color-accent)] cursor-pointer"
                       />
-                      <span className={`text-[10px] tracking-[0.1em] transition-colors ${
-                        selectedSources.has(s.id) ? 'text-[#1a0505]' : 'text-[#7a4a4a]/40'
-                      }`} style={{ fontFamily: 'var(--font-nunito)' }}>
+                      <span className={`text-[13px] tracking-[0.1em] transition-colors ${
+                        selectedSources.has(s.id) ? 'text-[var(--color-ink)]' : 'text-[var(--color-on-paper-muted)]/40'
+                      }`} style={{ fontFamily: 'var(--font-geist)' }}>
                         {s.label}
                         {loadingSources.has(s.id) && <Loader2 size={8} className="inline ml-1 animate-spin" />}
                       </span>
@@ -505,27 +537,27 @@ export default function EventEmailModalAdvanced({
               </div>
 
               {/* ── Filters ── */}
-              <div className="border border-[#e8d5d5] rounded-lg overflow-hidden">
+              <div className="border border-[var(--color-rule-paper)] rounded-xl overflow-hidden">
                 <button
                   onClick={() => setShowEventFilter(v => !v)}
-                  className="w-full flex items-center justify-between px-4 py-2.5 bg-[#fdf6f6] text-[9px] tracking-[0.3em] text-[#7a4a4a] hover:text-[#731515] transition-colors"
+                  className="w-full flex items-center justify-between px-4 py-2.5 bg-[var(--color-paper-soft)] text-[12px] font-medium tracking-[0.06em] text-[var(--color-on-paper-muted)] hover:text-[var(--color-accent)] transition-colors"
                 >
                   <span>FILTRI AVANZATI {selectedEventSlugs.length > 0 && `(${selectedEventSlugs.length} evento${selectedEventSlugs.length > 1 ? 'i' : ''})`}</span>
                   {showEventFilter ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
                 </button>
 
                 {showEventFilter && (
-                  <div className="px-4 py-3 space-y-3 border-t border-[#e8d5d5]">
+                  <div className="px-4 py-3 space-y-3 border-t border-[var(--color-rule-paper)]">
                     {/* Event filter */}
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-[9px] tracking-[0.25em] text-[#7a4a4a]/70">PARTECIPANTI A EVENTO</span>
+                        <span className="text-[12px] font-medium tracking-[0.06em] text-[var(--color-on-paper-muted)]/70">PARTECIPANTI A EVENTO</span>
                         {selectedEventSlugs.length > 1 && (
                           <div className="flex items-center gap-1.5">
-                            <span className="text-[9px] text-[#7a4a4a]/50">Logica:</span>
+                            <span className="text-[12px] text-[var(--color-on-paper-muted)]/50">Logica:</span>
                             <button
                               onClick={() => setEventLogic(v => v === 'OR' ? 'AND' : 'OR')}
-                              className="text-[9px] tracking-[0.15em] px-2 py-0.5 border border-[#731515]/30 text-[#731515] rounded hover:bg-[#fdf0f0] transition-colors"
+                              className="text-[12px] tracking-[0.15em] px-2 py-0.5 border border-[var(--color-accent)]/30 text-[var(--color-accent)] rounded hover:bg-[#fdf0f0] transition-colors"
                             >
                               {eventLogic}
                             </button>
@@ -533,7 +565,7 @@ export default function EventEmailModalAdvanced({
                         )}
                       </div>
                       {pastEvents.length === 0 ? (
-                        <p className="text-[10px] text-[#7a4a4a]/40 italic">Nessun evento con lista invitati trovato</p>
+                        <p className="text-[13px] text-[var(--color-on-paper-muted)]/40 italic">Nessun evento con lista invitati trovato</p>
                       ) : (
                         <div className="flex flex-wrap gap-2 max-h-28 overflow-y-auto pr-1">
                           {pastEvents.map(ev => (
@@ -542,18 +574,18 @@ export default function EventEmailModalAdvanced({
                                 type="checkbox"
                                 checked={selectedEventSlugs.includes(ev.slug)}
                                 onChange={() => toggleEventSlug(ev.slug)}
-                                className="w-3 h-3 accent-[#731515] cursor-pointer shrink-0"
+                                className="w-3 h-3 accent-[var(--color-accent)] cursor-pointer shrink-0"
                               />
-                              <span className="text-[10px] text-[#1a0505]" style={{ fontFamily: 'var(--font-nunito)' }}>
+                              <span className="text-[13px] text-[var(--color-ink)]" style={{ fontFamily: 'var(--font-geist)' }}>
                                 {ev.title}
-                                <span className="text-[#7a4a4a]/40 ml-1">({ev.count})</span>
+                                <span className="text-[var(--color-on-paper-muted)]/40 ml-1">({ev.count})</span>
                               </span>
                             </label>
                           ))}
                         </div>
                       )}
                       {loadingEvents && (
-                        <div className="flex items-center gap-1.5 mt-1 text-[10px] text-[#7a4a4a]/50">
+                        <div className="flex items-center gap-1.5 mt-1 text-[13px] text-[var(--color-on-paper-muted)]/50">
                           <Loader2 size={10} className="animate-spin" /> Caricamento partecipanti…
                         </div>
                       )}
@@ -562,16 +594,16 @@ export default function EventEmailModalAdvanced({
                     {/* Tier filter (only if Membri selected) */}
                     {hasMembriSelected && (
                       <div>
-                        <div className="text-[9px] tracking-[0.25em] text-[#7a4a4a]/70 mb-2">RUOLO (MEMBRI)</div>
+                        <div className="text-[12px] font-medium tracking-[0.06em] text-[var(--color-on-paper-muted)]/70 mb-2">RUOLO (MEMBRI)</div>
                         <div className="flex gap-2 flex-wrap">
                           {['', 'Member', 'Staff'].map(t => (
                             <button
                               key={t || 'all'}
                               onClick={() => setTierFilter(t)}
-                              className={`px-3 py-1 text-[9px] tracking-[0.15em] rounded-full border transition-colors ${
+                              className={`px-3 py-1 text-[12px] tracking-[0.15em] rounded-full border transition-colors ${
                                 tierFilter === t
-                                  ? 'bg-[#731515] text-white border-[#731515]'
-                                  : 'border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515]/40'
+                                  ? 'bg-[var(--color-accent)] text-white border-[var(--color-accent)]'
+                                  : 'border-[var(--color-rule-paper)] text-[var(--color-on-paper-muted)] hover:border-[var(--color-accent)]/40'
                               }`}
                             >
                               {t || 'TUTTI'}
@@ -585,18 +617,18 @@ export default function EventEmailModalAdvanced({
               </div>
 
               {/* ── Search ── */}
-              <div className="flex items-center gap-2 bg-[#fdf6f6] border border-[#e8d5d5] rounded-lg px-3 py-1.5">
-                <Search size={11} className="text-[#7a4a4a]/40 shrink-0" />
+              <div className="flex items-center gap-2 bg-[var(--color-paper-soft)] border border-[var(--color-rule-paper)] rounded-xl min-h-[44px] px-4">
+                <Search size={11} className="text-[var(--color-on-paper-muted)]/40 shrink-0" />
                 <input
                   type="text"
                   placeholder="Cerca per nome, cognome o email…"
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  className="flex-1 bg-transparent text-[12px] text-[#1a0505] placeholder:text-[#7a4a4a]/30 focus:outline-none"
-                  style={{ fontFamily: 'var(--font-nunito)' }}
+                  className="flex-1 bg-transparent text-[12px] text-[var(--color-ink)] placeholder:text-[var(--color-on-paper-muted)]/30 focus:outline-none"
+                  style={{ fontFamily: 'var(--font-geist)' }}
                 />
                 {searchQuery && (
-                  <button onClick={() => setSearchQuery('')} className="text-[#7a4a4a]/40 hover:text-[#731515] transition-colors">
+                  <button onClick={() => setSearchQuery('')} className="text-[var(--color-on-paper-muted)]/40 hover:text-[var(--color-accent)] transition-colors">
                     <X size={10} />
                   </button>
                 )}
@@ -605,44 +637,44 @@ export default function EventEmailModalAdvanced({
               {/* ── Contact list ── */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[9px] tracking-[0.3em] text-[#7a4a4a]/60">
+                  <span className="text-[12px] font-medium tracking-[0.06em] text-[var(--color-on-paper-muted)]/60">
                     {displaySelected.length} SELEZIONATI SU {displayContacts.length}
                     {displayContacts.length !== allContacts.length && ` (${allContacts.length} totali)`}
                   </span>
                 </div>
-                <div className="border border-[#e8d5d5] rounded-lg overflow-hidden">
+                <div className="border border-[var(--color-rule-paper)] rounded-xl overflow-hidden">
                   {/* Select-all row */}
-                  <label className="flex items-center gap-2.5 px-3 py-2 bg-[#fdf6f6] border-b border-[#e8d5d5] cursor-pointer hover:bg-[#fdf0f0] transition-colors select-none">
+                  <label className="flex items-center gap-2.5 px-3 py-2 bg-[var(--color-paper-soft)] border-b border-[var(--color-rule-paper)] cursor-pointer hover:bg-[#fdf0f0] transition-colors select-none">
                     <input
                       type="checkbox"
                       checked={allDisplaySelected}
                       onChange={toggleAllDisplay}
-                      className="w-3.5 h-3.5 cursor-pointer accent-[#731515] shrink-0"
+                      className="w-3.5 h-3.5 cursor-pointer accent-[var(--color-accent)] shrink-0"
                     />
-                    <span className="text-[10px] font-semibold text-[#731515] tracking-[0.2em]">
+                    <span className="text-[13px] font-semibold text-[var(--color-accent)] tracking-[0.2em]">
                       {allDisplaySelected ? 'DESELEZIONA TUTTI' : 'SELEZIONA TUTTI'}
                     </span>
                   </label>
                   {/* Contact rows */}
-                  <div className="max-h-52 overflow-y-auto divide-y divide-[#f0e4e4]">
+                  <div className="max-h-[48vh] overflow-y-auto divide-y divide-[var(--color-rule-paper)] lg:max-h-[52vh]">
                     {displayContacts.length === 0 ? (
-                      <div className="px-4 py-6 text-center text-[11px] text-[#7a4a4a]/40">
+                      <div className="px-4 py-6 text-center text-[13px] text-[var(--color-on-paper-muted)]/40">
                         {loadingSources.size > 0 ? 'Caricamento contatti…' : 'Nessun contatto trovato'}
                       </div>
                     ) : displayContacts.map(c => (
                       <label
                         key={c.email}
-                        className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-[#fdf6f6] transition-colors select-none"
+                        className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-[var(--color-paper-soft)] transition-colors select-none"
                       >
                         <input
                           type="checkbox"
                           checked={selectedEmails.has(c.email)}
                           onChange={() => toggleEmail(c.email)}
-                          className="w-3.5 h-3.5 cursor-pointer accent-[#731515] shrink-0"
+                          className="w-3.5 h-3.5 cursor-pointer accent-[var(--color-accent)] shrink-0"
                         />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-[12px] text-[#1a0505] font-medium truncate" style={{ fontFamily: 'var(--font-nunito)' }}>
+                            <span className="text-[12px] text-[var(--color-ink)] font-medium truncate" style={{ fontFamily: 'var(--font-geist)' }}>
                               {c.name}
                             </span>
                             {c.sources.map(src => (
@@ -651,7 +683,7 @@ export default function EventEmailModalAdvanced({
                               </span>
                             ))}
                           </div>
-                          <div className="text-[10px] text-[#7a4a4a]/55 truncate">{c.email}</div>
+                          <div className="text-[13px] text-[var(--color-on-paper-muted)]/55 truncate">{c.email}</div>
                         </div>
                       </label>
                     ))}
@@ -659,77 +691,81 @@ export default function EventEmailModalAdvanced({
                 </div>
               </div>
 
-              {/* ── Email form (collapsible) ── */}
-              <div className="border border-[#e8d5d5] rounded-lg overflow-hidden">
-                <button
-                  onClick={() => setShowForm(v => !v)}
-                  className="w-full flex items-center justify-between px-4 py-2.5 bg-[#fdf6f6] text-[9px] tracking-[0.3em] text-[#7a4a4a] hover:text-[#731515] transition-colors"
-                >
-                  <span>CONTENUTO EMAIL</span>
-                  {showForm ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-                </button>
-                {showForm && (
-                  <div className="px-4 py-4 space-y-3 border-t border-[#e8d5d5]">
+              </div>
+            </div>
+
+            {/* ── Cosa ──
+                Its own column, always open: the email was collapsed
+                below a thousand names, so you wrote it blind. */}
+            <div
+              className={`min-h-0 flex-1 overflow-y-auto bg-[var(--color-paper-soft)]/40 px-4 py-4 lg:block lg:px-6 ${
+                pane === 'what' ? '' : 'hidden'
+              }`}
+            >
+              <h3 className="ds-display mb-4 text-[17px] tracking-[-0.02em] text-[var(--color-ink)]">
+                Contenuto dell&apos;email
+              </h3>
+              <div>
+                <div>
+                  <div className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-[9px] tracking-[0.25em] text-[#7a4a4a]/60 mb-1.5">TITOLO EVENTO *</label>
-                        <input value={form.eventTitle} onChange={set('eventTitle')} required placeholder="Wine Party Estate 2026" className={inputCls + ' rounded-lg text-sm'} />
+                        <label className="block text-[12px] font-medium tracking-[0.06em] text-[var(--color-on-paper-muted)]/60 mb-1.5">TITOLO EVENTO *</label>
+                        <input value={form.eventTitle} onChange={set('eventTitle')} required placeholder="Wine Party Estate 2026" className={inputCls + ' rounded-xl text-sm'} />
                       </div>
                       <div>
-                        <label className="block text-[9px] tracking-[0.25em] text-[#7a4a4a]/60 mb-1.5">DATA</label>
-                        <input value={form.eventDate} onChange={set('eventDate')} placeholder="Sabato 15 Agosto 2026" className={inputCls + ' rounded-lg text-sm'} />
+                        <label className="block text-[12px] font-medium tracking-[0.06em] text-[var(--color-on-paper-muted)]/60 mb-1.5">DATA</label>
+                        <input value={form.eventDate} onChange={set('eventDate')} placeholder="Sabato 15 Agosto 2026" className={inputCls + ' rounded-xl text-sm'} />
                       </div>
                     </div>
                     <div>
-                      <label className="block text-[9px] tracking-[0.25em] text-[#7a4a4a]/60 mb-1.5">LOCATION</label>
-                      <input value={form.eventLocation} onChange={set('eventLocation')} placeholder="Rooftop Milano, Via Brera 12" className={inputCls + ' rounded-lg text-sm'} />
+                      <label className="block text-[12px] font-medium tracking-[0.06em] text-[var(--color-on-paper-muted)]/60 mb-1.5">LOCATION</label>
+                      <input value={form.eventLocation} onChange={set('eventLocation')} placeholder="Rooftop Milano, Via Brera 12" className={inputCls + ' rounded-xl text-sm'} />
                     </div>
                     <div>
-                      <label className="block text-[9px] tracking-[0.25em] text-[#7a4a4a]/60 mb-1.5">DESCRIZIONE</label>
-                      <textarea value={form.eventDescription} onChange={set('eventDescription')} rows={3} placeholder="Breve descrizione…" className={inputCls + ' rounded-lg text-sm resize-none'} />
+                      <label className="block text-[12px] font-medium tracking-[0.06em] text-[var(--color-on-paper-muted)]/60 mb-1.5">DESCRIZIONE</label>
+                      <textarea value={form.eventDescription} onChange={set('eventDescription')} rows={3} placeholder="Breve descrizione…" className={inputCls + ' rounded-xl text-sm resize-none'} />
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-[9px] tracking-[0.25em] text-[#7a4a4a]/60 mb-1.5">TESTO CTA</label>
-                        <input value={form.ctaText} onChange={set('ctaText')} className={inputCls + ' rounded-lg text-sm'} />
+                        <label className="block text-[12px] font-medium tracking-[0.06em] text-[var(--color-on-paper-muted)]/60 mb-1.5">TESTO CTA</label>
+                        <input value={form.ctaText} onChange={set('ctaText')} className={inputCls + ' rounded-xl text-sm'} />
                       </div>
                       <div>
-                        <label className="block text-[9px] tracking-[0.25em] text-[#7a4a4a]/60 mb-1.5">LINK CTA</label>
-                        <input value={form.ctaLink} onChange={set('ctaLink')} type="url" className={inputCls + ' rounded-lg text-sm'} />
+                        <label className="block text-[12px] font-medium tracking-[0.06em] text-[var(--color-on-paper-muted)]/60 mb-1.5">LINK CTA</label>
+                        <input value={form.ctaLink} onChange={set('ctaLink')} type="url" className={inputCls + ' rounded-xl text-sm'} />
                       </div>
                     </div>
                   </div>
-                )}
+                </div>
               </div>
-
             </div>
+
           </div>
         )}
 
         {/* ── Footer / Send button ── */}
         {status !== 'done' && (
-          <div className="px-6 py-4 border-t border-[#e8d5d5] shrink-0 space-y-3">
+          <div
+            className="shrink-0 space-y-3 border-t border-[var(--color-rule-paper)] bg-white px-4 py-4 lg:px-6"
+            style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
+          >
             {status === 'error' && (
-              <div className="flex items-center gap-2 p-2.5 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center gap-2 p-2.5 bg-red-50 border border-red-200 rounded-xl">
                 <AlertCircle size={13} className="text-red-500 shrink-0" />
-                <span className="text-[11px] text-red-600">Errore durante l&apos;invio. Riprova.</span>
+                <span className="text-[13px] text-red-600">Errore durante l&apos;invio. Riprova.</span>
               </div>
-            )}
-            {!showForm && (
-              <p className="text-[10px] text-[#7a4a4a]/50 text-center" style={{ fontFamily: 'var(--font-nunito)' }}>
-                Apri &quot;Contenuto Email&quot; per compilare i dettagli dell&apos;evento prima di inviare.
-              </p>
             )}
             <form onSubmit={handleSend}>
               <button
                 type="submit"
                 disabled={totalSelected === 0 || !form.eventTitle || status === 'sending'}
-                className="w-full flex items-center justify-center gap-2 py-3 bg-[#731515] text-white text-[10px] tracking-[0.3em] hover:bg-[#aa4848] disabled:opacity-40 transition-colors rounded-lg"
+                className="flex min-h-[52px] w-full items-center justify-center gap-2.5 rounded-full bg-[var(--color-accent)] text-[15px] font-medium text-white transition-colors hover:bg-[var(--color-accent-lift)] disabled:opacity-40 lg:ml-auto lg:w-auto lg:px-10"
               >
                 <Send size={13} />
                 {status === 'sending'
-                  ? 'INVIO IN CORSO…'
-                  : `INVIA A ${totalSelected} CONTATT${totalSelected === 1 ? 'O' : 'I'}`}
+                  ? 'Invio in corso…'
+                  : `Invia a ${totalSelected} contatt${totalSelected === 1 ? 'o' : 'i'}`}
               </button>
             </form>
           </div>

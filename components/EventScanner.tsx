@@ -314,7 +314,7 @@ export default function EventScanner({
         success: {
           bg:       'bg-emerald-500',
           icon:     <CheckCircle2 size={60} className="text-white drop-shadow" />,
-          title:    '✓ Accesso confermato',
+          title:    'Accesso confermato',
           nameCls:  'text-white/95',
           subCls:   'text-white/75',
           sub:      scanResult.email,
@@ -322,7 +322,7 @@ export default function EventScanner({
         already: {
           bg:       'bg-amber-500',
           icon:     <AlertTriangle size={60} className="text-white drop-shadow" />,
-          title:    '⚠ Già scannerizzato',
+          title:    'Già scannerizzato',
           nameCls:  'text-white/95',
           subCls:   'text-white/75',
           sub:      scanResult.scannedBy
@@ -332,7 +332,7 @@ export default function EventScanner({
         invalid: {
           bg:       'bg-red-500',
           icon:     <XCircle size={60} className="text-white drop-shadow" />,
-          title:    '✗ Biglietto non valido',
+          title:    'Biglietto non valido',
           nameCls:  'text-white/95',
           subCls:   'text-white/75',
           sub:      undefined,
@@ -367,11 +367,11 @@ export default function EventScanner({
       >
 
         {/* ── Header ── */}
-        <div className="flex items-start justify-between px-6 py-5 border-b border-[#eddada] shrink-0">
+        <div className="flex items-start justify-between px-6 py-5 border-b border-[var(--color-rule-paper)] shrink-0">
           <div>
-            <div className="text-[9px] tracking-[0.42em] text-[#731515] mb-0.5">EVENT SCANNER</div>
+            <div className="text-[12px] font-medium tracking-[0.08em] text-[var(--color-accent)] mb-0.5">EVENT SCANNER</div>
             <h2
-              className="text-lg font-light text-[#1a0505] leading-tight"
+              className="text-lg font-light text-[var(--color-ink)] leading-tight"
               style={{ fontFamily: 'var(--font-syne)' }}
             >
               {event.title}
@@ -380,16 +380,16 @@ export default function EventScanner({
           <div className="flex items-center gap-4">
             <div className="text-center">
               <div
-                className="text-[28px] font-light text-[#731515] leading-none"
+                className="text-[28px] font-light text-[var(--color-accent)] leading-none"
                 style={{ fontFamily: 'var(--font-syne)' }}
               >
-                {present}<span className="text-base text-[#7a4a4a]/40">/{total}</span>
+                {present}<span className="text-base text-[var(--color-on-paper-muted)]/40">/{total}</span>
               </div>
-              <div className="text-[9px] tracking-[0.3em] text-[#7a4a4a]/50 mt-0.5">PRESENTI</div>
+              <div className="text-[12px] font-medium tracking-[0.06em] text-[var(--color-on-paper-muted)]/50 mt-0.5">PRESENTI</div>
             </div>
             <button
               onClick={onClose}
-              className="p-2.5 rounded-lg text-[#7a4a4a] hover:text-[#1a0505] hover:bg-[#fdf6f6] transition-colors"
+              className="p-2.5 rounded-xl text-[var(--color-on-paper-muted)] hover:text-[var(--color-ink)] hover:bg-[var(--color-paper-soft)] transition-colors"
               aria-label="Chiudi scanner"
             >
               <X size={18} />
@@ -398,15 +398,15 @@ export default function EventScanner({
         </div>
 
         {/* ── Tab bar ── */}
-        <div className="flex border-b border-[#eddada] shrink-0">
+        <div className="flex border-b border-[var(--color-rule-paper)] shrink-0">
           {(['list', 'scanner'] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`flex-1 py-3 text-[9px] tracking-[0.35em] transition-colors ${
+              className={`flex-1 min-h-[48px] text-[13px] font-medium tracking-normal transition-colors ${
                 tab === t
-                  ? 'text-[#731515] border-b-2 border-[#731515] -mb-px'
-                  : 'text-[#7a4a4a]/50 hover:text-[#7a4a4a]'
+                  ? 'text-[var(--color-accent)] border-b-2 border-[var(--color-accent)] -mb-px'
+                  : 'text-[var(--color-on-paper-muted)]/50 hover:text-[var(--color-on-paper-muted)]'
               }`}
             >
               {t === 'list' ? (
@@ -428,12 +428,12 @@ export default function EventScanner({
           {/* Hidden via CSS, never unmounted */}
           <div style={{ display: tab === 'list' ? 'block' : 'none' }} className="px-6 py-5">
             <div className="flex items-center justify-between mb-4">
-              <p className="text-[10px] tracking-[0.3em] text-[#7a4a4a]/50">
+              <p className="text-[13px] font-medium tracking-normal text-[var(--color-on-paper-muted)]/50">
                 {total} {total === 1 ? 'prenotazione' : 'prenotazioni'} · {present} presenti
               </p>
               <button
                 onClick={load}
-                className="p-1.5 rounded-lg text-[#7a4a4a]/50 hover:text-[#731515] hover:bg-[#fdf6f6] transition-colors"
+                className="p-1.5 rounded-xl text-[var(--color-on-paper-muted)]/50 hover:text-[var(--color-accent)] hover:bg-[var(--color-paper-soft)] transition-colors"
                 title="Aggiorna"
               >
                 <RefreshCw size={13} />
@@ -442,14 +442,14 @@ export default function EventScanner({
 
             {loading ? (
               <div className="flex justify-center py-10">
-                <div className="w-5 h-5 rounded-full border-2 border-[#731515] border-t-transparent animate-spin" />
+                <div className="w-5 h-5 rounded-full border-2 border-[var(--color-accent)] border-t-transparent animate-spin" />
               </div>
             ) : tickets.length === 0 ? (
               <div
-                className="text-center py-10 text-[#7a4a4a]/40 text-sm"
-                style={{ fontFamily: 'var(--font-nunito)' }}
+                className="text-center py-10 text-[var(--color-on-paper-muted)]/40 text-sm"
+                style={{ fontFamily: 'var(--font-geist)' }}
               >
-                <Users size={28} className="mx-auto mb-2 text-[#eddada]" />
+                <Users size={28} className="mx-auto mb-2 text-[var(--color-rule-paper)]" />
                 Nessun biglietto acquistato per questo evento.
               </div>
             ) : (
@@ -462,7 +462,7 @@ export default function EventScanner({
                       className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${
                         ticket.checked_in
                           ? 'bg-emerald-50 border-emerald-200'
-                          : 'bg-white border-[#eddada]'
+                          : 'bg-white border-[var(--color-rule-paper)]'
                       }`}
                     >
                       {ticket.checked_in ? (
@@ -473,22 +473,22 @@ export default function EventScanner({
 
                       <div className="flex-1 min-w-0">
                         <div
-                          className={`text-sm font-medium truncate ${ticket.checked_in ? 'text-emerald-800' : 'text-[#1a0505]'}`}
+                          className={`text-sm font-medium truncate ${ticket.checked_in ? 'text-emerald-800' : 'text-[var(--color-ink)]'}`}
                           style={{ fontFamily: 'var(--font-syne)' }}
                         >
                           {ticket.name}
                         </div>
                         <div className="flex flex-wrap items-center gap-x-3 mt-0.5">
                           <span
-                            className={`text-[11px] truncate ${ticket.checked_in ? 'text-emerald-700/60' : 'text-[#7a4a4a]/50'}`}
-                            style={{ fontFamily: 'var(--font-nunito)' }}
+                            className={`text-[13px] truncate ${ticket.checked_in ? 'text-emerald-700/60' : 'text-[var(--color-on-paper-muted)]/50'}`}
+                            style={{ fontFamily: 'var(--font-geist)' }}
                           >
                             {ticket.email}
                           </span>
                           {ticket.phone && (
                             <span
-                              className={`flex items-center gap-1 text-[11px] shrink-0 ${ticket.checked_in ? 'text-emerald-700/60' : 'text-[#7a4a4a]/50'}`}
-                              style={{ fontFamily: 'var(--font-nunito)' }}
+                              className={`flex items-center gap-1 text-[13px] shrink-0 ${ticket.checked_in ? 'text-emerald-700/60' : 'text-[var(--color-on-paper-muted)]/50'}`}
+                              style={{ fontFamily: 'var(--font-geist)' }}
                             >
                               <Phone size={9} className="shrink-0" />{ticket.phone}
                             </span>
@@ -499,8 +499,8 @@ export default function EventScanner({
                       {/* Scanned-at time (QR scanner) */}
                       {ticket.checked_in && ticket.scanned_at && ticket.scanned_by !== 'manuale' && (
                         <div
-                          className="text-[10px] text-emerald-600/70 shrink-0"
-                          style={{ fontFamily: 'var(--font-nunito)' }}
+                          className="text-[13px] text-emerald-600/70 shrink-0"
+                          style={{ fontFamily: 'var(--font-geist)' }}
                         >
                           {fmtTime(ticket.scanned_at)}
                         </div>
@@ -512,8 +512,8 @@ export default function EventScanner({
                           onClick={() => toggleCheckIn(ticket)}
                           disabled={isUpdating}
                           title="Clicca per annullare il check-in"
-                          className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-100 border border-emerald-200 text-emerald-700 text-[9px] tracking-[0.2em] hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-all disabled:opacity-50 disabled:cursor-wait"
-                          style={{ fontFamily: 'var(--font-nunito)' }}
+                          className="shrink-0 inline-flex items-center gap-1.5 min-h-[44px] px-4 rounded-xl bg-emerald-100 border border-emerald-200 text-emerald-700 text-[13px] font-medium tracking-normal hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-all disabled:opacity-50 disabled:cursor-wait"
+                          style={{ fontFamily: 'var(--font-geist)' }}
                         >
                           {isUpdating
                             ? <span className="w-3 h-3 rounded-full border border-current/40 border-t-current animate-spin" />
@@ -525,8 +525,8 @@ export default function EventScanner({
                           onClick={() => toggleCheckIn(ticket)}
                           disabled={isUpdating}
                           title="Check-in manuale"
-                          className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-[9px] tracking-[0.2em] transition-colors disabled:opacity-50 disabled:cursor-wait"
-                          style={{ fontFamily: 'var(--font-nunito)' }}
+                          className="shrink-0 inline-flex items-center gap-1.5 min-h-[44px] px-4 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-[13px] font-medium tracking-normal transition-colors disabled:opacity-50 disabled:cursor-wait"
+                          style={{ fontFamily: 'var(--font-geist)' }}
                         >
                           {isUpdating
                             ? <span className="w-3 h-3 rounded-full border border-white/40 border-t-white animate-spin" />
@@ -584,11 +584,11 @@ export default function EventScanner({
 
               {/* ── Placeholder overlay (camera off, no result) ── */}
               {!cameraOn && !scanResult && (
-                <div className="absolute inset-0 rounded-xl border-2 border-dashed border-[#eddada] bg-[#fdf8f8] flex flex-col items-center justify-center gap-4 text-[#9a6060]/50">
+                <div className="absolute inset-0 rounded-xl border-2 border-dashed border-[var(--color-rule-paper)] bg-[#fdf8f8] flex flex-col items-center justify-center gap-4 text-[#9a6060]/50">
                   <ScanLine size={52} strokeWidth={1} />
                   <p
                     className="text-sm text-center px-8 leading-relaxed"
-                    style={{ fontFamily: 'var(--font-nunito)' }}
+                    style={{ fontFamily: 'var(--font-geist)' }}
                   >
                     Premi il pulsante qui sotto per attivare la fotocamera e iniziare la scansione
                   </p>
@@ -600,8 +600,8 @@ export default function EventScanner({
                 <div className="absolute inset-0 bg-black/65 rounded-xl flex flex-col items-center justify-center gap-3">
                   <div className="w-9 h-9 rounded-full border-[3px] border-white border-t-transparent animate-spin" />
                   <span
-                    className="text-[10px] tracking-[0.35em] text-white/80"
-                    style={{ fontFamily: 'var(--font-nunito)' }}
+                    className="text-[13px] tracking-[0.35em] text-white/80"
+                    style={{ fontFamily: 'var(--font-geist)' }}
                   >
                     VERIFICA…
                   </span>
@@ -630,7 +630,7 @@ export default function EventScanner({
                     {scanResult.name && (
                       <div
                         className={`text-base font-semibold mt-1 ${resultOverlay.nameCls}`}
-                        style={{ fontFamily: 'var(--font-nunito)' }}
+                        style={{ fontFamily: 'var(--font-geist)' }}
                       >
                         {scanResult.name}
                       </div>
@@ -638,7 +638,7 @@ export default function EventScanner({
                     {resultOverlay.sub && (
                       <div
                         className={`text-sm mt-0.5 ${resultOverlay.subCls}`}
-                        style={{ fontFamily: 'var(--font-nunito)' }}
+                        style={{ fontFamily: 'var(--font-geist)' }}
                       >
                         {resultOverlay.sub}
                       </div>
@@ -646,7 +646,7 @@ export default function EventScanner({
                   </div>
                   <button
                     onClick={handleNext}
-                    className="mt-1 inline-flex items-center gap-2 px-6 py-3 bg-white/20 hover:bg-white/30 border border-white/30 text-white text-[10px] tracking-[0.3em] rounded-lg transition-colors"
+                    className="mt-1 inline-flex items-center gap-2 px-6 py-3 bg-white/20 hover:bg-white/30 border border-white/30 text-white text-[13px] font-medium tracking-normal rounded-xl transition-colors"
                   >
                     <ArrowRight size={13} />
                     SCANSIONA PROSSIMO
@@ -659,7 +659,7 @@ export default function EventScanner({
             {cameraErr && (
               <p
                 className="text-sm text-red-600 text-center max-w-xs"
-                style={{ fontFamily: 'var(--font-nunito)' }}
+                style={{ fontFamily: 'var(--font-geist)' }}
               >
                 {cameraErr}
               </p>
@@ -669,10 +669,10 @@ export default function EventScanner({
             {!scanResult && (
               <button
                 onClick={cameraOn ? stopCamera : startCamera}
-                className={`inline-flex items-center gap-2 px-6 py-3 rounded-lg text-[10px] tracking-[0.3em] transition-colors ${
+                className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl text-[13px] font-medium tracking-normal transition-colors ${
                   cameraOn
                     ? 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    : 'bg-[#731515] text-white hover:bg-[#9b2323]'
+                    : 'bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-lift)]'
                 }`}
               >
                 {cameraOn ? <CameraOff size={14} /> : <Camera size={14} />}
