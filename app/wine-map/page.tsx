@@ -162,13 +162,13 @@ function CounterStat({ to, suffix = '', label, sub, delay = 0 }: {
     <div ref={ref} className="flex flex-col items-center text-center px-4 sm:px-8 py-6 sm:py-8">
       <div className="h-[clamp(2.4rem,5vw,4rem)] flex items-center justify-center mb-2">
         <span
-          className="text-[clamp(2.4rem,5vw,4rem)] font-medium text-[var(--color-accent)] leading-none tabular-nums"
+          className="ds-display ds-numeric text-title text-[var(--color-accent)]"
           style={{ fontFamily: 'var(--font-syne)' }}
         >
           <motion.span>{disp}</motion.span>{suffix}
         </span>
       </div>
-      <div className="text-[9px] tracking-[0.4em] text-[var(--color-ink)] mb-1">{label}</div>
+      <div className="text-[11px] font-medium tracking-[0.18em] text-[var(--color-ink)] mb-1">{label}</div>
       {sub && (
         <div className="text-[11px] text-[var(--color-on-paper-muted)]/50" style={{ fontFamily: 'var(--font-geist)' }}>
           {sub}
@@ -196,13 +196,13 @@ function TextStat({ value, label, sub, delay = 0 }: {
     >
       <div className="h-[clamp(2.4rem,5vw,4rem)] flex items-center justify-center mb-2">
         <span
-          className="text-[clamp(2.4rem,5vw,4rem)] font-medium text-[var(--color-accent)] leading-none whitespace-nowrap"
+          className="ds-display text-title whitespace-nowrap text-[var(--color-accent)]"
           style={{ fontFamily: 'var(--font-syne)' }}
         >
           {value}
         </span>
       </div>
-      <div className="text-[9px] tracking-[0.4em] text-[var(--color-ink)] mb-1">{label}</div>
+      <div className="text-[11px] font-medium tracking-[0.18em] text-[var(--color-ink)] mb-1">{label}</div>
       {sub && (
         <div className="text-[11px] text-[var(--color-on-paper-muted)]/50" style={{ fontFamily: 'var(--font-geist)' }}>
           {sub}
@@ -245,7 +245,6 @@ export default function WineMapPage() {
 
         {/* ── INTERACTIVE MAP ── */}
         <section className="relative overflow-hidden pb-24">
-          <div className="fog-right" style={{ top: '10%' }} />
 
           {/* Divider — kept in a padded container */}
           <div className="max-w-7xl mx-auto px-6 lg:px-10">
@@ -277,7 +276,6 @@ export default function WineMapPage() {
                   />
                 </div>
                 <p className="text-center text-[10px] tracking-[0.3em] text-[var(--color-on-paper-muted)]/50 mt-3 px-6">
-                  CLICK A MARKER TO EXPLORE THE REGION
                 </p>
               </motion.div>
 
@@ -301,7 +299,7 @@ export default function WineMapPage() {
                         <X size={16} />
                       </button>
 
-                      <div className="text-[9px] tracking-[0.4em] text-[var(--color-accent)] mb-2">
+                      <div className="text-[11px] font-medium tracking-[0.18em] text-[var(--color-accent)] mb-2">
                         {selected.country.toUpperCase()}
                       </div>
                       <h3
@@ -325,7 +323,7 @@ export default function WineMapPage() {
                       </p>
 
                       <div className="mb-7">
-                        <div className="text-[9px] tracking-[0.4em] text-[var(--color-accent)] mb-2">KEY GRAPES</div>
+                        <div className="text-[11px] font-medium tracking-[0.18em] text-[var(--color-accent)] mb-2">KEY GRAPES</div>
                         <div className="flex flex-wrap gap-2">
                           {selected.grapes.map((g) => (
                             <span
@@ -358,7 +356,7 @@ export default function WineMapPage() {
                     >
                       {/* Panel header */}
                       <div className="mb-6">
-                        <div className="text-[9px] tracking-[0.5em] text-[var(--color-accent)] mb-2">WINE MAP</div>
+                        <div className="text-[11px] font-medium tracking-[0.18em] text-[var(--color-accent)] mb-2">WINE MAP</div>
                         <p
                           className="text-xs text-[var(--color-on-paper-muted)]/70 leading-relaxed"
                           style={{ fontFamily: 'var(--font-geist)' }}
@@ -383,7 +381,7 @@ export default function WineMapPage() {
                               <div className="flex items-center gap-2.5 mb-3">
                                 {Flag && <Flag />}
                                 <span
-                                  className="text-[9px] tracking-[0.4em] text-[var(--color-on-paper-muted)]/60 uppercase"
+                                  className="text-[11px] font-medium tracking-[0.18em] text-[var(--color-on-paper-muted)]/60 uppercase"
                                   style={{ fontFamily: 'var(--font-geist)' }}
                                 >
                                   {meta?.label ?? country}
@@ -444,7 +442,6 @@ export default function WineMapPage() {
 
         {/* ── TOP ESTATES RANKING ── */}
         <section className="relative overflow-hidden pb-24">
-          <div className="fog-left" style={{ top: '20%' }} />
 
           <div className="max-w-5xl mx-auto px-6 lg:px-10">
 
@@ -465,11 +462,9 @@ export default function WineMapPage() {
                 viewport={{ once: true }}
                 transition={{ duration: d(0.7) }}
               >
-                <div className="text-[10px] tracking-[0.5em] text-[var(--color-accent)] mb-3">OUR FINEST VISITS</div>
-                <h2
-                  className="text-[clamp(2rem,5vw,3.5rem)] font-light text-[var(--color-ink)] leading-tight"
-                  style={{ fontFamily: 'var(--font-syne)' }}
-                >
+                                <h2
+                  className="ds-display text-title"
+                  >
                   Top<br />Estates
                 </h2>
                 <p
@@ -498,7 +493,6 @@ export default function WineMapPage() {
 
         {/* ── STATS ── */}
         <section className="relative overflow-hidden pb-12 md:pb-16">
-          <div className="fog-right" style={{ top: '10%' }} />
 
           <div className="max-w-5xl mx-auto px-6 lg:px-10">
 

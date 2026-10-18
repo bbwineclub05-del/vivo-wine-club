@@ -368,8 +368,9 @@ body::after {
   to   { transform: translate3d(-50%, 0, 0); }
 }
 
-/* The tinted letter in a chapter heading takes its colour from the
-   ground it sits on: rose only ever appears on ink, where it clears
-   the large-text contrast floor. On paper it would sit near 1.6:1. */
-.ds-accent-letter        { color: var(--color-accent-soft); }
-.ds-on-ink .ds-accent-letter { color: var(--color-rose); }
+/* The tinted letter in a chapter heading is the brand bordeaux, the one
+   on the logo and the Join button. On the dark ground that exact value
+   sits at 1.73:1 against the background and would disappear, so there it
+   is lightened to #AA4848 (3.49:1) and stays in the same family. */
+.ds-accent-letter            { color: var(--color-accent); }
+.ds-on-ink .ds-accent-letter { color: var(--color-accent-soft); }
