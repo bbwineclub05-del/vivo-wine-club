@@ -5,10 +5,12 @@ import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, Pencil, Trash2, Eye, EyeOff, ChevronDown, ChevronUp,
-  CalendarDays, MapPin, Tag, Users, CheckCircle2, Clock, XCircle, Globe, ScanLine,
-  Send, X, Check, ImagePlus, Loader2, ClipboardList, UserCheck, Link2, Search,
-} from 'lucide-react';
+  CalendarDays, MapPin, Tag, X, Check, ImagePlus, Loader2, ClipboardList, UserCheck, Link2, } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import {
+  ActionButton, DataList, EmptyState, FilterPills, NewButton, PageHead,
+  SearchField, Sheet, StatusPill as Pill, Toolbar, type Column,
+} from '@/components/admin/ui';
 import EventScanner from '@/components/EventScanner';
 import EventGuestPanel from '@/components/EventGuestPanel';
 import EventPartnerPanel from '@/components/EventPartnerPanel';
@@ -100,37 +102,55 @@ function StatusPill({ status }: { status: DbEvent['status'] }) {
    Input helpers
 ───────────────────────────────────────────── */
 const inputCls =
-  'w-full bg-[#fdf6f6] border border-[#eddada] text-[#1a0505] px-3 py-2 text-sm placeholder:text-[#7a4a4a]/35 focus:outline-none focus:border-[#731515]/50 transition-colors rounded-lg';
+  'w-full rounded-2xl border border-[#E4D6D3] bg-[#FDFBFA] px-4 py-3.5 text-[#1A0505] ' +
+  'placeholder:text-[#7A5252]/55 transition-colors focus:border-[#731515]/50 focus:outline-none [font-size:16px]';
 
 function Label({ children }: { children: React.ReactNode }) {
   return (
-    <label className="block text-[9px] tracking-[0.38em] text-[#731515] mb-1.5 uppercase">
+    <label className="mb-2 block text-[13px] font-medium text-[#1A0505]">
       {children}
     </label>
   );
 }
 
-function Toggle({
-  label, checked, onChange,
-}: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+/** A titled band inside the form, so twenty-two fields read as five groups. */
+function FormGroup({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
-    <label className="flex items-center gap-3 cursor-pointer select-none">
-      <div
-        onClick={() => onChange(!checked)}
-        className={`relative w-10 h-5 rounded-full transition-colors duration-200 ${
-          checked ? 'bg-[#731515]' : 'bg-[#e8d5d5]'
+    <section className="border-t border-[#E4D6D3] pt-6 first:border-0 first:pt-0">
+      <h4 className="ds-display text-[17px] tracking-[-0.02em] text-[#1A0505]">{title}</h4>
+      {hint && <p className="mt-1.5 text-[13px] text-[#7A5252]">{hint}</p>}
+      <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2">{children}</div>
+    </section>
+  );
+}
+
+function Toggle({
+  label, checked, onChange, hint,
+}: { label: string; checked: boolean; onChange: (v: boolean) => void; hint?: string }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!checked)}
+      aria-pressed={checked}
+      className="flex w-full min-h-[56px] items-center gap-4 rounded-2xl px-1 text-left transition-colors hover:bg-[#F4EDEB]"
+    >
+      <span
+        aria-hidden="true"
+        className={`relative h-7 w-12 shrink-0 rounded-full transition-colors duration-200 ${
+          checked ? 'bg-[#731515]' : 'bg-[#E4D6D3]'
         }`}
       >
         <span
-          className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+          className={`absolute left-1 top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
             checked ? 'translate-x-5' : 'translate-x-0'
           }`}
         />
-      </div>
-      <span className="text-sm text-[#1a0505]" style={{ fontFamily: 'var(--font-nunito)' }}>
-        {label}
       </span>
-    </label>
+      <span className="min-w-0">
+        <span className="block text-[15px] text-[#1A0505]">{label}</span>
+        {hint && <span className="mt-0.5 block text-[13px] text-[#7A5252]">{hint}</span>}
+      </span>
+    </button>
   );
 }
 
@@ -181,16 +201,15 @@ function EventForm({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.2 }}
-      className="bg-white border border-[#eddada] rounded-xl p-6 mb-5 shadow-[0_2px_12px_rgba(107,26,26,0.08)]"
+      className="mb-6 rounded-2xl border border-[#E4D6D3] bg-white p-5 md:p-7"
     >
-      <h3
-        className="text-lg font-light text-[#1a0505] mb-6"
-        style={{ fontFamily: 'var(--font-syne)' }}
-      >
-        {initial.title ? 'Modifica Evento' : 'Nuovo Evento'}
+      <h3 className="ds-display mb-7 text-[22px] tracking-[-0.025em] text-[#1A0505]">
+        {initial.title ? 'Modifica evento' : 'Nuovo evento'}
       </h3>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <div className="space-y-8">
+
+      <FormGroup title="L’evento">
 
         {/* Title */}
         <div className="md:col-span-2">
@@ -229,6 +248,62 @@ function EventForm({
             <option value="completed">Completato</option>
           </select>
         </div>
+
+        {/* Description */}
+        <div className="md:col-span-2">
+          <Label>Descrizione *</Label>
+          <textarea className={`${inputCls} resize-none`} rows={4} value={f.description}
+            onChange={e => set('description', e.target.value)}
+            placeholder="Descrizione dell'evento per la pagina pubblica..." required />
+        </div>
+
+        {/* Event mode — ticket vs list-only */}
+        <div className="md:col-span-2">
+          <Label>Tipo evento</Label>
+          {/* Two states of one decision, so each one carries its own
+              consequence instead of a shared note underneath. */}
+          <div className="grid gap-3 sm:grid-cols-2">
+            {([
+              {
+                listOnly: false,
+                title: 'Vendita biglietti',
+                hint: 'Checkout con Stripe. Il prezzo è obbligatorio per gli eventi a pagamento.',
+              },
+              {
+                listOnly: true,
+                title: 'Solo lista',
+                hint: 'Nessun checkout: ci si iscrive e basta. La lista invitati si attiva da sola, e un eventuale prezzo diventa «pagamento all’ingresso».',
+              },
+            ] as const).map((opt) => {
+              const active = f.is_list_only === opt.listOnly;
+              return (
+                <button
+                  key={opt.title}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => {
+                    set('is_list_only', opt.listOnly);
+                    if (opt.listOnly) set('guest_list_enabled', true);
+                  }}
+                  className={`rounded-2xl border px-4 py-4 text-left transition-colors ${
+                    active
+                      ? 'border-[#731515] bg-[#731515] text-white'
+                      : 'border-[#E4D6D3] bg-[#FDFBFA] hover:border-[#731515]/40'
+                  }`}
+                >
+                  <span className="block text-[15px] font-medium">{opt.title}</span>
+                  <span className={`mt-1 block text-[13px] ${active ? 'text-white/75' : 'text-[#7A5252]'}`}>
+                    {opt.hint}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+      </FormGroup>
+
+      <FormGroup title="Quando e dove" hint="Data, orario e indirizzi. I link alle mappe finiscono nell’email di conferma.">
 
         {/* Date */}
         <div>
@@ -287,52 +362,9 @@ function EventForm({
           Se compilati, compaiono nell&apos;email di conferma iscrizione lista come link a Google Maps.
         </p>
 
-        {/* Description */}
-        <div className="md:col-span-2">
-          <Label>Descrizione *</Label>
-          <textarea className={`${inputCls} resize-none`} rows={4} value={f.description}
-            onChange={e => set('description', e.target.value)}
-            placeholder="Descrizione dell'evento per la pagina pubblica..." required />
-        </div>
+      </FormGroup>
 
-        {/* Event mode — ticket vs list-only */}
-        <div className="md:col-span-2">
-          <Label>Tipo evento</Label>
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={() => {
-                set('is_list_only', false);
-              }}
-              className={`flex-1 py-3 px-4 rounded-lg border text-[11px] tracking-[0.2em] transition-colors ${
-                !f.is_list_only
-                  ? 'bg-[#731515] text-white border-[#731515]'
-                  : 'bg-[#fdf6f6] text-[#7a4a4a] border-[#eddada] hover:border-[#731515]/40'
-              }`}
-            >
-              🎟 VENDITA BIGLIETTI
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                set('is_list_only', true);
-                set('guest_list_enabled', true);
-              }}
-              className={`flex-1 py-3 px-4 rounded-lg border text-[11px] tracking-[0.2em] transition-colors ${
-                f.is_list_only
-                  ? 'bg-[#731515] text-white border-[#731515]'
-                  : 'bg-[#fdf6f6] text-[#7a4a4a] border-[#eddada] hover:border-[#731515]/40'
-              }`}
-            >
-              📋 SOLO LISTA
-            </button>
-          </div>
-          <p className="mt-1.5 text-[10px] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
-            {f.is_list_only
-              ? 'Nessun checkout — gli utenti si iscrivono direttamente alla lista. La lista invitati viene attivata automaticamente. Se c\'è un prezzo, verrà indicato come "pagamento all\'ingresso".'
-              : 'Checkout con Stripe. Prezzo obbligatorio per eventi a pagamento.'}
-          </p>
-        </div>
+      <FormGroup title="Biglietti e posti">
 
         {/* Price */}
         <div>
@@ -401,12 +433,29 @@ function EventForm({
             onChange={e => set('sort_order', parseInt(e.target.value) || 0)} />
         </div>
 
-        {/* Toggles */}
-        <div className="flex flex-col gap-3 justify-center">
-          <Toggle label="Pubblicato (visibile sul sito)" checked={f.published} onChange={v => set('published', v)} />
-          <Toggle label="Titolo barrato" checked={f.title_strikethrough} onChange={v => set('title_strikethrough', v)} />
+      </FormGroup>
+
+      <FormGroup title="Visibilità e iscrizioni">
+        <div className="flex flex-col gap-1 md:col-span-2">
+          <Toggle
+            label="Pubblicato sul sito"
+            hint="Finché è spento, l’evento non compare nel calendario pubblico."
+            checked={f.published}
+            onChange={v => set('published', v)}
+          />
+          <Toggle
+            label="Titolo barrato"
+            hint="Mostra il titolo sbarrato, per una data annullata o spostata."
+            checked={f.title_strikethrough}
+            onChange={v => set('title_strikethrough', v)}
+          />
           {!f.is_list_only && (
-            <Toggle label="Lista invitati attiva" checked={f.guest_list_enabled ?? false} onChange={v => set('guest_list_enabled', v)} />
+            <Toggle
+              label="Lista invitati attiva"
+              hint="Chi riceve il link può iscriversi senza pagare."
+              checked={f.guest_list_enabled ?? false}
+              onChange={v => set('guest_list_enabled', v)}
+            />
           )}
           {f.is_list_only && (
             <div className="flex items-center gap-2 text-[11px] text-[#731515]/60" style={{ fontFamily: 'var(--font-nunito)' }}>
@@ -415,50 +464,43 @@ function EventForm({
           )}
           {!f.is_list_only && f.price > 0 && (
             <Toggle
-              label="Programma Referral attivo"
+              label="Programma referral attivo"
+              hint="Chi porta cinque amici riceve il premio. Widget visibile al checkout."
               checked={f.referral_enabled ?? false}
               onChange={v => set('referral_enabled', v)}
             />
           )}
-          {!f.is_list_only && f.price > 0 && (f.referral_enabled ?? false) && (
-            <p className="text-[10px] text-[#731515]/60 -mt-1" style={{ fontFamily: 'var(--font-nunito)' }}>
-              Widget condivisione e reward 5 inviti visibile nel checkout
-            </p>
-          )}
           <Toggle
-            label="Iscrizioni chiuse manualmente"
+            label="Iscrizioni chiuse"
+            hint="Il pubblico vede «Iscrizioni chiuse»: niente checkout, niente form."
             checked={f.registration_closed ?? false}
             onChange={v => set('registration_closed', v)}
           />
-          {(f.registration_closed ?? false) && (
-            <p className="text-[10px] text-amber-600 -mt-1" style={{ fontFamily: 'var(--font-nunito)' }}>
-              Il pubblico vedrà &ldquo;Iscrizioni chiuse&rdquo; — nessun checkout o form disponibile
-            </p>
-          )}
         </div>
+      </FormGroup>
 
       </div>
 
       {error && (
-        <p className="mt-4 text-sm text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>
-          {error}
-        </p>
+        <p role="alert" className="mt-6 text-[14px] text-[#731515]">{error}</p>
       )}
 
-      <div className="flex gap-3 mt-6">
-        <button
+      {/* Sticky on a phone, so Salva is reachable without scrolling back
+          up through twenty-two fields. */}
+      <div
+        className="sticky bottom-0 -mx-5 mt-8 flex gap-3 border-t border-[#E4D6D3] bg-white px-5 pt-4 md:-mx-7 md:px-7"
+        style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
+      >
+        <ActionButton variant="quiet" onClick={onCancel} className="flex-1 md:flex-none">
+          Annulla
+        </ActionButton>
+        <ActionButton
           onClick={() => onSave(f)}
           disabled={saving || !f.title || !f.date || !f.location || !f.description}
-          className="px-6 py-2.5 bg-[#731515] text-white text-[10px] tracking-[0.3em] hover:bg-[#9b2323] disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-lg"
+          className="flex-1 md:flex-none"
         >
-          {saving ? 'SALVATAGGIO…' : 'SALVA EVENTO'}
-        </button>
-        <button
-          onClick={onCancel}
-          className="px-5 py-2.5 border border-[#eddada] bg-white text-[#7a4a4a] text-[10px] tracking-[0.3em] hover:border-[#731515]/40 transition-colors rounded-lg"
-        >
-          ANNULLA
-        </button>
+          {saving ? 'Salvataggio…' : 'Salva evento'}
+        </ActionButton>
       </div>
     </motion.div>
   );
@@ -606,55 +648,63 @@ function GuestListDrawer({
 
   return (
     <motion.div
-      className="fixed inset-0 z-50 bg-white flex flex-col overflow-hidden"
+      className="ds fixed inset-0 z-[70] flex flex-col overflow-hidden bg-[#FDFBFA] text-[#1A0505]"
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{    opacity: 0, y: 16 }}
       transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
     >
-      {/* ── Header ── */}
-      <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-[#eddada] bg-white shrink-0">
-        <div className="min-w-0">
-          <div className="text-[9px] tracking-[0.45em] text-[#731515] mb-0.5">LISTA INVITATI</div>
+      {/* ── Header ──
+           The eyebrow is gone: the event title and the tabs below say
+           what this is. The close button sits on the left, where a
+           thumb reaches it on a phone held one-handed. */}
+      <div
+        className="flex shrink-0 items-center gap-3 border-b border-[#E4D6D3] bg-white px-4 py-3 sm:px-6"
+        style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}
+      >
+        <button
+          onClick={onClose}
+          aria-label="Chiudi"
+          title="Chiudi (Esc)"
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-[#1A0505] transition-colors hover:bg-[#F4EDEB]"
+          style={{ touchAction: 'manipulation' }}
+        >
+          <X size={21} strokeWidth={1.8} />
+        </button>
+
+        <div className="min-w-0 flex-1">
           <h2
-            className="text-lg sm:text-xl font-light text-[#1a0505] truncate"
-            style={{ fontFamily: 'var(--font-syne)' }}
+            className="ds-display truncate text-[19px] tracking-[-0.02em] text-[#1A0505]"
             title={event.title}
           >
             {event.title}
           </h2>
-          <p className="text-[11px] text-[#7a4a4a]/50 mt-0.5" style={{ fontFamily: 'var(--font-nunito)' }}>
+          <p className="mt-0.5 truncate text-[13px] text-[#7A5252]">
             {event.date ? fmtDate(event.date) : ''}{event.location ? ` · ${event.location}` : ''}
           </p>
         </div>
-        <button
-          onClick={onClose}
-          className="shrink-0 ml-3 w-11 h-11 flex items-center justify-center rounded-xl text-[#7a4a4a]/50 hover:text-[#731515] hover:bg-[#fdf6f6] transition-colors"
-          title="Chiudi (Esc)"
-          style={{ touchAction: 'manipulation' }}
-        >
-          <X size={20} />
-        </button>
       </div>
 
       {/* ── Tabs — 3-column grid so each tab is perfectly centred in its cell ── */}
-      <div className="grid grid-cols-3 border-b border-[#eddada] bg-white shrink-0">
-        {DRAWER_TABS.map(({ id, icon: Icon, label, short }) => (
-          <button
-            key={id}
-            onClick={() => changeTab(id)}
-            className={`flex items-center justify-center gap-1.5 py-3.5 text-[9px] sm:text-[10px] tracking-[0.2em] sm:tracking-[0.3em] border-b-2 transition-colors ${
-              tab === id
-                ? 'border-[#731515] text-[#731515]'
-                : 'border-transparent text-[#7a4a4a]/40 hover:text-[#7a4a4a]'
-            }`}
-            style={{ fontFamily: 'var(--font-nunito)', touchAction: 'manipulation' }}
-          >
-            <Icon size={11} className="shrink-0" />
-            <span className="sm:hidden">{short}</span>
-            <span className="hidden sm:inline">{label}</span>
-          </button>
-        ))}
+      <div className="shrink-0 border-b border-[#E4D6D3] bg-white px-4 pb-3 sm:px-6">
+        <div className="flex gap-2">
+          {DRAWER_TABS.map(({ id, label, short }) => (
+            <button
+              key={id}
+              onClick={() => changeTab(id)}
+              aria-pressed={tab === id}
+              className={`min-h-[44px] flex-1 rounded-full border px-3 text-[13px] font-medium transition-colors ${
+                tab === id
+                  ? 'border-[#731515] bg-[#731515] text-white'
+                  : 'border-[#E4D6D3] text-[#1A0505] hover:border-[#731515]/40'
+              }`}
+              style={{ touchAction: 'manipulation' }}
+            >
+              <span className="sm:hidden">{short}</span>
+              <span className="hidden sm:inline">{label}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* ── Single stable scroll container — ALL tab content lives here ──
@@ -698,210 +748,76 @@ function GuestListDrawer({
 /* ─────────────────────────────────────────────
    Single event row
 ───────────────────────────────────────────── */
-function EventRow({
-  event,
-  onEdit,
-  onDelete,
-  onTogglePublished,
-  onScan,
-  onInvite,
-  onGuestList,
-  guestListActive,
-  isPast = false,
-}: {
-  event: DbEvent;
-  onEdit: () => void;
-  onDelete: () => void;
-  onTogglePublished: () => void;
-  onScan: () => void;
-  onInvite: () => void;
-  onGuestList: () => void;
-  guestListActive: boolean;
-  isPast?: boolean;
-}) {
-  const [expanded, setExpanded] = useState(false);
-  const [delConfirm, setDelConfirm] = useState(false);
-
-  // Shared action buttons — rendered once on desktop (inline), once on mobile (bottom bar)
-  const actionButtons = (compact = false) => {
-    const sz  = compact ? 15 : 14;
-    const cls = compact ? 'p-2.5' : 'p-2';
-    return (
-      <>
-        {!isPast && (
-          <button onClick={onScan} title="Event Scanner"
-            className={`${cls} rounded-lg text-[#7a4a4a]/60 hover:text-[#731515] hover:bg-[#fdf6f6] transition-colors`}>
-            <ScanLine size={sz} />
-          </button>
-        )}
-        {!isPast && (
-          <button onClick={onInvite} title="Invita clienti CRM"
-            className={`${cls} rounded-lg text-[#7a4a4a]/60 hover:text-[#731515] hover:bg-[#fdf6f6] transition-colors`}>
-            <Send size={sz} />
-          </button>
-        )}
-        <button
-          onClick={onGuestList}
-          title="Lista invitati"
-          className={`${cls} rounded-lg transition-colors ${
-            guestListActive
-              ? 'text-[#731515] bg-[#f5e8e8]'
-              : event.guest_list_enabled
-                ? 'text-[#731515] bg-[#fdf6f6] hover:bg-[#f5e8e8]'
-                : 'text-[#7a4a4a]/40 hover:text-[#731515] hover:bg-[#fdf6f6]'
-          }`}
-        >
-          <ClipboardList size={sz} />
-        </button>
-        <button onClick={onTogglePublished} title={event.published ? 'Nascondi' : 'Pubblica'}
-          className={`${cls} rounded-lg transition-colors ${
-            event.published ? 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100'
-                            : 'text-slate-400 bg-slate-50 hover:bg-slate-100'}`}>
-          {event.published ? <Eye size={sz} /> : <EyeOff size={sz} />}
-        </button>
-        {!isPast && (
-          <button onClick={onEdit}
-            className={`${cls} rounded-lg text-[#7a4a4a] hover:text-[#731515] hover:bg-[#fdf6f6] transition-colors`}>
-            <Pencil size={sz} />
-          </button>
-        )}
-        {delConfirm ? (
-          <div className="flex items-center gap-1">
-            <button onClick={onDelete}
-              className="px-2.5 py-1.5 rounded bg-red-600 text-white text-[9px] tracking-wide hover:bg-red-700 transition-colors">
-              ELIMINA
-            </button>
-            <button onClick={() => setDelConfirm(false)}
-              className="px-2.5 py-1.5 rounded border border-[#eddada] text-[9px] text-[#7a4a4a] hover:bg-[#fdf6f6] transition-colors">
-              NO
-            </button>
-          </div>
-        ) : (
-          <button onClick={() => setDelConfirm(true)}
-            className={`${cls} rounded-lg text-[#7a4a4a]/50 hover:text-red-600 hover:bg-red-50 transition-colors`}>
-            <Trash2 size={sz} />
-          </button>
-        )}
-        <button onClick={() => setExpanded(x => !x)}
-          className={`${cls} rounded-lg text-[#7a4a4a]/50 hover:text-[#1a0505] hover:bg-[#fdf6f6] transition-colors`}>
-          {expanded ? <ChevronUp size={sz} /> : <ChevronDown size={sz} />}
-        </button>
-      </>
-    );
-  };
-
-  return (
-    <div className={`border rounded-xl overflow-hidden ${
-      isPast
-        ? 'bg-[#f8f5f5] border-[#e8dada] shadow-none'
-        : 'bg-white border-[#eddada] shadow-[0_1px_4px_rgba(107,26,26,0.05)]'
-    }`}>
-      {/* Main row — date + info + desktop actions */}
-      <div className="flex items-center gap-3 p-4">
-
-        {/* Date badge */}
-        <div className="w-11 shrink-0 text-center">
-          <div className="text-[8px] tracking-[0.3em] text-[#731515]">
-            {event.date ? event.date.split('-')[1]
-              ? ['','JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'][
-                  parseInt(event.date.split('-')[1])
-                ]
-              : '' : ''}
-          </div>
-          <div className="text-2xl font-light text-[#1a0505] leading-tight" style={{ fontFamily: 'var(--font-syne)' }}>
-            {event.date ? parseInt(event.date.split('-')[2]) : '?'}
-          </div>
-          <div className="text-[8px] text-[#7a4a4a]/50">
-            {event.date ? event.date.split('-')[0] : ''}
-          </div>
-        </div>
-
-        {/* Vertical line */}
-        <div className="w-px h-10 bg-[#eddada] shrink-0" />
-
-        {/* Main info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className={`text-[8px] tracking-[0.35em] ${isPast ? 'text-[#7a4a4a]/40' : 'text-[#7a4a4a]/60'}`}>{event.type}</span>
-            {isPast
-              ? <span className="inline-block text-[8px] tracking-[0.3em] border px-2 py-0.5 rounded-full bg-[#f5f0f0] text-[#9a7070] border-[#e8d5d5]">PASSATO</span>
-              : <StatusPill status={event.status} />
-            }
-            {event.price > 0 && (
-              <span className="inline-flex items-center gap-1 text-[8px] tracking-[0.2em] bg-[#fde8e8] text-[#731515] px-2 py-0.5 rounded-full border border-[#731515]/15">
-                <Tag size={8} /> €{event.price}
-              </span>
-            )}
-            {!event.published && (
-              <span className="text-[8px] tracking-[0.2em] bg-slate-100 text-slate-400 px-2 py-0.5 rounded-full border border-slate-200">
-                NASCOSTO
-              </span>
-            )}
-          </div>
-          <div
-            className={`text-[15px] font-medium mt-0.5 truncate ${isPast ? 'text-[#7a4a4a]' : 'text-[#1a0505]'} ${event.title_strikethrough ? 'line-through decoration-[#731515]/50' : ''}`}
-            style={{ fontFamily: 'var(--font-syne)' }}
-          >
-            {event.title}
-          </div>
-          <div className={`flex items-center gap-1 mt-0.5 text-[11px] ${isPast ? 'text-[#7a4a4a]/40' : 'text-[#7a4a4a]/60'}`}>
-            <MapPin size={9} className={`${isPast ? 'text-[#7a4a4a]/30' : 'text-[#731515]/50'} shrink-0`} />
-            <span className="truncate" style={{ fontFamily: 'var(--font-nunito)' }}>{event.location}</span>
-          </div>
-        </div>
-
-        {/* Desktop actions — hidden on small screens */}
-        <div className="hidden sm:flex items-center gap-1.5 shrink-0">
-          {actionButtons(false)}
-        </div>
-      </div>
-
-      {/* Mobile action bar — visible only on small screens */}
-      <div className="flex sm:hidden items-center justify-around border-t border-[#f0e4e4] px-2 py-1">
-        {actionButtons(true)}
-      </div>
-
-      {/* Expanded details */}
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden border-t border-[#eddada]"
-          >
-            <div className="px-5 py-4 text-sm text-[#7a4a4a] space-y-2" style={{ fontFamily: 'var(--font-nunito)' }}>
-              <p><span className="text-[#731515] font-medium">Location completa:</span> {event.location_full}</p>
-              {event.time && <p><span className="text-[#731515] font-medium">Ora:</span> {event.time}</p>}
-              {event.capacity && <p><span className="text-[#731515] font-medium">Capacità:</span> {event.capacity} posti</p>}
-              {event.image_url && (
-                <div className="flex items-center gap-3">
-                  <span className="text-[#731515] font-medium shrink-0">Immagine:</span>
-                  <div className="relative w-14 h-14 rounded-lg overflow-hidden border border-[#eddada] shrink-0">
-                    <Image src={event.image_url} alt={event.title} fill className="object-cover" sizes="56px" />
-                  </div>
-                  <span className="text-[10px] text-[#7a4a4a]/50 truncate max-w-[180px]">{event.image_url}</span>
-                </div>
-              )}
-              {event.stripe_product_id && (
-                <p><span className="text-[#731515] font-medium">Stripe Product:</span>
-                  <code className="ml-1 text-[10px] bg-slate-100 px-1 rounded">{event.stripe_product_id}</code>
-                </p>
-              )}
-              <p className="leading-relaxed"><span className="text-[#731515] font-medium">Descrizione:</span> {event.description}</p>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-    </div>
-  );
-}
-
 /* ─────────────────────────────────────────────
    Main component
 ───────────────────────────────────────────── */
+
+/**
+ * What you can do to an event.
+ *
+ * These six actions used to sit as six small buttons inside every row,
+ * which on a phone meant six targets a few pixels apart. Tapping the row
+ * opens them as a list instead: each one is a full-width line you cannot
+ * miss, and the destructive one sits apart at the bottom.
+ */
+function EventActions({
+  event, isPast, onClose, onEdit, onGuestList, onInvite, onScan, onTogglePublished, onDelete,
+}: {
+  event: DbEvent | null;
+  isPast: boolean;
+  onClose: () => void;
+  onEdit: () => void;
+  onGuestList: () => void;
+  onInvite: () => void;
+  onScan: () => void;
+  onTogglePublished: () => void;
+  onDelete: () => void;
+}) {
+  if (!event) return null;
+
+  const rows: { label: string; hint?: string; run: () => void; hidden?: boolean }[] = [
+    { label: 'Modifica evento', hint: 'Data, luogo, prezzo, capienza', run: onEdit, hidden: isPast },
+    { label: 'Lista ospiti', hint: 'Chi si è iscritto e chi è entrato', run: onGuestList },
+    { label: 'Invita', hint: 'Manda l’email a una lista di contatti', run: onInvite, hidden: isPast },
+    { label: 'Scanner', hint: 'Controlla i biglietti all’ingresso', run: onScan, hidden: isPast },
+    {
+      label: event.published ? 'Nascondi dal sito' : 'Pubblica sul sito',
+      hint: event.published ? 'Smette di comparire nel calendario' : 'Compare subito nel calendario pubblico',
+      run: onTogglePublished,
+    },
+  ];
+
+  return (
+    <Sheet open={!!event} title={event.title} onClose={onClose}>
+      <ul className="space-y-1">
+        {rows.filter((r) => !r.hidden).map((r) => (
+          <li key={r.label}>
+            <button
+              onClick={() => { r.run(); onClose(); }}
+              className="w-full rounded-2xl px-4 py-3.5 text-left transition-colors hover:bg-[#F4EDEB]"
+            >
+              <span className="block text-[16px] font-medium text-[#1A0505]">{r.label}</span>
+              {r.hint && <span className="mt-0.5 block text-[13px] text-[#7A5252]">{r.hint}</span>}
+            </button>
+          </li>
+        ))}
+      </ul>
+
+      {!isPast && (
+        <>
+          <div className="my-4 h-px bg-[#E4D6D3]" />
+          <button
+            onClick={() => { onDelete(); onClose(); }}
+            className="w-full rounded-2xl px-4 py-3.5 text-left text-[16px] font-medium text-[#731515] transition-colors hover:bg-[#731515]/5"
+          >
+            Elimina evento
+          </button>
+        </>
+      )}
+    </Sheet>
+  );
+}
+
 export default function EventManager() {
   const [events,      setEvents]      = useState<DbEvent[]>([]);
   const [loading,     setLoading]     = useState(true);
@@ -912,6 +828,8 @@ export default function EventManager() {
   const [scannerEvent,    setScannerEvent]    = useState<DbEvent | null>(null);
   const [inviteEvent,     setInviteEvent]     = useState<DbEvent | null>(null);
   const [guestListEventId, setGuestListEventId] = useState<string | null>(null);
+  const [actionsEvent,    setActionsEvent]    = useState<DbEvent | null>(null);
+  const [query,           setQuery]           = useState('');
   const [accessToken,     setAccessToken]     = useState<string | null>(null);
 
   useMobileOverlay(!!scannerEvent, () => setScannerEvent(null));
@@ -983,6 +901,63 @@ export default function EventManager() {
   const activeEvts = events.filter(e => e.date >= today).sort((a, b) => a.date.localeCompare(b.date));
   const pastEvts   = events.filter(e => e.date < today).sort((a, b) => b.date.localeCompare(a.date));
   const tabEvents  = tab === 'active' ? activeEvts : pastEvts;
+
+  /* ── What the list actually shows ── */
+  const shownEvents = query.trim()
+    ? tabEvents.filter((e) =>
+        `${e.title} ${e.location_full ?? ''} ${e.location ?? ''}`
+          .toLowerCase()
+          .includes(query.trim().toLowerCase()),
+      )
+    : tabEvents;
+
+  /* The columns are declared once and the list decides how to draw them:
+     a table on a desktop, a stack of cards on a phone. */
+  const eventColumns: Column<DbEvent>[] = [
+    {
+      key: 'title',
+      label: 'Evento',
+      primary: true,
+      render: (e) => (
+        <span className={e.title_strikethrough ? 'line-through decoration-[#731515]/60' : ''}>
+          {e.title}
+        </span>
+      ),
+    },
+    {
+      key: 'date',
+      label: 'Data',
+      render: (e) => (
+        <span className="ds-numeric">
+          {fmtDate(e.date)}
+          {e.time ? ` · ${e.time}` : ''}
+        </span>
+      ),
+    },
+    {
+      key: 'place',
+      label: 'Luogo',
+      desktopOnly: true,
+      render: (e) => <span className="text-[#7A5252]">{e.location_full || e.location || '—'}</span>,
+    },
+    {
+      key: 'status',
+      label: 'Stato',
+      align: 'right',
+      render: (e) => <StatusPill status={e.status} />,
+    },
+    {
+      key: 'published',
+      label: 'Sul sito',
+      align: 'right',
+      // The single most consequential flag on this screen: an event that
+      // is not published simply does not exist for anyone outside.
+      render: (e) =>
+        e.published
+          ? <Pill tone="good">pubblicato</Pill>
+          : <Pill tone="warn">non pubblicato</Pill>,
+    },
+  ];
 
   /* ── Guest list drawer — derive from events so it auto-updates on reload ── */
   const guestListEvent = guestListEventId
@@ -1100,68 +1075,46 @@ export default function EventManager() {
         )}
       </AnimatePresence>
 
-      {/* Header row */}
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-        <div>
-          <div className="text-[9px] tracking-[0.42em] text-[#731515] mb-1">ADMIN</div>
-          <h2 className="text-xl font-light text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>
-            Gestione Eventi
-          </h2>
-        </div>
+      <EventActions
+        event={actionsEvent}
+        isPast={tab === 'past'}
+        onClose={() => setActionsEvent(null)}
+        onEdit={() => { setFormErr(''); setMode({ edit: actionsEvent! }); }}
+        onGuestList={() => setGuestListEventId(actionsEvent!.id)}
+        onInvite={() => setInviteEvent(actionsEvent)}
+        onScan={() => setScannerEvent(actionsEvent)}
+        onTogglePublished={() => handleToggle(actionsEvent!)}
+        onDelete={() => handleDelete(actionsEvent!.slug)}
+      />
 
-        {mode === 'list' && tab === 'active' && (
-          <button
-            onClick={() => { setFormErr(''); setMode('create'); }}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#731515] text-white text-[10px] tracking-[0.3em] hover:bg-[#9b2323] transition-colors rounded-lg"
-          >
-            <Plus size={13} />
-            NUOVO EVENTO
-          </button>
-        )}
-      </div>
+      <PageHead
+        title="Eventi"
+        subtitle={
+          /* One quiet line instead of three metric cards: the number
+             that matters here is how many are actually visible on the
+             site, and it deserves a sentence, not a dashboard. */
+          `${total} eventi · ${published} pubblicati sul sito · ${open} prenotabili`
+        }
+        action={
+          mode === 'list' && tab === 'active'
+            ? <NewButton label="Nuovo evento" onClick={() => { setFormErr(''); setMode('create'); }} />
+            : undefined
+        }
+      />
 
-      {/* Tab switcher */}
-      <div className="flex gap-1 mb-6 p-1 bg-[#fdf6f6] border border-[#eddada] rounded-xl w-fit">
-        {([['active', 'Eventi Attivi', activeEvts.length], ['past', 'Past Events', pastEvts.length]] as const).map(([id, label, count]) => (
-          <button
-            key={id}
-            onClick={() => { setTab(id); if (mode !== 'list') setMode('list'); }}
-            className={`flex items-center gap-2 px-5 py-2 rounded-lg text-[10px] tracking-[0.3em] transition-all duration-200 ${
-              tab === id
-                ? 'bg-[#731515] text-white shadow-sm'
-                : 'text-[#7a4a4a] hover:bg-[#eddada]/60'
-            }`}
-          >
-            {label}
-            <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${
-              tab === id ? 'bg-white/20 text-white' : 'bg-[#eddada] text-[#7a4a4a]'
-            }`}>
-              {count}
-            </span>
-          </button>
-        ))}
-      </div>
+      <Toolbar>
+        <SearchField value={query} onChange={setQuery} placeholder="Cerca per titolo o luogo" />
+        <FilterPills
+          value={tab}
+          onChange={(v) => { setTab(v); if (mode !== 'list') setMode('list'); }}
+          options={[
+            { value: 'active' as const, label: 'In programma', count: activeEvts.length },
+            { value: 'past' as const,   label: 'Passati',      count: pastEvts.length },
+          ]}
+        />
+      </Toolbar>
 
-      {/* KPI strip */}
-      <div className="grid grid-cols-3 gap-4 mb-7">
-        {[
-          { icon: CalendarDays, label: 'Totale',      value: total,     color: 'text-[#731515]' },
-          { icon: Globe,        label: 'Pubblicati',  value: published, color: 'text-emerald-600' },
-          { icon: CheckCircle2, label: 'Prenotabili', value: open,      color: 'text-[#731515]' },
-        ].map(({ icon: Icon, label, value, color }) => (
-          <div key={label} className="bg-white border border-[#eddada] rounded-xl p-4 shadow-[0_1px_4px_rgba(107,26,26,0.05)]">
-            <div className="flex items-center gap-2 mb-1">
-              <Icon size={13} className={color} />
-              <span className="text-[9px] tracking-[0.3em] text-[#7a4a4a]/60">{label.toUpperCase()}</span>
-            </div>
-            <div className={`text-2xl font-light ${color}`} style={{ fontFamily: 'var(--font-syne)' }}>
-              {value}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Form (create / edit) — only for active tab */}
+      {/* Form (create / edit) — only for the active tab */}
       <AnimatePresence>
         {mode !== 'list' && tab === 'active' && (
           <EventForm
@@ -1202,35 +1155,36 @@ export default function EventManager() {
         )}
       </AnimatePresence>
 
-      {/* Events list */}
       {loading ? (
         <div className="flex justify-center py-16">
-          <div className="w-6 h-6 rounded-full border-2 border-[#731515] border-t-transparent animate-spin" />
-        </div>
-      ) : tabEvents.length === 0 ? (
-        <div className="text-center py-16 text-[#7a4a4a]/50 text-sm" style={{ fontFamily: 'var(--font-nunito)' }}>
-          <CalendarDays size={32} className="mx-auto mb-3 text-[#eddada]" />
-          {tab === 'active'
-            ? 'Nessun evento attivo. Crea il primo evento con il pulsante qui sopra.'
-            : 'Nessun evento passato.'}
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#731515] border-t-transparent" />
         </div>
       ) : (
-        <div className={`space-y-3 ${tab === 'past' ? 'opacity-80' : ''}`}>
-          {tabEvents.map(event => (
-            <EventRow
-              key={event.id || event.slug}
-              event={event}
-              onEdit={tab === 'past' ? () => {} : () => { setFormErr(''); setMode({ edit: event }); }}
-              onDelete={() => handleDelete(event.slug)}
-              onTogglePublished={() => handleToggle(event)}
-              onScan={tab === 'past' ? () => {} : () => setScannerEvent(event)}
-              onInvite={tab === 'past' ? () => {} : () => setInviteEvent(event)}
-              onGuestList={() => setGuestListEventId(id => id === event.id ? null : event.id)}
-              guestListActive={guestListEvent?.id === event.id}
-              isPast={tab === 'past'}
+        <DataList
+          items={shownEvents}
+          getKey={(e) => e.id || e.slug}
+          onRowClick={(e) => setActionsEvent(e)}
+          columns={eventColumns}
+          empty={
+            <EmptyState
+              title={query ? 'Nessun risultato' : tab === 'active' ? 'Nessun evento in programma' : 'Nessun evento passato'}
+              body={
+                query
+                  ? 'Prova a cercare altro, o cambia filtro.'
+                  : tab === 'active'
+                    ? 'Crea il primo evento e comparirà qui.'
+                    : undefined
+              }
+              action={
+                query
+                  ? <ActionButton variant="quiet" onClick={() => setQuery('')}>Azzera la ricerca</ActionButton>
+                  : tab === 'active'
+                    ? <NewButton label="Nuovo evento" onClick={() => { setFormErr(''); setMode('create'); }} />
+                    : undefined
+              }
             />
-          ))}
-        </div>
+          }
+        />
       )}
     </div>
   );

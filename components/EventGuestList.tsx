@@ -130,11 +130,11 @@ export default function EventGuestList({ event, accessToken, onClose }: Props) {
         transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-start justify-between px-6 py-5 border-b border-[#eddada] shrink-0 bg-white">
+        <div className="sticky top-0 z-10 flex items-start justify-between px-6 py-5 border-b border-[var(--color-rule-paper)] shrink-0 bg-white">
           <div>
-            <div className="text-[9px] tracking-[0.4em] text-[#731515] mb-0.5">LISTA INVITATI</div>
+            <div className="text-[12px] tracking-[0.4em] text-[var(--color-accent)] mb-0.5">LISTA INVITATI</div>
             <h2
-              className="text-lg font-light text-[#1a0505] leading-tight"
+              className="text-lg font-light text-[var(--color-ink)] leading-tight"
               style={{ fontFamily: 'var(--font-syne)' }}
             >
               {event.title}
@@ -143,35 +143,35 @@ export default function EventGuestList({ event, accessToken, onClose }: Props) {
             {/* Counters */}
             <div className="flex flex-wrap items-center gap-3 mt-3">
               <div className="flex items-center gap-1.5">
-                <Users size={13} className="text-[#731515]" />
-                <span className="text-[13px] text-[#1a0505]" style={{ fontFamily: 'var(--font-nunito)' }}>
+                <Users size={13} className="text-[var(--color-accent)]" />
+                <span className="text-[13px] text-[var(--color-ink)]" style={{ fontFamily: 'var(--font-geist)' }}>
                   <strong>{guests.length}</strong>
-                  <span className="text-[#7a4a4a]/60 ml-1">
+                  <span className="text-[var(--color-on-paper-muted)]/60 ml-1">
                     {guests.length === 1 ? 'iscritto' : 'iscritti'}
                   </span>
                 </span>
               </div>
-              <span className="text-[#eddada]">·</span>
+              <span className="text-[var(--color-rule-paper)]">·</span>
               <div className="flex items-center gap-1.5">
                 <CheckCheck size={13} className="text-emerald-600" />
-                <span className="text-[13px] text-[#1a0505]" style={{ fontFamily: 'var(--font-nunito)' }}>
+                <span className="text-[13px] text-[var(--color-ink)]" style={{ fontFamily: 'var(--font-geist)' }}>
                   <strong className="text-emerald-700">{checkedIn}</strong>
-                  <span className="text-[#7a4a4a]/60 ml-1">
+                  <span className="text-[var(--color-on-paper-muted)]/60 ml-1">
                     {checkedIn === 1 ? 'presente' : 'presenti'}
                   </span>
                 </span>
               </div>
               {hasRoutes && (
                 <>
-                  <span className="text-[#eddada]">·</span>
-                  <span className="text-[13px] text-[#1a0505]" style={{ fontFamily: 'var(--font-nunito)' }}>
+                  <span className="text-[var(--color-rule-paper)]">·</span>
+                  <span className="text-[13px] text-[var(--color-ink)]" style={{ fontFamily: 'var(--font-geist)' }}>
                     <strong>{count40km}</strong>
-                    <span className="text-[#7a4a4a]/60 ml-1">× 40 km</span>
+                    <span className="text-[var(--color-on-paper-muted)]/60 ml-1">× 40 km</span>
                   </span>
-                  <span className="text-[#eddada]">·</span>
-                  <span className="text-[13px] text-[#1a0505]" style={{ fontFamily: 'var(--font-nunito)' }}>
+                  <span className="text-[var(--color-rule-paper)]">·</span>
+                  <span className="text-[13px] text-[var(--color-ink)]" style={{ fontFamily: 'var(--font-geist)' }}>
                     <strong>{count80km}</strong>
-                    <span className="text-[#7a4a4a]/60 ml-1">× 80 km</span>
+                    <span className="text-[var(--color-on-paper-muted)]/60 ml-1">× 80 km</span>
                   </span>
                 </>
               )}
@@ -180,27 +180,27 @@ export default function EventGuestList({ event, accessToken, onClose }: Props) {
           <button
             onClick={onClose}
             aria-label="Chiudi"
-            className="text-[#7a4a4a]/50 hover:text-[#731515] transition-colors rounded-lg hover:bg-[#fdf6f6] mt-0.5 min-w-[48px] min-h-[48px] flex items-center justify-center"
+            className="text-[var(--color-on-paper-muted)]/50 hover:text-[var(--color-accent)] transition-colors rounded-xl hover:bg-[var(--color-paper-soft)] mt-0.5 min-w-[48px] min-h-[48px] flex items-center justify-center"
           >
             <X size={18} />
           </button>
         </div>
 
         {/* Search */}
-        <div className="sticky top-[88px] z-10 px-6 py-3 border-b border-[#eddada] shrink-0 bg-white">
-          <div className="flex items-center gap-2.5 bg-[#fdf6f6] border border-[#eddada] rounded-lg px-3 py-2">
-            <Search size={13} className="text-[#7a4a4a]/50 shrink-0" />
+        <div className="sticky top-[88px] z-10 min-h-[48px] px-6 border-b border-[var(--color-rule-paper)] shrink-0 bg-white">
+          <div className="flex items-center gap-2.5 bg-[var(--color-paper-soft)] border border-[var(--color-rule-paper)] rounded-xl px-3 py-2">
+            <Search size={13} className="text-[var(--color-on-paper-muted)]/50 shrink-0" />
             <input
               type="search"
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Cerca per nome, email, telefono…"
-              className="flex-1 bg-transparent text-sm text-[#1a0505] placeholder:text-[#7a4a4a]/35 focus:outline-none"
-              style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
+              className="flex-1 bg-transparent text-sm text-[var(--color-ink)] placeholder:text-[var(--color-on-paper-muted)]/35 focus:outline-none"
+              style={{ fontFamily: 'var(--font-geist)', fontSize: '16px' }}
               autoFocus
             />
             {search && (
-              <button onClick={() => setSearch('')} className="text-[#7a4a4a]/40 hover:text-[#731515] transition-colors">
+              <button onClick={() => setSearch('')} className="text-[var(--color-on-paper-muted)]/40 hover:text-[var(--color-accent)] transition-colors">
                 <X size={12} />
               </button>
             )}
@@ -214,12 +214,12 @@ export default function EventGuestList({ event, accessToken, onClose }: Props) {
         >
           {loading ? (
             <div className="flex justify-center items-center py-20">
-              <div className="w-6 h-6 rounded-full border-2 border-[#731515] border-t-transparent animate-spin" />
+              <div className="w-6 h-6 rounded-full border-2 border-[var(--color-accent)] border-t-transparent animate-spin" />
             </div>
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <Users size={32} className="text-[#eddada] mb-3" />
-              <p className="text-sm text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
+              <Users size={32} className="text-[var(--color-rule-paper)] mb-3" />
+              <p className="text-sm text-[var(--color-on-paper-muted)]/50" style={{ fontFamily: 'var(--font-geist)' }}>
                 {search ? 'Nessun risultato per questa ricerca.' : 'Nessun iscritto ancora.'}
               </p>
             </div>
@@ -237,8 +237,8 @@ export default function EventGuestList({ event, accessToken, onClose }: Props) {
                 >
                   {/* Number */}
                   <span
-                    className="text-[11px] text-[#7a4a4a]/30 w-6 text-right shrink-0 tabular-nums"
-                    style={{ fontFamily: 'var(--font-nunito)' }}
+                    className="text-[13px] text-[var(--color-on-paper-muted)]/30 w-6 text-right shrink-0 tabular-nums"
+                    style={{ fontFamily: 'var(--font-geist)' }}
                   >
                     {guests.indexOf(guest) + 1}
                   </span>
@@ -246,34 +246,34 @@ export default function EventGuestList({ event, accessToken, onClose }: Props) {
                   {/* Info */}
                   <div className="flex-1 min-w-0">
                     <p
-                      className={`text-[15px] font-medium leading-tight flex flex-wrap items-center gap-2 ${guest.checked_in ? 'text-emerald-800' : 'text-[#1a0505]'}`}
+                      className={`text-[15px] font-medium leading-tight flex flex-wrap items-center gap-2 ${guest.checked_in ? 'text-emerald-800' : 'text-[var(--color-ink)]'}`}
                       style={{ fontFamily: 'var(--font-syne)' }}
                     >
                       {guest.first_name} {guest.last_name}
                       {guest.checked_in && (
-                        <span className="text-[9px] tracking-[0.25em] text-emerald-600 font-normal">✓ PRESENTE</span>
+                        <span className="text-[12px] font-medium tracking-[0.06em] text-emerald-600 font-normal">✓ PRESENTE</span>
                       )}
                       {guest.route_option && (
                         <span
-                          className="text-[9px] tracking-[0.2em] px-1.5 py-0.5 rounded-md font-normal bg-[#731515]/10 text-[#731515]"
-                          style={{ fontFamily: 'var(--font-nunito)' }}
+                          className="text-[12px] font-medium px-1.5 py-0.5 rounded-md font-normal bg-[var(--color-accent)]/10 text-[var(--color-accent)]"
+                          style={{ fontFamily: 'var(--font-geist)' }}
                         >
                           {guest.route_option === '40km' ? '40 KM' : '80 KM'}
                         </span>
                       )}
                     </p>
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1">
-                      <span className="flex items-center gap-1 text-[11px] text-[#7a4a4a]/60" style={{ fontFamily: 'var(--font-nunito)' }}>
+                      <span className="flex items-center gap-1 text-[13px] text-[var(--color-on-paper-muted)]/60" style={{ fontFamily: 'var(--font-geist)' }}>
                         <Mail size={9} className="shrink-0" />
                         {guest.email}
                       </span>
                       {guest.phone && (
-                        <span className="flex items-center gap-1 text-[11px] text-[#7a4a4a]/60" style={{ fontFamily: 'var(--font-nunito)' }}>
+                        <span className="flex items-center gap-1 text-[13px] text-[var(--color-on-paper-muted)]/60" style={{ fontFamily: 'var(--font-geist)' }}>
                           <Phone size={9} className="shrink-0" />
                           {guest.phone}
                         </span>
                       )}
-                      <span className="flex items-center gap-1 text-[10px] text-[#7a4a4a]/40" style={{ fontFamily: 'var(--font-nunito)' }}>
+                      <span className="flex items-center gap-1 text-[13px] text-[var(--color-on-paper-muted)]/40" style={{ fontFamily: 'var(--font-geist)' }}>
                         <Clock size={9} className="shrink-0" />
                         {fmtTime(guest.created_at)}
                       </span>
@@ -285,10 +285,10 @@ export default function EventGuestList({ event, accessToken, onClose }: Props) {
                     onClick={() => toggleCheckIn(guest)}
                     disabled={toggling === guest.id}
                     title={guest.checked_in ? 'Rimuovi presenza' : 'Segna come presente'}
-                    className={`shrink-0 w-12 h-12 rounded-lg flex items-center justify-center transition-all duration-200 ${
+                    className={`shrink-0 w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-200 ${
                       guest.checked_in
                         ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
-                        : 'border border-[#e8d5d5] text-[#7a4a4a]/40 hover:border-emerald-400 hover:text-emerald-600 hover:bg-emerald-50'
+                        : 'border border-[var(--color-rule-paper)] text-[var(--color-on-paper-muted)]/40 hover:border-emerald-400 hover:text-emerald-600 hover:bg-emerald-50'
                     } disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
                     {toggling === guest.id ? (
@@ -305,8 +305,8 @@ export default function EventGuestList({ event, accessToken, onClose }: Props) {
 
         {/* Footer */}
         {!loading && filtered.length > 0 && (
-          <div className="px-6 py-3 border-t border-[#eddada] shrink-0 bg-[#fdf9f9]">
-            <p className="text-[10px] text-[#7a4a4a]/40 text-center" style={{ fontFamily: 'var(--font-nunito)' }}>
+          <div className="min-h-[48px] px-6 border-t border-[var(--color-rule-paper)] shrink-0 bg-[#fdf9f9]">
+            <p className="text-[13px] text-[var(--color-on-paper-muted)]/40 text-center" style={{ fontFamily: 'var(--font-geist)' }}>
               Lista aggiornata in tempo reale · Clicca <UserCheck size={9} className="inline mx-0.5" /> per segnare la presenza
             </p>
           </div>

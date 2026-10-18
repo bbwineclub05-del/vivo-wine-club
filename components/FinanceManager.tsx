@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import FounderAccounts from './FounderAccounts';
-import { FINANCE_EMAILS } from '@/lib/admins';
 import { useOverlayBackClose } from '@/lib/useMobileOverlay';
 
 /* ─────────────────────────────────────────────

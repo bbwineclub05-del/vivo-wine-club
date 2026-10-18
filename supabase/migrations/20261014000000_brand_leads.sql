@@ -4,6 +4,10 @@
 -- This migration only CREATEs. It does not touch events, tickets, orders,
 -- payments or any existing table, so it is safe to run while events are live.
 --
+-- Status and review columns follow the Application convention used by
+-- ambassador_applications, so the reserved area can list both through the
+-- same registry.
+--
 -- RLS is enabled with no policies, exactly like ambassador_applications:
 -- only the service role (the API route) can read or write. Anon and
 -- authenticated clients get nothing, so the public form posts through the
@@ -13,8 +17,8 @@ CREATE TABLE IF NOT EXISTS public.brand_leads (
   id                          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at                  timestamptz NOT NULL DEFAULT now(),
   updated_at                  timestamptz NOT NULL DEFAULT now(),
-  status                      text NOT NULL DEFAULT 'new'
-                              CHECK (status IN ('new', 'in_review', 'won', 'lost')),
+  status                      text NOT NULL DEFAULT 'pending'
+                              CHECK (status IN ('pending', 'accepted', 'rejected')),
   company                     text NOT NULL,
   contact_name                text NOT NULL,
   email                       text NOT NULL,
@@ -25,7 +29,9 @@ CREATE TABLE IF NOT EXISTS public.brand_leads (
   consent_privacy_accepted_at timestamptz NOT NULL,
   consent_privacy_version     text NOT NULL,
   consent_ip                  text,
-  staff_notes                 text
+  staff_notes                 text,
+  reviewed_by                 text,
+  reviewed_at                 timestamptz
 );
 
 CREATE INDEX IF NOT EXISTS brand_leads_status_idx ON public.brand_leads (status);

@@ -276,21 +276,21 @@ export default function EventGuestPanel({ event, accessToken, onGuestEnabled }: 
   if (!event.guest_list_enabled) {
     return (
       <div className="px-6 py-12 flex flex-col items-center gap-4 text-center">
-        <div className="w-16 h-16 rounded-full bg-[#fdf6f6] flex items-center justify-center">
-          <Users size={28} className="text-[#eddada]" />
+        <div className="w-16 h-16 rounded-full bg-[var(--color-paper-soft)] flex items-center justify-center">
+          <Users size={28} className="text-[var(--color-rule-paper)]" />
         </div>
         <div>
-          <p className="text-base font-light text-[#1a0505] mb-1" style={{ fontFamily: 'var(--font-syne)' }}>
+          <p className="text-base font-light text-[var(--color-ink)] mb-1" style={{ fontFamily: 'var(--font-syne)' }}>
             Nessuna lista creata
           </p>
-          <p className="text-sm text-[#7a4a4a]/60" style={{ fontFamily: 'var(--font-nunito)' }}>
+          <p className="text-sm text-[var(--color-on-paper-muted)]/60" style={{ fontFamily: 'var(--font-geist)' }}>
             Attiva la lista per raccogliere iscrizioni sulla pagina pubblica.
           </p>
         </div>
         <button
           onClick={enableGuestList}
           disabled={enabling}
-          className="inline-flex items-center gap-2 px-6 py-3 bg-[#731515] text-white text-[10px] tracking-[0.3em] hover:bg-[#9b2323] disabled:opacity-50 transition-colors rounded-lg"
+          className="inline-flex items-center gap-2 min-h-[48px] px-6 bg-[var(--color-accent)] text-white text-[13px] font-medium tracking-normal hover:bg-[var(--color-accent-lift)] disabled:opacity-50 transition-colors rounded-xl"
         >
           {enabling ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
           {enabling ? 'ATTIVAZIONE…' : 'CREA LISTA INVITATI'}
@@ -318,15 +318,15 @@ export default function EventGuestPanel({ event, accessToken, onGuestEnabled }: 
               transition={{ duration: 0.18 }}
               className="overflow-hidden"
             >
-              <div className="flex items-center gap-3 px-4 sm:px-6 py-3 bg-red-50 border-b border-red-200 flex-wrap">
-                <p className="flex-1 text-sm text-red-700" style={{ fontFamily: 'var(--font-nunito)' }}>
+              <div className="flex items-center gap-3 px-4 sm:min-h-[48px] px-6 bg-red-50 border-b border-red-200 flex-wrap">
+                <p className="flex-1 text-sm text-red-700" style={{ fontFamily: 'var(--font-geist)' }}>
                   Eliminare la lista? Tutti gli iscritti verranno rimossi e il form sparirà dal sito.
                 </p>
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={deleteGuestList}
                     disabled={deleting}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white text-[10px] tracking-[0.25em] rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
+                    className="inline-flex items-center gap-1.5 min-h-[44px] px-4 bg-red-600 text-white text-[13px] font-medium tracking-normal rounded-xl hover:bg-red-700 disabled:opacity-50 transition-colors"
                   >
                     {deleting ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />}
                     {deleting ? 'ELIMINAZIONE…' : 'ELIMINA'}
@@ -334,7 +334,7 @@ export default function EventGuestPanel({ event, accessToken, onGuestEnabled }: 
                   <button
                     onClick={() => setDelConfirm(false)}
                     disabled={deleting}
-                    className="px-3 py-1.5 border border-red-200 text-red-600 text-[10px] tracking-[0.25em] rounded-lg hover:bg-red-100 disabled:opacity-50 transition-colors"
+                    className="min-h-[44px] px-4 border border-red-200 text-red-600 text-[13px] font-medium tracking-normal rounded-xl hover:bg-red-100 disabled:opacity-50 transition-colors"
                   >
                     ANNULLA
                   </button>
@@ -345,23 +345,23 @@ export default function EventGuestPanel({ event, accessToken, onGuestEnabled }: 
         </AnimatePresence>
 
         {/* Counters + search bar */}
-        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-[#f0e4e4] bg-[#fdf9f9]">
+        <div className="px-4 sm:min-h-[48px] px-6 sm:py-4 border-b border-[#f0e4e4] bg-[#fdf9f9]">
         {/* Counters row */}
         <div className="flex items-center gap-4 mb-3">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-[#731515]/8 flex items-center justify-center">
-              <Users size={14} className="text-[#731515]" />
+            <div className="w-8 h-8 rounded-full bg-[var(--color-accent)]/8 flex items-center justify-center">
+              <Users size={14} className="text-[var(--color-accent)]" />
             </div>
             <div>
-              <span className="text-xl font-semibold text-[#1a0505] leading-none tabular-nums" style={{ fontFamily: 'var(--font-syne)' }}>
+              <span className="text-xl font-semibold text-[var(--color-ink)] leading-none tabular-nums" style={{ fontFamily: 'var(--font-syne)' }}>
                 {guests.length}
               </span>
-              <span className="text-[11px] text-[#7a4a4a]/60 ml-1.5" style={{ fontFamily: 'var(--font-nunito)' }}>
+              <span className="text-[13px] text-[var(--color-on-paper-muted)]/60 ml-1.5" style={{ fontFamily: 'var(--font-geist)' }}>
                 {guests.length === 1 ? 'iscritto' : 'iscritti'}
               </span>
             </div>
           </div>
-          <div className="w-px h-6 bg-[#eddada]" />
+          <div className="w-px h-6 bg-[var(--color-rule-paper)]" />
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center">
               <CheckCheck size={14} className="text-emerald-600" />
@@ -370,7 +370,7 @@ export default function EventGuestPanel({ event, accessToken, onGuestEnabled }: 
               <span className="text-xl font-semibold text-emerald-700 leading-none tabular-nums" style={{ fontFamily: 'var(--font-syne)' }}>
                 {checkedIn}
               </span>
-              <span className="text-[11px] text-[#7a4a4a]/60 ml-1.5" style={{ fontFamily: 'var(--font-nunito)' }}>
+              <span className="text-[13px] text-[var(--color-on-paper-muted)]/60 ml-1.5" style={{ fontFamily: 'var(--font-geist)' }}>
                 {checkedIn === 1 ? 'presente' : 'presenti'}
               </span>
             </div>
@@ -381,8 +381,8 @@ export default function EventGuestPanel({ event, accessToken, onGuestEnabled }: 
             onClick={exportPdf}
             disabled={exporting || guests.length === 0}
             title="Esporta PDF"
-            className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] tracking-[0.2em] border border-[#eddada] text-[#731515] rounded-lg hover:bg-[#fdf6f6] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            style={{ fontFamily: 'var(--font-nunito)' }}
+            className="flex items-center gap-1.5 min-h-[44px] px-4 text-[13px] font-medium tracking-normal border border-[var(--color-rule-paper)] text-[var(--color-accent)] rounded-xl hover:bg-[var(--color-paper-soft)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            style={{ fontFamily: 'var(--font-geist)' }}
           >
             {exporting
               ? <Loader2 size={12} className="animate-spin" />
@@ -394,8 +394,8 @@ export default function EventGuestPanel({ event, accessToken, onGuestEnabled }: 
           <button
             onClick={() => setDelConfirm(x => !x)}
             title="Elimina lista"
-            className={`p-2 rounded-lg transition-colors ${
-              delConfirm ? 'text-red-600 bg-red-50' : 'text-[#7a4a4a]/35 hover:text-red-500 hover:bg-red-50'
+            className={`p-2 rounded-xl transition-colors ${
+              delConfirm ? 'text-red-600 bg-red-50' : 'text-[var(--color-on-paper-muted)]/35 hover:text-red-500 hover:bg-red-50'
             }`}
           >
             <Trash2 size={15} />
@@ -403,19 +403,19 @@ export default function EventGuestPanel({ event, accessToken, onGuestEnabled }: 
         </div>
 
         {/* Search */}
-        <div className="flex items-center gap-2 bg-white border border-[#eddada] rounded-xl px-4 py-2.5 shadow-[inset_0_1px_3px_rgba(107,26,26,0.04)]">
-          <Search size={14} className="text-[#7a4a4a]/40 shrink-0" />
+        <div className="flex items-center gap-2 bg-white border border-[var(--color-rule-paper)] rounded-xl px-4 py-2.5 shadow-[inset_0_1px_3px_rgba(107,26,26,0.04)]">
+          <Search size={14} className="text-[var(--color-on-paper-muted)]/40 shrink-0" />
           <input
             type="search"
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Cerca per nome, cognome o email…"
-            className="flex-1 bg-transparent text-sm text-[#1a0505] placeholder:text-[#7a4a4a]/30 focus:outline-none"
-            style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
+            className="flex-1 bg-transparent text-sm text-[var(--color-ink)] placeholder:text-[var(--color-on-paper-muted)]/30 focus:outline-none"
+            style={{ fontFamily: 'var(--font-geist)', fontSize: '16px' }}
             autoComplete="off"
           />
           {search && (
-            <button onClick={() => setSearch('')} className="text-[#7a4a4a]/40 hover:text-[#731515] transition-colors">
+            <button onClick={() => setSearch('')} className="text-[var(--color-on-paper-muted)]/40 hover:text-[var(--color-accent)] transition-colors">
               <X size={12} />
             </button>
           )}
@@ -429,12 +429,12 @@ export default function EventGuestPanel({ event, accessToken, onGuestEnabled }: 
       <div>
         {loading ? (
           <div className="flex justify-center py-12">
-            <div className="w-6 h-6 rounded-full border-2 border-[#731515] border-t-transparent animate-spin" />
+            <div className="w-6 h-6 rounded-full border-2 border-[var(--color-accent)] border-t-transparent animate-spin" />
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <Users size={28} className="text-[#eddada] mb-3" />
-            <p className="text-sm text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
+            <Users size={28} className="text-[var(--color-rule-paper)] mb-3" />
+            <p className="text-sm text-[var(--color-on-paper-muted)]/50" style={{ fontFamily: 'var(--font-geist)' }}>
               {search ? 'Nessun risultato per questa ricerca.' : 'Nessun iscritto ancora.'}
             </p>
           </div>
@@ -455,8 +455,8 @@ export default function EventGuestPanel({ event, accessToken, onGuestEnabled }: 
                 >
                   {/* Position number */}
                   <span
-                    className="text-[11px] text-[#7a4a4a]/25 w-6 text-right shrink-0 tabular-nums select-none"
-                    style={{ fontFamily: 'var(--font-nunito)' }}
+                    className="text-[13px] text-[var(--color-on-paper-muted)]/25 w-6 text-right shrink-0 tabular-nums select-none"
+                    style={{ fontFamily: 'var(--font-geist)' }}
                   >
                     {i + 1}
                   </span>
@@ -466,8 +466,8 @@ export default function EventGuestPanel({ event, accessToken, onGuestEnabled }: 
                     {/* Partner badge — shown only when partner_code is mapped to a name */}
                     {guest.partner_code && partnerNames.has(guest.partner_code) && (
                       <span
-                        className="block text-[9px] tracking-[0.18em] text-[#7a4a4a]/45 uppercase leading-none mb-1"
-                        style={{ fontFamily: 'var(--font-nunito)' }}
+                        className="block text-[12px] font-medium text-[var(--color-on-paper-muted)]/45 uppercase leading-none mb-1"
+                        style={{ fontFamily: 'var(--font-geist)' }}
                       >
                         {partnerNames.get(guest.partner_code)}
                       </span>
@@ -475,7 +475,7 @@ export default function EventGuestPanel({ event, accessToken, onGuestEnabled }: 
                     <div className="flex items-center gap-1.5">
                       <p
                         className={`text-[15px] font-medium leading-tight truncate ${
-                          guest.checked_in ? 'text-emerald-800' : 'text-[#1a0505]'
+                          guest.checked_in ? 'text-emerald-800' : 'text-[var(--color-ink)]'
                         }`}
                         style={{ fontFamily: 'var(--font-syne)' }}
                       >
@@ -491,15 +491,15 @@ export default function EventGuestPanel({ event, accessToken, onGuestEnabled }: 
                       )}
                     </div>
                     <div className="flex flex-wrap items-center gap-x-3 mt-0.5">
-                      <span className="flex items-center gap-1 text-[11px] text-[#7a4a4a]/55" style={{ fontFamily: 'var(--font-nunito)' }}>
+                      <span className="flex items-center gap-1 text-[13px] text-[var(--color-on-paper-muted)]/55" style={{ fontFamily: 'var(--font-geist)' }}>
                         <Mail size={9} className="shrink-0" />{guest.email}
                       </span>
                       {guest.phone && (
-                        <span className="flex items-center gap-1 text-[11px] text-[#7a4a4a]/55" style={{ fontFamily: 'var(--font-nunito)' }}>
+                        <span className="flex items-center gap-1 text-[13px] text-[var(--color-on-paper-muted)]/55" style={{ fontFamily: 'var(--font-geist)' }}>
                           <Phone size={9} className="shrink-0" />{guest.phone}
                         </span>
                       )}
-                      <span className="flex items-center gap-1 text-[10px] text-[#7a4a4a]/30" style={{ fontFamily: 'var(--font-nunito)' }}>
+                      <span className="flex items-center gap-1 text-[13px] text-[var(--color-on-paper-muted)]/30" style={{ fontFamily: 'var(--font-geist)' }}>
                         <Clock size={8} className="shrink-0" />{fmtTime(guest.created_at)}
                       </span>
                     </div>

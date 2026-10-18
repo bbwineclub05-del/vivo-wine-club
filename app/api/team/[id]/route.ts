@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { getAuthUser } from '@/lib/auth-guard';
-import { isSuperAdmin } from '@/lib/admins';
+import { isAdminEmail } from '@/lib/admins';
 
 async function assertSuperAdmin(request: Request) {
   const auth = await getAuthUser(request);
   if (!auth.ok) return { ok: false as const, response: auth.response };
-  if (!isSuperAdmin(auth.email)) {
+  // Team Management is board-only: staff can neither see it nor write to it.
+  if (!isAdminEmail(auth.email)) {
     return { ok: false as const, response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
   }
   return { ok: true as const };

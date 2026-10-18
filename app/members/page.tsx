@@ -5,11 +5,9 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Home, CheckSquare, BarChart3, Users, FileText,
-  Mail, LogOut, KeyRound, ScanLine, Menu, X,
-  Wine, Shield, ArrowUpRight, CreditCard, User, CalendarDays, Images,
-  Database, ChevronDown, UsersRound, Lock, ShoppingBag, Tag, FolderOpen, Layers,
-  Camera, Loader2, Wallet, Receipt, BookOpen, Sparkles, Clock, Pencil, MapPin, Inbox,
+  Mail, LogOut, KeyRound, ScanLine, X,
+  Wine, Shield, ArrowUpRight, CreditCard, User, Lock,
+  Camera, Loader2, Clock, Pencil,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -35,7 +33,10 @@ import WineAssistant from '@/components/WineAssistant';
 import UpsellManager from '@/components/UpsellManager';
 import WineriesMapManager from '@/components/WineriesMapManager';
 import ApplicationsManager from '@/components/ApplicationsManager';
-import { isSuperAdmin, isFinanceUser } from '@/lib/admins';
+import { isFinanceUser } from '@/lib/admins';
+import { SECTION_PERMISSION } from '@/lib/access';
+import { AdminShell } from '@/components/admin/AdminShell';
+import { type AdminRole } from '@/lib/admin-nav';
 import { useMobileOverlay } from '@/lib/useMobileOverlay';
 
 /* ─────────────────────────────────────────────
@@ -43,67 +44,6 @@ import { useMobileOverlay } from '@/lib/useMobileOverlay';
 ───────────────────────────────────────────── */
 type Section = 'overview' | 'settings' | 'wine-assistant' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm' | 'media' | 'team' | 'merch' | 'discounts' | 'documents' | 'finance' | 'bilancio' | 'quotes' | 'ped' | 'upsell' | 'wineries' | 'applications';
 
-// Maps section IDs to the permission key in team_members.permissions
-const SECTION_PERM: Partial<Record<Section, string>> = {
-  tasks:     'tasks',
-  events:    'events',
-  news:      'news',
-  crm:       'crm',
-  media:     'media',
-  analytics: 'analytics',
-  pipeline:  'pipeline',
-  merch:     'merch',
-  discounts: 'merch',
-  upsell:    'merch',
-  documents: 'documents',
-  wineries:  'media', // reuses the Media permission — same content-curation audience
-};
-
-interface NavItem {
-  id: Section;
-  label: string;
-  icon: React.ElementType;
-}
-
-const NAV_MAIN: NavItem[] = [
-  { id: 'overview',       label: 'Overview',        icon: Home       },
-  { id: 'wine-assistant', label: 'Wine Assistant',  icon: Wine       },
-];
-
-const SETTINGS_ITEM: NavItem = { id: 'settings', label: 'Impostazioni', icon: KeyRound };
-
-// Sub-items for the collapsible Gestione group
-const GESTIONE_ITEMS: NavItem[] = [
-  { id: 'events',    label: 'Eventi',  icon: CalendarDays },
-  { id: 'news',      label: 'News',    icon: FileText     },
-  { id: 'merch',     label: 'Merch',   icon: ShoppingBag  },
-  { id: 'media',     label: 'Media',   icon: Images       },
-  { id: 'discounts', label: 'Sconti',  icon: Tag          },
-  { id: 'upsell',    label: 'Upsell',  icon: Sparkles     },
-  { id: 'wineries',  label: 'Mappa Cantine', icon: MapPin },
-];
-
-// Visible to both admin and staff
-const NAV_SHARED: NavItem[] = [
-  { id: 'tasks',     label: 'Task', icon: CheckSquare },
-  { id: 'ped',       label: 'PED',        icon: BookOpen    },
-  { id: 'documents', label: 'Documenti',  icon: FolderOpen  },
-  { id: 'quotes',    label: 'Preventivi', icon: Receipt     },
-];
-
-// Admin only
-const NAV_ADMIN_ONLY: NavItem[] = [
-  { id: 'analytics', label: 'Analytics',           icon: BarChart3 },
-  { id: 'pipeline',  label: 'Pipeline Membership', icon: Users     },
-];
-
-
-// Visible to both admin and staff
-const NAV_SHARED_BOTTOM: NavItem[] = [];
-
-/* ─────────────────────────────────────────────
-   Sub-components
-───────────────────────────────────────────── */
 
 /** Monogram avatar — shows photo if src is provided, falls back to initials */
 function UserAvatar({ name, size = 36, src }: { name: string; size?: number; src?: string | null }) {
@@ -125,328 +65,6 @@ function UserAvatar({ name, size = 36, src }: { name: string; size?: number; src
       className="rounded-full bg-gradient-to-br from-[#731515] to-[#3d0808] flex items-center justify-center text-white font-semibold select-none"
     >
       {initials}
-    </div>
-  );
-}
-
-/** Single sidebar nav button */
-function NavBtn({
-  item,
-  active,
-  onClick,
-  badge,
-}: {
-  item: NavItem;
-  active: boolean;
-  onClick: () => void;
-  /** Optional counter shown on the right (hidden when 0/undefined). */
-  badge?: number;
-}) {
-  const Icon = item.icon;
-  return (
-    <button
-      onClick={onClick}
-      className={`w-full flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-left transition-all duration-150 text-[12.5px] relative ${
-        active
-          ? 'bg-[#731515]/25 text-white'
-          : 'text-white/45 hover:text-white/75 hover:bg-white/[0.06]'
-      }`}
-      style={{ fontFamily: 'var(--font-nunito)' }}
-    >
-      {active && (
-        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-[#c84040] rounded-r-full" />
-      )}
-      <Icon size={14} className={active ? 'text-[#c84040]' : 'text-white/35'} />
-      {item.label}
-      {!!badge && badge > 0 && (
-        <span
-          className="ml-auto min-w-[18px] h-[18px] px-1.5 rounded-full bg-[#c84040] text-white text-[10px] leading-[18px] text-center font-semibold"
-          aria-label={`${badge} da gestire`}
-        >
-          {badge > 99 ? '99+' : badge}
-        </span>
-      )}
-    </button>
-  );
-}
-
-
-/** Collapsible Gestione group (Events, News, Merch) in the sidebar */
-function GestioneGroupNav({ activeSection, navigate }: { activeSection: Section; navigate: (s: Section) => void }) {
-  const isActive = GESTIONE_ITEMS.some((item) => item.id === activeSection);
-  const [open, setOpen] = useState(isActive);
-
-  useEffect(() => {
-    if (isActive) setOpen(true);
-  }, [isActive]);
-
-  return (
-    <div>
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className={`w-full flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-left transition-all duration-150 text-[12.5px] ${
-          isActive
-            ? 'text-white/75 bg-white/[0.04]'
-            : 'text-white/45 hover:text-white/75 hover:bg-white/[0.06]'
-        }`}
-        style={{ fontFamily: 'var(--font-nunito)' }}
-      >
-        <Layers size={14} className={isActive ? 'text-[#c84040]' : 'text-white/35'} />
-        Gestione
-        <ChevronDown
-          size={11}
-          className={`ml-auto text-white/25 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
-        />
-      </button>
-
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="overflow-hidden"
-          >
-            <div className="ml-3 pl-2.5 border-l border-white/[0.07] mt-0.5 mb-0.5 space-y-0.5">
-              {GESTIONE_ITEMS.map((item) => (
-                <NavBtn
-                  key={item.id}
-                  item={item}
-                  active={activeSection === item.id}
-                  onClick={() => navigate(item.id)}
-                />
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-const FINANCE_ITEMS: NavItem[] = [
-  { id: 'finance',  label: 'Transazioni', icon: Receipt  },
-  { id: 'bilancio', label: 'Bilancio',    icon: BarChart3 },
-];
-
-/** Collapsible Finance group (Transazioni, Bilancio) in the sidebar */
-function FinanceGroupNav({ activeSection, navigate }: { activeSection: Section; navigate: (s: Section) => void }) {
-  const isActive = FINANCE_ITEMS.some((item) => item.id === activeSection);
-  const [open, setOpen] = useState(isActive);
-
-  useEffect(() => {
-    if (isActive) setOpen(true);
-  }, [isActive]);
-
-  return (
-    <div>
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className={`w-full flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-left transition-all duration-150 text-[12.5px] ${
-          isActive
-            ? 'text-white/75 bg-white/[0.04]'
-            : 'text-white/45 hover:text-white/75 hover:bg-white/[0.06]'
-        }`}
-        style={{ fontFamily: 'var(--font-nunito)' }}
-      >
-        <Wallet size={14} className={isActive ? 'text-[#c84040]' : 'text-white/35'} />
-        Finance
-        <ChevronDown
-          size={11}
-          className={`ml-auto text-white/25 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
-        />
-      </button>
-
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="overflow-hidden"
-          >
-            <div className="ml-3 pl-2.5 border-l border-white/[0.07] mt-0.5 mb-0.5 space-y-0.5">
-              {FINANCE_ITEMS.map((item) => (
-                <NavBtn
-                  key={item.id}
-                  item={item}
-                  active={activeSection === item.id}
-                  onClick={() => navigate(item.id)}
-                />
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-/** Sidebar shell — rendered both in desktop aside and mobile drawer */
-function SidebarContent({
-  displayName,
-  email,
-  activeSection,
-  navigate,
-  onLogout,
-  admin,
-  isStaff,
-  canAccess,
-  superAdmin,
-  financeUser,
-  pendingApplications,
-}: {
-  displayName: string;
-  email: string;
-  activeSection: Section;
-  navigate: (s: Section) => void;
-  onLogout: () => void;
-  admin: boolean;
-  isStaff: boolean;
-  canAccess: (section: Section) => boolean;
-  superAdmin: boolean;
-  financeUser: boolean;
-  pendingApplications: number;
-}) {
-  return (
-    <div className="flex flex-col h-full overflow-hidden">
-
-      {/* Logo */}
-      <div className="px-5 pt-6 pb-5 shrink-0">
-        <Link href="/" className="inline-flex items-center gap-2 group">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logobianco.png" alt="Vivo Wine Club" className="h-7 opacity-80 group-hover:opacity-100 transition-opacity duration-200" />
-        </Link>
-        <div className="mt-1.5 text-[8px] tracking-[0.55em] text-white/20 uppercase">Members Area</div>
-      </div>
-
-      {/* Divider */}
-      <div className="mx-4 h-px bg-white/[0.07] shrink-0" />
-
-      {/* User card */}
-      <div className="px-4 py-4 shrink-0">
-        <div className="flex items-center gap-3">
-          <UserAvatar name={displayName} size={34} />
-          <div className="min-w-0">
-            <div
-              className="text-[13px] text-white/85 font-medium truncate leading-tight"
-              style={{ fontFamily: 'var(--font-syne)' }}
-            >
-              {displayName}
-            </div>
-            <div
-              className="text-[10px] text-white/30 truncate mt-0.5"
-              style={{ fontFamily: 'var(--font-nunito)' }}
-            >
-              {email}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Divider */}
-      <div className="mx-4 h-px bg-white/[0.07] mb-2 shrink-0" />
-
-      {/* Nav */}
-      <nav className="flex-1 overflow-y-auto px-3 py-1 space-y-0.5">
-        {NAV_MAIN.map(item => (
-          <NavBtn key={item.id} item={item} active={activeSection === item.id} onClick={() => navigate(item.id)} />
-        ))}
-
-        {(admin || isStaff) && (
-          <>
-            <div className="pt-5 pb-1.5 px-3 flex items-center gap-1.5">
-              {admin
-                ? <Shield size={8} className="text-white/20" />
-                : <ScanLine size={8} className="text-white/20" />
-              }
-              <span className="text-[8px] tracking-[0.55em] text-white/20 uppercase">
-                {admin ? 'Admin' : 'Gestione'}
-              </span>
-            </div>
-            <GestioneGroupNav activeSection={activeSection} navigate={navigate} />
-            {NAV_SHARED.map(item => (
-              <NavBtn key={item.id} item={item} active={activeSection === item.id} onClick={() => navigate(item.id)} />
-            ))}
-            {NAV_ADMIN_ONLY.map(item => (
-              <NavBtn key={item.id} item={item} active={activeSection === item.id} onClick={() => navigate(item.id)} />
-            ))}
-            <NavBtn
-              item={{ id: 'applications', label: 'Application', icon: Inbox }}
-              active={activeSection === 'applications'}
-              onClick={() => navigate('applications')}
-              badge={pendingApplications}
-            />
-            <NavBtn
-              item={{ id: 'crm', label: 'CRM', icon: Database }}
-              active={activeSection === 'crm'}
-              onClick={() => navigate('crm')}
-            />
-            {NAV_SHARED_BOTTOM.map(item => (
-              <NavBtn key={item.id} item={item} active={activeSection === item.id} onClick={() => navigate(item.id)} />
-            ))}
-          </>
-        )}
-
-        {superAdmin && (
-          <>
-            <div className="pt-5 pb-1.5 px-3 flex items-center gap-1.5">
-              <UsersRound size={8} className="text-white/20" />
-              <span className="text-[8px] tracking-[0.55em] text-white/20 uppercase">Super Admin</span>
-            </div>
-            <NavBtn
-              item={{ id: 'team', label: 'Team Management', icon: UsersRound }}
-              active={activeSection === 'team'}
-              onClick={() => navigate('team')}
-            />
-          </>
-        )}
-
-        {financeUser && (
-          <>
-            <div className="pt-5 pb-1.5 px-3 flex items-center gap-1.5">
-              <Wallet size={8} className="text-white/20" />
-              <span className="text-[8px] tracking-[0.55em] text-white/20 uppercase">Finance</span>
-            </div>
-            <FinanceGroupNav activeSection={activeSection} navigate={navigate} />
-          </>
-        )}
-
-        {/* Account — always last */}
-        <div className="pt-5 pb-1.5 px-3 flex items-center gap-1.5">
-          <KeyRound size={8} className="text-white/20" />
-          <span className="text-[8px] tracking-[0.55em] text-white/20 uppercase">Account</span>
-        </div>
-        <NavBtn
-          item={SETTINGS_ITEM}
-          active={activeSection === 'settings'}
-          onClick={() => navigate('settings')}
-        />
-      </nav>
-
-      {/* Bottom actions */}
-      <div className="mx-4 h-px bg-white/[0.07] shrink-0" />
-      <div className="px-3 py-3 shrink-0 space-y-0.5">
-        <Link
-          href="/"
-          className="flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-white/30 hover:text-white/55 hover:bg-white/[0.06] transition-all duration-150 text-[12px]"
-          style={{ fontFamily: 'var(--font-nunito)' }}
-        >
-          <ArrowUpRight size={12} />
-          vivowineclub.com
-        </Link>
-        <button
-          onClick={onLogout}
-          className="w-full flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-white/30 hover:text-[#e88a8a] hover:bg-white/[0.06] transition-all duration-150 text-[12px] text-left"
-          style={{ fontFamily: 'var(--font-nunito)' }}
-        >
-          <LogOut size={12} />
-          Esci
-        </button>
-      </div>
-
     </div>
   );
 }
@@ -1196,7 +814,6 @@ function MembersPageInner() {
   if (!user) return null;
 
   const admin       = isAdmin(user.email ?? '');
-  const superAdmin  = isSuperAdmin(user.email ?? '');
   const financeUser = isFinanceUser(user.email ?? '');
   const displayName = user.name || user.email?.split('@')[0] || 'Member';
 
@@ -1224,12 +841,16 @@ function MembersPageInner() {
 
   /** Returns true if the current user can access this section. */
   function canAccess(section: Section): boolean {
-    if (admin) return true; // admins always have full access
-    if (!isStaff) return false;
-    if (staffPermissions === null) return true; // still loading — optimistic to avoid false UnauthorisedSection flash
-    const permKey = SECTION_PERM[section];
-    if (!permKey) return true; // overview, settings, etc. — always accessible
-    return staffPermissions[permKey] ?? false;
+    // /api/team/me already applied the rules in lib/access.ts, including
+    // the board check and the deactivation that the hardcoded list used
+    // to override. Here we only read its answer.
+    if (section === 'overview' || section === 'settings' || section === 'wine-assistant') return true;
+    if (section === 'team') return admin;
+    if (staffPermissions === null) return true; // still loading: avoid a flash of "unauthorised"
+
+    const permKey = SECTION_PERMISSION[section];
+    if (!permKey) return false; // an unmapped section is a bug, not an invitation
+    return staffPermissions[permKey] !== false;
   }
 
   function navigate(s: Section) {
@@ -1242,96 +863,27 @@ function MembersPageInner() {
     router.push('/');
   }
 
-  const sidebarProps = {
-    displayName,
-    email:     user.email ?? '',
-    activeSection,
-    navigate,
-    onLogout:  handleLogout,
-    admin,
-    isStaff,
-    canAccess,
-    superAdmin,
-    financeUser,
-    pendingApplications,
-  };
+  const destination = destinationOf(activeSection);
 
   return (
-    <div className="flex overflow-hidden relative" style={{ height: '100dvh', background: '#0a0101' }}>
+    <AdminShell
+      role={(admin ? 'board' : 'staff') as AdminRole}
+      active={destination}
+      onNavigate={(id) => navigate((DESTINATION_FIRST_SECTION[id] ?? id) as Section)}
+      userName={displayName}
+      pendingApplications={pendingApplications}
+    >
+      <div id="members-scroll-root" className="mx-auto max-w-[1180px] px-5 py-7 lg:px-10 lg:py-10">
+        <SectionTabs destination={destination} active={activeSection} onPick={navigate} />
 
-      {/* ── Fixed background image (vigna.jpg) ── */}
-      <div
-        className="fixed inset-0 z-0 pointer-events-none"
-        style={{ backgroundImage: 'url(/vigna.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }}
-      >
-        <div className="absolute inset-0 bg-[#0a0101]/65" />
-      </div>
-
-      {/* ── Desktop sidebar ── */}
-      <aside className="hidden lg:flex w-[230px] shrink-0 bg-[#0e0202] flex-col border-r border-white/[0.04] relative z-10" style={{ height: '100dvh' }}>
-        <SidebarContent {...sidebarProps} />
-      </aside>
-
-      {/* ── Mobile overlay ── */}
-      <AnimatePresence>
-        {sidebarOpen && (
-          <>
-            <motion.div
-              key="overlay"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.18 }}
-              className="fixed inset-0 bg-black/55 z-40 lg:hidden"
-              onClick={() => setSidebarOpen(false)}
-            />
-            <motion.aside
-              key="drawer"
-              initial={{ x: -230 }}
-              animate={{ x: 0 }}
-              exit={{ x: -230 }}
-              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-              className="fixed left-0 top-0 h-full w-[230px] bg-[#0e0202] z-50 flex flex-col border-r border-white/[0.04] lg:hidden"
-            >
-              <button
-                onClick={() => setSidebarOpen(false)}
-                className="absolute top-2 right-2 text-white/35 hover:text-white/65 min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors"
-              >
-                <X size={17} />
-              </button>
-              <SidebarContent {...sidebarProps} />
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* ── Main content ── */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative z-10">
-
-        {/* Mobile top bar */}
-        <div className="lg:hidden flex items-center justify-between px-4 py-3 bg-[#0e0202] border-b border-white/[0.06] shrink-0">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="text-white/50 hover:text-white min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors"
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeSection}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -5 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
           >
-            <Menu size={20} />
-          </button>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logobianco.png" alt="Vivo" className="h-6 opacity-70" />
-          <UserAvatar name={displayName} size={28} />
-        </div>
-
-        {/* Scrollable content area */}
-        <main id="members-scroll-root" className="flex-1 overflow-y-auto bg-white">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-6 sm:py-10">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeSection}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-              >
 
                 {activeSection === 'overview' && (
                   <OverviewSection user={{ name: user.name, email: user.email }} isAdmin={admin} isStaff={isStaff} token={token} />
@@ -1434,7 +986,7 @@ function MembersPageInner() {
                   ) : <UnauthorisedSection title="Gestione Documenti" />
                 )}
 
-                {superAdmin && activeSection === 'team' && <TeamManagement />}
+                {admin && activeSection === 'team' && <TeamManagement />}
 
                 {(admin || isStaff) && activeSection === 'quotes' && (
                   <>
@@ -1462,11 +1014,81 @@ function MembersPageInner() {
                   ) : <UnauthorisedSection title="Mappa Cantine" />
                 )}
 
-              </motion.div>
-            </AnimatePresence>
-          </div>
-        </main>
+          </motion.div>
+        </AnimatePresence>
       </div>
+    </AdminShell>
+  );
+}
+
+
+/* ─────────────────────────────────────────────
+   Destinations and the sections inside them
+
+   The navigation speaks in destinations; the render below still speaks
+   in the original section ids. Three destinations hold more than one
+   section, so these two maps translate between them and nothing in the
+   rendering had to change.
+───────────────────────────────────────────── */
+const SECTION_TO_DESTINATION: Record<string, string> = {
+  news: 'site', media: 'site', wineries: 'site',
+  discounts: 'offers', upsell: 'offers',
+  finance: 'finance', bilancio: 'finance', quotes: 'finance',
+  pipeline: 'membership',
+};
+
+const DESTINATION_FIRST_SECTION: Record<string, Section> = {
+  site: 'news', offers: 'discounts', finance: 'finance', membership: 'pipeline',
+};
+
+/** The tab labels inside a grouped destination, in render order. */
+const DESTINATION_SECTIONS: Record<string, { id: Section; label: string }[]> = {
+  site: [
+    { id: 'news', label: 'News' },
+    { id: 'media', label: 'Media' },
+    { id: 'wineries', label: 'Mappa cantine' },
+  ],
+  offers: [
+    { id: 'discounts', label: 'Sconti' },
+    { id: 'upsell', label: 'Upsell' },
+  ],
+  finance: [
+    { id: 'finance', label: 'Transazioni' },
+    { id: 'bilancio', label: 'Bilancio' },
+    { id: 'quotes', label: 'Preventivi' },
+  ],
+};
+
+function destinationOf(section: Section): string {
+  return SECTION_TO_DESTINATION[section] ?? section;
+}
+
+/** One row of tabs, shown only where a destination holds several sections. */
+function SectionTabs({
+  destination, active, onPick,
+}: {
+  destination: string;
+  active: Section;
+  onPick: (s: Section) => void;
+}) {
+  const tabs = DESTINATION_SECTIONS[destination];
+  if (!tabs) return null;
+  return (
+    <div className="mb-7 flex flex-wrap gap-2">
+      {tabs.map((t) => (
+        <button
+          key={t.id}
+          onClick={() => onPick(t.id)}
+          aria-current={active === t.id ? 'page' : undefined}
+          className={`min-h-[44px] rounded-full border px-5 text-[13px] font-medium transition-colors ${
+            active === t.id
+              ? 'border-[#731515] bg-[#731515] text-white'
+              : 'border-[#E4D6D3] text-[#1A0505] hover:border-[#731515]/40'
+          }`}
+        >
+          {t.label}
+        </button>
+      ))}
     </div>
   );
 }

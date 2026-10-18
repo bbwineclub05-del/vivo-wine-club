@@ -117,7 +117,57 @@ const AMBASSADOR: ApplicationType = {
   ],
 };
 
-export const APPLICATION_TYPES: readonly ApplicationType[] = [AMBASSADOR];
+/* ── Lavora con noi ────────────────────────────────────────────────────
+   Enquiries from the "Parliamo del tuo brand" form on /brands. Same
+   registry, same screen: a winery writing in is a candidate like any
+   other, just from the other side of the business. */
+
+const PROJECT_TYPE_LABELS: Record<string, string> = {
+  single:   'Un creator, un progetto',
+  campaign: 'Una campagna',
+  ongoing:  'Collaborazione continuativa',
+  event:    'Evento',
+  other:    'Altro',
+};
+
+const projectTypeText = (row: ApplicationRow): string =>
+  PROJECT_TYPE_LABELS[String(row.project_type ?? '')] ?? String(row.project_type ?? '');
+
+const BRAND_LEADS: ApplicationType = {
+  key: 'brand',
+  label: 'Lavora con noi',
+  table: 'brand_leads',
+  // Explicit, so consent_ip never leaves the server.
+  columns: [
+    'id', 'created_at', 'updated_at', 'status',
+    'company', 'contact_name', 'email', 'phone',
+    'project_type', 'message', 'locale',
+    'consent_privacy_accepted_at', 'consent_privacy_version',
+    'staff_notes', 'reviewed_by', 'reviewed_at',
+  ],
+  // The company is who is writing; the person signs underneath.
+  name:  (row) => String(row.company ?? '').trim() || String(row.contact_name ?? ''),
+  email: (row) => String(row.email ?? ''),
+  area: {
+    options: Object.entries(PROJECT_TYPE_LABELS).map(([value, label]) => ({ value, label })),
+    value: (row) => String(row.project_type ?? ''),
+    label: projectTypeText,
+  },
+  listExtra: { label: 'Referente', value: (row) => String(row.contact_name ?? '') },
+  detail: [
+    { label: 'Azienda',             kind: 'text', value: (r) => str(r.company) },
+    { label: 'Referente',           kind: 'text', value: (r) => str(r.contact_name) },
+    { label: 'Email',               kind: 'text', value: (r) => str(r.email) },
+    { label: 'Telefono',            kind: 'text', value: (r) => str(r.phone) },
+    { label: 'Tipo di progetto',    kind: 'text', value: projectTypeText },
+    { label: 'Messaggio',           kind: 'long', value: (r) => str(r.message) },
+    { label: 'Lingua della pagina', kind: 'text', value: (r) => str(r.locale) },
+    { label: 'Privacy accettata',   kind: 'date', value: (r) => str(r.consent_privacy_accepted_at) },
+    { label: 'Versione privacy',    kind: 'text', value: (r) => str(r.consent_privacy_version) },
+  ],
+};
+
+export const APPLICATION_TYPES: readonly ApplicationType[] = [AMBASSADOR, BRAND_LEADS];
 
 export function getApplicationType(key: string | null | undefined): ApplicationType | undefined {
   return APPLICATION_TYPES.find((t) => t.key === key);
