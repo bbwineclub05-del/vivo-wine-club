@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { RecordTable } from '@/components/admin/RecordTable';
 import { candidature } from '@/lib/crm-resources';
 import MembershipManager from '@/components/MembershipManager';
+import MembershipArchive from '@/components/MembershipArchive';
 
 /**
  * Soci e candidature, nello stesso posto.
@@ -19,10 +20,11 @@ import MembershipManager from '@/components/MembershipManager';
 
 const KINDS = ['ambassador', 'company', 'creator', 'staff'] as const;
 type Kind = (typeof KINDS)[number];
-type Tab = 'tessere' | Kind;
+type Tab = 'tessere' | Kind | 'archivio';
 
 const LABEL: Record<Tab, string> = {
   tessere: 'Tessere',
+  archivio: 'Archivio',
   ambassador: 'Ambassador',
   company: 'Aziende',
   creator: 'Creator',
@@ -95,7 +97,7 @@ export default function MembershipHub({ onChanged }: { onChanged?: () => void })
   return (
     <div>
       <div className="-mx-1 mb-6 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {(['tessere', ...KINDS] as Tab[]).map((t) => {
+        {(['tessere', ...KINDS, 'archivio'] as Tab[]).map((t) => {
           const on = tab === t;
           const n = counts[t] ?? 0;
           return (
@@ -124,10 +126,12 @@ export default function MembershipHub({ onChanged }: { onChanged?: () => void })
 
       {tab === 'tessere' ? (
         <MembershipManager />
+      ) : tab === 'archivio' ? (
+        <MembershipArchive />
       ) : (
         // `key` rimonta la tabella cambiando scheda: altrimenti
         // resterebbero attivi i filtri dell'elenco precedente.
-        <RecordTable key={tab} resource={candidature(tab)} />
+        <RecordTable key={tab} resource={candidature(tab as Kind)} />
       )}
     </div>
   );

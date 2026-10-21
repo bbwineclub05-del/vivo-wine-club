@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { motion, useReducedMotion } from 'framer-motion';
 import Link from 'next/link';
 
@@ -34,13 +34,17 @@ function minDob() {
   return d.toISOString().split('T')[0];
 }
 
-function fmtDate(iso: string) {
-  const [y, m, d] = iso.slice(0, 10).split('-');
-  const mesi = [
-    'gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno',
-    'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre',
-  ];
-  return `${Number(d)} ${mesi[Number(m) - 1]} ${y}`;
+/**
+ * La data nella lingua della pagina.
+ *
+ * I nomi dei mesi erano scritti in italiano dentro il codice, quindi
+ * un inglese leggeva "31 dicembre 2026" in mezzo a una frase inglese.
+ * Qui gira nel browser, dove i dati di localizzazione ci sono sempre.
+ */
+function fmtDate(iso: string, locale: string) {
+  const d = new Date(`${iso.slice(0, 10)}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 function Label({ htmlFor, children }: { htmlFor: string; children: React.ReactNode }) {
@@ -60,6 +64,7 @@ interface Done {
 export function MembershipForm() {
   const t = useTranslations('membership');
   const tc = useTranslations('consent');
+  const locale = useLocale();
   const reduce = useReducedMotion();
 
   const [form, setForm] = useState({
@@ -153,7 +158,7 @@ export function MembershipForm() {
           {t('welcomeHeading', { name: done.name })}
         </p>
         <p className="mt-4 text-lead text-on-paper-muted">
-          {t('welcomeBody', { memberId: done.memberId, expires: fmtDate(done.expires) })}
+          {t('welcomeBody', { memberId: done.memberId, expires: fmtDate(done.expires, locale) })}
         </p>
         <p className="mt-3 text-body text-on-paper-muted">{t('welcomeNext')}</p>
         <Link

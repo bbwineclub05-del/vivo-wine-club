@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 /**
@@ -14,6 +14,7 @@ import Link from 'next/link';
  */
 export function MembershipSuccess({ sessionId }: { sessionId: string | null }) {
   const t = useTranslations('membership');
+  const locale = useLocale();
   // Senza sessione non c'e' niente da verificare: lo stato parte gia'
   // sbagliato invece di passare da "controllo" e correggersi subito.
   const [state, setState] = useState<'checking' | 'ok' | 'failed'>(
@@ -68,13 +69,14 @@ export function MembershipSuccess({ sessionId }: { sessionId: string | null }) {
     );
   }
 
+  // Nella lingua della pagina: i nomi dei mesi scritti in italiano nel
+  // codice finivano in mezzo a frasi inglesi e francesi.
   const expires = card?.expires_at
-    ? (() => {
-        const [y, m, d] = card.expires_at.slice(0, 10).split('-');
-        const mesi = ['gennaio','febbraio','marzo','aprile','maggio','giugno',
-                      'luglio','agosto','settembre','ottobre','novembre','dicembre'];
-        return `${Number(d)} ${mesi[Number(m) - 1]} ${y}`;
-      })()
+    ? new Date(`${card.expires_at.slice(0, 10)}T00:00:00`).toLocaleDateString(locale, {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      })
     : '';
 
   return (
