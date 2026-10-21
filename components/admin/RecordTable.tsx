@@ -79,6 +79,23 @@ export interface ResourceDef<T extends Record_> {
   columns: ColumnDef<T>[];
   fields: FieldDef[];
   /**
+   * Tiene solo alcune righe di quelle che l'endpoint restituisce.
+   *
+   * Serve quando più elenchi condividono la stessa tabella: le
+   * candidature stanno tutte in `collaboration_applications` e si
+   * distinguono per il tipo, ma restano quattro elenchi diversi da
+   * guardare. Filtrare qui evita di infilare parametri nell'indirizzo,
+   * che poi si porterebbero dietro anche le chiamate di modifica.
+   */
+  filter?: (r: T) => boolean;
+  /**
+   * Se si possono aggiungere righe a mano.
+   *
+   * Le candidature arrivano dal sito: un pulsante "Nuovo" lì dentro
+   * creerebbe una riga a metà, senza tipo né consenso registrato.
+   */
+  canCreate?: boolean;
+  /**
    * Una rubrica con stato, responsabile e data di richiamo.
    *
    * Non tutte ne hanno bisogno: una lista di persone raccolte per un
@@ -400,7 +417,7 @@ export function RecordTable<T extends Record_>({ resource }: { resource: Resourc
 
   const counts = useMemo(() => {
     const c: Record<string, number> = { due: 0 };
-    for (const r of rows) {
+    for (const r of rows.filter((x) => !resource.filter || resource.filter(x))) {
       const s = (r.stage as string) ?? 'new';
       c[s] = (c[s] ?? 0) + 1;
       if (isDue(r, today)) c.due += 1;
@@ -411,6 +428,7 @@ export function RecordTable<T extends Record_>({ resource }: { resource: Resourc
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
     let out = rows.filter((r) => {
+      if (resource.filter && !resource.filter(r)) return false;
       if (stage === 'due' && !isDue(r, today)) return false;
       if (stage && stage !== 'due' && ((r.stage as string) ?? 'new') !== stage) return false;
       if (!q) return true;
@@ -464,10 +482,12 @@ export function RecordTable<T extends Record_>({ resource }: { resource: Resourc
         title={resource.label}
         subtitle={resource.subtitle}
         action={
-          <ActionButton onClick={() => setOpen('new')}>
-            <Plus size={17} strokeWidth={2} />
-            Nuovo
-          </ActionButton>
+          resource.canCreate === false ? undefined : (
+            <ActionButton onClick={() => setOpen('new')}>
+              <Plus size={17} strokeWidth={2} />
+              Nuovo
+            </ActionButton>
+          )
         }
       />
 
@@ -554,9 +574,15 @@ export function RecordTable<T extends Record_>({ resource }: { resource: Resourc
           {visible.length === 0 ? (
             <EmptyState
               title="Niente qui"
-              body={query || stage ? 'Prova ad allargare i filtri.' : `Aggiungi il primo ${resource.singular}.`}
+              body={
+                query || stage
+                  ? 'Prova ad allargare i filtri.'
+                  : resource.canCreate === false
+                    ? `Nessuna ${resource.singular} ancora: arrivano dal sito.`
+                    : `Aggiungi il primo ${resource.singular}.`
+              }
               action={
-                query || stage ? undefined : (
+                query || stage || resource.canCreate === false ? undefined : (
                   <ActionButton onClick={() => setOpen('new')}>
                     <Plus size={17} strokeWidth={2} />
                     Nuovo
@@ -655,7 +681,8 @@ export function RecordTable<T extends Record_>({ resource }: { resource: Resourc
               </div>
 
               <p className="mt-3 text-fine text-on-paper-muted">
-                {visible.length} di {rows.length}
+                {visible.length} di{' '}
+                {resource.filter ? rows.filter(resource.filter).length : rows.length}
                 {resource.pipeline !== false &&
                   counts.due > 0 &&
                   ` · ${counts.due} da riprendere in mano`}

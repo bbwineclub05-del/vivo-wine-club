@@ -179,3 +179,117 @@ export function listaPersonalizzata(id: string, name: string): ResourceDef<Recor
     ],
   };
 }
+
+/* ── Candidature ──────────────────────────────────────────────────── */
+
+/**
+ * Chi si è proposto per lavorare con il club.
+ *
+ * Quattro elenchi sopra una tabella sola: stanno tutti in
+ * `collaboration_applications` e si distinguono per il tipo, ma si
+ * guardano separatamente — chi cerca un ambassador non vuole
+ * scorrere le aziende.
+ *
+ * I campi visibili cambiano con il tipo, come nel modulo pubblico: un
+ * creator ha i follower, un'azienda la ragione sociale.
+ */
+type Kind = 'ambassador' | 'company' | 'creator' | 'staff';
+
+const KIND_LABEL: Record<Kind, string> = {
+  ambassador: 'Ambassador',
+  company: 'Aziende',
+  creator: 'Creator',
+  staff: 'Staff',
+};
+
+const KIND_SUBTITLE: Record<Kind, string> = {
+  ambassador: 'Chi vuole portare VIVO nella propria città.',
+  company: 'Cantine, locali e marchi che vogliono lavorare con noi.',
+  creator: 'Creator e influencer che vogliono entrare nel portafoglio.',
+  staff: 'Chi vuole far parte del team.',
+};
+
+/** Le colonne che hanno senso per ciascun tipo. */
+const KIND_COLUMNS: Record<Kind, { key: string; label: string; secondary?: boolean }[]> = {
+  ambassador: [
+    { key: 'city', label: 'Città' },
+    { key: 'instagram', label: 'Instagram', secondary: true },
+  ],
+  company: [
+    { key: 'company', label: 'Azienda' },
+    { key: 'role', label: 'Ruolo', secondary: true },
+  ],
+  creator: [
+    { key: 'instagram', label: 'Instagram' },
+    { key: 'followers', label: 'Follower', secondary: true },
+  ],
+  staff: [
+    { key: 'city', label: 'Città' },
+    { key: 'role', label: 'Ruolo', secondary: true },
+  ],
+};
+
+const KIND_FIELDS: Record<Kind, FieldDefLite[]> = {
+  ambassador: [
+    { key: 'city', label: 'Città' },
+    { key: 'country', label: 'Paese' },
+    { key: 'instagram', label: 'Instagram' },
+  ],
+  company: [
+    { key: 'company', label: 'Azienda' },
+    { key: 'role', label: 'Ruolo' },
+    { key: 'website', label: 'Sito', type: 'url' },
+  ],
+  creator: [
+    { key: 'city', label: 'Città' },
+    { key: 'instagram', label: 'Instagram' },
+    { key: 'tiktok', label: 'TikTok' },
+    { key: 'followers', label: 'Follower', type: 'number' },
+  ],
+  staff: [
+    { key: 'city', label: 'Città' },
+    { key: 'role', label: 'Ruolo' },
+  ],
+};
+
+type FieldDefLite = { key: string; label: string; type?: 'text' | 'url' | 'number' | 'textarea' };
+
+export function candidature(kind: Kind): ResourceDef<Record_> {
+  return {
+    label: KIND_LABEL[kind],
+    singular: 'candidatura',
+    subtitle: KIND_SUBTITLE[kind],
+    endpoint: '/api/collaboration-applications',
+    listKey: 'applications',
+    filter: (r) => r.kind === kind,
+    canCreate: false,
+    title: (r) =>
+      [s(r.first_name), s(r.last_name)].filter(Boolean).join(' ') || s(r.company) || s(r.email),
+    secondary: (r) => [s(r.email), s(r.city) || s(r.company)].filter(Boolean).join(' · '),
+    email: (r) => s(r.email) || null,
+    columns: [
+      {
+        key: 'name',
+        label: 'Nome',
+        value: (r) =>
+          [s(r.first_name), s(r.last_name)].filter(Boolean).join(' ') || s(r.company) || '—',
+        wide: true,
+      },
+      ...KIND_COLUMNS[kind].map((c) => ({
+        key: c.key,
+        label: c.label,
+        value: (r: Record_) => s(r[c.key]),
+        secondary: c.secondary,
+      })),
+      { key: 'email', label: 'Email', value: (r) => s(r.email), secondary: true },
+    ],
+    fields: [
+      { key: 'first_name', label: 'Nome' },
+      { key: 'last_name', label: 'Cognome' },
+      { key: 'phone', label: 'Telefono', type: 'tel' },
+      ...KIND_FIELDS[kind],
+      { key: 'message', label: 'Cosa ci ha scritto', type: 'textarea' },
+      { key: 'notes', label: 'Note interne', type: 'textarea' },
+    ],
+  };
+}

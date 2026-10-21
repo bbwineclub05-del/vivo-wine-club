@@ -13,7 +13,7 @@ import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import TaskBoard, { isAdmin } from '@/components/TaskBoard';
 import AnalyticsDashboard from '@/components/AnalyticsDashboard';
-import MembershipPipeline from '@/components/MembershipPipeline';
+import MembershipManager from '@/components/MembershipManager';
 import NewsManager from '@/components/NewsManager';
 import CrmHub from '@/components/CrmHub';
 import EventManager from '@/components/EventManager';
@@ -697,16 +697,18 @@ function SettingsSection() {
 }
 
 /** Total pending applications across all types (sidebar badge). null on failure. */
+/** Quante candidature sono arrivate e nessuno ha ancora guardato. */
 async function fetchPendingApplications(token: string): Promise<number | null> {
   try {
-    const res = await fetch('/api/admin/applications?summary=1', {
+    const res = await fetch('/api/collaboration-applications', {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) return null;
     const data = await res.json();
-    return typeof data.total === 'number' ? data.total : null;
+    if (!Array.isArray(data.applications)) return null;
+    return data.applications.filter((a: { stage?: string }) => a.stage === 'new').length;
   } catch {
-    return null; // non-fatal — badge only
+    return null; // è solo il numerino: se non arriva, pazienza
   }
 }
 
@@ -930,19 +932,18 @@ function MembersPageInner() {
                   ) : <UnauthorisedSection title="Analytics" />
                 )}
 
+                {/* MembershipManager porta la propria intestazione. */}
                 {(admin || isStaff) && activeSection === 'pipeline' && (
-                  canAccess('pipeline') ? (
-                    <>
-                      <SectionHeader title="Pipeline Membership" subtitle="Gestisci le richieste di adesione." />
-                      <MembershipPipeline />
-                    </>
-                  ) : <UnauthorisedSection title="Pipeline Membership" />
+                  canAccess('pipeline') ? <MembershipManager /> : <UnauthorisedSection title="Membership" />
                 )}
 
                 {(admin || isStaff) && activeSection === 'applications' && (
                   <>
-                    <SectionHeader title="Application" subtitle="Candidature ricevute dal sito." />
-                    <ApplicationsManager token={token} onChanged={refreshPendingApplications} />
+                    <SectionHeader
+                      title="Application"
+                      subtitle="Chi si è proposto per lavorare con noi: ambassador, aziende, creator e staff."
+                    />
+                    <ApplicationsManager onChanged={refreshPendingApplications} />
                   </>
                 )}
 
