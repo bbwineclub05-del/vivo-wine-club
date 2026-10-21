@@ -53,6 +53,10 @@ create table if not exists memberships (
   offer_expires_at date,
 
   cancelled_at timestamptz,
+
+  -- Se la tessera nasce da una delle trentanove vecchie richieste in
+  -- archivio, qui resta scritto da quale. Non è un'approvazione: è
+  -- solo il ricordo di dove è cominciata.
   source_application_id uuid,
 
   -- Promemoria già mandati, per non mandarli due volte.
