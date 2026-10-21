@@ -13,7 +13,7 @@ import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import TaskBoard, { isAdmin } from '@/components/TaskBoard';
 import AnalyticsDashboard from '@/components/AnalyticsDashboard';
-import MembershipManager from '@/components/MembershipManager';
+import MembershipHub from '@/components/MembershipHub';
 import NewsManager from '@/components/NewsManager';
 import CrmHub from '@/components/CrmHub';
 import EventManager from '@/components/EventManager';
@@ -32,7 +32,6 @@ import PedManager from '@/components/PedManager';
 import WineAssistant from '@/components/WineAssistant';
 import UpsellManager from '@/components/UpsellManager';
 import WineriesMapManager from '@/components/WineriesMapManager';
-import ApplicationsManager from '@/components/ApplicationsManager';
 import { isFinanceUser } from '@/lib/admins';
 import { SECTION_PERMISSION } from '@/lib/access';
 import { AdminShell } from '@/components/admin/AdminShell';
@@ -42,7 +41,7 @@ import { useMobileOverlay } from '@/lib/useMobileOverlay';
 /* ─────────────────────────────────────────────
    Types
 ───────────────────────────────────────────── */
-type Section = 'overview' | 'settings' | 'wine-assistant' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm' | 'media' | 'team' | 'merch' | 'discounts' | 'documents' | 'finance' | 'bilancio' | 'quotes' | 'ped' | 'upsell' | 'wineries' | 'applications';
+type Section = 'overview' | 'settings' | 'wine-assistant' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm' | 'media' | 'team' | 'merch' | 'discounts' | 'documents' | 'finance' | 'bilancio' | 'quotes' | 'ped' | 'upsell' | 'wineries';
 
 
 /** Monogram avatar — shows photo if src is provided, falls back to initials */
@@ -721,7 +720,14 @@ function MembersPageInner() {
   const searchParams     = useSearchParams();
 
   // If the invite link contains ?section=settings, open that tab immediately
-  const initialSection = (searchParams.get('section') as Section | null) ?? 'overview';
+  // `applications` era una sezione a sé prima che soci e candidature
+  // finissero insieme: i link già in giro devono continuare ad aprire
+  // qualcosa invece di una pagina vuota.
+  const requestedSection = searchParams.get('section');
+  const initialSection: Section =
+    requestedSection === 'applications'
+      ? 'pipeline'
+      : ((requestedSection as Section | null) ?? 'overview');
   const [activeSection,     setActiveSection]     = useState<Section>(initialSection);
   const [sidebarOpen,       setSidebarOpen]        = useState(false);
   useMobileOverlay(sidebarOpen, () => setSidebarOpen(false));
@@ -806,7 +812,7 @@ function MembersPageInner() {
   }, [token, isStaff]);
 
   // Pending applications badge (sidebar → Application). Refreshed on focus and
-  // after a status change in ApplicationsManager.
+  // after a status change in MembershipHub.
   const canManage = isStaff || isAdmin(user?.email ?? '');
   const refreshPendingApplications = useCallback(() => {
     if (!token || !canManage) return;
@@ -932,20 +938,13 @@ function MembersPageInner() {
                   ) : <UnauthorisedSection title="Analytics" />
                 )}
 
-                {/* MembershipManager porta la propria intestazione. */}
+                {/* Soci e candidature insieme: MembershipHub ha le sue schede. */}
                 {(admin || isStaff) && activeSection === 'pipeline' && (
-                  canAccess('pipeline') ? <MembershipManager /> : <UnauthorisedSection title="Membership" />
+                  canAccess('pipeline')
+                    ? <MembershipHub onChanged={refreshPendingApplications} />
+                    : <UnauthorisedSection title="Membership" />
                 )}
 
-                {(admin || isStaff) && activeSection === 'applications' && (
-                  <>
-                    <SectionHeader
-                      title="Application"
-                      subtitle="Chi si è proposto per lavorare con noi: ambassador, aziende, creator e staff."
-                    />
-                    <ApplicationsManager onChanged={refreshPendingApplications} />
-                  </>
-                )}
 
                 {(admin || isStaff) && activeSection === 'events' && (
                   canAccess('events') ? <EventManager /> : <UnauthorisedSection title="Gestione Eventi" />

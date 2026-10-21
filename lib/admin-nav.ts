@@ -74,9 +74,12 @@ export const DESTINATIONS: AdminDestination[] = [
   {
     id: 'membership',
     label: 'Membership',
-    hint: 'Richieste di iscrizione da valutare',
+    hint: 'Tessere, rinnovi e chi vuole lavorare con noi',
     rhythm: 'main',
-    search: ['pipeline', 'membri', 'iscrizioni', 'candidature'],
+    search: [
+      'pipeline', 'membri', 'soci', 'tessere', 'iscrizioni', 'rinnovi',
+      'candidature', 'application', 'ambassador', 'creator', 'aziende', 'staff',
+    ],
   },
   {
     // Quotes used to be a separate row; it belongs with the money.
@@ -116,13 +119,6 @@ export const DESTINATIONS: AdminDestination[] = [
       { id: 'influencer', label: 'Influencer' },
     ],
     search: ['contatti', 'sponsor', 'clienti', 'influencer', 'bordeaux', 'produttori', 'rubrica'],
-  },
-  {
-    id: 'applications',
-    label: 'Application',
-    hint: 'Candidature ambassador e creator',
-    rhythm: 'main',
-    search: ['ambassador', 'creator', 'candidature'],
   },
 
   // ── Everything else ─────────────────────────────────────────────────

@@ -5,6 +5,7 @@ import CrmPersone from '@/components/CrmPersone';
 import { RecordTable } from '@/components/admin/RecordTable';
 import { BORDEAUX, listaPersonalizzata } from '@/lib/crm-resources';
 import EventInvite from '@/components/admin/EventInvite';
+import MembershipHub from '@/components/MembershipHub';
 
 /**
  * Persone con una rubrica inventata, per giudicare il layout senza
@@ -91,6 +92,30 @@ function install() {
         { email: 'membro2@esempio.it', name: 'Membro Due' },
       ] });
     }
+    if (url.includes('/api/memberships')) {
+      return json({ memberships: [
+        { id:'m1', email:'anna@esempio.it', full_name:'Anna Rossi', member_id:'VIVO-A1B2',
+          tier:'founding', started_at:'2026-01-01', expires_at:'2026-12-31',
+          standard_price_cents:3000, offer_price_cents:2000, offer_expires_at:'2026-12-31',
+          cancelled_at:null, reminded_30_at:null, reminded_7_at:null, reminded_0_at:null, user_id:null,
+          payments:[{id:'p1',amount_cents:0,period_start:'2026-01-01',period_end:'2026-12-31',status:'waived',paid_at:'x'}] },
+        { id:'m2', email:'bruno@esempio.it', full_name:'Bruno Verdi', member_id:'VIVO-C3D4',
+          tier:'standard', started_at:'2027-01-05', expires_at:'2027-12-31',
+          standard_price_cents:3000, offer_price_cents:null, offer_expires_at:null,
+          cancelled_at:null, reminded_30_at:null, reminded_7_at:null, reminded_0_at:null, user_id:null,
+          payments:[{id:'p2',amount_cents:3000,period_start:'2027-01-05',period_end:'2027-12-31',status:'paid',paid_at:'x'}] },
+      ] });
+    }
+    if (url.includes('/api/collaboration-applications')) {
+      return json({ applications: [
+        { id:'a1', kind:'ambassador', first_name:'Marta', last_name:'Bianchi', email:'marta@esempio.it',
+          city:'Torino', instagram:'@marta', stage:'new', message:'Vorrei portare VIVO a Torino.' },
+        { id:'a2', kind:'creator', first_name:'Luca', last_name:'Neri', email:'luca@esempio.it',
+          instagram:'@lucaneri', followers:42000, stage:'contacted', message:'Faccio contenuti sul vino.' },
+        { id:'a3', kind:'company', company:'Cantina Prova', first_name:'Elena', last_name:'Russo',
+          email:'elena@esempio.it', role:'Marketing', stage:'new', message:'Vorremmo collaborare.' },
+      ] });
+    }
     if (url.includes('/api/crm/bordeaux')) {
       return json({
         contacts: [
@@ -166,6 +191,8 @@ export function MockCrm() {
       <RecordTable resource={BORDEAUX} />
       <hr className="my-16 border-rule-paper" />
       <RecordTable resource={listaPersonalizzata('cat1', 'General')} />
+      <hr className="my-16 border-rule-paper" />
+      <MembershipHub />
       <Invito />
     </>
   );
