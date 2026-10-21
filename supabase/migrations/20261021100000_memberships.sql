@@ -99,12 +99,14 @@ create unique index if not exists membership_payments_session_unique
 
 alter table membership_payments enable row level security;
 
--- ── Le candidature sanno dire a che punto sono ──
--- Stesso vocabolario della pipeline del CRM, così una candidatura si
--- segue come si segue uno sponsor.
-alter table applications add column if not exists owner_email text;
-alter table applications add column if not exists next_action_at date;
-alter table applications add column if not exists membership_id uuid references memberships(id) on delete set null;
+-- Le vecchie righe di `applications` restano dove sono, intatte.
+--
+-- Erano richieste di diventare socio, da quando il club le valutava
+-- una per una. Ora una tessera si compra e non si chiede, quindi non
+-- c'è più niente da approvare: quelle trentanove righe diventano un
+-- archivio di com'era prima, consultabile dalla sezione Membership,
+-- con la possibilità di creare la tessera a chi se lo merita.
+-- Nessuna colonna viene aggiunta e nessuna riga viene toccata.
 
 -- ── Travaso: i quattro Member di oggi diventano membership vere ──
 -- Entrano come 'founding' con l'anno in corso gratuito e il rinnovo a

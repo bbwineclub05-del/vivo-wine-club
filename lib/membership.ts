@@ -130,6 +130,10 @@ export function priceFor(m: Membership, now = today()): Price {
  *  · Chi arriva dal 1/12 in poi non ha lo sconto: avrebbe pagato per
  *    undici giorni di socio, e l'anno prossimo rientra fra i nuovi.
  *  · Dal 1/01/2027 si entra pagando trenta euro per l'anno solare.
+ *
+ * Non c'è niente da approvare: una tessera si compra, non si chiede.
+ * Chi si iscrive diventa socio nel momento in cui paga — o subito, se
+ * siamo ancora nel periodo gratuito.
  */
 export const FREE_UNTIL = '2026-12-31';
 export const OFFER_CUTOFF = '2026-11-30';
