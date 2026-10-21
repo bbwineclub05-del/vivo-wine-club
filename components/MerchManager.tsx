@@ -5,11 +5,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, Pencil, Trash2, X, Loader2, Eye, EyeOff,
   Package, ShoppingBag, CheckCircle, Clock, ImagePlus, Palette, Truck, Type,
-  Copy, Check as CheckIcon, MapPin, Phone, StickyNote,
+  Copy, Check as CheckIcon, MapPin, Phone, StickyNote, ChevronRight,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import { useMobileOverlay } from '@/lib/useMobileOverlay';
-import { FilterPills, NewButton, PageHead } from '@/components/admin/ui';
+import { FilterPills, NewButton, PageHead, Sheet } from '@/components/admin/ui';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -1365,41 +1365,114 @@ function TextVariantRow({
 
 // ── Product card ───────────────────────────────────────────────────────────────
 
-function ProductCard({
-  product, token, onEdit, onDelete, onVariants, onTextVariants,
+/**
+ * What you can do to a product.
+ *
+ * These five actions used to sit under every card as one labelled
+ * button and four bare icons about 29px across, whose only explanation
+ * was a hover tooltip that does not exist on a touch screen. One of
+ * them deleted the product.
+ */
+function ProductActions({
+  product, token, onClose, onEdit, onVariants, onTextVariants, onDeleted, onChanged,
 }: {
-  product:         Product;
-  token:           string;
-  onEdit:          (p: Product) => void;
-  onDelete:        (id: string) => void;
-  onVariants:      (p: Product) => void;
-  onTextVariants:  (p: Product) => void;
+  product: Product | null;
+  token: string;
+  onClose: () => void;
+  onEdit: (p: Product) => void;
+  onVariants: (p: Product) => void;
+  onTextVariants: (p: Product) => void;
+  onDeleted: (id: string) => void;
+  onChanged: () => void;
 }) {
-  const [deleting, setDeleting]   = useState(false);
-  const [confirm,  setConfirm]    = useState(false);
-  const [toggling, setToggling]   = useState(false);
-  const [visible,  setVisible]    = useState(product.visible);
+  const [busy, setBusy] = useState(false);
+  // Keyed to the product rather than a boolean reset by an effect, so
+  // opening another product never inherits a pending confirmation.
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const confirming = !!product && confirmingId === product.id;
 
-  async function handleDelete() {
-    if (!confirm) { setConfirm(true); return; }
-    setDeleting(true);
+  if (!product) return null;
+
+  async function toggleVisible() {
+    if (!product) return;
+    setBusy(true);
+    await fetch(`/api/merch/products/${product.id}`, {
+      method:  'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body:    JSON.stringify({ visible: !product.visible }),
+    });
+    setBusy(false);
+    onChanged();
+    onClose();
+  }
+
+  async function remove() {
+    if (!product) return;
+    setBusy(true);
     await fetch(`/api/merch/products/${product.id}`, {
       method: 'DELETE', headers: { Authorization: `Bearer ${token}` },
     });
-    onDelete(product.id);
+    onDeleted(product.id);
+    setBusy(false);
+    onClose();
   }
 
-  async function toggleVisible() {
-    setToggling(true);
-    const res  = await fetch(`/api/merch/products/${product.id}`, {
-      method:  'PATCH',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body:    JSON.stringify({ visible: !visible }),
-    });
-    const data = await res.json();
-    if (data.product) setVisible(data.product.visible);
-    setToggling(false);
-  }
+  const rows = [
+    { label: 'Modifica prodotto', hint: 'Nome, prezzo, descrizione, immagini', run: () => { onEdit(product); onClose(); } },
+    { label: 'Varianti colore',   hint: 'Colori disponibili e foto di ciascuno', run: () => { onVariants(product); onClose(); } },
+    { label: 'Varianti testo',    hint: 'Scritte personalizzabili sul capo',     run: () => { onTextVariants(product); onClose(); } },
+    {
+      label: product.visible ? 'Nascondi dallo shop' : 'Mostra nello shop',
+      hint: product.visible ? 'Smette di comparire fra i prodotti in vendita' : 'Torna visibile nello shop pubblico',
+      run: toggleVisible,
+    },
+  ];
+
+  return (
+    <Sheet open={!!product} title={product.title} onClose={onClose}>
+      <ul className="space-y-1">
+        {rows.map(r => (
+          <li key={r.label}>
+            <button
+              onClick={r.run}
+              disabled={busy}
+              className="w-full rounded-2xl px-4 py-3.5 text-left transition-colors hover:bg-[#F4EDEB] disabled:opacity-50"
+            >
+              <span className="block text-[16px] font-medium text-[#1A0505]">{r.label}</span>
+              <span className="mt-0.5 block text-[13px] text-[#7A5252]">{r.hint}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+
+      <div className="my-4 h-px bg-[#E4D6D3]" />
+
+      {/* Two taps, and the second one says out loud what it will do. */}
+      <button
+        onClick={() => (confirming ? remove() : setConfirmingId(product.id))}
+        disabled={busy}
+        className="w-full rounded-2xl px-4 py-3.5 text-left transition-colors hover:bg-[#731515]/5 disabled:opacity-50"
+      >
+        <span className="block text-[16px] font-medium text-[#731515]">
+          {confirming ? 'Tocca ancora per eliminare' : 'Elimina prodotto'}
+        </span>
+        {confirming && (
+          <span className="mt-0.5 block text-[13px] text-[#7A5252]">
+            L’operazione non si può annullare.
+          </span>
+        )}
+      </button>
+    </Sheet>
+  );
+}
+
+function ProductCard({
+  product, onOpenActions,
+}: {
+  product:       Product;
+  onOpenActions: (p: Product) => void;
+}) {
+  const visible = product.visible;
 
   // Use first available image across all color variants; neutral placeholder if none
   const thumb = (product.product_variants ?? [])
@@ -1452,33 +1525,15 @@ function ProductCard({
           </div>
         )}
 
-        {/* Actions */}
-        <div className="flex items-center gap-2 mt-3">
-          <button onClick={() => onEdit(product)}
-            className="flex-1 flex items-center justify-center gap-1.5 text-[13px] font-medium tracking-normal bg-white border border-[#eddada] text-[#7a4a4a] py-2 rounded-lg hover:bg-[#fdf6f6] transition-colors">
-            <Pencil size={11} /> MODIFICA
-          </button>
-          <button onClick={() => onVariants(product)}
-            className="p-2 rounded-lg bg-white border border-[#eddada] text-[#7a4a4a]/50 hover:text-[#731515] hover:border-[#731515]/30 transition-colors"
-            title="Varianti colore">
-            <Palette size={13} />
-          </button>
-          <button onClick={() => onTextVariants(product)}
-            className="p-2 rounded-lg bg-white border border-[#eddada] text-[#7a4a4a]/50 hover:text-[#731515] hover:border-[#731515]/30 transition-colors"
-            title="Varianti testo">
-            <Type size={13} />
-          </button>
-          <button onClick={toggleVisible} disabled={toggling}
-            className="p-2 rounded-lg bg-white border border-[#eddada] text-[#7a4a4a]/50 hover:text-[#731515] hover:border-[#731515]/30 transition-colors"
-            title={visible ? 'Nascondi' : 'Mostra'}>
-            {toggling ? <Loader2 size={13} className="animate-spin" /> : visible ? <Eye size={13} /> : <EyeOff size={13} />}
-          </button>
-          <button onClick={handleDelete} disabled={deleting} onBlur={() => setConfirm(false)}
-            className={`p-2 rounded-lg border transition-colors ${confirm ? 'bg-red-50 border-red-200 text-red-600' : 'bg-white border-[#eddada] text-[#7a4a4a]/50 hover:text-red-500 hover:border-red-200'}`}
-            title={confirm ? 'Conferma eliminazione' : 'Elimina'}>
-            {deleting ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
-          </button>
-        </div>
+        {/* One action instead of five icons a thumb cannot tell apart.
+            Everything else lives in the sheet, where it has a name. */}
+        <button
+          onClick={() => onOpenActions(product)}
+          className="mt-3 flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full border border-[#E4D6D3] bg-white text-[14px] font-medium text-[#1A0505] transition-colors hover:border-[#731515]/40"
+        >
+          Gestisci
+          <ChevronRight size={16} strokeWidth={1.8} />
+        </button>
       </div>
     </div>
   );
@@ -2233,6 +2288,7 @@ export default function MerchManager() {
   useMobileOverlay(showModal, () => { setShowModal(false); setEditing(null); });
   const [variantModal,     setVariantModal]     = useState<Product | null>(null);
   const [textVariantModal, setTextVariantModal] = useState<Product | null>(null);
+  const [actionsProduct,   setActionsProduct]   = useState<Product | null>(null);
   useMobileOverlay(!!variantModal, () => setVariantModal(null));
   useMobileOverlay(!!textVariantModal, () => setTextVariantModal(null));
 
@@ -2332,6 +2388,17 @@ export default function MerchManager() {
 
   return (
     <>
+      <ProductActions
+        product={actionsProduct}
+        token={token}
+        onClose={() => setActionsProduct(null)}
+        onEdit={p => { setEditing(p); setShowModal(true); }}
+        onVariants={p => setVariantModal(p)}
+        onTextVariants={p => setTextVariantModal(p)}
+        onDeleted={id => setProducts(prev => prev.filter(x => x.id !== id))}
+        onChanged={() => { if (token) loadProducts(token); }}
+      />
+
       <PageHead
         title="Merch"
         subtitle="Prodotti dello shop, ordini ricevuti e giacenze."
@@ -2406,11 +2473,10 @@ export default function MerchManager() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {products.map(p => (
-                <ProductCard key={p.id} product={p} token={token}
-                  onEdit={p => { setEditing(p); setShowModal(true); }}
-                  onDelete={id => setProducts(prev => prev.filter(x => x.id !== id))}
-                  onVariants={p => setVariantModal(p)}
-                  onTextVariants={p => setTextVariantModal(p)}
+                <ProductCard
+                  key={p.id}
+                  product={p}
+                  onOpenActions={prod => setActionsProduct(prod)}
                 />
               ))}
             </div>
