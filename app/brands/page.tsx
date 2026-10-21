@@ -7,7 +7,6 @@ import { Chapter, Statement } from '@/components/ui/Chapter';
 import { Section } from '@/components/ui/Section';
 import { SiteFooter } from '@/components/ui/SiteFooter';
 import { SiteNav } from '@/components/ui/SiteNav';
-import { BrandLeadForm } from '@/components/ui/BrandLeadForm';
 import { PartnerLogos } from '@/components/ui/PartnerLogos';
 import CartDrawer from '@/components/CartDrawer';
 
@@ -146,7 +145,9 @@ export default async function BrandsPage() {
             <h2 className="ds-display text-title">{t('formTitle')}</h2>
             <p className="mt-4 text-lead text-on-paper-muted">{t('formBody')}</p>
             <div className="mt-10">
-              <BrandLeadForm />
+              <ButtonLink href="/apply?kind=company" size="lg">
+                {t('formCta')}
+              </ButtonLink>
             </div>
           </div>
         </Section>

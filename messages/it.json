@@ -555,29 +555,11 @@
       "talentsCta": "Guarda il network",
       "formTitle": "Parliamo del tuo brand",
       "formBody": "Raccontaci in due righe cosa avete in mente. Rispondiamo entro pochi giorni.",
-      "fCompany": "Azienda",
-      "fName": "Referente",
-      "fEmail": "Email",
-      "fPhone": "Telefono",
-      "fType": "Tipo di progetto",
-      "fMessage": "Messaggio",
-      "fTypePlaceholder": "Seleziona",
-      "fTypeSingle": "Un creator, un progetto",
-      "fTypeCampaign": "Una campagna",
-      "fTypeOngoing": "Collaborazione continuativa",
-      "fTypeEvent": "Evento",
-      "fTypeOther": "Altro",
-      "fOptional": "(facoltativo)",
-      "fSubmit": "Invia",
-      "fSending": "Invio in corso…",
-      "okTitle": "Messaggio ricevuto",
-      "okBody": "Grazie. Ti rispondiamo alla mail che ci hai lasciato.",
-      "errGeneric": "Qualcosa è andato storto. Riprova.",
-      "errInvalid": "Controlla i campi e riprova.",
       "casesCta": "Guarda gli eventi",
       "partnersTitle": "Hanno già lavorato con noi",
       "partnersBody": "Cantine e location che ci hanno aperto le porte per eventi e visite. Non sono clienti media: sono il motivo per cui sappiamo come si entra in una cantina.",
-      "partnersCta": "Vedi tutti i partner"
+      "partnersCta": "Vedi tutti i partner",
+      "formCta": "Scrivici"
     },
     "talents": {
       "statement": "I creator non hanno un pubblico. Hanno la fiducia di un pubblico.",
@@ -602,6 +584,56 @@
       "ctaBody": "Le serate si riempiono in fretta e i posti sono contati.",
       "ctaPrimary": "Diventa member",
       "ctaSecondary": "Guarda gli eventi"
+    },
+    "apply": {
+      "metaTitle": "Lavora con noi",
+      "metaDescription": "Ambassador, aziende, creator e staff: raccontaci chi sei.",
+      "heading": "Raccontaci chi sei.",
+      "intro": "Vuoi diventare ambassador, lavorare con noi come azienda, entrare nel nostro portafoglio come creator, o lavorare nel team? Scegli da dove vuoi partire: ti chiediamo solo quello che serve.",
+      "question": "Come vuoi lavorare con noi?",
+      "kind": {
+        "ambassador": {
+          "label": "Ambassador",
+          "hint": "Porti VIVO nella tua città e organizzi gli eventi."
+        },
+        "company": {
+          "label": "Azienda",
+          "hint": "Cantina, locale o marchio che vuole lavorare con noi."
+        },
+        "creator": {
+          "label": "Creator",
+          "hint": "Entri nel nostro portafoglio di creator e influencer."
+        },
+        "staff": {
+          "label": "Staff",
+          "hint": "Vuoi far parte del team che fa funzionare il club."
+        }
+      },
+      "firstName": "Nome",
+      "lastName": "Cognome",
+      "email": "Email",
+      "phone": "Telefono",
+      "field": {
+        "city": "Città",
+        "country": "Paese",
+        "company": "Azienda",
+        "role": "Ruolo",
+        "website": "Sito",
+        "instagram": "Instagram",
+        "tiktok": "TikTok",
+        "followers": "Follower"
+      },
+      "message": {
+        "ambassador": "Perché vuoi portare VIVO nella tua città?",
+        "company": "Che cosa avete in mente?",
+        "creator": "Raccontaci cosa fai e con chi hai lavorato.",
+        "staff": "Che cosa vorresti fare e perché?"
+      },
+      "submit": "Invia la candidatura",
+      "sending": "Invio…",
+      "error": "Non sono riuscito a inviare. Riprova.",
+      "doneTitle": "Ci siamo.",
+      "doneBody": "Abbiamo ricevuto la tua candidatura. Ti rispondiamo appena l'abbiamo letta."
     }
   }
 }

@@ -555,29 +555,11 @@
       "talentsCta": "Voir le réseau",
       "formTitle": "Parlons de votre marque",
       "formBody": "Dites-nous en deux lignes ce que vous avez en tête. Nous répondons sous quelques jours.",
-      "fCompany": "Entreprise",
-      "fName": "Contact",
-      "fEmail": "Email",
-      "fPhone": "Téléphone",
-      "fType": "Type de projet",
-      "fMessage": "Message",
-      "fTypePlaceholder": "Sélectionnez",
-      "fTypeSingle": "Un créateur, un projet",
-      "fTypeCampaign": "Une campagne",
-      "fTypeOngoing": "Collaboration continue",
-      "fTypeEvent": "Événement",
-      "fTypeOther": "Autre",
-      "fOptional": "(facultatif)",
-      "fSubmit": "Envoyer",
-      "fSending": "Envoi en cours…",
-      "okTitle": "Message reçu",
-      "okBody": "Merci. Nous répondrons à l'adresse que vous nous avez laissée.",
-      "errGeneric": "Une erreur est survenue. Réessayez.",
-      "errInvalid": "Vérifiez les champs et réessayez.",
       "casesCta": "Voir les événements",
       "partnersTitle": "Ils ont déjà travaillé avec nous",
       "partnersBody": "Des domaines et des lieux qui nous ont ouvert leurs portes pour des événements et des visites. Ce ne sont pas des clients média : ce sont la raison pour laquelle nous savons comment entrer dans un domaine.",
-      "partnersCta": "Voir tous les partenaires"
+      "partnersCta": "Voir tous les partenaires",
+      "formCta": "Écrivez-nous"
     },
     "talents": {
       "statement": "Les créateurs n'ont pas une audience. Ils ont la confiance d'une audience.",
@@ -602,6 +584,56 @@
       "ctaBody": "Les soirées se remplissent vite et les places sont comptées.",
       "ctaPrimary": "Rejoindre le club",
       "ctaSecondary": "Voir les événements"
+    },
+    "apply": {
+      "metaTitle": "Travailler avec nous",
+      "metaDescription": "Ambassadeurs, entreprises, créateurs et équipe : dites-nous qui vous êtes.",
+      "heading": "Dites-nous qui vous êtes.",
+      "intro": "Vous voulez devenir ambassadeur, travailler avec nous en tant qu'entreprise, rejoindre notre portefeuille de créateurs, ou faire partie de l'équipe ? Choisissez par où commencer : nous ne demandons que l'essentiel.",
+      "question": "Comment voulez-vous travailler avec nous ?",
+      "kind": {
+        "ambassador": {
+          "label": "Ambassadeur",
+          "hint": "Vous amenez VIVO dans votre ville et organisez les événements."
+        },
+        "company": {
+          "label": "Entreprise",
+          "hint": "Domaine, lieu ou marque qui souhaite travailler avec nous."
+        },
+        "creator": {
+          "label": "Créateur",
+          "hint": "Vous rejoignez notre portefeuille de créateurs."
+        },
+        "staff": {
+          "label": "Équipe",
+          "hint": "Vous voulez rejoindre l'équipe qui fait vivre le club."
+        }
+      },
+      "firstName": "Prénom",
+      "lastName": "Nom",
+      "email": "E-mail",
+      "phone": "Téléphone",
+      "field": {
+        "city": "Ville",
+        "country": "Pays",
+        "company": "Entreprise",
+        "role": "Rôle",
+        "website": "Site web",
+        "instagram": "Instagram",
+        "tiktok": "TikTok",
+        "followers": "Abonnés"
+      },
+      "message": {
+        "ambassador": "Pourquoi voulez-vous amener VIVO dans votre ville ?",
+        "company": "Qu'avez-vous en tête ?",
+        "creator": "Dites-nous ce que vous faites et avec qui vous avez travaillé.",
+        "staff": "Que souhaiteriez-vous faire, et pourquoi ?"
+      },
+      "submit": "Envoyer la candidature",
+      "sending": "Envoi…",
+      "error": "L'envoi a échoué. Réessayez.",
+      "doneTitle": "C'est fait.",
+      "doneBody": "Nous avons reçu votre candidature. Nous revenons vers vous dès que nous l'aurons lue."
     }
   }
 }

@@ -97,8 +97,12 @@ const nextConfig: NextConfig = {
       // every URL printed on a ticket, sent in an email or used as a
       // Stripe return keeps its original path untouched.
       { source: '/who-we-are',                destination: '/manifesto',     permanent: true },
-      { source: '/collaborate',               destination: '/brands',        permanent: true },
-      { source: '/collaborate/companies',     destination: '/brands',        permanent: true },
+      // Le tre porte di prima portano tutte alla porta unica, ognuna
+      // con la risposta gia' scelta: chi arrivava da un vecchio link
+      // non deve rispondere a una domanda che aveva gia' risposto.
+      { source: '/collaborate',               destination: '/apply',                 permanent: true },
+      { source: '/collaborate/companies',     destination: '/apply?kind=company',    permanent: true },
+      { source: '/collaborate/ambassador',    destination: '/apply?kind=ambassador', permanent: true },
     ];
   },
 

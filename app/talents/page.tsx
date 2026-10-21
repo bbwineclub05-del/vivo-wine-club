@@ -85,10 +85,9 @@ export default async function TalentsPage() {
               <h2 className="ds-display text-title">{t('applyTitle')}</h2>
               <p className="mt-4 max-w-[48ch] text-lead text-on-ink-muted">{t('applyBody')}</p>
             </div>
-            {/* Points at the existing, working application until
-                /talents/apply ships with the Ambassador/Creator role
-                selector. Nothing 404s in the meantime. */}
-            <ButtonLink href="/collaborate/ambassador" variant="paper" size="lg">
+            {/* Arriva alla porta unica con la risposta gia' scelta: chi
+                ha fatto clic qui ha gia' detto chi e'. */}
+            <ButtonLink href="/apply?kind=creator" variant="paper" size="lg">
               {t('applyCta')}
             </ButtonLink>
           </div>

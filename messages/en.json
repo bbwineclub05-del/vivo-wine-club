@@ -555,29 +555,11 @@
       "talentsCta": "See the network",
       "formTitle": "Let's talk about your brand",
       "formBody": "Tell us in two lines what you have in mind. We answer within a few days.",
-      "fCompany": "Company",
-      "fName": "Contact",
-      "fEmail": "Email",
-      "fPhone": "Phone",
-      "fType": "Project type",
-      "fMessage": "Message",
-      "fTypePlaceholder": "Select",
-      "fTypeSingle": "One creator, one project",
-      "fTypeCampaign": "A campaign",
-      "fTypeOngoing": "Ongoing collaboration",
-      "fTypeEvent": "Event",
-      "fTypeOther": "Other",
-      "fOptional": "(optional)",
-      "fSubmit": "Send",
-      "fSending": "Sending…",
-      "okTitle": "Message received",
-      "okBody": "Thank you. We will reply to the address you gave us.",
-      "errGeneric": "Something went wrong. Please try again.",
-      "errInvalid": "Please check the fields and try again.",
       "casesCta": "See the events",
       "partnersTitle": "They have already worked with us",
       "partnersBody": "Estates and venues that opened their doors to us for events and visits. They are not media clients: they are the reason we know how to get inside a winery.",
-      "partnersCta": "See all partners"
+      "partnersCta": "See all partners",
+      "formCta": "Get in touch"
     },
     "talents": {
       "statement": "Creators do not have an audience. They have an audience that trusts them.",
@@ -602,6 +584,56 @@
       "ctaBody": "The evenings fill up fast and the places are counted.",
       "ctaPrimary": "Join the club",
       "ctaSecondary": "See the events"
+    },
+    "apply": {
+      "metaTitle": "Work with us",
+      "metaDescription": "Ambassadors, companies, creators and staff: tell us who you are.",
+      "heading": "Tell us who you are.",
+      "intro": "Do you want to become an ambassador, work with us as a company, join our creator roster, or work in the team? Pick where you want to start: we only ask what we need.",
+      "question": "How do you want to work with us?",
+      "kind": {
+        "ambassador": {
+          "label": "Ambassador",
+          "hint": "You bring VIVO to your city and run the events."
+        },
+        "company": {
+          "label": "Company",
+          "hint": "An estate, venue or brand that wants to work with us."
+        },
+        "creator": {
+          "label": "Creator",
+          "hint": "You join our roster of creators and influencers."
+        },
+        "staff": {
+          "label": "Staff",
+          "hint": "You want to be part of the team behind the club."
+        }
+      },
+      "firstName": "First name",
+      "lastName": "Last name",
+      "email": "Email",
+      "phone": "Phone",
+      "field": {
+        "city": "City",
+        "country": "Country",
+        "company": "Company",
+        "role": "Role",
+        "website": "Website",
+        "instagram": "Instagram",
+        "tiktok": "TikTok",
+        "followers": "Followers"
+      },
+      "message": {
+        "ambassador": "Why do you want to bring VIVO to your city?",
+        "company": "What do you have in mind?",
+        "creator": "Tell us what you do and who you have worked with.",
+        "staff": "What would you like to do, and why?"
+      },
+      "submit": "Send application",
+      "sending": "Sending…",
+      "error": "I couldn't send it. Please try again.",
+      "doneTitle": "That's it.",
+      "doneBody": "We've got your application. We'll get back to you as soon as we've read it."
     }
   }
 }
