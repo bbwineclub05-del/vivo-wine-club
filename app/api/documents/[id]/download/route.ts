@@ -1,22 +1,24 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { requireAdminOrStaff } from '@/lib/auth-guard';
+import { mimeOf, canOpenInline } from '@/lib/documents';
 
 const BUCKET = 'documents';
 
-function mimeFromFileName(fileName: string): string {
-  const ext = fileName.split('.').pop()?.toLowerCase() ?? '';
-  const map: Record<string, string> = {
-    pdf:  'application/pdf',
-    doc:  'application/msword',
-    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    ppt:  'application/vnd.ms-powerpoint',
-    pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-  };
-  return map[ext] ?? 'application/octet-stream';
-}
-
-/* ── GET /api/documents/[id]/download — streams PDF to client ── */
+/**
+ * GET /api/documents/[id]/download — restituisce il file.
+ *
+ * Con `?inline=1` il browser lo apre in una scheda invece di scaricarlo,
+ * ma soltanto per i tipi che sa mostrare senza rischi: PDF e immagini
+ * raster. Tutto il resto scende come allegato, SVG compreso — un SVG
+ * può contenere script, e aprirlo sul nostro dominio li eseguirebbe lì
+ * dentro, con la sessione di chi ha fatto clic.
+ *
+ * Il tipo è dedotto dall'estensione e non da quello che il browser
+ * aveva dichiarato al caricamento, perché quel valore arriva dal
+ * client. `nosniff` chiude la porta rimasta: senza, un browser può
+ * decidere da sé che un file è HTML e trattarlo come tale.
+ */
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -49,11 +51,16 @@ export async function GET(
   const buffer = Buffer.from(await blob.arrayBuffer());
   const safeName = doc.file_name.replace(/[^\w.\- ]/g, '_');
 
+  const wantsInline = new URL(request.url).searchParams.get('inline') === '1';
+  const inline = wantsInline && canOpenInline(doc.file_name);
+
   return new NextResponse(buffer, {
     headers: {
-      'Content-Type':        mimeFromFileName(doc.file_name),
-      'Content-Disposition': `attachment; filename="${safeName}"`,
-      'Content-Length':      String(buffer.byteLength),
+      'Content-Type': mimeOf(doc.file_name),
+      'Content-Disposition': `${inline ? 'inline' : 'attachment'}; filename="${safeName}"`,
+      'Content-Length': String(buffer.byteLength),
+      'X-Content-Type-Options': 'nosniff',
+      'Cache-Control': 'private, no-store',
     },
   });
 }
