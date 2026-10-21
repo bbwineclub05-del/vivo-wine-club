@@ -5,33 +5,38 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { CalendarPlus, Plus, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import MemberCRM from '@/components/MemberCRM';
-import CrmClienti from '@/components/CrmClienti';
-import CrmSponsors from '@/components/CrmSponsors';
-import CrmWine from '@/components/CrmWine';
-import CrmBordeaux from '@/components/CrmBordeaux';
-import CrmInfluencer from '@/components/CrmInfluencer';
-import CrmCustomCategory from '@/components/CrmCustomCategory';
+import CrmPersone from '@/components/CrmPersone';
+import { RecordTable } from '@/components/admin/RecordTable';
+import { SPONSORS, CANTINE, BORDEAUX, INFLUENCER, listaPersonalizzata } from '@/lib/crm-resources';
 import EventEmailModalAdvanced from '@/components/EventEmailModalAdvanced';
 import { useMobileOverlay, useOverlayBackClose } from '@/lib/useMobileOverlay';
+import { ActionButton } from '@/components/admin/ui';
 
 /* ── Types ── */
-type BuiltinTab = 'membri' | 'clienti' | 'sponsors' | 'vino' | 'bordeaux' | 'influencer';
+type BuiltinTab = 'membri' | 'persone' | 'sponsors' | 'vino' | 'bordeaux' | 'influencer';
 type ActiveTab  = BuiltinTab | string; // string = custom category id
 
-interface CustomCategory { id: string; name: string }
+interface CustomCategory {
+  id: string;
+  name: string;
+  /** Quanti contatti contiene. */
+  contacts?: number;
+  /** Quanti di quelli esistono soltanto qui: è ciò che si perde davvero. */
+  onlyHere?: number;
+}
 
 const BUILTIN_TABS: { id: BuiltinTab; label: string }[] = [
   { id: 'membri',      label: 'Membri'         },
-  { id: 'clienti',    label: 'Clienti'        },
+  { id: 'persone',    label: 'Persone'        },
   { id: 'sponsors',   label: 'Sponsors'       },
-  { id: 'vino',       label: 'Contatti Vino'  },
-  { id: 'bordeaux',   label: 'Produttori BDX' },
+  { id: 'vino',       label: 'Cantine'        },
+  { id: 'bordeaux',   label: 'Bordeaux'       },
   { id: 'influencer', label: 'Influencer'     },
 ];
 
 const TAB_SUBTITLES: Record<BuiltinTab, string> = {
-  membri:     'Lista membri e invio comunicazioni.',
-  clienti:    'Banca dati automatica dei clienti che hanno acquistato biglietti — invio email e storico eventi.',
+  membri:     'Chi ha la membership del club.',
+  persone:    'Chi è passato dagli eventi del club. Filtra per evento o per gruppo e scrivi a tutti insieme.',
   sponsors:   'Gestione degli sponsor del club — contatti, siti web e note.',
   vino:       'Contatti del settore vitivinicolo — produttori, hospitality, industry.',
   bordeaux:   'Châteaux e produttori di Bordeaux — richieste visita e follow-up.',
@@ -155,8 +160,26 @@ export default function CrmHub() {
     if (created?.id) setActiveTab(created.id);
   }
 
+  /**
+   * L'avviso dice quello che succede davvero a questa lista, non una
+   * formula uguale per tutte. Quasi sempre i contatti di una lista
+   * stanno anche in Persone — quelli nati da un biglietto ci sono di
+   * sicuro — e in quel caso non si perde niente. Quando invece
+   * qualcuno esiste solo lì, lo si scrive con il suo numero.
+   */
   async function handleDeleteCategory(id: string, name: string) {
-    if (!confirm(`Eliminare la categoria "${name}" e tutti i suoi contatti?`)) return;
+    const cat = customCats.find(c => c.id === id);
+    const contacts = cat?.contacts ?? 0;
+    const onlyHere = cat?.onlyHere ?? 0;
+
+    const message =
+      contacts === 0
+        ? `Eliminare la lista "${name}"? È vuota.`
+        : onlyHere === 0
+          ? `Eliminare la lista "${name}"?\n\nI suoi ${contacts} contatti restano in Persone: si elimina solo la lista.`
+          : `Eliminare la lista "${name}"?\n\nContiene ${contacts} contatti, e ${onlyHere} ${onlyHere === 1 ? 'esiste' : 'esistono'} soltanto qui: ${onlyHere === 1 ? 'quello andrebbe perso' : 'quelli andrebbero persi'} per sempre.`;
+
+    if (!confirm(message)) return;
     setDeletingCat(id);
     await fetch(`/api/crm/categories/${id}`, {
       method:  'DELETE',
@@ -178,30 +201,19 @@ export default function CrmHub() {
   return (
     <div className="flex flex-col gap-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-2">
-        <div>
-          <h1
-            className="text-[clamp(1.6rem,2.5vw,2.2rem)] font-light text-[#1a0505] leading-none tracking-tight"
-            style={{ fontFamily: 'var(--font-syne)' }}
-          >
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="ds-display text-[26px] leading-none tracking-[-0.03em] lg:text-[32px]">
             CRM
           </h1>
-          <p className="mt-2 text-sm text-[#7a4a4a]/70 font-light" style={{ fontFamily: 'var(--font-nunito)' }}>
-            {subtitle}
-          </p>
-          <div className="mt-5 h-px w-16 bg-[#e8d5d5]" />
+          <p className="mt-2.5 max-w-[62ch] text-body text-on-paper-muted">{subtitle}</p>
         </div>
 
-        {/* Nuovo Evento button — always visible */}
-        <button
-          onClick={() => setShowEventModal(true)}
-          className="self-start sm:self-auto flex items-center gap-2 px-4 py-2.5 border border-[#731515]/40 text-[#731515] bg-white hover:bg-[#fdf0f0] text-[9px] tracking-[0.25em] transition-colors rounded-lg shrink-0"
-          style={{ fontFamily: 'var(--font-nunito)' }}
-        >
-          <CalendarPlus size={13} />
-          NUOVO EVENTO
-        </button>
-      </div>
+        <ActionButton variant="quiet" onClick={() => setShowEventModal(true)}>
+          <CalendarPlus size={17} strokeWidth={1.9} />
+          Invita a un evento
+        </ActionButton>
+      </header>
 
       {/* Tab bar */}
       <div className="overflow-x-auto -mx-1 px-1">
@@ -211,21 +223,14 @@ export default function CrmHub() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2 rounded-lg text-[11px] tracking-[0.2em] whitespace-nowrap transition-all duration-150 ${
+              aria-pressed={activeTab === tab.id}
+              className={`inline-flex min-h-[44px] shrink-0 items-center whitespace-nowrap rounded-full border px-4 text-fine font-medium transition-colors ${
                 activeTab === tab.id
-                  ? 'bg-[#731515] text-white shadow-sm'
-                  : 'bg-white border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515]/40 hover:text-[#731515]'
+                  ? 'border-accent bg-accent text-paper'
+                  : 'border-rule-paper text-on-paper hover:border-accent/40'
               }`}
-              style={{ fontFamily: 'var(--font-nunito)' }}
             >
               {tab.label}
-              {tab.id === 'influencer' && (
-                <span className={`ml-1.5 text-[8px] px-1 py-0.5 rounded tracking-[0.1em] ${
-                  activeTab === tab.id ? 'bg-white/20 text-white' : 'bg-[#731515]/10 text-[#731515]'
-                }`}>
-                  NEW
-                </span>
-              )}
             </button>
           ))}
 
@@ -234,12 +239,12 @@ export default function CrmHub() {
             <div key={cat.id} className="relative group/cattab">
               <button
                 onClick={() => setActiveTab(cat.id)}
-                className={`px-4 py-2 pr-7 rounded-lg text-[11px] tracking-[0.2em] whitespace-nowrap transition-all duration-150 ${
+                aria-pressed={activeTab === cat.id}
+                className={`inline-flex min-h-[44px] shrink-0 items-center whitespace-nowrap rounded-full border py-0 pl-4 pr-9 text-fine font-medium transition-colors ${
                   activeTab === cat.id
-                    ? 'bg-[#731515] text-white shadow-sm'
-                    : 'bg-white border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515]/40 hover:text-[#731515]'
+                    ? 'border-accent bg-accent text-paper'
+                    : 'border-rule-paper text-on-paper hover:border-accent/40'
                 }`}
-                style={{ fontFamily: 'var(--font-nunito)' }}
               >
                 {cat.name}
               </button>
@@ -262,10 +267,11 @@ export default function CrmHub() {
           {/* Add category button */}
           <button
             onClick={() => setShowAddCatModal(true)}
-            title="Aggiungi nuova categoria CRM"
-            className="flex items-center justify-center w-8 h-8 rounded-lg border border-dashed border-[#c0a0a0]/60 text-[#7a4a4a]/50 hover:border-[#731515]/50 hover:text-[#731515] hover:bg-[#fdf6f6] transition-all"
+            title="Nuova lista"
+            aria-label="Nuova lista"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-dashed border-rule-paper text-on-paper-muted transition-colors hover:border-accent/50 hover:text-accent"
           >
-            <Plus size={14} />
+            <Plus size={17} strokeWidth={2} />
           </button>
         </div>
       </div>
@@ -273,13 +279,16 @@ export default function CrmHub() {
       {/* Content */}
       <div>
         {activeTab === 'membri'     && <MemberCRM />}
-        {activeTab === 'clienti'    && <CrmClienti />}
-        {activeTab === 'sponsors'   && <CrmSponsors />}
-        {activeTab === 'vino'       && <CrmWine />}
-        {activeTab === 'bordeaux'   && <CrmBordeaux />}
-        {activeTab === 'influencer' && <CrmInfluencer />}
+        {activeTab === 'persone'    && <CrmPersone />}
+        {activeTab === 'sponsors'   && <RecordTable resource={SPONSORS} />}
+        {activeTab === 'vino'       && <RecordTable resource={CANTINE} />}
+        {activeTab === 'bordeaux'   && <RecordTable resource={BORDEAUX} />}
+        {activeTab === 'influencer' && <RecordTable resource={INFLUENCER} />}
         {activeCustom && (
-          <CrmCustomCategory key={activeCustom.id} categoryId={activeCustom.id} accessToken={accessToken} />
+          <RecordTable
+            key={activeCustom.id}
+            resource={listaPersonalizzata(activeCustom.id, activeCustom.name)}
+          />
         )}
       </div>
 
