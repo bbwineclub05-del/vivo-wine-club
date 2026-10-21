@@ -6,6 +6,8 @@ import { RecordTable } from '@/components/admin/RecordTable';
 import { BORDEAUX, listaPersonalizzata } from '@/lib/crm-resources';
 import EventInvite from '@/components/admin/EventInvite';
 import MembershipHub from '@/components/MembershipHub';
+import DiscountManager from '@/components/DiscountManager';
+import UpsellManager from '@/components/UpsellManager';
 
 /**
  * Persone con una rubrica inventata, per giudicare il layout senza
@@ -90,6 +92,37 @@ function install() {
       return json({ members: [
         { email: 'membro1@esempio.it', name: 'Membro Uno' },
         { email: 'membro2@esempio.it', name: 'Membro Due' },
+      ] });
+    }
+    if (url.includes('/api/discounts')) {
+      return json({ discounts: [
+        { id:'d1', title:'10% da Il Canto del Gallo', partner:'Il Canto del Gallo',
+          description:'Mostra la tessera al momento del conto.', code:null, logo_url:null,
+          expires_at:'2027-12-31', visible:true, sort_order:0, created_at:'x' },
+        { id:'d2', title:'Due calici al prezzo di uno', partner:'Enoteca Prova',
+          description:null, code:'VIVO2X1', logo_url:null,
+          expires_at:'2026-09-30', visible:true, sort_order:1, created_at:'x' },
+        { id:'d3', title:'Sconto spedizioni', partner:'Corriere Prova', description:null,
+          code:'SPED', logo_url:null, expires_at:null, visible:false, sort_order:2, created_at:'x' },
+      ] });
+    }
+    if (url.includes('/api/merch/products')) {
+      return json({ products: [
+        { id:'p1', title:'T-shirt VIVO', price:25, images:[], slug:'t', visible:true },
+        { id:'p2', title:'Cappellino', price:18, images:[], slug:'c', visible:true },
+        { id:'p3', title:'Tote bag', price:12, images:[], slug:'b', visible:true },
+        { id:'p4', title:'Calice serigrafato', price:9, images:[], slug:'g', visible:true },
+      ] });
+    }
+    if (url.includes('/api/admin/upsell/analytics')) {
+      return json({ analytics: [
+        { config_id:'u1', impressions:7593, added:4, removed:3, kept:1 },
+      ], totalEvents: 7600 });
+    }
+    if (url.includes('/api/admin/upsell')) {
+      return json({ configs: [
+        { id:'u1', product_id:'p1', context:'event', target_slug:null },
+        { id:'u2', product_id:'p3', context:'event', target_slug:null },
       ] });
     }
     if (url.includes('/api/memberships')) {
@@ -193,6 +226,10 @@ export function MockCrm() {
       <RecordTable resource={listaPersonalizzata('cat1', 'General')} />
       <hr className="my-16 border-rule-paper" />
       <MembershipHub />
+      <hr className="my-16 border-rule-paper" />
+      <DiscountManager token="anteprima" />
+      <hr className="my-16 border-rule-paper" />
+      <UpsellManager />
       <Invito />
     </>
   );

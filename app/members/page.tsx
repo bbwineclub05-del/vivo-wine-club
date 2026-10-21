@@ -984,13 +984,11 @@ function MembersPageInner() {
                   canAccess('merch') ? <MerchManager /> : <UnauthorisedSection title="Gestione Merch" />
                 )}
 
+                {/* DiscountManager porta la propria intestazione. */}
                 {(admin || isStaff) && activeSection === 'discounts' && (
-                  canAccess('discounts') ? (
-                    <>
-                      <SectionHeader title="Gestione Sconti" subtitle="Sconti e convenzioni per i membri del club." />
-                      <DiscountManager token={token} />
-                    </>
-                  ) : <UnauthorisedSection title="Gestione Sconti" />
+                  canAccess('discounts')
+                    ? <DiscountManager token={token} />
+                    : <UnauthorisedSection title="Convenzioni" />
                 )}
 
                 {(admin || isStaff) && activeSection === 'documents' && (
