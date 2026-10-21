@@ -1,17 +1,50 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Plus, X, Pencil, Trash2, CalendarDays, List,
-  ChevronLeft, ChevronRight, ChevronDown, Loader2, CheckCircle2, Circle,
+  Calendar as CalendarIcon,
+  Check,
+  List,
+  Paperclip,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useOverlayBackClose } from '@/lib/useMobileOverlay';
+import {
+  ActionButton,
+  EmptyState,
+  Field,
+  NewButton,
+  PageHead,
+  Select,
+  Sheet,
+  TextArea,
+  TextInput,
+} from '@/components/admin/ui';
+import {
+  Calendar,
+  longDay,
+  ymd,
+  type CalendarItem,
+  type CalendarSource,
+} from '@/components/admin/Calendar';
 
-/* ─────────────────────────────────────────────
-   Types
-───────────────────────────────────────────── */
+/**
+ * The editorial plan.
+ *
+ * The old version painted every entry in its platform's brand colour
+ * inside a month grid, which on a phone gave you seven columns of
+ * fifty-pixel confetti and no way to answer "what are we posting on
+ * Instagram this week".
+ *
+ * Here the platforms *are* the calendars: each one is a toggle at the
+ * top, exactly like a shared calendar in the app everybody already has
+ * on their phone. Turn off the four you don't care about and the month
+ * becomes readable. The club's events sit on the same grid, because the
+ * whole point of a content plan is to post around them.
+ */
+
 type PedStatus = 'planned' | 'published';
 
 interface PedEntry {
@@ -34,175 +67,294 @@ interface CalEvent {
   date: string | null;
   time: string | null;
   location: string | null;
-  location_full: string | null;
   type: string | null;
   section: string | null;
   status: string | null;
   slug: string | null;
 }
 
-/* ─────────────────────────────────────────────
-   Constants
-───────────────────────────────────────────── */
-const PLATFORMS = ['Instagram', 'LinkedIn', 'WhatsApp', 'Newsletter', 'Sito Web', 'TikTok', 'Altro'];
+interface TeamMember {
+  name: string;
+  email: string;
+}
+
+const PLATFORMS = ['Instagram', 'TikTok', 'LinkedIn', 'WhatsApp', 'Newsletter', 'Sito Web', 'Altro'];
 const CONTENT_TYPES = ['Post', 'Reel', 'Story', 'Articolo', 'Email', 'Video', 'Foto', 'Altro'];
 
-const STATUS_CFG: Record<PedStatus, { label: string; cls: string }> = {
-  planned:   { label: 'Da fare',     cls: 'bg-blue-50 text-blue-700 border-blue-200'           },
-  published: { label: 'Pubblicato',  cls: 'bg-emerald-50 text-emerald-700 border-emerald-200'  },
-};
-
+/**
+ * Each platform keeps the colour people already associate with it —
+ * that is the one place where borrowed brand colour earns its keep,
+ * because it is read at a glance and never as a word.
+ */
 const PLATFORM_COLOR: Record<string, string> = {
-  Instagram:   '#e1306c',
-  LinkedIn:    '#0a66c2',
-  WhatsApp:    '#25d366',
-  Newsletter:  '#731515',
-  'Sito Web':  '#374151',
-  TikTok:      '#010101',
-  Altro:       '#7a4a4a',
+  Instagram: '#C13584',
+  TikTok: '#0F0F0F',
+  LinkedIn: '#0A66C2',
+  WhatsApp: '#1EA75A',
+  Newsletter: '#731515',
+  'Sito Web': '#3F4B5B',
+  Altro: '#7A5252',
 };
 
-const EVENT_BG = '#3d0d0d';
+const EVENTS_SOURCE = '__events';
 
-const MONTHS_IT = [
-  'Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno',
-  'Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre',
+const MONTHS = [
+  'Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
+  'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre',
 ];
-const DAYS_SHORT = ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];
 
-function mondayFirst(d: number) { return d === 0 ? 6 : d - 1; }
+function monthLabel(date: string) {
+  const [y, m] = date.slice(0, 10).split('-');
+  return `${MONTHS[Number(m) - 1]} ${y}`;
+}
 
-const inputCls =
-  'w-full bg-[#fdf6f6] border border-[#eddada] text-[#1a0505] px-3 py-2.5 text-sm ' +
-  'placeholder:text-[#7a4a4a]/35 focus:outline-none focus:border-[#731515]/50 transition-colors rounded-lg';
+function colorOfPlatform(p: string) {
+  return PLATFORM_COLOR[p] ?? PLATFORM_COLOR.Altro;
+}
 
 /* ─────────────────────────────────────────────
-   Publish toggle button
+   One entry, as a row
 ───────────────────────────────────────────── */
-function PublishBtn({
+function EntryRow({
   entry,
   onToggle,
+  onOpen,
+  showDate = true,
 }: {
   entry: PedEntry;
-  onToggle: (id: string, next: PedStatus) => void;
+  onToggle: (e: PedEntry) => void;
+  onOpen: (e: PedEntry) => void;
+  showDate?: boolean;
 }) {
   const published = entry.status === 'published';
+  const color = colorOfPlatform(entry.platform);
+
   return (
-    <button
-      onClick={e => { e.stopPropagation(); onToggle(entry.id, published ? 'planned' : 'published'); }}
-      title={published ? 'Segna come da fare' : 'Segna come pubblicato'}
-      className={`shrink-0 p-1 rounded-lg transition-all duration-150 ${
-        published
-          ? 'text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50'
-          : 'text-[#7a4a4a]/25 hover:text-emerald-500 hover:bg-emerald-50'
-      }`}
-    >
-      {published
-        ? <CheckCircle2 size={22} strokeWidth={1.8} />
-        : <Circle       size={22} strokeWidth={1.5} />
-      }
-    </button>
+    <div className="flex items-stretch rounded-2xl border border-rule-paper transition-colors hover:border-accent/35">
+      <button
+        onClick={() => onToggle(entry)}
+        aria-label={published ? 'Segna da pubblicare' : 'Segna pubblicato'}
+        aria-pressed={published}
+        className="grid w-[52px] shrink-0 place-items-center rounded-l-2xl"
+      >
+        <span
+          className={`grid h-[26px] w-[26px] place-items-center rounded-full border-2 transition-colors ${
+            published ? 'border-accent bg-accent text-paper' : 'border-rule-paper'
+          }`}
+        >
+          {published && <Check size={15} strokeWidth={3} />}
+        </span>
+      </button>
+
+      <button onClick={() => onOpen(entry)} className="min-w-0 flex-1 py-3 pr-3 text-left">
+        <span className={`block text-body ${published ? 'opacity-55' : ''}`}>{entry.title}</span>
+        <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-fine text-on-paper-muted">
+          {showDate && <span>{longDay(entry.date.slice(0, 10))}</span>}
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
+            {entry.platform}
+          </span>
+          <span>{entry.content_type}</span>
+          {entry.assigned_to && <span>{entry.assigned_to}</span>}
+          {entry.media_url && (
+            <span className="inline-flex items-center gap-1">
+              <Paperclip size={12} strokeWidth={1.8} />
+              Allegato
+            </span>
+          )}
+        </span>
+      </button>
+    </div>
   );
 }
 
 /* ─────────────────────────────────────────────
-   Entry Modal  (no status field — always 'planned' on create)
+   Entry detail
 ───────────────────────────────────────────── */
-interface FormState {
-  date: string;
-  title: string;
-  description: string;
-  platform: string;
-  content_type: string;
-  assigned_to: string;
-  notes: string;
+function EntryDetail({
+  entry,
+  onClose,
+  onEdit,
+  onDelete,
+  onToggle,
+}: {
+  entry: PedEntry | null;
+  onClose: () => void;
+  onEdit: (e: PedEntry) => void;
+  onDelete: (e: PedEntry) => void;
+  onToggle: (e: PedEntry) => void;
+}) {
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+  useOverlayBackClose(!!entry, onClose);
+
+  if (!entry) return null;
+  const published = entry.status === 'published';
+  const confirming = confirmId === entry.id;
+
+  return (
+    <Sheet
+      open
+      title="Contenuto"
+      onClose={onClose}
+      footer={
+        <div className="flex flex-wrap gap-2.5">
+          <ActionButton onClick={() => onToggle(entry)} className="flex-1">
+            <Check size={17} strokeWidth={2} />
+            {published ? 'Da pubblicare' : 'Pubblicato'}
+          </ActionButton>
+          <ActionButton variant="quiet" onClick={() => onEdit(entry)}>
+            <Pencil size={16} strokeWidth={1.8} />
+            Modifica
+          </ActionButton>
+          <ActionButton
+            variant="danger"
+            onClick={() => (confirming ? onDelete(entry) : setConfirmId(entry.id))}
+          >
+            <Trash2 size={16} strokeWidth={1.8} />
+            {confirming ? 'Confermi?' : 'Elimina'}
+          </ActionButton>
+        </div>
+      }
+    >
+      <div className="mb-3 flex items-center gap-2">
+        <span
+          className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-fine font-medium"
+          style={{ backgroundColor: `${colorOfPlatform(entry.platform)}16`, color: colorOfPlatform(entry.platform) }}
+        >
+          <span
+            className="h-2 w-2 rounded-full"
+            style={{ backgroundColor: colorOfPlatform(entry.platform) }}
+          />
+          {entry.platform}
+        </span>
+        <span className="text-fine text-on-paper-muted">{entry.content_type}</span>
+      </div>
+
+      <h3 className="ds-display text-[22px] leading-tight tracking-[-0.02em]">{entry.title}</h3>
+
+      {entry.description && (
+        <p className="mt-3 whitespace-pre-wrap text-body text-on-paper-muted">{entry.description}</p>
+      )}
+
+      <dl className="mt-6 grid gap-px overflow-hidden rounded-2xl border border-rule-paper bg-rule-paper">
+        {[
+          { k: 'Data', v: longDay(entry.date.slice(0, 10)) },
+          { k: 'Stato', v: published ? 'Pubblicato' : 'Da pubblicare' },
+          { k: 'Responsabile', v: entry.assigned_to || '—' },
+        ].map((r) => (
+          <div key={r.k} className="flex flex-wrap gap-x-4 gap-y-1 bg-paper px-4 py-3">
+            <dt className="min-w-[110px] text-fine text-on-paper-muted">{r.k}</dt>
+            <dd className="text-body">{r.v}</dd>
+          </div>
+        ))}
+      </dl>
+
+      {entry.notes && (
+        <div className="mt-5">
+          <p className="mb-1.5 text-fine font-medium">Note interne</p>
+          <p className="whitespace-pre-wrap text-body text-on-paper-muted">{entry.notes}</p>
+        </div>
+      )}
+
+      {/* The old form uploaded an attachment and then never showed it
+          anywhere. Here it is. */}
+      {entry.media_url && (
+        <a
+          href={entry.media_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-5 inline-flex min-h-[48px] items-center gap-2 rounded-full border border-rule-paper px-4 text-fine font-medium transition-colors hover:border-accent/40"
+        >
+          <Paperclip size={16} strokeWidth={1.8} />
+          Apri l&apos;allegato
+        </a>
+      )}
+    </Sheet>
+  );
 }
 
-const EMPTY: FormState = {
-  date: '',
-  title: '',
-  description: '',
-  platform: 'Instagram',
-  content_type: 'Post',
-  assigned_to: '',
-  notes: '',
-};
-
-function EntryModal({
+/* ─────────────────────────────────────────────
+   New / edit entry
+───────────────────────────────────────────── */
+function EntryForm({
   token,
+  members,
   editTarget,
   defaultDate,
   onClose,
   onSaved,
 }: {
   token: string;
-  editTarget: PedEntry | null;
+  members: TeamMember[];
+  editTarget?: PedEntry | null;
   defaultDate?: string;
   onClose: () => void;
-  onSaved: (entry: PedEntry) => void;
+  onSaved: (e: PedEntry) => void;
 }) {
   const isEdit = !!editTarget;
-  const [form, setForm] = useState<FormState>(
-    editTarget
-      ? {
-          date:         editTarget.date,
-          title:        editTarget.title,
-          description:  editTarget.description ?? '',
-          platform:     editTarget.platform,
-          content_type: editTarget.content_type,
-          assigned_to:  editTarget.assigned_to ?? '',
-          notes:        editTarget.notes ?? '',
-        }
-      : { ...EMPTY, date: defaultDate ?? '' },
-  );
-  const [file,    setFile]    = useState<File | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState('');
+  const [form, setForm] = useState(() => ({
+    date: editTarget?.date.slice(0, 10) ?? defaultDate ?? ymd(new Date()),
+    title: editTarget?.title ?? '',
+    description: editTarget?.description ?? '',
+    platform: editTarget?.platform ?? 'Instagram',
+    content_type: editTarget?.content_type ?? 'Post',
+    assigned_to: editTarget?.assigned_to ?? '',
+    notes: editTarget?.notes ?? '',
+  }));
+  const [file, setFile] = useState<File | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = prev; };
-  }, []);
-
-  function setField<K extends keyof FormState>(k: K, v: FormState[K]) {
-    setForm(p => ({ ...p, [k]: v }));
+  function set<K extends keyof typeof form>(k: K, v: (typeof form)[K]) {
+    setForm((p) => ({ ...p, [k]: v }));
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!form.date || !form.title.trim() || !form.platform || !form.content_type) {
-      setError('Data, titolo, piattaforma e tipo contenuto sono obbligatori.');
+  /**
+   * `assigned_to` is a free-text column, and years of typing have left
+   * it holding "Cristiano", "Cris", "Cri", "Elly" and "ELLY" for four
+   * people. The picker writes the team member's full name from now on,
+   * while still offering whatever string is already on the row so that
+   * opening an old entry and saving it doesn't silently wipe the name.
+   */
+  const legacyName =
+    form.assigned_to && !members.some((m) => m.name === form.assigned_to) ? form.assigned_to : null;
+
+  async function submit() {
+    if (!form.date || !form.title.trim()) {
+      setError('Servono almeno la data e il titolo.');
       return;
     }
-    setError(''); setLoading(true);
+    setError('');
+    setSaving(true);
     try {
       let res: Response;
       if (isEdit && editTarget) {
+        // JSON on edit, multipart on create: both exactly as the API
+        // expects them today.
         res = await fetch(`/api/ped/${editTarget.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify({
-            date:         form.date,
-            title:        form.title.trim(),
-            description:  form.description.trim() || null,
-            platform:     form.platform,
+            date: form.date,
+            title: form.title.trim(),
+            description: form.description.trim() || null,
+            platform: form.platform,
             content_type: form.content_type,
-            assigned_to:  form.assigned_to.trim() || null,
-            notes:        form.notes.trim() || null,
+            assigned_to: form.assigned_to.trim() || null,
+            notes: form.notes.trim() || null,
           }),
         });
       } else {
         const fd = new FormData();
-        fd.append('date',         form.date);
-        fd.append('title',        form.title.trim());
-        fd.append('platform',     form.platform);
+        fd.append('date', form.date);
+        fd.append('title', form.title.trim());
+        fd.append('platform', form.platform);
         fd.append('content_type', form.content_type);
-        fd.append('status',       'planned');
-        if (form.description.trim()) fd.append('description',  form.description.trim());
-        if (form.assigned_to.trim()) fd.append('assigned_to',  form.assigned_to.trim());
-        if (form.notes.trim())       fd.append('notes',        form.notes.trim());
-        if (file)                    fd.append('file', file);
+        fd.append('status', 'planned');
+        if (form.description.trim()) fd.append('description', form.description.trim());
+        if (form.assigned_to.trim()) fd.append('assigned_to', form.assigned_to.trim());
+        if (form.notes.trim()) fd.append('notes', form.notes.trim());
+        if (file) fd.append('file', file);
         res = await fetch('/api/ped', {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
@@ -215,913 +367,419 @@ function EntryModal({
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Errore.');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <motion.div className="absolute inset-0 bg-black/50" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} />
-      <motion.div
-        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden"
-        initial={{ opacity: 0, scale: 0.95, y: 16 }}
-        animate={{ opacity: 1, scale: 1,    y: 0  }}
-        exit={{    opacity: 0, scale: 0.95, y: 16 }}
-        transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-      >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#eddada] shrink-0 bg-white z-10">
-          <div>
-            <div className="text-[9px] tracking-[0.4em] text-[#731515] mb-0.5">PIANO EDITORIALE</div>
-            <h3 className="text-base font-light text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>
-              {isEdit ? 'Modifica entry' : 'Nuova entry'}
-            </h3>
-          </div>
-          <button onClick={onClose} aria-label="Chiudi" className="min-w-[48px] min-h-[48px] flex items-center justify-center text-[#7a4a4a]/50 hover:text-[#731515] transition-colors rounded-lg"><X size={16} /></button>
+    <Sheet
+      open
+      title={isEdit ? 'Modifica contenuto' : 'Nuovo contenuto'}
+      onClose={onClose}
+      footer={
+        <div className="flex gap-2.5">
+          <ActionButton variant="quiet" onClick={onClose} className="flex-1">
+            Annulla
+          </ActionButton>
+          <ActionButton onClick={submit} disabled={saving} className="flex-[2]">
+            {saving ? 'Salvo…' : isEdit ? 'Salva' : 'Aggiungi'}
+          </ActionButton>
         </div>
+      }
+    >
+      <div className="flex flex-col gap-5">
+        <TextInput
+          autoFocus
+          value={form.title}
+          onChange={(e) => set('title', e.target.value)}
+          placeholder="Cosa pubblichiamo?"
+          className="!py-4 !text-[19px]"
+        />
 
-        <div className="flex-1 overflow-y-auto" style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
-          {/* Date */}
-          <div>
-            <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">DATA *</div>
-            <input type="date" className={inputCls} value={form.date} onChange={e => setField('date', e.target.value)} style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }} />
-          </div>
-
-          {/* Title */}
-          <div>
-            <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">TITOLO *</div>
-            <input className={inputCls} placeholder="Titolo del contenuto…" value={form.title} onChange={e => setField('title', e.target.value)} style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }} />
-          </div>
-
-          {/* Platform + Content type */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">PIATTAFORMA *</div>
-              <select className={inputCls} value={form.platform} onChange={e => setField('platform', e.target.value)} style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}>
-                {PLATFORMS.map(p => <option key={p} value={p}>{p}</option>)}
-              </select>
-            </div>
-            <div>
-              <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">TIPO CONTENUTO *</div>
-              <select className={inputCls} value={form.content_type} onChange={e => setField('content_type', e.target.value)} style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}>
-                {CONTENT_TYPES.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
-          </div>
-
-          {/* Description */}
-          <div>
-            <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">DESCRIZIONE <span className="text-[#7a4a4a]/40 normal-case tracking-normal">— opzionale</span></div>
-            <textarea className={`${inputCls} resize-none`} rows={3} placeholder="Descrizione del contenuto…" value={form.description} onChange={e => setField('description', e.target.value)} style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }} />
-          </div>
-
-          {/* Assigned to */}
-          <div>
-            <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">ASSEGNATO A <span className="text-[#7a4a4a]/40 normal-case tracking-normal">— opzionale</span></div>
-            <input className={inputCls} placeholder="Nome responsabile…" value={form.assigned_to} onChange={e => setField('assigned_to', e.target.value)} style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }} />
-          </div>
-
-          {/* Notes */}
-          <div>
-            <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">NOTE <span className="text-[#7a4a4a]/40 normal-case tracking-normal">— opzionale</span></div>
-            <textarea className={`${inputCls} resize-none`} rows={2} placeholder="Note interne…" value={form.notes} onChange={e => setField('notes', e.target.value)} style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }} />
-          </div>
-
-          {/* File upload (create only) */}
-          {!isEdit && (
-            <div>
-              <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">ALLEGATO <span className="text-[#7a4a4a]/40 normal-case tracking-normal">— opzionale</span></div>
-              <input
-                type="file"
-                accept="image/*,video/*,application/pdf"
-                onChange={e => setFile(e.target.files?.[0] ?? null)}
-                className="w-full text-sm text-[#7a4a4a] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:tracking-[0.2em] file:bg-[#731515] file:text-white hover:file:bg-[#9b2323] file:cursor-pointer"
-                style={{ fontFamily: 'var(--font-nunito)' }}
-              />
-            </div>
-          )}
-
-          {error && (
-            <p className="text-[11px] text-red-600" style={{ fontFamily: 'var(--font-nunito)' }}>{error}</p>
-          )}
-
-          <div className="flex justify-end gap-3 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-[10px] tracking-[0.2em] text-[#7a4a4a] hover:text-[#1a0505] transition-colors" style={{ fontFamily: 'var(--font-nunito)' }}>
-              ANNULLA
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="inline-flex items-center gap-2 px-5 py-2 bg-[#731515] text-white text-[10px] tracking-[0.2em] rounded-lg hover:bg-[#9b2323] disabled:opacity-50 transition-colors"
-              style={{ fontFamily: 'var(--font-nunito)' }}
-            >
-              {loading && <Loader2 size={11} className="animate-spin" />}
-              {isEdit ? 'SALVA' : 'CREA'}
-            </button>
-          </div>
-        </form>
-        </div>{/* end scrollable area */}
-      </motion.div>
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────────
-   Calendar View
-───────────────────────────────────────────── */
-function PedCalendar({
-  entries,
-  events,
-  onDayClick,
-  onEntryClick,
-  onToggleStatus,
-}: {
-  entries:        PedEntry[];
-  events:         CalEvent[];
-  onDayClick:     (date: string) => void;
-  onEntryClick:   (entry: PedEntry) => void;
-  onToggleStatus: (id: string, next: PedStatus) => void;
-}) {
-  const [month, setMonth] = useState(() => {
-    const n = new Date();
-    return new Date(n.getFullYear(), n.getMonth(), 1);
-  });
-  const [selectedDay, setSelectedDay] = useState<string | null>(null);
-  const [calView,    setCalView]    = useState<'month' | 'week'>('month');
-  const [weekStart,  setWeekStart]  = useState<Date>(() => {
-    const n = new Date();
-    const day = n.getDay();
-    const diff = day === 0 ? -6 : 1 - day;
-    const mon = new Date(n);
-    mon.setDate(n.getDate() + diff);
-    mon.setHours(0, 0, 0, 0);
-    return mon;
-  });
-
-  const year = month.getFullYear();
-  const mon  = month.getMonth();
-  const daysInMonth    = new Date(year, mon + 1, 0).getDate();
-  const firstDayOfWeek = mondayFirst(new Date(year, mon, 1).getDay());
-
-  const todayStr = (() => {
-    const n = new Date();
-    return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
-  })();
-
-  const dayMap: Record<string, PedEntry[]> = {};
-  for (const e of entries) {
-    const key = e.date.slice(0, 10);
-    if (!dayMap[key]) dayMap[key] = [];
-    dayMap[key].push(e);
-  }
-
-  const eventDayMap: Record<string, CalEvent[]> = {};
-  for (const ev of events) {
-    if (!ev.date) continue;
-    const key = ev.date.slice(0, 10);
-    if (!eventDayMap[key]) eventDayMap[key] = [];
-    eventDayMap[key].push(ev);
-  }
-
-  const cells: (number | null)[] = [
-    ...Array(firstDayOfWeek).fill(null),
-    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
-  ];
-  while (cells.length % 7 !== 0) cells.push(null);
-
-  const selectedEntries = selectedDay ? (dayMap[selectedDay] ?? []) : [];
-  const selectedEvents  = selectedDay ? (eventDayMap[selectedDay] ?? []) : [];
-
-  function handleDayClick(dayStr: string) {
-    setSelectedDay(prev => prev === dayStr ? null : dayStr);
-  }
-
-  const weekDays = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(weekStart);
-    d.setDate(weekStart.getDate() + i);
-    return d;
-  });
-
-  function weekRangeLabel(): string {
-    const end = new Date(weekStart);
-    end.setDate(weekStart.getDate() + 6);
-    if (weekStart.getMonth() === end.getMonth()) {
-      return `${weekStart.getDate()} - ${end.getDate()} ${MONTHS_IT[weekStart.getMonth()]} ${weekStart.getFullYear()}`;
-    }
-    return `${weekStart.getDate()} ${MONTHS_IT[weekStart.getMonth()]} - ${end.getDate()} ${MONTHS_IT[end.getMonth()]} ${end.getFullYear()}`;
-  }
-
-  return (
-    <div className="space-y-4">
-      {/* Nav + view toggle */}
-      <div className="flex items-center justify-between bg-white border border-[#eddada] rounded-xl px-5 py-3">
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => calView === 'month'
-              ? setMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1))
-              : setWeekStart(w => { const d = new Date(w); d.setDate(d.getDate() - 7); return d; })
-            }
-            className="p-1.5 rounded-lg hover:bg-[#fdf6f6] transition-colors text-[#7a4a4a] hover:text-[#731515]"
-          >
-            <ChevronLeft size={15} />
-          </button>
-          <span className="text-sm font-light tracking-[0.1em] text-[#1a0505] min-w-[180px] text-center" style={{ fontFamily: 'var(--font-syne)' }}>
-            {calView === 'month' ? `${MONTHS_IT[mon]} ${year}` : weekRangeLabel()}
-          </span>
-          <button
-            onClick={() => calView === 'month'
-              ? setMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1))
-              : setWeekStart(w => { const d = new Date(w); d.setDate(d.getDate() + 7); return d; })
-            }
-            className="p-1.5 rounded-lg hover:bg-[#fdf6f6] transition-colors text-[#7a4a4a] hover:text-[#731515]"
-          >
-            <ChevronRight size={15} />
-          </button>
-        </div>
-        {/* Month / Week toggle */}
-        <div className="flex gap-0.5 bg-[#fdf6f6] border border-[#eddada] rounded-lg p-0.5">
-          {(['month', 'week'] as const).map(v => (
-            <button
-              key={v}
-              onClick={() => setCalView(v)}
-              className={`px-3 py-1.5 text-[9px] tracking-[0.2em] rounded-lg transition-all duration-150 ${
-                calView === v ? 'bg-[#731515] text-white shadow-sm' : 'text-[#7a4a4a] hover:text-[#731515]'
-              }`}
-              style={{ fontFamily: 'var(--font-nunito)' }}
-            >
-              {v === 'month' ? 'MESE' : 'SETTIMANA'}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Month grid */}
-      {calView === 'month' && (
-        <div className="bg-white border border-[#eddada] rounded-xl overflow-hidden">
-          <div className="grid grid-cols-7 border-b border-[#eddada]">
-            {DAYS_SHORT.map(d => (
-              <div key={d} className="px-2 py-2.5 text-center text-[9px] tracking-[0.25em] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
-                {d}
-              </div>
-            ))}
-          </div>
-          <div className="grid grid-cols-7 divide-x divide-y divide-[#eddada]">
-            {cells.map((day, i) => {
-              if (!day) return <div key={i} className="min-h-[80px] bg-[#fdf6f6]/30" />;
-              const dayStr = `${year}-${String(mon + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-              const items     = dayMap[dayStr] ?? [];
-              const dayEvents = eventDayMap[dayStr] ?? [];
-              const isToday    = dayStr === todayStr;
-              const isSelected = dayStr === selectedDay;
+        {/* Platforms as tappable chips rather than a dropdown: it is the
+            field people change most, and here it takes one tap. */}
+        <Field label="Piattaforma">
+          <div className="flex flex-wrap gap-2">
+            {PLATFORMS.map((p) => {
+              const on = form.platform === p;
+              const color = colorOfPlatform(p);
               return (
                 <button
-                  key={i}
-                  onClick={() => handleDayClick(dayStr)}
-                  className={`min-h-[80px] p-2 text-left flex flex-col gap-1 transition-colors hover:bg-[#fdf6f6] ${isSelected ? 'bg-[#fdf6f6] ring-1 ring-inset ring-[#731515]/30' : ''}`}
+                  key={p}
+                  type="button"
+                  onClick={() => set('platform', p)}
+                  aria-pressed={on}
+                  className="inline-flex min-h-[44px] items-center gap-2 rounded-full border px-3.5 text-fine font-medium transition-colors"
+                  style={{
+                    backgroundColor: on ? color : 'transparent',
+                    borderColor: on ? color : 'var(--color-rule-paper)',
+                    color: on ? '#FDFBFA' : 'var(--color-on-paper)',
+                  }}
                 >
-                  <div className={`text-xs w-6 h-6 flex items-center justify-center rounded-full ${isToday ? 'bg-[#731515] text-white font-semibold' : 'text-[#7a4a4a]'}`} style={{ fontFamily: 'var(--font-nunito)' }}>
-                    {day}
-                  </div>
-                  {items.map(e => (
-                    <div
-                      key={e.id}
-                      className={`w-full px-1.5 py-0.5 rounded text-[9px] truncate text-white leading-tight ${e.status === 'published' ? 'opacity-50' : ''}`}
-                      style={{ backgroundColor: PLATFORM_COLOR[e.platform] ?? '#7a4a4a' }}
-                      onClick={ev => { ev.stopPropagation(); onEntryClick(e); }}
-                    >
-                      {e.status === 'published' && '✓ '}{e.title}
-                    </div>
-                  ))}
-                  {dayEvents.map(ev => (
-                    <div
-                      key={ev.id}
-                      className="w-full px-1.5 py-0.5 rounded text-[9px] truncate leading-tight"
-                      style={{ backgroundColor: EVENT_BG, color: '#fff', opacity: 0.92 }}
-                    >
-                      {ev.title}
-                    </div>
-                  ))}
-                  {items.length === 0 && isSelected && (
-                    <div
-                      className="w-full mt-auto text-[8px] tracking-[0.15em] text-[#731515]/50 flex items-center gap-1"
-                      onClick={ev => { ev.stopPropagation(); onDayClick(dayStr); }}
-                    >
-                      <Plus size={9} /> NUOVO
-                    </div>
-                  )}
+                  <span
+                    className="h-2 w-2 shrink-0 rounded-full"
+                    style={{ backgroundColor: on ? '#FDFBFA' : color }}
+                  />
+                  {p}
                 </button>
               );
             })}
           </div>
-        </div>
-      )}
+        </Field>
 
-      {/* Week grid */}
-      {calView === 'week' && (
-        <div className="bg-white border border-[#eddada] rounded-xl overflow-hidden">
-          {/* Day headers */}
-          <div className="grid grid-cols-7 border-b border-[#eddada]">
-            {weekDays.map((d, i) => {
-              const dayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-              const isToday = dayStr === todayStr;
-              return (
-                <div key={i} className={`px-2 py-3 text-center border-r border-[#eddada] last:border-r-0 ${isToday ? 'bg-[#fdf6f6]' : ''}`}>
-                  <div className="text-[9px] tracking-[0.2em] text-[#7a4a4a]/50 mb-1.5" style={{ fontFamily: 'var(--font-nunito)' }}>
-                    {DAYS_SHORT[i]}
-                  </div>
-                  <div className={`text-sm w-7 h-7 mx-auto flex items-center justify-center rounded-full font-light ${isToday ? 'bg-[#731515] text-white' : 'text-[#1a0505]'}`} style={{ fontFamily: 'var(--font-syne)' }}>
-                    {d.getDate()}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          {/* Day columns */}
-          <div className="grid grid-cols-7 divide-x divide-[#eddada]">
-            {weekDays.map((d, i) => {
-              const dayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-              const items     = dayMap[dayStr] ?? [];
-              const dayEvents = eventDayMap[dayStr] ?? [];
-              const isToday    = dayStr === todayStr;
-              const isSelected = dayStr === selectedDay;
+        <Field label="Tipo">
+          <div className="flex flex-wrap gap-2">
+            {CONTENT_TYPES.map((c) => {
+              const on = form.content_type === c;
               return (
                 <button
-                  key={i}
-                  onClick={() => handleDayClick(dayStr)}
-                  className={`min-h-[160px] p-2.5 text-left flex flex-col gap-1.5 transition-colors hover:bg-[#fdf6f6] ${
-                    isSelected ? 'bg-[#fdf6f6] ring-1 ring-inset ring-[#731515]/30' : isToday ? 'bg-[#fdf6f6]/40' : ''
+                  key={c}
+                  type="button"
+                  onClick={() => set('content_type', c)}
+                  aria-pressed={on}
+                  className={`inline-flex min-h-[44px] items-center rounded-full border px-3.5 text-fine font-medium transition-colors ${
+                    on
+                      ? 'border-accent bg-accent text-paper'
+                      : 'border-rule-paper text-on-paper hover:border-accent/40'
                   }`}
                 >
-                  {items.map(e => (
-                    <div
-                      key={e.id}
-                      className={`w-full px-2 py-1 rounded text-white leading-tight ${e.status === 'published' ? 'opacity-50' : ''}`}
-                      style={{ backgroundColor: PLATFORM_COLOR[e.platform] ?? '#7a4a4a' }}
-                      onClick={ev => { ev.stopPropagation(); onEntryClick(e); }}
-                    >
-                      <div className="text-[10px] font-medium truncate">{e.status === 'published' && '✓ '}{e.title}</div>
-                      <div className="text-[8px] opacity-80 mt-0.5">{e.platform} · {e.content_type}</div>
-                    </div>
-                  ))}
-                  {dayEvents.map(ev => (
-                    <div
-                      key={ev.id}
-                      className="w-full px-2 py-1 rounded leading-tight"
-                      style={{ backgroundColor: EVENT_BG, color: '#fff' }}
-                    >
-                      <div className="text-[10px] font-medium truncate">{ev.title}</div>
-                      {ev.location && <div className="text-[8px] opacity-75 mt-0.5 truncate">📍 {ev.location}</div>}
-                    </div>
-                  ))}
-                  <div
-                    className="mt-auto text-[8px] tracking-[0.15em] text-[#731515]/30 flex items-center gap-1"
-                    onClick={ev => { ev.stopPropagation(); onDayClick(dayStr); }}
-                  >
-                    <Plus size={8} /> NUOVO
-                  </div>
+                  {c}
                 </button>
               );
             })}
           </div>
-        </div>
-      )}
+        </Field>
 
-      {/* Day popup */}
-      <AnimatePresence>
-        {selectedDay && (selectedEntries.length > 0 || selectedEvents.length > 0) && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-            transition={{ duration: 0.2 }}
-            className="bg-white border border-[#eddada] rounded-xl overflow-hidden shadow-md"
-          >
-            <div className="flex items-center justify-between px-5 py-3 bg-[#fdf6f6] border-b border-[#eddada]">
-              <div className="text-[9px] tracking-[0.35em] text-[#731515]">
-                {selectedDay.split('-').reverse().join('/')}
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => onDayClick(selectedDay)}
-                  className="text-[8px] tracking-[0.2em] text-[#731515] hover:text-[#9b2323] transition-colors flex items-center gap-1"
-                  style={{ fontFamily: 'var(--font-nunito)' }}
-                >
-                  <Plus size={9} /> NUOVA
-                </button>
-                <button onClick={() => setSelectedDay(null)} className="text-[#7a4a4a]/40 hover:text-[#731515] transition-colors">
-                  <X size={13} />
-                </button>
-              </div>
-            </div>
-            <div className="divide-y divide-[#eddada]">
-              {selectedEvents.map(ev => (
-                <div key={ev.id} className="flex items-center gap-3 px-4 py-3">
-                  {/* Event dot */}
-                  <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: EVENT_BG }} />
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field label="Data">
+            <TextInput type="date" value={form.date} onChange={(e) => set('date', e.target.value)} />
+          </Field>
 
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[12px] font-medium leading-tight text-[#1a0505]" style={{ fontFamily: 'var(--font-nunito)' }}>
-                      {ev.title}
-                    </div>
-                    <div className="text-[10px] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
-                      Evento
-                      {ev.location && ` · 📍 ${ev.location}`}
-                      {ev.time && ` · 🕐 ${ev.time}`}
-                    </div>
-                  </div>
-                </div>
+          <Field label="Responsabile" hint="— opzionale">
+            <Select value={form.assigned_to} onChange={(e) => set('assigned_to', e.target.value)}>
+              <option value="">Nessuno</option>
+              {members.map((m) => (
+                <option key={m.email} value={m.name}>
+                  {m.name}
+                </option>
               ))}
-              {selectedEntries.map(e => (
-                <div key={e.id} className="flex items-center gap-3 px-4 py-3 hover:bg-[#fdf6f6] transition-colors">
-                  {/* Publish toggle */}
-                  <PublishBtn entry={e} onToggle={onToggleStatus} />
-
-                  {/* Platform dot */}
-                  <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: PLATFORM_COLOR[e.platform] ?? '#7a4a4a' }} />
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0 cursor-pointer" onClick={() => onEntryClick(e)}>
-                    <div className={`text-[12px] font-medium leading-tight ${e.status === 'published' ? 'line-through text-[#7a4a4a]/50' : 'text-[#1a0505]'}`} style={{ fontFamily: 'var(--font-nunito)' }}>
-                      {e.title}
-                    </div>
-                    <div className="text-[10px] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
-                      {e.platform} · {e.content_type}
-                      {e.assigned_to && ` · ${e.assigned_to}`}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Legend */}
-      <div className="flex flex-wrap items-center gap-4 px-1" style={{ fontFamily: 'var(--font-nunito)' }}>
-        <span className="text-[9px] text-[#7a4a4a]/40 tracking-[0.2em]">PIATTAFORME</span>
-        {PLATFORMS.filter(p => p !== 'Altro').map(p => (
-          <div key={p} className="flex items-center gap-1.5 text-[9px] text-[#7a4a4a]">
-            <span className="w-2 h-2 rounded-sm" style={{ backgroundColor: PLATFORM_COLOR[p] }} />
-            {p}
-          </div>
-        ))}
-        <span className="text-[9px] text-[#7a4a4a]/40 tracking-[0.2em] ml-2">ALTRO</span>
-        <div className="flex items-center gap-1.5 text-[9px] text-[#7a4a4a]">
-          <span className="w-2 h-2 rounded-sm" style={{ backgroundColor: EVENT_BG }} />
-          Eventi
+              {legacyName && <option value={legacyName}>{legacyName}</option>}
+            </Select>
+          </Field>
         </div>
-      </div>
-    </div>
-  );
-}
 
-/* ─────────────────────────────────────────────
-   Shared entry row (used in both main list and published accordion)
-───────────────────────────────────────────── */
-function EntryRow({
-  entry,
-  index,
-  onEdit,
-  onDelete,
-  onToggleStatus,
-}: {
-  entry:          PedEntry;
-  index:          number;
-  onEdit:         (e: PedEntry) => void;
-  onDelete:       (id: string) => void;
-  onToggleStatus: (id: string, next: PedStatus) => void;
-}) {
-  const [, em, ed] = entry.date.slice(0, 10).split('-');
-  const published  = entry.status === 'published';
-  return (
-    <div
-      className={`flex items-center gap-3 px-4 py-4 transition-colors hover:bg-[#fdf6f6] ${index > 0 ? 'border-t border-[#eddada]' : ''}`}
-    >
-      <PublishBtn entry={entry} onToggle={onToggleStatus} />
+        <Field label="Descrizione" hint="— opzionale">
+          <TextArea
+            rows={3}
+            value={form.description}
+            onChange={(e) => set('description', e.target.value)}
+            placeholder="Copy, concept, riferimenti…"
+          />
+        </Field>
 
-      <div className="shrink-0 w-9 text-center">
-        <div className={`text-lg font-light leading-none ${published ? 'text-[#7a4a4a]/40' : 'text-[#1a0505]'}`} style={{ fontFamily: 'var(--font-syne)' }}>{ed}</div>
-        <div className="text-[9px] text-[#7a4a4a]/40 tracking-[0.1em]">{MONTHS_IT[parseInt(em) - 1].slice(0, 3).toUpperCase()}</div>
-      </div>
+        <Field label="Note interne" hint="— opzionale">
+          <TextArea
+            rows={2}
+            value={form.notes}
+            onChange={(e) => set('notes', e.target.value)}
+            placeholder="Promemoria per il team…"
+          />
+        </Field>
 
-      <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: PLATFORM_COLOR[entry.platform] ?? '#7a4a4a', opacity: published ? 0.4 : 1 }} />
-
-      <div className="flex-1 min-w-0">
-        <div className={`text-[13px] font-medium leading-tight ${published ? 'line-through text-[#7a4a4a]/40' : 'text-[#1a0505]'}`} style={{ fontFamily: 'var(--font-nunito)' }}>
-          {entry.title}
-        </div>
-        <div className="flex flex-wrap items-center gap-2 mt-1">
-          <span className="text-[9px] tracking-[0.1em] px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: PLATFORM_COLOR[entry.platform] ?? '#7a4a4a', opacity: published ? 0.5 : 1, fontFamily: 'var(--font-nunito)' }}>
-            {entry.platform}
-          </span>
-          <span className="text-[9px] tracking-[0.1em] px-2 py-0.5 rounded-full bg-[#fdf6f6] text-[#7a4a4a] border border-[#eddada]" style={{ fontFamily: 'var(--font-nunito)' }}>
-            {entry.content_type}
-          </span>
-        </div>
-        {entry.description && (
-          <p className={`mt-1 text-[11px] leading-relaxed line-clamp-1 ${published ? 'text-[#7a4a4a]/30' : 'text-[#7a4a4a]/60'}`} style={{ fontFamily: 'var(--font-nunito)' }}>{entry.description}</p>
-        )}
-        {entry.assigned_to && (
-          <p className="mt-0.5 text-[10px] text-[#7a4a4a]/40" style={{ fontFamily: 'var(--font-nunito)' }}>👤 {entry.assigned_to}</p>
-        )}
-      </div>
-
-      <div className="flex items-center gap-1 shrink-0">
-        <button onClick={() => onEdit(entry)} className="p-1.5 rounded-lg hover:bg-[#fdf6f6] text-[#7a4a4a]/30 hover:text-[#731515] transition-colors">
-          <Pencil size={13} />
-        </button>
-        <button onClick={() => onDelete(entry.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-[#7a4a4a]/30 hover:text-red-600 transition-colors">
-          <Trash2 size={13} />
-        </button>
-      </div>
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────────
-   List View
-───────────────────────────────────────────── */
-function quarterKey(dateStr: string): string {
-  const [y, m] = dateStr.slice(0, 7).split('-');
-  const q = Math.ceil(parseInt(m) / 3);
-  return `${y}-Q${q}`;
-}
-
-function quarterLabel(key: string): string {
-  const [y, q] = key.split('-');
-  return `${q} ${y}`;
-}
-
-function quarterSortKey(key: string): string {
-  // "2026-Q2" → sort descending (newest first)
-  const [y, q] = key.split('-');
-  return `${y}-${q}`;
-}
-
-function PedList({
-  entries,
-  onEdit,
-  onDelete,
-  onToggleStatus,
-}: {
-  entries:        PedEntry[];
-  onEdit:         (e: PedEntry) => void;
-  onDelete:       (id: string) => void;
-  onToggleStatus: (id: string, next: PedStatus) => void;
-}) {
-  const [platformFilter,   setPlatformFilter]   = useState('');
-  const [publishedOpen,    setPublishedOpen]    = useState(false);
-  const [openQuarters,     setOpenQuarters]     = useState<Set<string>>(new Set());
-
-  // Split planned vs published
-  const planned   = entries.filter(e => e.status === 'planned'   && (!platformFilter || e.platform === platformFilter));
-  const published = entries.filter(e => e.status === 'published' && (!platformFilter || e.platform === platformFilter));
-
-  // Group planned by month
-  const plannedGroups: Record<string, PedEntry[]> = {};
-  for (const e of planned) {
-    const key = e.date.slice(0, 7);
-    if (!plannedGroups[key]) plannedGroups[key] = [];
-    plannedGroups[key].push(e);
-  }
-  const plannedMonths = Object.keys(plannedGroups).sort();
-
-  // Group published by quarter
-  const pubQuarters: Record<string, PedEntry[]> = {};
-  for (const e of published) {
-    const key = quarterKey(e.date);
-    if (!pubQuarters[key]) pubQuarters[key] = [];
-    pubQuarters[key].push(e);
-  }
-  const sortedQuarters = Object.keys(pubQuarters).sort((a, b) => quarterSortKey(b).localeCompare(quarterSortKey(a)));
-
-  function toggleQuarter(key: string) {
-    setOpenQuarters(prev => {
-      const next = new Set(prev);
-      next.has(key) ? next.delete(key) : next.add(key);
-      return next;
-    });
-  }
-
-  return (
-    <div className="space-y-4">
-      {/* Platform filter only */}
-      <div className="flex flex-wrap gap-2">
-        <select
-          className="bg-white border border-[#eddada] text-[#7a4a4a] text-[11px] px-3 py-1.5 rounded-lg focus:outline-none focus:border-[#731515]/50"
-          value={platformFilter}
-          onChange={e => setPlatformFilter(e.target.value)}
-          style={{ fontFamily: 'var(--font-nunito)' }}
-        >
-          <option value="">Tutte le piattaforme</option>
-          {PLATFORMS.map(p => <option key={p} value={p}>{p}</option>)}
-        </select>
-      </div>
-
-      {/* ── Planned list (main) ── */}
-      {planned.length === 0 ? (
-        <div className="bg-white border border-[#eddada] rounded-xl py-12 text-center">
-          <p className="text-[12px] text-[#7a4a4a]/40 italic" style={{ fontFamily: 'var(--font-nunito)' }}>
-            Nessun contenuto da pubblicare. Ottimo lavoro!
-          </p>
-        </div>
-      ) : (
-        plannedMonths.map(monthKey => {
-          const [y, m] = monthKey.split('-');
-          const label  = `${MONTHS_IT[parseInt(m) - 1]} ${y}`;
-          return (
-            <div key={monthKey}>
-              <div className="text-[9px] tracking-[0.4em] text-[#731515] mb-2 px-1">{label.toUpperCase()}</div>
-              <div className="bg-white border border-[#eddada] rounded-xl overflow-hidden">
-                {plannedGroups[monthKey].map((e, i) => (
-                  <EntryRow
-                    key={e.id}
-                    entry={e}
-                    index={i}
-                    onEdit={onEdit}
-                    onDelete={onDelete}
-                    onToggleStatus={onToggleStatus}
-                  />
-                ))}
-              </div>
-            </div>
-          );
-        })
-      )}
-
-      {/* ── Published accordion ── */}
-      {published.length > 0 && (
-        <div className="bg-white border border-[#eddada] rounded-xl overflow-hidden">
-          {/* Header */}
-          <button
-            onClick={() => setPublishedOpen(v => !v)}
-            className="w-full flex items-center justify-between px-5 py-4 hover:bg-[#fdf6f6] transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <CheckCircle2 size={15} className="text-emerald-500 shrink-0" />
-              <span className="text-[11px] font-medium text-[#1a0505]" style={{ fontFamily: 'var(--font-nunito)' }}>
-                Pubblicati
-              </span>
-              <span className="text-[10px] text-[#7a4a4a]/40 bg-[#fdf6f6] border border-[#eddada] px-2 py-0.5 rounded-full" style={{ fontFamily: 'var(--font-nunito)' }}>
-                {published.length}
-              </span>
-            </div>
-            <ChevronDown
-              size={14}
-              className={`text-[#7a4a4a]/40 transition-transform duration-200 ${publishedOpen ? 'rotate-180' : ''}`}
+        {!isEdit && (
+          <Field label="Allegato" hint="— opzionale, solo alla creazione">
+            <input
+              type="file"
+              accept="image/*,video/*,application/pdf"
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              className="w-full text-body text-on-paper-muted file:mr-3 file:min-h-[44px] file:rounded-full file:border-0 file:bg-accent file:px-4 file:text-fine file:font-medium file:text-paper"
             />
-          </button>
+          </Field>
+        )}
 
-          {/* Expandable body */}
-          <AnimatePresence initial={false}>
-            {publishedOpen && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-                className="overflow-hidden border-t border-[#eddada]"
-              >
-                <div className="divide-y divide-[#eddada]">
-                  {sortedQuarters.map(qKey => {
-                    const qEntries = pubQuarters[qKey];
-                    const isOpen   = openQuarters.has(qKey);
-                    return (
-                      <div key={qKey}>
-                        {/* Quarter sub-accordion header */}
-                        <button
-                          onClick={() => toggleQuarter(qKey)}
-                          className="w-full flex items-center justify-between px-5 py-3 hover:bg-[#fdf6f6] transition-colors"
-                        >
-                          <div className="flex items-center gap-3">
-                            <span className="text-[10px] font-medium tracking-[0.2em] text-[#7a4a4a]" style={{ fontFamily: 'var(--font-nunito)' }}>
-                              {quarterLabel(qKey).toUpperCase()}
-                            </span>
-                            <span className="text-[9px] text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full" style={{ fontFamily: 'var(--font-nunito)' }}>
-                              {qEntries.length} pubblicat{qEntries.length === 1 ? 'o' : 'i'}
-                            </span>
-                          </div>
-                          <ChevronDown
-                            size={12}
-                            className={`text-[#7a4a4a]/30 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
-                          />
-                        </button>
-
-                        {/* Quarter entries */}
-                        <AnimatePresence initial={false}>
-                          {isOpen && (
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: 'auto', opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                              className="overflow-hidden border-t border-[#eddada]/60"
-                            >
-                              {qEntries
-                                .sort((a, b) => b.date.localeCompare(a.date))
-                                .map((e, i) => (
-                                  <EntryRow
-                                    key={e.id}
-                                    entry={e}
-                                    index={i}
-                                    onEdit={onEdit}
-                                    onDelete={onDelete}
-                                    onToggleStatus={onToggleStatus}
-                                  />
-                                ))}
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    );
-                  })}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      )}
-    </div>
+        {error && <p className="text-fine font-medium text-accent">{error}</p>}
+      </div>
+    </Sheet>
   );
 }
 
 /* ─────────────────────────────────────────────
-   Main component
+   Manager
 ───────────────────────────────────────────── */
 export default function PedManager() {
-  const [entries,     setEntries]     = useState<PedEntry[]>([]);
-  const [events,      setEvents]      = useState<CalEvent[]>([]);
-  const [loading,     setLoading]     = useState(true);
-  const [tab,         setTab]         = useState<'calendar' | 'list'>('calendar');
-  const [showModal,   setShowModal]   = useState(false);
-  const [editTarget,  setEditTarget]  = useState<PedEntry | null>(null);
-  const [defaultDate, setDefaultDate] = useState<string | undefined>();
-  // EntryModal locks scroll on its own — only add back-close here.
-  useOverlayBackClose(showModal, () => { setShowModal(false); setEditTarget(null); });
-  const [token,       setToken]       = useState('');
+  const [entries, setEntries] = useState<PedEntry[]>([]);
+  const [events, setEvents] = useState<CalEvent[]>([]);
+  const [members, setMembers] = useState<TeamMember[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState('');
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.access_token) setToken(session.access_token);
-    });
-  }, []);
+  const [tab, setTab] = useState<'calendar' | 'list'>('calendar');
+  const [listFilter, setListFilter] = useState<'todo' | 'published' | 'all'>('todo');
+  const [detail, setDetail] = useState<PedEntry | null>(null);
+  const [formFor, setFormFor] = useState<{ edit?: PedEntry | null; date?: string } | null>(null);
+
+  // In the parent, not in the sheet: see the note in TaskBoard.
+  useOverlayBackClose(!!formFor, () => setFormFor(null));
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const tk  = session?.access_token ?? '';
-      const res = await fetch('/api/ped', { headers: { Authorization: `Bearer ${tk}` } });
-      const json = await res.json();
-      setEntries(json.entries ?? []);
-    } catch { /* silent */ }
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const tk = session?.access_token ?? '';
+      setToken(tk);
+      const [pedRes, evRes, memRes] = await Promise.all([
+        fetch('/api/ped', { headers: { Authorization: `Bearer ${tk}` } }),
+        fetch('/api/events/all'),
+        fetch('/api/team/members', { headers: { Authorization: `Bearer ${tk}` } }),
+      ]);
+      const ped = await pedRes.json().catch(() => ({}));
+      setEntries(ped.entries ?? []);
+      if (evRes.ok) {
+        const j = await evRes.json().catch(() => ({}));
+        if (Array.isArray(j.events)) setEvents(j.events);
+      }
+      if (memRes.ok) {
+        const j = await memRes.json().catch(() => ({}));
+        if (Array.isArray(j.members)) setMembers(j.members);
+      }
+    } catch {
+      /* silent */
+    }
     setLoading(false);
   }, []);
 
-  const loadEvents = useCallback(async () => {
-    try {
-      const res = await fetch('/api/events/all');
-      if (!res.ok) return;
-      const json = await res.json();
-      if (Array.isArray(json.events)) setEvents(json.events as CalEvent[]);
-    } catch { /* silent */ }
-  }, []);
+  useEffect(() => {
+    load();
+  }, [load]);
 
-  useEffect(() => { load(); loadEvents(); }, [load, loadEvents]);
-
-  function openCreate(date?: string) {
-    setEditTarget(null);
-    setDefaultDate(date);
-    setShowModal(true);
-  }
-
-  function openEdit(entry: PedEntry) {
-    setEditTarget(entry);
-    setDefaultDate(undefined);
-    setShowModal(true);
-  }
-
-  function handleSaved(entry: PedEntry) {
-    setEntries(prev => {
-      const idx = prev.findIndex(e => e.id === entry.id);
-      if (idx >= 0) {
-        const next = [...prev];
-        next[idx]  = entry;
-        return next;
-      }
-      return [...prev, entry].sort((a, b) => a.date.localeCompare(b.date));
-    });
-    setShowModal(false);
-    setEditTarget(null);
-  }
-
-  async function handleToggleStatus(id: string, next: PedStatus) {
-    // Optimistic update
-    setEntries(prev => prev.map(e => e.id === id ? { ...e, status: next } : e));
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const tk  = session?.access_token ?? '';
-      const res = await fetch(`/api/ped/${id}`, {
-        method:  'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tk}` },
-        body:    JSON.stringify({ status: next }),
+  /* ── Mutations ── */
+  const toggle = useCallback(
+    async (entry: PedEntry) => {
+      const next: PedStatus = entry.status === 'published' ? 'planned' : 'published';
+      setEntries((prev) => prev.map((e) => (e.id === entry.id ? { ...e, status: next } : e)));
+      setDetail((d) => (d && d.id === entry.id ? { ...d, status: next } : d));
+      const res = await fetch(`/api/ped/${entry.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ status: next }),
       });
       if (!res.ok) {
-        // Rollback
-        const prev: PedStatus = next === 'published' ? 'planned' : 'published';
-        setEntries(p => p.map(e => e.id === id ? { ...e, status: prev } : e));
+        setEntries((prev) =>
+          prev.map((e) => (e.id === entry.id ? { ...e, status: entry.status } : e)),
+        );
+        setDetail((d) => (d && d.id === entry.id ? { ...d, status: entry.status } : d));
       }
-    } catch {
-      const prev: PedStatus = next === 'published' ? 'planned' : 'published';
-      setEntries(p => p.map(e => e.id === id ? { ...e, status: prev } : e));
-    }
+    },
+    [token],
+  );
+
+  const remove = useCallback(
+    async (entry: PedEntry) => {
+      const res = await fetch(`/api/ped/${entry.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        setEntries((prev) => prev.filter((e) => e.id !== entry.id));
+        setDetail(null);
+      }
+    },
+    [token],
+  );
+
+  function handleSaved(entry: PedEntry) {
+    setEntries((prev) => {
+      const i = prev.findIndex((e) => e.id === entry.id);
+      if (i >= 0) {
+        const next = [...prev];
+        next[i] = entry;
+        return next;
+      }
+      return [...prev, entry];
+    });
+    setFormFor(null);
+    setDetail((d) => (d && d.id === entry.id ? entry : d));
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm('Eliminare questa entry?')) return;
-    const { data: { session } } = await supabase.auth.getSession();
-    const tk  = session?.access_token ?? '';
-    const res = await fetch(`/api/ped/${id}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${tk}` },
-    });
-    if (res.ok) setEntries(prev => prev.filter(e => e.id !== id));
-  }
+  /* ── Calendar: one source per platform in use, plus the events ── */
+  const sources = useMemo<CalendarSource[]>(() => {
+    const used = PLATFORMS.filter((p) => entries.some((e) => e.platform === p));
+    const list: CalendarSource[] = used.map((p) => ({
+      key: p,
+      label: p,
+      color: colorOfPlatform(p),
+    }));
+    if (events.length) list.push({ key: EVENTS_SOURCE, label: 'Eventi VIVO', color: '#A3561A' });
+    return list;
+  }, [entries, events]);
+
+  const calendarItems = useMemo<CalendarItem[]>(() => {
+    const out: CalendarItem[] = entries.map((e) => ({
+      id: `ped-${e.id}`,
+      date: e.date.slice(0, 10),
+      title: e.title,
+      source: PLATFORMS.includes(e.platform) ? e.platform : 'Altro',
+      detail: [e.content_type, e.assigned_to].filter(Boolean).join(' · ') || null,
+      done: e.status === 'published',
+    }));
+    for (const ev of events) {
+      if (!ev.date) continue;
+      out.push({
+        id: `event-${ev.id}`,
+        date: ev.date.slice(0, 10),
+        time: ev.time,
+        title: ev.title,
+        source: EVENTS_SOURCE,
+        detail: ev.location ?? null,
+      });
+    }
+    return out;
+  }, [entries, events]);
+
+  /* ── List: newest month first, and inside it by date ── */
+  const months = useMemo(() => {
+    const kept = entries.filter((e) =>
+      listFilter === 'all'
+        ? true
+        : listFilter === 'published'
+          ? e.status === 'published'
+          : e.status !== 'published',
+    );
+    const map: Record<string, PedEntry[]> = {};
+    for (const e of kept) {
+      const key = e.date.slice(0, 7);
+      (map[key] ??= []).push(e);
+    }
+    return Object.entries(map)
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .map(([key, list]) => ({
+        key,
+        label: monthLabel(`${key}-01`),
+        list: list.sort((a, b) => a.date.localeCompare(b.date)),
+      }));
+  }, [entries, listFilter]);
+
+  const todoCount = entries.filter((e) => e.status !== 'published').length;
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Header */}
-      <div className="flex items-start justify-between flex-wrap gap-3">
-        <div>
-          <div className="text-[9px] tracking-[0.42em] text-[#731515] mb-1">ADMIN · SOCIAL</div>
-          <h2 className="text-xl font-light text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>Piano Editoriale</h2>
-        </div>
-        <button
-          onClick={() => openCreate()}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-[#731515] text-white text-[10px] tracking-[0.25em] rounded-lg hover:bg-[#9b2323] transition-colors"
-          style={{ fontFamily: 'var(--font-nunito)' }}
-        >
-          <Plus size={11} />
-          NUOVA ENTRY
-        </button>
-      </div>
+    <div>
+      <PageHead
+        title="Piano editoriale"
+        subtitle="Cosa esce, dove e quando — accanto agli eventi del club."
+        action={<NewButton label="Nuovo contenuto" onClick={() => setFormFor({})} />}
+      />
 
-      {/* Tabs */}
-      <div className="flex gap-1 bg-[#fdf6f6] border border-[#eddada] rounded-xl p-1 w-fit">
-        {([
-          { id: 'calendar', label: 'Calendario', Icon: CalendarDays },
-          { id: 'list',     label: 'Lista',       Icon: List         },
-        ] as { id: 'calendar' | 'list'; label: string; Icon: React.FC<{ size?: number }> }[]).map(t => (
+      <div className="mb-5 flex rounded-full border border-rule-paper p-1 lg:w-fit">
+        {(
+          [
+            { id: 'calendar', label: 'Calendario', Icon: CalendarIcon },
+            { id: 'list', label: 'Elenco', Icon: List },
+          ] as const
+        ).map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`flex items-center gap-2 px-5 py-2 text-[10px] tracking-[0.22em] rounded-lg transition-all duration-200 ${
-              tab === t.id ? 'bg-[#731515] text-white shadow-sm' : 'text-[#7a4a4a] hover:text-[#731515]'
+            aria-pressed={tab === t.id}
+            className={`inline-flex min-h-[46px] flex-1 items-center justify-center gap-2 rounded-full text-fine font-medium transition-colors lg:flex-none lg:px-8 ${
+              tab === t.id ? 'bg-accent text-paper' : 'text-on-paper-muted hover:text-on-paper'
             }`}
-            style={{ fontFamily: 'var(--font-nunito)' }}
           >
-            <t.Icon size={12} />
-            {t.label.toUpperCase()}
+            <t.Icon size={16} strokeWidth={1.8} />
+            {t.label}
           </button>
         ))}
       </div>
 
-      {/* Content */}
       {loading ? (
-        <div className="flex justify-center py-16">
-          <div className="w-6 h-6 rounded-full border-2 border-[#731515] border-t-transparent animate-spin" />
+        <div className="flex justify-center py-20">
+          <span className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
         </div>
       ) : tab === 'calendar' ? (
-        <PedCalendar
-          entries={entries}
-          events={events}
-          onDayClick={openCreate}
-          onEntryClick={openEdit}
-          onToggleStatus={handleToggleStatus}
+        <Calendar
+          items={calendarItems}
+          sources={sources}
+          onItemClick={(item) => {
+            const e = entries.find((x) => `ped-${x.id}` === item.id);
+            if (e) setDetail(e);
+          }}
+          onDayAdd={(date) => setFormFor({ date })}
+          addLabel="Contenuto"
+          emptyDayLabel="Niente in programma questo giorno."
         />
       ) : (
-        <PedList
-          entries={entries}
-          onEdit={openEdit}
-          onDelete={handleDelete}
-          onToggleStatus={handleToggleStatus}
-        />
+        <div className="flex flex-col gap-7">
+          <div className="flex rounded-full border border-rule-paper p-1 lg:w-fit">
+            {(
+              [
+                { id: 'todo', label: `Da pubblicare${todoCount ? ` · ${todoCount}` : ''}` },
+                { id: 'published', label: 'Pubblicati' },
+                { id: 'all', label: 'Tutti' },
+              ] as const
+            ).map((f) => (
+              <button
+                key={f.id}
+                onClick={() => setListFilter(f.id)}
+                aria-pressed={listFilter === f.id}
+                className={`min-h-[44px] flex-1 rounded-full px-3 text-fine font-medium transition-colors lg:flex-none lg:px-7 ${
+                  listFilter === f.id ? 'bg-paper-soft text-on-paper' : 'text-on-paper-muted'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+          {months.length === 0 ? (
+            <EmptyState
+              title="Niente da mostrare"
+              body={
+                listFilter === 'todo'
+                  ? 'Nessun contenuto in attesa di pubblicazione.'
+                  : 'Aggiungi un contenuto e comparirà qui, raggruppato per mese.'
+              }
+              action={<NewButton label="Nuovo contenuto" onClick={() => setFormFor({})} />}
+            />
+          ) : (
+            months.map((m) => (
+              <section key={m.key}>
+                <h3 className="mb-2.5 flex items-baseline gap-2 text-subtitle font-medium">
+                  {m.label}
+                  <span className="text-fine font-normal text-on-paper-muted">{m.list.length}</span>
+                </h3>
+                <div className="flex flex-col gap-1.5">
+                  {m.list.map((e) => (
+                    <EntryRow key={e.id} entry={e} onToggle={toggle} onOpen={setDetail} />
+                  ))}
+                </div>
+              </section>
+            ))
+          )}
+        </div>
       )}
 
-      {/* Modal */}
-      <AnimatePresence>
-        {showModal && (
-          <EntryModal
-            key={editTarget?.id ?? 'new'}
-            token={token}
-            editTarget={editTarget}
-            defaultDate={defaultDate}
-            onClose={() => { setShowModal(false); setEditTarget(null); }}
-            onSaved={handleSaved}
-          />
-        )}
-      </AnimatePresence>
+      <EntryDetail
+        entry={detail}
+        onClose={() => setDetail(null)}
+        onEdit={(e) => {
+          setDetail(null);
+          setFormFor({ edit: e });
+        }}
+        onDelete={remove}
+        onToggle={toggle}
+      />
+
+      {formFor && (
+        <EntryForm
+          token={token}
+          members={members}
+          editTarget={formFor.edit}
+          defaultDate={formFor.date}
+          onClose={() => setFormFor(null)}
+          onSaved={handleSaved}
+        />
+      )}
     </div>
   );
 }
