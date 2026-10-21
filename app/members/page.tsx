@@ -755,6 +755,26 @@ function MembersPageInner() {
     });
   }, []);
 
+  /**
+   * Tiene il token aggiornato per tutta la durata della sessione.
+   *
+   * `getSession()` lo legge una volta sola, al montaggio. I token di
+   * accesso scadono dopo un'ora: il client Supabase ne ottiene uno
+   * nuovo da solo, ma questa pagina continuava a passare ai componenti
+   * quello vecchio. Dopo un'ora con l'area aperta, ogni chiamata fatta
+   * con quel token tornava 401 — ed era il motivo per cui Documenti
+   * diceva "non autorizzato" pur essendo loggati.
+   *
+   * Le sezioni che chiedono la sessione da sé non se ne accorgevano;
+   * le sei che ricevono il token da qui sì.
+   */
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setToken(session?.access_token ?? '');
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
   // Re-fetch permissions when the window regains focus so that changes made
   // by a superAdmin in Team Management are picked up without a full page reload.
   useEffect(() => {

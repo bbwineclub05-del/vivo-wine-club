@@ -755,6 +755,7 @@ export default function DocumentManager({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const [liveToken, setLiveToken] = useState(token);
   const [openFolder, setOpenFolder] = useState<string | null>(null);
   const [query, setQuery] = useState('');
 
@@ -771,7 +772,14 @@ export default function DocumentManager({
     setLoading(true);
     setError('');
     try {
-      const headers = { Authorization: `Bearer ${token}` };
+      // Il token arriva come prop, ma lo si rilegge dalla sessione:
+      // quello passato è stato letto al montaggio della pagina e i
+      // token di accesso scadono dopo un'ora. Il client Supabase ne
+      // tiene uno valido, quindi conviene chiederlo a lui.
+      const { data: { session } } = await supabase.auth.getSession();
+      const live = session?.access_token || token;
+      setLiveToken(live);
+      const headers = { Authorization: `Bearer ${live}` };
       const [docsRes, foldersRes] = await Promise.all([
         fetch('/api/documents', { headers }),
         fetch('/api/documents/folders', { headers }),
@@ -796,9 +804,11 @@ export default function DocumentManager({
     }
   }, [token]);
 
+  // Si carica comunque: la sessione la legge `load` da sé, quindi non
+  // dipende dal fatto che il prop sia già arrivato.
   useEffect(() => {
-    if (token) load();
-  }, [token, load]);
+    load();
+  }, [load]);
 
   /* ── Conteggi sempre derivati dai documenti, mai dal server ── */
   const foldersWithCounts = useMemo(
@@ -838,7 +848,7 @@ export default function DocumentManager({
   async function deleteFolder(f: FolderRow) {
     const res = await fetch(`/api/documents/folders/${f.id}`, {
       method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${liveToken}` },
     });
     if (res.ok) {
       setFolders((p) => p.filter((x) => x.id !== f.id));
@@ -1017,7 +1027,7 @@ export default function DocumentManager({
         doc={detail}
         folders={foldersWithCounts}
         isAdmin={isAdmin}
-        token={token}
+        token={liveToken}
         onClose={() => setDetail(null)}
         onChanged={(d) => {
           setDocs((p) => p.map((x) => (x.id === d.id ? d : x)));
@@ -1034,7 +1044,7 @@ export default function DocumentManager({
           initialFiles={uploadFiles}
           folders={foldersWithCounts}
           defaultFolder={openFolder ?? ''}
-          token={token}
+          token={liveToken}
           onClose={() => setUploadFiles(null)}
           onUploaded={(d) => setDocs((p) => [d, ...p])}
         />
@@ -1043,7 +1053,7 @@ export default function DocumentManager({
       {folderSheet && (
         <FolderSheet
           target={folderSheet}
-          token={token}
+          token={liveToken}
           onClose={() => setFolderSheet(null)}
           onSaved={(f) => {
             setFolders((p) => {
