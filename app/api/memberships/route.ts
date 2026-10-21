@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { requireAdminOrStaff } from '@/lib/auth-guard';
 import { fetchAllRows } from '@/lib/crm';
 import { generateMemberId, newMembershipFor, type Membership } from '@/lib/membership';
+import { PRIVACY_POLICY_VERSION } from '@/lib/consent';
 
 /**
  * Le tessere.
@@ -100,7 +101,13 @@ export async function POST(request: Request) {
           standard_price_cents: plan.standard_price_cents,
           offer_price_cents: plan.offer_price_cents,
           offer_expires_at: plan.offer_expires_at,
-          notes: String(body.city ?? '').trim() || null,
+          phone: String(body.phone ?? '').trim() || null,
+          city: String(body.city ?? '').trim() || null,
+          date_of_birth: String(body.date_of_birth ?? '').trim() || null,
+          source: String(body.source ?? '').trim() || null,
+          consent_marketing: body.consent_marketing === true,
+          consent_privacy_accepted_at: new Date().toISOString(),
+          consent_privacy_version: PRIVACY_POLICY_VERSION,
         })
         .select()
         .single();
