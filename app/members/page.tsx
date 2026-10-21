@@ -894,11 +894,10 @@ function MembersPageInner() {
                 {activeSection === 'wine-assistant' && <WineAssistant />}
 
                 {(admin || isStaff) && activeSection === 'tasks' && (
+                  // TaskBoard porta la propria intestazione: un SectionHeader
+                  // qui sopra stamperebbe il titolo due volte.
                   canAccess('tasks') ? (
-                    <>
-                      <SectionHeader title="Task" subtitle="Assegna e gestisci task tra i founder." />
-                      <TaskBoard currentEmail={user.email ?? ''} />
-                    </>
+                    <TaskBoard currentEmail={user.email ?? ''} />
                   ) : <UnauthorisedSection title="Task" />
                 )}
 
@@ -944,19 +943,13 @@ function MembersPageInner() {
                   canAccess('crm') ? <CrmHub /> : <UnauthorisedSection title="CRM" />
                 )}
 
+                {/* FinanceManager porta la propria intestazione. */}
                 {financeUser && activeSection === 'finance' && (
-                  <>
-                    <SectionHeader title="Transazioni" subtitle="Gestione contabile — revenues, costi e saldo di cassa." />
-                    <FinanceManager />
-                  </>
+                  <FinanceManager isAdmin={admin} />
                 )}
 
-                {financeUser && activeSection === 'bilancio' && (
-                  <>
-                    <SectionHeader title="Bilancio" subtitle="Analisi dei flussi finanziari per periodo — mensile, trimestrale, annuale." />
-                    <BilancioManager />
-                  </>
-                )}
+                {/* BilancioManager porta la propria intestazione. */}
+                {financeUser && activeSection === 'bilancio' && <BilancioManager />}
 
                 {(admin || isStaff) && activeSection === 'media' && (
                   canAccess('media') ? (
@@ -994,12 +987,8 @@ function MembersPageInner() {
                   </>
                 )}
 
-                {(admin || isStaff) && activeSection === 'ped' && (
-                  <>
-                    <SectionHeader title="Piano Editoriale" subtitle="Pianificazione e tracciamento dei contenuti social e digitali." />
-                    <PedManager />
-                  </>
-                )}
+                {/* Come per Task: PedManager ha già la sua intestazione. */}
+                {(admin || isStaff) && activeSection === 'ped' && <PedManager />}
 
                 {(admin || isStaff) && activeSection === 'upsell' && (
                   canAccess('upsell') ? <UpsellManager /> : <UnauthorisedSection title="Upsell" />
