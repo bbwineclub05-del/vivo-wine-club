@@ -14,7 +14,7 @@ import {
 import EventScanner from '@/components/EventScanner';
 import EventGuestPanel from '@/components/EventGuestPanel';
 import EventPartnerPanel from '@/components/EventPartnerPanel';
-import EventEmailModalAdvanced, { type CustomCategoryInfo } from '@/components/EventEmailModalAdvanced';
+import EventInvite, { type CustomCategoryInfo } from '@/components/admin/EventInvite';
 import { useMobileOverlay, useOverlayBackClose } from '@/lib/useMobileOverlay';
 
 /* ─────────────────────────────────────────────
@@ -833,7 +833,7 @@ export default function EventManager() {
   const [accessToken,     setAccessToken]     = useState<string | null>(null);
 
   useMobileOverlay(!!scannerEvent, () => setScannerEvent(null));
-  // EventEmailModalAdvanced already locks scroll on its own — only add back-close here.
+  // EventInvite blocca lo scorrimento da sé: qui serve solo la chiusura col tasto indietro.
   useOverlayBackClose(!!inviteEvent, () => setInviteEvent(null));
   useMobileOverlay(!!guestListEventId, () => setGuestListEventId(null));
   const [customCats,      setCustomCats]      = useState<CustomCategoryInfo[]>([]);
@@ -1049,10 +1049,10 @@ export default function EventManager() {
         )}
       </AnimatePresence>
 
-      {/* Invite modal — shared EventEmailModalAdvanced with event pre-filled */}
+      {/* Invito, con l'evento già compilato. */}
       <AnimatePresence>
         {inviteEvent && accessToken && (
-          <EventEmailModalAdvanced
+          <EventInvite
             key="invite"
             accessToken={accessToken}
             customCategories={customCats}

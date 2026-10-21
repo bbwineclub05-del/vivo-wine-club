@@ -8,7 +8,7 @@ import MemberCRM from '@/components/MemberCRM';
 import CrmPersone from '@/components/CrmPersone';
 import { RecordTable } from '@/components/admin/RecordTable';
 import { SPONSORS, CANTINE, BORDEAUX, INFLUENCER, listaPersonalizzata } from '@/lib/crm-resources';
-import EventEmailModalAdvanced from '@/components/EventEmailModalAdvanced';
+import EventInvite from '@/components/admin/EventInvite';
 import { useMobileOverlay, useOverlayBackClose } from '@/lib/useMobileOverlay';
 import { ActionButton } from '@/components/admin/ui';
 
@@ -117,7 +117,7 @@ export default function CrmHub() {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [showEventModal,    setShowEventModal]    = useState(false);
   const [showAddCatModal,   setShowAddCatModal]   = useState(false);
-  // EventEmailModalAdvanced already locks scroll on its own — only add back-close.
+  // EventInvite blocca lo scorrimento da sé: qui solo la chiusura col tasto indietro.
   useOverlayBackClose(showEventModal, () => setShowEventModal(false));
   // AddCategoryModal has no scroll lock of its own — use the full treatment.
   useMobileOverlay(showAddCatModal, () => setShowAddCatModal(false));
@@ -295,7 +295,7 @@ export default function CrmHub() {
       {/* Modals */}
       <AnimatePresence>
         {showEventModal && (
-          <EventEmailModalAdvanced
+          <EventInvite
             key="event-modal"
             accessToken={accessToken}
             customCategories={customCats}

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import CrmPersone from '@/components/CrmPersone';
 import { RecordTable } from '@/components/admin/RecordTable';
 import { BORDEAUX, listaPersonalizzata } from '@/lib/crm-resources';
+import EventInvite from '@/components/admin/EventInvite';
 
 /**
  * Persone con una rubrica inventata, per giudicare il layout senza
@@ -75,6 +76,21 @@ function install() {
         ],
       });
     }
+    if (url.includes('/api/events/guest-counts')) {
+      return json({
+        events: [
+          { slug: 'bottenago-lake-garda-jul-2026', title: 'Bottenago Lake Garda', count: 538 },
+          { slug: 'prime-alture-sep-2026', title: 'Prime Alture', count: 394 },
+          { slug: 'vivo-wine-party-paris-oct-2026', title: 'VIVO Wine Party Paris', count: 118 },
+        ],
+      });
+    }
+    if (url.includes('/api/crm/members')) {
+      return json({ members: [
+        { email: 'membro1@esempio.it', name: 'Membro Uno' },
+        { email: 'membro2@esempio.it', name: 'Membro Due' },
+      ] });
+    }
     if (url.includes('/api/crm/bordeaux')) {
       return json({
         contacts: [
@@ -116,6 +132,27 @@ function install() {
   };
 }
 
+function Invito() {
+  const [aperto, setAperto] = useState(false);
+  return (
+    <div className="mt-16 border-t border-rule-paper pt-8">
+      <button
+        onClick={() => setAperto(true)}
+        className="min-h-[48px] rounded-full bg-accent px-5 text-fine font-medium text-paper"
+      >
+        Apri "Invita a un evento"
+      </button>
+      {aperto && (
+        <EventInvite
+          accessToken="anteprima"
+          customCategories={[{ id: 'cat1', name: 'General' }]}
+          onClose={() => setAperto(false)}
+        />
+      )}
+    </div>
+  );
+}
+
 export function MockCrm() {
   const [ready, setReady] = useState(false);
   if (!ready) {
@@ -129,6 +166,7 @@ export function MockCrm() {
       <RecordTable resource={BORDEAUX} />
       <hr className="my-16 border-rule-paper" />
       <RecordTable resource={listaPersonalizzata('cat1', 'General')} />
+      <Invito />
     </>
   );
 }
