@@ -10,7 +10,6 @@ import EstatesGrid from '@/components/EstatesGrid';
 import { Chapter } from '@/components/ui/Chapter';
 import { Section } from '@/components/ui/Section';
 import { SiteNav } from '@/components/ui/SiteNav';
-import CartDrawer from '@/components/CartDrawer';
 
 // Stays a client page: the region filter is read from `?region=`, which
 // the wine map links into.
@@ -58,7 +57,6 @@ export default function WineriesIndexPage() {
           <WineriesContent />
         </Suspense>
       </main>
-      <CartDrawer />
     </>
   );
 }

@@ -110,12 +110,14 @@ export default async function WineRegionPage({
 
         {/* ── Back link ── */}
         <div className="max-w-5xl mx-auto px-6 lg:px-10 pt-4">
+          {/* La mappa delle regioni non c'è più: si torna all'elenco
+              delle cantine, che ha il filtro per regione e i dati veri. */}
           <Link
-            href="/wine-map"
+            href="/wineries"
             className="group inline-flex items-center gap-2 text-[10px] tracking-[0.3em] text-[#7a4a4a] hover:text-[#731515] transition-colors duration-300"
           >
             <ArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform duration-300" />
-            WINE MAP
+            CANTINE
           </Link>
         </div>
 

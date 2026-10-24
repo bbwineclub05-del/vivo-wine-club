@@ -33,7 +33,15 @@ export async function PATCH(request: Request, { params }: Params) {
   try { body = await request.json(); }
   catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }
 
-  const allowed = ['name', 'logo_url', 'region', 'country', 'description', 'lat', 'lng', 'coords_precise', 'photos'] as const;
+  // Da quando la scheda pubblica legge il database e non più l'elenco
+  // scritto nel codice, anche questi due campi si modificano da qui.
+  const allowed = [
+    'name', 'logo_url', 'region', 'country', 'description',
+    'classification', 'short_description',
+    'lat', 'lng', 'coords_precise', 'photos', 'visit_date',
+    // I contatti: servono ai soci per prenotare una visita.
+    'website', 'phone', 'email', 'booking_url', 'address',
+  ] as const;
   const patch: Record<string, unknown> = {};
   for (const k of allowed) {
     if (k in body) patch[k] = body[k];
