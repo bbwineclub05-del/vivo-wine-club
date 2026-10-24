@@ -2,6 +2,7 @@
 
 import { useEffect, type ReactNode } from 'react';
 import { Plus, Search, X } from 'lucide-react';
+import { useOverlayBackClose } from '@/lib/useMobileOverlay';
 
 /**
  * The shared pieces every section of the reserved area is built from.
@@ -294,6 +295,10 @@ export function Sheet({
   children: ReactNode;
   footer?: ReactNode;
 }) {
+  // Il tasto indietro chiude il foglio in cima: la pila sta in un
+  // posto solo, invece che dentro ogni foglio.
+  useOverlayBackClose(open, onClose);
+
   useEffect(() => {
     if (!open) return;
     document.body.style.overflow = 'hidden';

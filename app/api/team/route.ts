@@ -2,12 +2,14 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { getAuthUser } from '@/lib/auth-guard';
 import { isAdminEmail, FOUNDERS } from '@/lib/admins';
+import { fullPermissions, normalizePermissions } from '@/lib/access';
 
-const DEFAULT_PERMISSIONS = {
-  tasks: true, events: true, news: true, crm: true,
-  media: true, scanner: true, analytics: true, pipeline: true,
-  merch: true, documents: true,
-};
+// Chi entra entra con tutto acceso, e poi si spegne quello che non
+// serve. Prima questa lista era scritta a mano con le chiavi di due
+// riorganizzazioni fa — news, media, pipeline — e non nominava né
+// Finance né PED né Membership: quelle sezioni restavano aperte a
+// chiunque perché nessuno le aveva mai scritte.
+const DEFAULT_PERMISSIONS = fullPermissions();
 
 /** Name lookup: founders first, then user_metadata, then email prefix. */
 const FOUNDER_NAME: Record<string, string> = Object.fromEntries(
@@ -113,6 +115,7 @@ export async function GET(request: Request) {
     const au = authByEmail.get(m.email as string);
     return {
       ...m,
+      permissions:    normalizePermissions(m.permissions as Record<string, boolean> | null),
       name:           m.name || resolveName(m.email as string, au?.user_metadata as Record<string, string> ?? null),
       email_confirmed: au?.email_confirmed_at != null,
       last_sign_in:    au?.last_sign_in_at ?? null,

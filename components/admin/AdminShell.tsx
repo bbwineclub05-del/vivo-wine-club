@@ -2,13 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  BarChart3, CalendarDays, CheckSquare, Database, FileText, FolderOpen,
+  BarChart3, CalendarDays, CheckSquare, ChevronLeft, Database, FileText, FolderOpen,
   Images, Inbox, LayoutGrid, Search, Settings, ShoppingBag,
   Tag, Users, UsersRound, Wallet, X,
 } from 'lucide-react';
 
 import {
-  barFor, beyondBarFor, mainFor, restFor, searchDestinations,
+  barFor, beyondBarFor, mainFor, searchDestinations, PROFILE_ITEMS,
   type AdminDestination, type AdminRole,
 } from '@/lib/admin-nav';
 
@@ -31,23 +31,41 @@ export interface AdminShellProps {
   userName?: string;
   /** Count on the Application tab, when there is something waiting. */
   pendingApplications?: number | null;
+  /**
+   * Quali destinazioni questa persona può aprire. Quelle che non può
+   * non compaiono: né nella barra, né in "Tutto", né nella ricerca.
+   */
+  can?: (id: string) => boolean;
   children: React.ReactNode;
 }
 
 export function AdminShell({
-  role, active, onNavigate, userName, pendingApplications, children,
+  role, active, onNavigate, userName, pendingApplications, can, children,
 }: AdminShellProps) {
-  const bar = useMemo(() => barFor(role), [role]);
-  const main = useMemo(() => mainFor(role), [role]);
-  const rest = useMemo(() => restFor(role), [role]);
-  const beyond = useMemo(() => beyondBarFor(role), [role]);
+  const bar = useMemo(() => barFor(role, can), [role, can]);
+  const main = useMemo(() => mainFor(role, can), [role, can]);
+  const beyond = useMemo(() => beyondBarFor(role, can), [role, can]);
 
   const [sheet, setSheet] = useState<null | 'more' | 'profile'>(null);
   const [query, setQuery] = useState('');
   const searchRef = useRef<HTMLInputElement>(null);
 
-  const results = useMemo(() => searchDestinations(role, query), [role, query]);
+  const results = useMemo(() => searchDestinations(role, query, can), [role, query, can]);
   const inBar = bar.some((d) => d.id === active);
+
+  /**
+   * La freccia indietro, e dove riporta.
+   *
+   * Esiste solo sul telefono, dove la colonna di sinistra non c'è: sul
+   * computer il menù è sempre lì accanto e una freccia sarebbe un
+   * secondo modo di fare la stessa cosa.
+   *
+   * Riporta al menù da cui si è arrivati — "Tutto" per le sezioni, il
+   * profilo per riepilogo e impostazioni — non a un'altra sezione: da
+   * una sottopagina si torna all'elenco, si sceglie, si entra.
+   */
+  const fromProfile = PROFILE_ITEMS.some((p) => p.id === active);
+  const showBack = !inBar && active !== 'overview';
 
   // The open sheet owns the viewport.
   useEffect(() => {
@@ -141,7 +159,19 @@ export function AdminShell({
       {/* ── Phone top bar ──────────────────────────────────────────
           Carries only where you are and who you are. Everything else
           lives in the thumb's reach at the bottom. */}
-      <header className="ds-on-ink sticky top-0 z-30 flex h-[60px] items-center gap-3 bg-ink px-4 text-on-ink lg:hidden">
+      <header className="ds-on-ink sticky top-0 z-30 flex h-[60px] items-center gap-2 bg-ink px-2 text-on-ink lg:hidden">
+        {showBack ? (
+          <button
+            onClick={() => setSheet(fromProfile ? 'profile' : 'more')}
+            aria-label="Indietro"
+            className="-ml-1 grid h-11 w-11 shrink-0 place-items-center rounded-full hover:bg-ink-soft"
+          >
+            <ChevronLeft size={24} strokeWidth={1.9} />
+          </button>
+        ) : (
+          <span className="w-2" />
+        )}
+
         <h1 className="ds-display flex-1 truncate text-[19px] tracking-[-0.02em]">{activeLabel}</h1>
 
         <button

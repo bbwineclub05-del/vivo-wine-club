@@ -31,6 +31,65 @@ export interface Entry {
   category: string | null;
 }
 
+/**
+ * Una riga del database, come la scrivono i due mondi.
+ *
+ * Il sito in produzione scrive ancora con lo schema vecchio — `type`,
+ * `assigned_to`, `reimbursed_to` — e non riempie le colonne nuove. Il
+ * registro quelle righe le scartava: diciassette movimenti per
+ * 1.548,57 €, fra cui un incasso in contanti di 100 €, non comparivano
+ * da nessuna parte e la cassa mostrata era sbagliata di conseguenza.
+ *
+ * Scartare in silenzio è la cosa peggiore che possa fare un registro:
+ * meglio leggere il dato dove si trova. Il nome scritto a mano diventa
+ * una persona passando dalla rubrica del team.
+ */
+export interface RawTransaction {
+  id: string;
+  date: string;
+  description: string | null;
+  amount: string | number | null;
+  entry_type: string | null;
+  member_email: string | null;
+  budget_category?: string | null;
+  /** Lo schema vecchio: 'cost' | 'revenue' | 'rimborso'. */
+  type?: string | null;
+  assigned_to?: string | null;
+  reimbursed_to?: string | null;
+}
+
+export function toEntry(
+  row: RawTransaction,
+  /** nome scritto a mano → email, dalla rubrica del team. */
+  emailByName?: Map<string, string>,
+): Entry {
+  const entry_type: EntryType =
+    (row.entry_type as EntryType | null) ??
+    (row.type === 'revenue'
+      ? 'income'
+      : row.type === 'rimborso'
+        ? 'reimbursement'
+        : 'expense');
+
+  let member_email = row.member_email;
+  if (!member_email && emailByName) {
+    const written = entry_type === 'reimbursement' ? row.reimbursed_to : row.assigned_to;
+    const key = (written ?? '').trim().toLowerCase();
+    // "Club" non è una persona: è il conto del club.
+    if (key && key !== 'club') member_email = emailByName.get(key) ?? null;
+  }
+
+  return {
+    id: row.id,
+    date: row.date,
+    description: row.description ?? '',
+    amount_cents: toCents(row.amount ?? 0) ?? 0,
+    entry_type,
+    member_email: member_email ?? null,
+    category: row.budget_category ?? null,
+  };
+}
+
 /* ── Le quattro righe possibili ───────────────────────────────────── */
 
 export const ENTRY_LABEL: Record<EntryType, string> = {

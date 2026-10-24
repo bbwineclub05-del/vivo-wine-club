@@ -51,8 +51,33 @@ export async function GET(request: Request) {
 
   if (txRes.error) return NextResponse.json({ error: txRes.error.message }, { status: 500 });
 
+  // Il sito in produzione scrive ancora con le colonne vecchie e non
+  // riempie `entry_type` né `member_email`. Quelle righe venivano
+  // scartate da chi legge — diciassette movimenti per 1.548,57 €, un
+  // incasso in contanti compreso — e la cassa risultava sbagliata.
+  // Qui il dato si ricava da dove sta, una volta sola, per tutti.
+  const emailByName = new Map<string, string>(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (memRes.data ?? []).map((m: any) => [String(m.name ?? '').trim().toLowerCase(), m.email]),
+  );
+  emailByName.set('pippo', 'filippo.lombardi890@gmail.com');
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const entries = (txRes.data ?? []).map((t: any) => {
+    const entry_type =
+      t.entry_type ??
+      (t.type === 'revenue' ? 'income' : t.type === 'rimborso' ? 'reimbursement' : 'expense');
+    let member_email = t.member_email ?? null;
+    if (!member_email) {
+      const written = entry_type === 'reimbursement' ? t.reimbursed_to : t.assigned_to;
+      const key = String(written ?? '').trim().toLowerCase();
+      if (key && key !== 'club') member_email = emailByName.get(key) ?? null;
+    }
+    return { ...t, entry_type, member_email };
+  });
+
   return NextResponse.json({
-    entries: txRes.data ?? [],
+    entries,
     categories: catRes.data ?? [],
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     members: (memRes.data ?? []).filter((m: any) => m.active !== false),

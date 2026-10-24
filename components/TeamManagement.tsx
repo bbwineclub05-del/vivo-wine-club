@@ -1,497 +1,501 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Plus, Trash2, ChevronDown, Shield, UserCheck, UserX,
-  ToggleLeft, ToggleRight, X, Loader2, Mail, Crown,
-} from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Search, Trash2, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { ADMIN_EMAILS, SUPER_ADMIN_EMAIL } from '@/lib/admins';
-import { useMobileOverlay } from '@/lib/useMobileOverlay';
+import { PERMISSION_KEYS, type PermissionKey } from '@/lib/access';
+import {
+  ActionButton, EmptyState, Field, NewButton, PageHead, Select, Sheet, StatusPill, TextInput,
+} from '@/components/admin/ui';
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+/**
+ * Chi fa parte del club, e cosa vede.
+ *
+ * Due cose non erano vere, prima.
+ *
+ * La prima: gli interruttori elencavano sezioni che non esistono più —
+ * News, Media, Pipeline — e non nominavano Finance, PED, Membership,
+ * Sconti. Quelle restavano aperte a chiunque, perché una chiave che
+ * nessuno ha mai scritto vale "permesso". Ora c'è un interruttore per
+ * ogni voce del menù, dodici, e spegnerlo fa sparire la voce: non si
+ * vede più, invece di vedersi e sbattere la porta dopo il clic.
+ *
+ * La seconda: "elimina" non eliminava. Toglieva la riga e lasciava
+ * l'account con la sua password, e alla ricarica successiva la
+ * sincronizzazione automatica rimetteva la persona nell'elenco. Ora se
+ * ne vanno riga, profilo, foto e credenziali.
+ */
 
-interface Permissions {
-  tasks:     boolean;
-  events:    boolean;
-  news:      boolean;
-  crm:       boolean;
-  media:     boolean;
-  scanner:   boolean;
-  analytics: boolean;
-  pipeline:  boolean;
-  merch:     boolean;
-  documents: boolean;
-}
-
-interface TeamMember {
-  id:              string;
-  email:           string;
-  name:            string;
-  role:            'admin' | 'staff';
-  permissions:     Permissions;
-  active:          boolean;
+interface Member {
+  id: string;
+  email: string;
+  name: string;
+  role: 'admin' | 'staff' | 'collaborator';
+  permissions: Record<string, boolean> | null;
+  active: boolean;
   email_confirmed: boolean;
-  last_sign_in:    string | null;
-  invited_at:      string | null;
-  created_at:      string;
+  last_sign_in: string | null;
 }
 
-const PERMISSION_LABELS: { key: keyof Permissions; label: string }[] = [
-  { key: 'tasks',     label: 'Task'                    },
-  { key: 'events',    label: 'Gestione Eventi'         },
-  { key: 'news',      label: 'Gestione News'           },
-  { key: 'crm',       label: 'CRM'                     },
-  { key: 'media',     label: 'Gestione Media'          },
-  { key: 'merch',     label: 'Gestione Merch & Sconti' },
-  { key: 'documents', label: 'Gestione Documenti'      },
-  { key: 'scanner',   label: 'Scanner'                 },
-  { key: 'analytics', label: 'Analytics'               },
-  { key: 'pipeline',  label: 'Pipeline Membership'     },
+/** Un interruttore per ogni posto in cui si può entrare. */
+const FEATURES: { key: PermissionKey; label: string; hint: string }[] = [
+  { key: 'events',     label: 'Eventi',     hint: 'Date, biglietti, liste' },
+  { key: 'merch',      label: 'Merch',      hint: 'Prodotti e ordini' },
+  { key: 'tasks',      label: 'Task',       hint: 'Cosa deve fare il team' },
+  { key: 'ped',        label: 'PED',        hint: 'Piano editoriale' },
+  { key: 'membership', label: 'Membership', hint: 'Tessere e candidature' },
+  { key: 'finance',    label: 'Finance',    hint: 'Transazioni, bilancio, preventivi' },
+  { key: 'documents',  label: 'Documenti',  hint: 'Archivio del club' },
+  { key: 'crm',        label: 'CRM',        hint: 'Rubrica e invii' },
+  { key: 'site',       label: 'Sito',       hint: 'News, media, mappa cantine' },
+  { key: 'offers',     label: 'Sconti',     hint: 'Codici e upsell' },
+  { key: 'analytics',  label: 'Analytics',  hint: 'I numeri del club' },
+  { key: 'scanner',    label: 'Scanner',    hint: 'Timbrare i biglietti in porta' },
 ];
 
-// ── Small helpers ─────────────────────────────────────────────────────────────
+const ROLE_LABEL: Record<Member['role'], string> = {
+  admin: 'Board',
+  staff: 'Staff',
+  collaborator: 'Collaboratore',
+};
 
-function Toggle({ on, onChange, disabled }: { on: boolean; onChange: (v: boolean) => void; disabled?: boolean }) {
+/** Assente vuol dire mai configurato, e mai configurato vuol dire acceso. */
+function isOn(m: Member, key: PermissionKey): boolean {
+  if (m.role === 'admin') return true; // il board vede tutto per definizione
+  return m.permissions?.[key] !== false;
+}
+
+function initials(name: string) {
+  return name.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase() || '?';
+}
+
+function Monogram({ name }: { name: string }) {
+  return (
+    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent/10 text-fine font-medium text-accent">
+      {initials(name)}
+    </span>
+  );
+}
+
+function Switch({ on, onChange, disabled, label }: {
+  on: boolean;
+  onChange: (v: boolean) => void;
+  disabled?: boolean;
+  label: string;
+}) {
   return (
     <button
       type="button"
-      onClick={() => !disabled && onChange(!on)}
+      role="switch"
+      aria-checked={on}
+      aria-label={label}
       disabled={disabled}
-      className={`shrink-0 transition-colors duration-200 ${disabled ? 'opacity-30 cursor-default' : 'cursor-pointer'}`}
+      onClick={() => onChange(!on)}
+      className={`relative h-[30px] w-[50px] shrink-0 rounded-full transition-colors duration-200 ${
+        on ? 'bg-accent' : 'bg-paper-soft border border-rule-paper'
+      } ${disabled ? 'opacity-40' : ''}`}
     >
-      {on
-        ? <ToggleRight size={22} className="text-[#731515]" />
-        : <ToggleLeft  size={22} className="text-[#7a4a4a]/25" />}
+      <span
+        className={`absolute top-[3px] h-[22px] w-[22px] rounded-full bg-paper shadow-sm transition-all duration-200 ${
+          on ? 'left-[25px]' : 'left-[3px] border border-rule-paper'
+        }`}
+      />
     </button>
   );
 }
 
-function RoleBadge({ role, isFounder, isSuperAdm }: { role: string; isFounder?: boolean; isSuperAdm?: boolean }) {
-  if (isSuperAdm) return (
-    <span className="inline-flex items-center gap-1 text-[9px] tracking-[0.3em] px-2 py-0.5 rounded-full bg-[#fbd8d8] text-[#731515] font-medium">
-      <Crown size={8} /> SUPER ADMIN
-    </span>
-  );
-  if (isFounder) return (
-    <span className="inline-flex items-center gap-1 text-[9px] tracking-[0.3em] px-2 py-0.5 rounded-full bg-[#fbd8d8] text-[#731515] font-medium">
-      <Shield size={8} /> ADMIN
-    </span>
-  );
-  return (
-    <span className="inline-flex items-center gap-1 text-[9px] tracking-[0.3em] px-2 py-0.5 rounded-full bg-[#e8d5d5] text-[#7a4a4a] font-medium">
-      <UserCheck size={8} /> STAFF
-    </span>
-  );
-}
+/* ── Il pannello di una persona ─────────────────────────────────── */
 
-function Monogram({ name, size = 32 }: { name: string; size?: number }) {
-  const initials = name.trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || '?';
-  return (
-    <div
-      style={{ width: size, height: size, minWidth: size, fontSize: Math.round(size * 0.37) }}
-      className="rounded-full bg-gradient-to-br from-[#731515] to-[#3d0808] flex items-center justify-center text-white font-semibold select-none shrink-0"
-    >
-      {initials}
-    </div>
-  );
-}
-
-// ── Add Member Modal ──────────────────────────────────────────────────────────
-
-function AddMemberModal({ onClose, onAdded, token }: {
-  onClose: () => void;
-  onAdded: (m: TeamMember) => void;
+function PersonSheet({
+  member, token, onClose, onSaved, onRemoved,
+}: {
+  member: Member;
   token: string;
+  onClose: () => void;
+  onSaved: (m: Member) => void;
+  onRemoved: (id: string) => void;
 }) {
-  const [name,   setName]   = useState('');
-  const [email,  setEmail]  = useState('');
-  const [role,   setRole]   = useState<'admin' | 'staff'>('staff');
+  const [draft, setDraft] = useState<Member>(member);
   const [saving, setSaving] = useState(false);
-  const [error,  setError]  = useState('');
+  const [error, setError] = useState('');
+  const [confirming, setConfirming] = useState(false);
+  const [typed, setTyped] = useState('');
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError('');
+  const protected_ = draft.email === SUPER_ADMIN_EMAIL;
+
+  async function patch(changes: Record<string, unknown>, next: Member) {
     setSaving(true);
+    setError('');
+    const previous = draft;
+    setDraft(next); // la risposta è immediata, l'errore rimette com'era
     try {
-      const res  = await fetch('/api/team', {
-        method:  'POST',
+      const res = await fetch(`/api/team/${member.id}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body:    JSON.stringify({ name, email, role }),
+        body: JSON.stringify(changes),
       });
-      const data = await res.json();
-      if (!res.ok) { setError(data.error ?? 'Errore'); return; }
-      onAdded(data.member);
-      onClose();
-    } catch { setError('Errore di rete.'); }
-    finally  { setSaving(false); }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? 'Salvataggio fallito.');
+      onSaved(next);
+    } catch (e) {
+      setDraft(previous);
+      setError(e instanceof Error ? e.message : 'Errore.');
+    } finally {
+      setSaving(false);
+    }
   }
 
-  const inp = 'w-full bg-[#fdf6f6] border border-[#eddada] text-[#1a0505] px-3.5 py-2.5 text-sm placeholder:text-[#7a4a4a]/35 focus:outline-none focus:border-[#731515]/50 transition-colors rounded-lg';
+  function toggle(key: PermissionKey, value: boolean) {
+    // Si scrivono tutte e dodici, non solo quella toccata: così la
+    // riga smette di dipendere da quali chiavi esistevano quel giorno.
+    const permissions = Object.fromEntries(
+      PERMISSION_KEYS.map((k) => [k, k === key ? value : isOn(draft, k)]),
+    );
+    patch({ permissions }, { ...draft, permissions });
+  }
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-        className="bg-white rounded-xl border border-[#eddada] shadow-xl w-full max-w-md p-6"
-      >
-        <div className="flex items-start justify-between mb-5">
-          <div>
-            <h2 className="text-[16px] font-light text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>
-              Aggiungi membro
-            </h2>
-            <p className="text-[11px] text-[#7a4a4a]/60 mt-0.5" style={{ fontFamily: 'var(--font-nunito)' }}>
-              Verrà inviata un&apos;email con link per impostare la password.
-            </p>
-          </div>
-          <button onClick={onClose} className="text-[#7a4a4a]/40 hover:text-[#7a4a4a] mt-0.5">
-            <X size={18} />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">NOME COMPLETO</label>
-            <input required placeholder="es. Mario Rossi" value={name}
-              onChange={e => setName(e.target.value)} className={inp}
-              style={{ fontFamily: 'var(--font-nunito)' }} />
-          </div>
-          <div>
-            <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">EMAIL</label>
-            <input type="email" required placeholder="mario@email.com" value={email}
-              onChange={e => setEmail(e.target.value)} className={inp}
-              style={{ fontFamily: 'var(--font-nunito)' }} />
-          </div>
-          <div>
-            <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">RUOLO</label>
-            <select value={role} onChange={e => setRole(e.target.value as 'admin' | 'staff')}
-              className={inp} style={{ fontFamily: 'var(--font-nunito)' }}>
-              <option value="staff">Staff</option>
-              <option value="admin">Admin</option>
-            </select>
-          </div>
-
-          {error && (
-            <p className="text-[12px] text-[#731515] bg-[#fde8e8] border border-[#731515]/15 px-3 py-2 rounded-lg"
-              style={{ fontFamily: 'var(--font-nunito)' }}>{error}</p>
-          )}
-
-          <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose}
-              className="flex-1 py-2.5 bg-white border border-[#eddada] text-[#7a4a4a] text-[10px] tracking-[0.25em] hover:bg-[#fdf6f6] transition-colors rounded-lg">
-              ANNULLA
-            </button>
-            <button type="submit" disabled={saving}
-              className="flex-1 py-2.5 bg-[#731515] text-white text-[10px] tracking-[0.25em] hover:bg-[#9b2323] disabled:opacity-55 transition-colors rounded-lg flex items-center justify-center gap-2">
-              {saving ? <Loader2 size={13} className="animate-spin" /> : <Mail size={13} />}
-              {saving ? 'INVIO…' : 'INVIA INVITO'}
-            </button>
-          </div>
-        </form>
-      </motion.div>
-    </div>
-  );
-}
-
-// ── Member row ────────────────────────────────────────────────────────────────
-
-function MemberRow({ member, token, onUpdated, onDeleted }: {
-  member:    TeamMember;
-  token:     string;
-  onUpdated: (m: TeamMember) => void;
-  onDeleted: (id: string)    => void;
-}) {
-  const [expanded,   setExpanded]   = useState(false);
-  const [saving,     setSaving]     = useState(false);
-  const [saveError,  setSaveError]  = useState('');
-  const [deleting,   setDeleting]   = useState(false);
-  const [confirmDel, setConfirmDel] = useState(false);
-
-  const isFounder    = ADMIN_EMAILS.includes(member.email);
-  const isSuperAdm   = member.email === SUPER_ADMIN_EMAIL;
-  const locked       = isSuperAdm; // super admin row is fully read-only
-
-  const patch = useCallback(async (body: Record<string, unknown>) => {
+  async function remove() {
     setSaving(true);
-    setSaveError('');
+    setError('');
     try {
-      const res  = await fetch(`/api/team/${member.id}`, {
-        method:  'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body:    JSON.stringify(body),
-      });
-      const data = await res.json();
-      if (res.ok) onUpdated(data.member);
-      else setSaveError(data.error ?? 'Errore nel salvataggio');
-    } catch { setSaveError('Errore di rete'); }
-    finally { setSaving(false); }
-  }, [member.id, token, onUpdated]);
-
-  async function handleDelete() {
-    if (!confirmDel) { setConfirmDel(true); return; }
-    setDeleting(true);
-    try {
-      await fetch(`/api/team/${member.id}`, {
-        method:  'DELETE',
+      const res = await fetch(`/api/team/${member.id}`, {
+        method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
-      onDeleted(member.id);
-    } finally { setDeleting(false); setConfirmDel(false); }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? 'Eliminazione fallita.');
+      onRemoved(member.id);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Errore.');
+      setConfirming(false);
+    } finally {
+      setSaving(false);
+    }
   }
 
-  const lastSeen = member.last_sign_in
-    ? new Date(member.last_sign_in).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })
-    : 'Mai';
-
   return (
-    <div className="border border-[#eddada] rounded-xl overflow-hidden">
+    <Sheet open title={draft.name} onClose={onClose}>
+      <p className="-mt-1 mb-5 text-fine text-on-paper-muted">{draft.email}</p>
 
-      {/* ── Header row ── */}
-      <div className="flex items-center gap-3 px-4 py-3.5">
-        <Monogram name={member.name} size={34} />
+      {error && <p className="mb-4 text-fine font-medium text-accent">{error}</p>}
 
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[13px] font-medium text-[#1a0505] leading-none"
-              style={{ fontFamily: 'var(--font-nunito)' }}>{member.name}</span>
-            <RoleBadge role={member.role} isFounder={isFounder} isSuperAdm={isSuperAdm} />
-            {!member.active && !locked && (
-              <span className="text-[9px] tracking-[0.3em] text-[#7a4a4a]/40 bg-[#e8e0e0] px-2 py-0.5 rounded-full">
-                DISATTIVATO
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-3 mt-0.5">
-            <span className="text-[11px] text-[#7a4a4a]/55" style={{ fontFamily: 'var(--font-nunito)' }}>
-              {member.email}
-            </span>
-            {!isSuperAdm && (
-              <span className="text-[10px] text-[#7a4a4a]/35" style={{ fontFamily: 'var(--font-nunito)' }}>
-                · Ultimo accesso: {lastSeen}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Actions */}
-        {!locked && (
-          <div className="flex items-center gap-1 shrink-0">
-            {saving && <Loader2 size={13} className="animate-spin text-[#731515]/40 mr-1" />}
-
-            {/* Active toggle */}
-            <button
-              onClick={() => patch({ active: !member.active })}
-              title={member.active ? 'Disattiva' : 'Attiva'}
-              className="p-1.5 rounded-lg text-[#7a4a4a]/30 hover:text-[#731515]/60 transition-colors"
-            >
-              {member.active ? <UserCheck size={15} /> : <UserX size={15} />}
-            </button>
-
-            {/* Delete */}
-            {!isFounder && (
-              <button
-                onClick={handleDelete} disabled={deleting}
-                title={confirmDel ? 'Conferma eliminazione' : 'Elimina'}
-                onBlur={() => setConfirmDel(false)}
-                className={`p-1.5 rounded-lg transition-colors ${confirmDel ? 'bg-red-50 text-red-600' : 'text-[#7a4a4a]/30 hover:text-red-500'}`}
-              >
-                {deleting ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
-              </button>
-            )}
-
-            {/* Expand permissions (not for admin-role users — permissions have no effect on admins) */}
-            {member.role === 'staff' && (
-              <button onClick={() => setExpanded(v => !v)}
-                className="p-1.5 rounded-lg text-[#7a4a4a]/30 hover:text-[#7a4a4a]/70 transition-colors"
-                title="Modifica permessi">
-                <ChevronDown size={15}
-                  className={`transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} />
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Save error */}
-      {saveError && (
-        <div className="px-4 pb-2.5">
-          <p className="text-[11px] text-[#731515] bg-[#fde8e8] border border-[#731515]/15 px-3 py-1.5 rounded-lg"
-            style={{ fontFamily: 'var(--font-nunito)' }}>{saveError}</p>
-        </div>
-      )}
-
-      {/* ── Permissions panel (staff only) ── */}
-      <AnimatePresence initial={false}>
-        {expanded && member.role === 'staff' && (
-          <motion.div
-            initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }}
-            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="overflow-hidden"
-          >
-            <div className="border-t border-[#eddada] bg-[#fdf8f8] px-4 py-4">
-              <p className="text-[9px] tracking-[0.4em] text-[#731515] mb-3">PERMESSI SEZIONI</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2.5">
-                {PERMISSION_LABELS.map(({ key, label }) => (
-                  <div key={key} className="flex items-center justify-between gap-3">
-                    <span className="text-[12.5px] text-[#3a1a1a]"
-                      style={{ fontFamily: 'var(--font-nunito)' }}>{label}</span>
-                    <Toggle
-                      on={member.permissions?.[key] ?? false}
-                      onChange={v => patch({ permissions: { [key]: v } })}
-                    />
-                  </div>
-                ))}
-              </div>
-              <p className="text-[10px] text-[#7a4a4a]/40 mt-3 italic" style={{ fontFamily: 'var(--font-nunito)' }}>
-                Se disattivata, la sezione mostra &ldquo;Accesso non autorizzato&rdquo;.
-              </p>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Admins note */}
-      {member.role === 'admin' && !locked && (
-        <div className="border-t border-[#eddada] bg-[#fdf8f8] px-4 py-2.5">
-          <p className="text-[10px] text-[#7a4a4a]/45 italic" style={{ fontFamily: 'var(--font-nunito)' }}>
-            Gli admin hanno accesso completo a tutte le sezioni.
+      {/* ── Dentro o fuori ── */}
+      <div className="flex items-center gap-4 rounded-2xl border border-rule-paper p-4">
+        <div className="min-w-0 flex-1">
+          <p className="text-body font-medium">Accesso al pannello</p>
+          <p className="mt-1 text-fine text-on-paper-muted">
+            {draft.active ? 'Può entrare nell’area riservata.' : 'Non entra: per lei l’area non si apre.'}
           </p>
         </div>
+        <Switch
+          label="Accesso al pannello"
+          on={draft.active}
+          disabled={saving || protected_}
+          onChange={(v) => patch({ active: v }, { ...draft, active: v })}
+        />
+      </div>
+
+      {/* ── Ruolo ── */}
+      {draft.role !== 'collaborator' && (
+        <div className="mt-4">
+          <Field label="Ruolo" hint={draft.role === 'admin' ? 'il board vede tutto' : undefined}>
+            <Select
+              value={draft.role}
+              disabled={saving || protected_}
+              onChange={(e) => {
+                const role = e.target.value as 'admin' | 'staff';
+                patch({ role }, { ...draft, role });
+              }}
+            >
+              <option value="staff">Staff</option>
+              <option value="admin">Board</option>
+            </Select>
+          </Field>
+        </div>
       )}
-    </div>
+
+      {/* ── Cosa vede ── */}
+      <p className="mb-1 mt-6 text-body font-medium">Cosa vede</p>
+      <p className="mb-3 text-fine text-on-paper-muted">
+        {draft.role === 'admin'
+          ? 'Il board apre tutto: per limitare qualcuno, mettilo in Staff.'
+          : 'Quello che spegni qui sparisce dal suo menù.'}
+      </p>
+
+      <div className="divide-y divide-rule-paper">
+        {FEATURES.map((f) => (
+          <div key={f.key} className="flex items-center gap-4 py-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-body">{f.label}</p>
+              <p className="mt-0.5 truncate text-fine text-on-paper-muted">{f.hint}</p>
+            </div>
+            <Switch
+              label={f.label}
+              on={isOn(draft, f.key)}
+              disabled={saving || draft.role === 'admin' || !draft.active}
+              onChange={(v) => toggle(f.key, v)}
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* ── Via dal club ── */}
+      {!protected_ && (
+        <div className="mt-7 rounded-2xl border border-accent/30 p-4">
+          <p className="text-body font-medium">Elimina dal club</p>
+          <p className="mt-1.5 text-fine text-on-paper-muted">
+            Spariscono accesso, profilo, foto e credenziali. Restano i movimenti di cassa e i
+            biglietti: la storia del club non si riscrive. Non si torna indietro.
+          </p>
+
+          {!confirming ? (
+            <ActionButton
+              variant="danger"
+              className="mt-3"
+              onClick={() => { setConfirming(true); setTyped(''); }}
+            >
+              <Trash2 size={15} />
+              Elimina {draft.name.split(' ')[0]}
+            </ActionButton>
+          ) : (
+            <div className="mt-3">
+              <Field label={`Scrivi ${draft.name.split(' ')[0]} per confermare`}>
+                <TextInput
+                  value={typed}
+                  autoFocus
+                  onChange={(e) => setTyped(e.target.value)}
+                  placeholder={draft.name.split(' ')[0]}
+                />
+              </Field>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <ActionButton
+                  variant="danger"
+                  onClick={remove}
+                  disabled={saving || typed.trim().toLowerCase() !== draft.name.split(' ')[0].toLowerCase()}
+                >
+                  {saving ? 'Elimino…' : 'Elimina davvero'}
+                </ActionButton>
+                <ActionButton variant="quiet" onClick={() => setConfirming(false)}>
+                  Annulla
+                </ActionButton>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </Sheet>
   );
 }
 
-// ── Main component ─────────────────────────────────────────────────────────────
+/* ── Invito ─────────────────────────────────────────────────────── */
 
-export default function TeamManagement() {
-  const [members,   setMembers]   = useState<TeamMember[]>([]);
-  const [loading,   setLoading]   = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [token,     setToken]     = useState('');
-  // AddMemberModal has no scroll lock of its own — use the full treatment.
-  useMobileOverlay(showModal, () => setShowModal(false));
-  const [error,     setError]     = useState('');
+function InviteSheet({ token, onClose, onAdded }: {
+  token: string;
+  onClose: () => void;
+  onAdded: () => void;
+}) {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [role, setRole] = useState<'admin' | 'staff'>('staff');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
-  const fetchMembers = useCallback(async (accessToken: string) => {
-    setLoading(true);
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    setError('');
     try {
-      const res  = await fetch('/api/team', { headers: { Authorization: `Bearer ${accessToken}` } });
-      const data = await res.json();
-      if (res.ok) setMembers(data.members ?? []);
-      else setError(data.error ?? 'Errore caricamento');
-    } catch { setError('Errore di rete.'); }
-    finally  { setLoading(false); }
-  }, []);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) { setLoading(false); return; }
-      setToken(session.access_token);
-      fetchMembers(session.access_token);
-    });
-  }, [fetchMembers]);
-
-  function handleAdded(m: TeamMember) {
-    setMembers(prev => {
-      const exists = prev.find(x => x.email === m.email);
-      return exists ? prev.map(x => x.email === m.email ? m : x) : [...prev, m];
-    });
+      const res = await fetch('/api/team', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ name: name.trim(), email: email.trim().toLowerCase(), role }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? 'Invito fallito.');
+      onAdded();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Errore.');
+    } finally {
+      setSaving(false);
+    }
   }
 
-  const admins = members.filter(m => m.role === 'admin');
-  const staff  = members.filter(m => m.role === 'staff');
+  return (
+    <Sheet open title="Invita una persona" onClose={onClose}>
+      <form onSubmit={submit} className="flex flex-col gap-4">
+        <Field label="Nome e cognome">
+          <TextInput value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
+        </Field>
+        <Field label="Email">
+          <TextInput type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        </Field>
+        <Field label="Ruolo">
+          <Select value={role} onChange={(e) => setRole(e.target.value as 'admin' | 'staff')}>
+            <option value="staff">Staff</option>
+            <option value="admin">Board</option>
+          </Select>
+        </Field>
+        <p className="text-fine text-on-paper-muted">
+          Riceve una mail per scegliere la password. Entra con tutte le sezioni accese: quelle che
+          non le servono si spengono dopo.
+        </p>
+        {error && <p className="text-fine font-medium text-accent">{error}</p>}
+        <ActionButton type="submit" disabled={saving}>
+          {saving ? 'Invio…' : 'Manda l’invito'}
+        </ActionButton>
+      </form>
+    </Sheet>
+  );
+}
+
+/* ── Elenco ─────────────────────────────────────────────────────── */
+
+export default function TeamManagement() {
+  const [members, setMembers] = useState<Member[]>([]);
+  const [token, setToken] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [query, setQuery] = useState('');
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [inviting, setInviting] = useState(false);
+
+  const load = useCallback(async () => {
+    setError('');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const tk = session?.access_token ?? '';
+      setToken(tk);
+      const res = await fetch('/api/team', { headers: { Authorization: `Bearer ${tk}` } });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Impossibile leggere il team.');
+      setMembers(data.members ?? []);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Errore.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const order = { admin: 0, staff: 1, collaborator: 2 } as const;
+    return members
+      .filter((m) => !q || `${m.name} ${m.email}`.toLowerCase().includes(q))
+      .sort((a, b) =>
+        a.active === b.active
+          ? order[a.role] - order[b.role] || a.name.localeCompare(b.name)
+          : a.active ? -1 : 1,
+      );
+  }, [members, query]);
+
+  const open = members.find((m) => m.id === openId) ?? null;
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-20">
+        <span className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+      </div>
+    );
+  }
 
   return (
     <>
-      {/* Header */}
-      <div className="flex items-start justify-between mb-8">
-        <div>
-          <h1 className="text-[clamp(1.6rem,2.5vw,2.2rem)] font-light text-[#1a0505] leading-none tracking-tight"
-            style={{ fontFamily: 'var(--font-syne)' }}>Team Management</h1>
-          <p className="mt-2 text-sm text-[#7a4a4a]/70 font-light" style={{ fontFamily: 'var(--font-nunito)' }}>
-            Tutti gli utenti su Supabase Auth — gestisci ruoli e permessi per sezione.
-          </p>
-          <div className="mt-5 h-px w-16 bg-[#731515]/30" />
-        </div>
-        <button onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 text-[10px] tracking-[0.3em] text-white bg-[#731515] px-5 py-3 hover:bg-[#9b2323] transition-colors rounded-lg shrink-0 mt-1">
-          <Plus size={13} /> AGGIUNGI
-        </button>
-      </div>
+      <PageHead
+        title="Team"
+        subtitle="Chi entra nel pannello e cosa vede. Quello che spegni qui sparisce dal suo menù."
+        action={<NewButton label="Invita" onClick={() => setInviting(true)} />}
+      />
 
-      {loading && (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 size={28} className="animate-spin text-[#731515]/40" />
-        </div>
-      )}
-
-      {error && (
-        <p className="text-sm text-[#731515] bg-[#fde8e8] border border-[#731515]/15 px-4 py-3 rounded-lg mb-6"
-          style={{ fontFamily: 'var(--font-nunito)' }}>{error}</p>
-      )}
-
-      {!loading && !error && (
-        <div className="space-y-8">
-
-          {/* Admin group */}
-          {admins.length > 0 && (
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Shield size={11} className="text-[#731515]" />
-                <span className="text-[9px] tracking-[0.42em] text-[#731515] uppercase">
-                  Admin ({admins.length})
-                </span>
-              </div>
-              <div className="space-y-2">
-                {admins.map(m => (
-                  <MemberRow key={m.id || m.email} member={m} token={token}
-                    onUpdated={u => setMembers(prev => prev.map(x => x.id === u.id ? u : x))}
-                    onDeleted={id => setMembers(prev => prev.filter(x => x.id !== id))} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Staff group */}
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <UserCheck size={11} className="text-[#7a4a4a]" />
-              <span className="text-[9px] tracking-[0.42em] text-[#7a4a4a]/70 uppercase">
-                Staff ({staff.length})
-              </span>
-            </div>
-            {staff.length === 0 ? (
-              <div className="border border-dashed border-[#eddada] rounded-xl px-6 py-10 text-center">
-                <UserCheck size={28} className="text-[#7a4a4a]/20 mx-auto mb-3" />
-                <p className="text-sm text-[#7a4a4a]/50 italic" style={{ fontFamily: 'var(--font-nunito)' }}>
-                  Nessun membro staff. Clicca &ldquo;Aggiungi&rdquo; per invitare qualcuno.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {staff.map(m => (
-                  <MemberRow key={m.id || m.email} member={m} token={token}
-                    onUpdated={u => setMembers(prev => prev.map(x => x.id === u.id ? u : x))}
-                    onDeleted={id => setMembers(prev => prev.filter(x => x.id !== id))} />
-                ))}
-              </div>
+      {error ? (
+        <EmptyState
+          title="Non riesco a leggere il team"
+          body={error}
+          action={<ActionButton onClick={load}>Riprova</ActionButton>}
+        />
+      ) : (
+        <>
+          <div className="mb-4 flex items-center gap-2.5 rounded-full border border-rule-paper px-4">
+            <Search size={17} strokeWidth={1.8} className="shrink-0 text-on-paper-muted" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Cerca nome o email"
+              className="min-h-[48px] w-full bg-transparent text-body placeholder:text-on-paper-muted/60 focus:outline-none [font-size:16px]"
+            />
+            {query && (
+              <button
+                onClick={() => setQuery('')}
+                aria-label="Pulisci"
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full hover:bg-paper-soft"
+              >
+                <X size={15} strokeWidth={2} />
+              </button>
             )}
           </div>
 
-        </div>
+          {visible.length === 0 ? (
+            <EmptyState title="Nessuno" body="Prova con un altro nome." />
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              {visible.map((m) => {
+                const off = FEATURES.filter((f) => !isOn(m, f.key)).length;
+                return (
+                  <button
+                    key={m.id}
+                    onClick={() => setOpenId(m.id)}
+                    className="flex items-center gap-3.5 rounded-2xl border border-rule-paper px-3.5 py-3 text-left transition-colors hover:border-accent/40"
+                  >
+                    <Monogram name={m.name} />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-body">{m.name}</p>
+                      <p className="mt-0.5 truncate text-fine text-on-paper-muted">{m.email}</p>
+                    </div>
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      <StatusPill tone={m.active ? (m.role === 'admin' ? 'good' : 'neutral') : 'off'}>
+                        {m.active ? ROLE_LABEL[m.role] : 'Spento'}
+                      </StatusPill>
+                      {m.active && off > 0 && (
+                        <span className="text-fine text-on-paper-muted">
+                          {off} {off === 1 ? 'sezione spenta' : 'sezioni spente'}
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          <p className="mt-5 text-fine text-on-paper-muted">
+            Il board ({ADMIN_EMAILS.length} persone) apre tutto per definizione. Il super admin non
+            si può spegnere né eliminare: è il pavimento sotto il sistema dei permessi.
+          </p>
+        </>
       )}
 
-      <AnimatePresence>
-        {showModal && (
-          <AddMemberModal token={token} onClose={() => setShowModal(false)} onAdded={handleAdded} />
-        )}
-      </AnimatePresence>
+      {open && (
+        <PersonSheet
+          member={open}
+          token={token}
+          onClose={() => setOpenId(null)}
+          onSaved={(next) => setMembers((list) => list.map((m) => (m.id === next.id ? next : m)))}
+          onRemoved={(id) => {
+            setMembers((list) => list.filter((m) => m.id !== id));
+            setOpenId(null);
+          }}
+        />
+      )}
+
+      {inviting && (
+        <InviteSheet
+          token={token}
+          onClose={() => setInviting(false)}
+          onAdded={() => { setInviting(false); load(); }}
+        />
+      )}
     </>
   );
 }

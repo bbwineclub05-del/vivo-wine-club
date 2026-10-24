@@ -5,6 +5,7 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   Check,
+  ChevronRight,
   Minus,
   Pencil,
   Plus,
@@ -28,6 +29,7 @@ import {
   checkBooks,
   formatEur,
   toCents,
+  toEntry,
   type Entry,
   type EntryType,
 } from '@/lib/ledger';
@@ -523,20 +525,17 @@ export default function FinanceManager({ isAdmin = false }: { isAdmin?: boolean 
   }, [load]);
 
   /* ── Tutto si ricalcola da qui, ogni volta ── */
+  // Niente righe scartate. Quelle scritte dal sito in produzione hanno
+  // ancora solo le colonne vecchie: il tipo e la persona si leggono da
+  // lì, invece di far sparire il movimento dal registro.
+  const emailByName = useMemo(
+    () => new Map(members.map((m) => [m.name.trim().toLowerCase(), m.email])),
+    [members],
+  );
+
   const entries = useMemo<Entry[]>(
-    () =>
-      rows
-        .filter((r) => r.entry_type)
-        .map((r) => ({
-          id: r.id,
-          date: r.date,
-          description: r.description,
-          amount_cents: toCents(r.amount) ?? 0,
-          entry_type: r.entry_type as EntryType,
-          member_email: r.member_email,
-          category: r.budget_category,
-        })),
-    [rows],
+    () => rows.map((r) => toEntry(r, emailByName)),
+    [rows, emailByName],
   );
 
   const { ok, drift, balances } = useMemo(() => checkBooks(entries), [entries]);
@@ -793,6 +792,11 @@ export default function FinanceManager({ isAdmin = false }: { isAdmin?: boolean 
                   }
                 />
               )}
+              {byMonth.length > 0 && (
+                <p className="-mt-1 text-fine text-on-paper-muted">
+                  Tocca un movimento per correggerlo o eliminarlo.
+                </p>
+              )}
               {byMonth.map((m) => (
                 <section key={m.key}>
                   <h3 className="mb-2.5 flex items-baseline gap-2 text-subtitle font-medium">
@@ -829,6 +833,14 @@ export default function FinanceManager({ isAdmin = false }: { isAdmin?: boolean 
                             {SIGN[t]}
                             {formatEur(toCents(r.amount) ?? 0).replace('−', '')}
                           </span>
+                          {/* La freccina dice che la riga si apre: senza,
+                              non si capiva che un movimento si può
+                              correggere o cancellare. */}
+                          <ChevronRight
+                            size={17}
+                            strokeWidth={1.8}
+                            className="-mr-1 shrink-0 text-on-paper-muted"
+                          />
                         </button>
                       );
                     })}

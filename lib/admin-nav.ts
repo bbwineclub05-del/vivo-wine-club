@@ -179,35 +179,48 @@ export function rhythmFor(d: AdminDestination, role: AdminRole): Rhythm {
   return role === 'staff' && d.staffRhythm ? d.staffRhythm : d.rhythm;
 }
 
-export function destinationsFor(role: AdminRole): AdminDestination[] {
-  return DESTINATIONS.filter((d) => !d.roles || d.roles.includes(role));
+/**
+ * Chi può aprire una destinazione.
+ *
+ * Senza questa funzione il menù elencava tutto a tutti e la porta
+ * sbatteva in faccia dopo il clic: spegnere una sezione in Team
+ * Management la lasciava scritta nella barra, nella ricerca e in
+ * "Tutto", e cliccandola si leggeva "accesso non autorizzato". Una
+ * cosa spenta non si vede.
+ */
+export type CanOpen = (id: string) => boolean;
+
+export function destinationsFor(role: AdminRole, can?: CanOpen): AdminDestination[] {
+  return DESTINATIONS.filter(
+    (d) => (!d.roles || d.roles.includes(role)) && (!can || can(d.id)),
+  );
 }
 
 /** The four bottom tabs. Identical for board and staff. */
-export function barFor(role: AdminRole): AdminDestination[] {
-  return destinationsFor(role).filter((d) => rhythmFor(d, role) === 'bar');
+export function barFor(role: AdminRole, can?: CanOpen): AdminDestination[] {
+  return destinationsFor(role, can).filter((d) => rhythmFor(d, role) === 'bar');
 }
 
 /** Shown in the rail under the divider: the weekly ones. */
-export function mainFor(role: AdminRole): AdminDestination[] {
-  return destinationsFor(role).filter((d) => rhythmFor(d, role) === 'main');
+export function mainFor(role: AdminRole, can?: CanOpen): AdminDestination[] {
+  return destinationsFor(role, can).filter((d) => rhythmFor(d, role) === 'main');
 }
 
 /** Only in "Tutto" and in search. */
-export function restFor(role: AdminRole): AdminDestination[] {
-  return destinationsFor(role).filter((d) => rhythmFor(d, role) === 'rest');
+export function restFor(role: AdminRole, can?: CanOpen): AdminDestination[] {
+  return destinationsFor(role, can).filter((d) => rhythmFor(d, role) === 'rest');
 }
 
 /** Everything that is not a bottom tab, weekly ones first. */
-export function beyondBarFor(role: AdminRole): AdminDestination[] {
-  return [...mainFor(role), ...restFor(role)];
+export function beyondBarFor(role: AdminRole, can?: CanOpen): AdminDestination[] {
+  return [...mainFor(role, can), ...restFor(role, can)];
 }
 
 /** Loose match over label, hint, tab labels and keywords. */
-export function searchDestinations(role: AdminRole, query: string): AdminDestination[] {
+export function searchDestinations(role: AdminRole, query: string, can?: CanOpen): AdminDestination[] {
   const q = query.trim().toLowerCase();
   if (!q) return [];
-  return destinationsFor(role).filter((d) =>
+  return destinationsFor(role, can).filter((d) =>
     [d.label, d.hint, ...(d.tabs ?? []).map((t) => t.label), ...(d.search ?? [])].some((s) =>
       s.toLowerCase().includes(q),
     ),

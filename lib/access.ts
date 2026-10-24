@@ -22,7 +22,6 @@ export const PERMISSION_KEYS = [
   'finance',
   'documents',
   'crm',
-  'applications',
   'site',
   'offers',
   'analytics',
@@ -49,13 +48,12 @@ export const SECTION_PERMISSION: Record<string, PermissionKey> = {
   tasks: 'tasks',
   ped: 'ped',
   membership: 'membership',
-  pipeline: 'membership', // old id, kept so existing links keep working
+  pipeline: 'membership', // vecchio id, i link esistenti continuano a funzionare
   finance: 'finance',
   bilancio: 'finance',
   quotes: 'finance',
   documents: 'documents',
   crm: 'crm',
-  applications: 'applications',
   site: 'site',
   news: 'site',
   media: 'site',
@@ -64,7 +62,48 @@ export const SECTION_PERMISSION: Record<string, PermissionKey> = {
   discounts: 'offers',
   upsell: 'offers',
   analytics: 'analytics',
+  // Lo scanner non è una voce di menù ma una pagina a sé, /checkin:
+  // senza questa riga il suo interruttore non spegneva niente.
+  scanner: 'scanner',
+  checkin: 'scanner',
 };
+
+/**
+ * Le chiavi vecchie rimaste scritte nelle righe di `team_members`.
+ *
+ * Le sezioni sono state accorpate — news, media e la mappa cantine
+ * stanno dentro "Sito", la pipeline dentro "Membership" — ma nel
+ * database restano le chiavi di prima. Chi aveva spento "news" voleva
+ * spegnere quello che oggi si chiama "site", e deve restare spento.
+ */
+const LEGACY_KEYS: Record<string, PermissionKey> = {
+  news: 'site',
+  media: 'site',
+  wineries: 'site',
+  pipeline: 'membership',
+  discounts: 'offers',
+  upsell: 'offers',
+  bilancio: 'finance',
+  quotes: 'finance',
+};
+
+/**
+ * Porta una riga del database sulle chiavi di oggi.
+ *
+ * Una chiave vecchia spenta spegne la sezione che l'ha assorbita; una
+ * accesa non riaccende niente che un'altra abbia già spento.
+ */
+export function normalizePermissions(raw: Permissions | null | undefined): Permissions {
+  const out: Permissions = {};
+  for (const [key, value] of Object.entries(raw ?? {})) {
+    const canonical = (PERMISSION_KEYS as readonly string[]).includes(key)
+      ? (key as PermissionKey)
+      : LEGACY_KEYS[key];
+    if (!canonical) continue; // chiave che non esiste più: si ignora
+    out[canonical] = out[canonical] === false ? false : value !== false;
+  }
+  return out;
+}
 
 /** Sections anyone who got through the door may open. */
 const ALWAYS_OPEN = new Set(['overview', 'settings', 'wine-assistant']);
@@ -112,7 +151,7 @@ export function resolveAccess(email: string, row: TeamRow | null): Access {
     return { active: false, board: false, can: () => false };
   }
 
-  const permissions = row?.permissions ?? {};
+  const permissions = normalizePermissions(row?.permissions);
 
   return {
     active: true,

@@ -37,7 +37,7 @@ function ImpostazioniInner() {
       user={{ name: user.name, email: user.email }}
       token={token}
       onLogout={handleLogout}
-      initialSection="settings"
+      initialSection="profilo"
     />
   );
 }
