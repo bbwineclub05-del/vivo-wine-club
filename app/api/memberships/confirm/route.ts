@@ -63,6 +63,27 @@ export async function POST(request: Request) {
       .update({ status: 'paid', paid_at: new Date().toISOString() })
       .eq('id', payment.id);
 
+    // L'indirizzo raccolto da Stripe finisce sulla tessera: è dove va
+    // spedito il welcome pack. Nelle versioni recenti dell'API sta
+    // dentro `collected_information`, in quelle vecchie direttamente
+    // sulla sessione: si leggono entrambe perché la riga non si perda
+    // al prossimo aggiornamento di Stripe.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const anySession = session as any;
+    const ship = anySession.collected_information?.shipping_details ?? anySession.shipping_details;
+    const shipping = ship?.address
+      ? {
+          shipping_name: ship.name ?? null,
+          shipping_phone: anySession.customer_details?.phone ?? null,
+          shipping_line1: ship.address.line1 ?? null,
+          shipping_line2: ship.address.line2 ?? null,
+          shipping_city: ship.address.city ?? null,
+          shipping_postal: ship.address.postal_code ?? null,
+          shipping_state: ship.address.state ?? null,
+          shipping_country: ship.address.country ?? null,
+        }
+      : {};
+
     // La scadenza si sposta, e i promemaria dell'anno appena chiuso si
     // azzerano: l'anno prossimo vanno rimandati da capo.
     const { data: membership } = await db
@@ -73,6 +94,7 @@ export async function POST(request: Request) {
         reminded_7_at: null,
         reminded_0_at: null,
         updated_at: new Date().toISOString(),
+        ...shipping,
       })
       .eq('id', payment.membership_id)
       .select('member_id, expires_at, full_name, email')

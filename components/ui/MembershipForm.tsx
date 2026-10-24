@@ -109,6 +109,10 @@ export function MembershipForm() {
           city: form.city,
           date_of_birth: form.dateOfBirth || null,
           source: form.source,
+          // La lingua in cui stava leggendo il sito: è con quella che
+          // gli scriveremo. Più affidabile della nazionalità, che non
+          // dice in che lingua una persona preferisce ricevere le mail.
+          locale,
           consent_privacy: privacy,
           consent_marketing: marketing,
         }),

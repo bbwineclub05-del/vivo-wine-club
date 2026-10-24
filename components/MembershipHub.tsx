@@ -6,6 +6,8 @@ import { RecordTable } from '@/components/admin/RecordTable';
 import { candidature } from '@/lib/crm-resources';
 import MembershipManager from '@/components/MembershipManager';
 import MembershipArchive from '@/components/MembershipArchive';
+import BottleInterestList from '@/components/BottleInterestList';
+import WineSelectionManager from '@/components/WineSelectionManager';
 
 /**
  * Soci e candidature, nello stesso posto.
@@ -20,11 +22,13 @@ import MembershipArchive from '@/components/MembershipArchive';
 
 const KINDS = ['ambassador', 'company', 'creator', 'staff'] as const;
 type Kind = (typeof KINDS)[number];
-type Tab = 'tessere' | Kind | 'archivio';
+type Tab = 'tessere' | Kind | 'archivio' | 'selection' | 'bottiglia';
 
 const LABEL: Record<Tab, string> = {
   tessere: 'Tessere',
   archivio: 'Archivio',
+  selection: 'Selection',
+  bottiglia: 'Bottiglia',
   ambassador: 'Ambassador',
   company: 'Aziende',
   creator: 'Creator',
@@ -97,7 +101,7 @@ export default function MembershipHub({ onChanged }: { onChanged?: () => void })
   return (
     <div>
       <div className="-mx-1 mb-6 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {(['tessere', ...KINDS, 'archivio'] as Tab[]).map((t) => {
+        {(['tessere', ...KINDS, 'selection', 'archivio', 'bottiglia'] as Tab[]).map((t) => {
           const on = tab === t;
           const n = counts[t] ?? 0;
           return (
@@ -128,6 +132,10 @@ export default function MembershipHub({ onChanged }: { onChanged?: () => void })
         <MembershipManager />
       ) : tab === 'archivio' ? (
         <MembershipArchive />
+      ) : tab === 'selection' ? (
+        <WineSelectionManager />
+      ) : tab === 'bottiglia' ? (
+        <BottleInterestList />
       ) : (
         // `key` rimonta la tabella cambiando scheda: altrimenti
         // resterebbero attivi i filtri dell'elenco precedente.

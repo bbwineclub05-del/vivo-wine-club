@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { Resend } from 'resend';
+import { membershipEmail, emailLocale } from '@/lib/emails/membership-emails';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { requireAdminOrStaff } from '@/lib/auth-guard';
 import { fetchAllRows } from '@/lib/crm';
@@ -105,6 +107,9 @@ export async function POST(request: Request) {
           city: String(body.city ?? '').trim() || null,
           date_of_birth: String(body.date_of_birth ?? '').trim() || null,
           source: String(body.source ?? '').trim() || null,
+          // La lingua del sito al momento dell'iscrizione: decide in
+          // che lingua riceverà le mail, oggi e fra un anno.
+          locale: emailLocale(body.locale),
           consent_marketing: body.consent_marketing === true,
           consent_privacy_accepted_at: new Date().toISOString(),
           consent_privacy_version: PRIVACY_POLICY_VERSION,
@@ -132,6 +137,40 @@ export async function POST(request: Request) {
       status: plan.dueNowCents === 0 ? 'waived' : 'pending',
       paid_at: plan.dueNowCents === 0 ? new Date().toISOString() : null,
     });
+
+    // Il benvenuto parte solo quando la tessera è già valida: se c'è
+    // da pagare, la manda la conferma del pagamento. Un invio fallito
+    // non deve far fallire l'iscrizione — la persona è socia comunque,
+    // e la mail si può rimandare dall'area riservata.
+    if (plan.dueNowCents === 0) {
+      try {
+        // Chi arriva dal modulo pubblico non sa ancora cosa sia VIVO:
+        // la mail glielo racconta prima di elencare i vantaggi.
+        const { subject, html } = membershipEmail('benvenuto', {
+          fullName: inserted.full_name,
+          memberId: inserted.member_id,
+          expiresAt: inserted.expires_at,
+          renewalCents: inserted.offer_price_cents ?? inserted.standard_price_cents,
+          standardCents: inserted.standard_price_cents,
+        }, inserted.locale);
+        const { error: mailErr } = await new Resend(process.env.RESEND_API_KEY).emails.send({
+          from: 'Vivo Wine Club <noreply@vivowineclub.com>',
+          to: inserted.email,
+          subject,
+          html,
+        });
+        if (!mailErr) {
+          await db
+            .from('memberships')
+            .update({ welcome_sent_at: new Date().toISOString() })
+            .eq('id', inserted.id);
+        } else {
+          console.error('[memberships POST] benvenuto non mandato:', mailErr.message);
+        }
+      } catch (e) {
+        console.error('[memberships POST] benvenuto non mandato:', e);
+      }
+    }
 
     return NextResponse.json({
       membership: inserted,

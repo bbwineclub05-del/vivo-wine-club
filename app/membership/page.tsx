@@ -5,7 +5,6 @@ import { MembershipForm } from '@/components/ui/MembershipForm';
 import { Section } from '@/components/ui/Section';
 import { SiteFooter } from '@/components/ui/SiteFooter';
 import { SiteNav } from '@/components/ui/SiteNav';
-import CartDrawer from '@/components/CartDrawer';
 
 export async function generateMetadata() {
   const t = await getTranslations('membership');
@@ -38,7 +37,6 @@ export default async function MembershipPage() {
       </main>
 
       <SiteFooter />
-      <CartDrawer />
     </>
   );
 }

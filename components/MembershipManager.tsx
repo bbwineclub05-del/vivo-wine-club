@@ -36,7 +36,7 @@ interface Payment {
   paid_at: string | null;
 }
 
-type Row = Membership & { payments: Payment[] };
+type Row = Membership & { payments: Payment[]; welcome_sent_at?: string | null };
 
 const PAYMENT_LABEL: Record<Payment['status'], string> = {
   paid: 'Pagato',
@@ -83,6 +83,10 @@ function Detail({
 }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
+  const [mandata, setMandata] = useState(false);
+  // Quale delle due mail: attivazione per i soci di prima, benvenuto
+  // per chi è arrivato dal modulo pubblico.
+  const [tipoMail, setTipoMail] = useState<'attivazione' | 'benvenuto'>('attivazione');
   useOverlayBackClose(!!row, onClose);
 
   if (!row) return null;
@@ -114,15 +118,73 @@ function Detail({
     }
   }
 
+  /** Manda il benvenuto a questa persona. Una sola, mai in blocco. */
+  async function mandaBenvenuto() {
+    setBusy(true);
+    setMessage('');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/memberships/welcome', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.access_token ?? ''}`,
+        },
+        body: JSON.stringify({
+          membershipIds: [row!.id],
+          kind: tipoMail,
+          force: !!row!.welcome_sent_at,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Errore.');
+      const esito = data.esiti?.[0]?.esito ?? 'fatto';
+      setMessage(
+        esito === 'mandata'
+          ? `Mail di ${tipoMail} mandata.`
+          : `Non mandata: ${esito}`,
+      );
+      if (esito === 'mandata') setMandata(true);
+      onChanged();
+    } catch (e) {
+      setMessage(e instanceof Error ? e.message : 'Errore.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const benvenutoFatto = mandata || !!row.welcome_sent_at;
+
   return (
     <Sheet
       open
       title={row.full_name || row.email}
       onClose={onClose}
       footer={
-        <ActionButton onClick={renewLink} disabled={busy} className="w-full">
-          {busy ? 'Preparo…' : `Link di rinnovo · ${eur(price.cents)}`}
-        </ActionButton>
+        <div className="flex flex-col gap-2.5">
+          <div className="flex gap-2">
+            {(['attivazione', 'benvenuto'] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => setTipoMail(t)}
+                aria-pressed={tipoMail === t}
+                className={`inline-flex min-h-[40px] flex-1 items-center justify-center rounded-full border px-3 text-fine font-medium capitalize transition-colors ${
+                  tipoMail === t ? 'border-accent bg-accent text-paper' : 'border-rule-paper text-on-paper'
+                }`}
+              >
+                {t === 'attivazione' ? 'Socio di prima' : 'Nuovo iscritto'}
+              </button>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2.5">
+            <ActionButton onClick={renewLink} disabled={busy} className="flex-1">
+              {busy ? 'Preparo…' : `Link di rinnovo · ${eur(price.cents)}`}
+            </ActionButton>
+            <ActionButton variant="quiet" onClick={mandaBenvenuto} disabled={busy}>
+              {benvenutoFatto ? 'Rimanda la mail' : 'Manda la mail'}
+            </ActionButton>
+          </div>
+        </div>
       }
     >
       <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -138,6 +200,7 @@ function Detail({
           { k: 'Email', v: row.email },
           { k: 'Socio dal', v: fmtDate(row.started_at) },
           { k: 'Scade il', v: fmtDate(row.expires_at) },
+          { k: 'Benvenuto', v: row.welcome_sent_at ? `mandato il ${fmtDate(row.welcome_sent_at)}` : 'mai mandato' },
           {
             k: 'Mancano',
             v: left >= 0 ? `${left} ${left === 1 ? 'giorno' : 'giorni'}` : `scaduta da ${-left} giorni`,
