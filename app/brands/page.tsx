@@ -8,7 +8,6 @@ import { Section } from '@/components/ui/Section';
 import { SiteFooter } from '@/components/ui/SiteFooter';
 import { SiteNav } from '@/components/ui/SiteNav';
 import { PartnerLogos } from '@/components/ui/PartnerLogos';
-import CartDrawer from '@/components/CartDrawer';
 
 export async function generateMetadata() {
   const t = await getTranslations('site.brands');
@@ -154,7 +153,6 @@ export default async function BrandsPage() {
       </main>
 
       <SiteFooter />
-      <CartDrawer />
     </>
   );
 }

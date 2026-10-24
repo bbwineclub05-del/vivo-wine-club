@@ -118,7 +118,11 @@ html {
 body {
   background: #F5E6E6;
   color: #1a0505;
-  overflow-x: hidden;
+  /* `clip`, non `hidden`: `hidden` fa del body un contenitore di
+     scorrimento, e `position: sticky` dentro al body si attacca a
+     quello — cioè non si attacca a niente, perché a scorrere è html.
+     `clip` taglia lo stesso l'orizzontale senza creare lo scroller. */
+  overflow-x: clip;
   /* Prevent iOS Safari from inflating font sizes on rotation */
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;

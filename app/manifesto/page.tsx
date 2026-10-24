@@ -6,7 +6,6 @@ import { Chapter, Statement } from '@/components/ui/Chapter';
 import { Section } from '@/components/ui/Section';
 import { SiteFooter } from '@/components/ui/SiteFooter';
 import { SiteNav } from '@/components/ui/SiteNav';
-import CartDrawer from '@/components/CartDrawer';
 
 export async function generateMetadata() {
   const t = await getTranslations('site.manifesto');
@@ -175,7 +174,6 @@ export default async function ManifestoPage() {
       </main>
 
       <SiteFooter />
-      <CartDrawer />
     </>
   );
 }

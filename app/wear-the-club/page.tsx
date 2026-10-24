@@ -5,7 +5,6 @@ import { Section } from '@/components/ui/Section';
 import { ShopGrid } from '@/components/ui/ShopGrid';
 import { SiteFooter } from '@/components/ui/SiteFooter';
 import { SiteNav } from '@/components/ui/SiteNav';
-import CartDrawer from '@/components/CartDrawer';
 
 export async function generateMetadata() {
   const t = await getTranslations('wearTheClub');
@@ -39,7 +38,6 @@ export default async function WearTheClubPage() {
       </main>
 
       <SiteFooter />
-      <CartDrawer />
     </>
   );
 }

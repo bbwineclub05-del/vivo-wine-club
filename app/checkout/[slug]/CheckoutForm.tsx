@@ -1,28 +1,29 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { pixel } from '@/lib/pixel';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
-import { MapPin, Minus, Plus, Calendar, Tag, User, Gift, Sparkles, ShoppingBag, Check } from 'lucide-react';
-import BackButton from '@/components/BackButton';
-import Navbar from '@/components/Navbar';
-import { type EventData } from '@/lib/events';
 import { useTranslations } from 'next-intl';
-import ConsentCheckbox from '@/components/ConsentCheckbox';
+import { Check, Minus, Plus } from 'lucide-react';
+import { pixel } from '@/lib/pixel';
+import type { EventData } from '@/lib/events';
 
-const EMAIL_MISMATCH = 'Email addresses do not match.';
+/**
+ * Comprare un biglietto.
+ *
+ * Prima erano seicento righe con i campi in maiuscoletto spaziato, il
+ * totale in fondo alla pagina e il pulsante ancora più sotto: da
+ * telefono, dopo aver scritto nome, cognome, due volte l'email e il
+ * telefono, bisognava scorrere al buio per sapere quanto si stava per
+ * pagare.
+ *
+ * Adesso il totale e il pulsante restano fermi in fondo allo schermo
+ * e si aggiornano mentre scegli. Quello che si paga si vede sempre.
+ */
 
-const MAX_TICKETS = 10;
+const MAX = 10;
 
-/* ── UpsellConfig type ── */
 interface UpsellConfig {
   id: string;
-  product_id: string;
-  context: 'event' | 'merch';
-  target_slug: string | null;
-  sort_order: number;
-  active: boolean;
   products: {
     id: string;
     title: string;
@@ -33,564 +34,319 @@ interface UpsellConfig {
   };
 }
 
-/* ── Input field ── */
-function Field({
-  label,
-  type = 'text',
-  value,
-  onChange,
-  placeholder,
-  autoComplete,
-  error,
-}: {
-  label: string;
-  type?: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-  autoComplete?: string;
-  error?: string;
-}) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-[9px] tracking-[0.3em] text-[#7a4a4a]">{label}</label>
-      <input
-        type={type}
-        required
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        autoComplete={autoComplete}
-        className={`w-full border bg-white px-4 py-3 text-sm text-[#1a0505] placeholder-[#c0a0a0] focus:outline-none transition-colors duration-200 rounded-lg ${error ? 'border-[#731515]' : 'border-[#e8d5d5] focus:border-[#731515]'}`}
-        style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
-      />
-      {error && (
-        <span className="text-[10px] text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>{error}</span>
-      )}
-    </div>
-  );
+function eur(n: number) {
+  return `${Number.isInteger(n) ? n : n.toFixed(2).replace('.', ',')} €`;
 }
 
-/* ── Checkout form ── */
-export default function CheckoutForm({ event, refCode, partnerCode, referralEnabled }: { event: EventData; refCode?: string; partnerCode?: string; referralEnabled?: boolean }) {
+export default function CheckoutForm({
+  event, refCode, partnerCode,
+}: {
+  event: EventData;
+  refCode?: string;
+  partnerCode?: string;
+  referralEnabled?: boolean;
+}) {
+  const t = useTranslations('events');
   const tc = useTranslations('consent');
-  const [qty,            setQty]            = useState(1);
-  const [firstName,      setFirstName]      = useState('');
-  const [lastName,       setLastName]       = useState('');
-  const [email,          setEmail]          = useState('');
-  const [confirmEmail,   setConfirmEmail]   = useState('');
-  const [phone,          setPhone]          = useState('');
-  const [enteredRefCode, setEnteredRefCode] = useState(refCode ?? '');
-  const [loading,        setLoading]        = useState(false);
-  const [error,          setError]          = useState('');
 
-  // Consent — consentPrivacyTerms is REQUIRED (blocks submit); consentMarketing/consentPhotoVideo are OPTIONAL
-  const [consentPrivacyTerms, setConsentPrivacyTerms] = useState(false);
-  const [consentMarketing,    setConsentMarketing]    = useState(false);
-  const [consentPhotoVideo,   setConsentPhotoVideo]   = useState(false);
+  const [qty, setQty] = useState(1);
+  const [nome, setNome] = useState('');
+  const [cognome, setCognome] = useState('');
+  const [email, setEmail] = useState('');
+  const [email2, setEmail2] = useState('');
+  const [telefono, setTelefono] = useState('');
+  const [codiceAmico, setCodiceAmico] = useState(refCode ?? '');
+  const [consenso, setConsenso] = useState(false);
+  const [marketing, setMarketing] = useState(false);
+  const [foto, setFoto] = useState(false);
+  const [inCorso, setInCorso] = useState(false);
+  const [errore, setErrore] = useState('');
 
-  /* ── Upsell state ── */
-  const [upsellConfigs, setUpsellConfigs] = useState<UpsellConfig[]>([]);
-  const [upsellAdded,   setUpsellAdded]   = useState<Set<string>>(new Set());
+  const [extra, setExtra] = useState<UpsellConfig[]>([]);
+  const [scelti, setScelti] = useState<Set<string>>(new Set());
 
-  const emailsMatch = email.length > 0 && email === confirmEmail;
+  const gratis = event.price === 0;
 
-  const total = event.price * qty;
-
-  /* ── Upsell totals ── */
-  const upsellTotal = upsellConfigs
-    .filter(c => upsellAdded.has(c.id))
-    .reduce((sum, c) => sum + Number(c.products.price), 0);
-  const grandTotal = total + upsellTotal;
-
-  const dec = () => setQty((q) => Math.max(1, q - 1));
-  const inc = () => setQty((q) => Math.min(MAX_TICKETS, q + 1));
-
-  /* ── Fetch upsell configs on mount ── */
   useEffect(() => {
     fetch(`/api/upsell?context=event&slug=${event.slug}`)
-      .then(r => r.json())
-      .then(j => {
-        if (j.configs?.length > 0) {
-          setUpsellConfigs(j.configs);
-          // Track impressions (fire-and-forget)
-          for (const c of j.configs) {
-            fetch('/api/upsell/track', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ upsellConfigId: c.id, eventType: 'impression', checkoutContext: event.slug }),
-            }).catch(() => {});
-          }
+      .then((r) => r.json())
+      .then((j) => {
+        if (!j.configs?.length) return;
+        setExtra(j.configs);
+        for (const c of j.configs) {
+          fetch('/api/upsell/track', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ upsellConfigId: c.id, eventType: 'impression', checkoutContext: event.slug }),
+          }).catch(() => {});
         }
       })
       .catch(() => {});
   }, [event.slug]);
 
-  /* ── Toggle upsell item ── */
-  function toggleUpsell(configId: string, eventType: 'added' | 'removed') {
-    setUpsellAdded(prev => {
-      const next = new Set(prev);
-      if (next.has(configId)) next.delete(configId); else next.add(configId);
-      return next;
+  function toggleExtra(c: UpsellConfig) {
+    const dentro = scelti.has(c.id);
+    setScelti((p) => {
+      const n = new Set(p);
+      if (dentro) n.delete(c.id); else n.add(c.id);
+      return n;
     });
     fetch('/api/upsell/track', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ upsellConfigId: configId, eventType, checkoutContext: event.slug }),
+      body: JSON.stringify({
+        upsellConfigId: c.id,
+        eventType: dentro ? 'removed' : 'added',
+        checkoutContext: event.slug,
+      }),
     }).catch(() => {});
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const totaleExtra = extra
+    .filter((c) => scelti.has(c.id))
+    .reduce((s, c) => s + Number(c.products.price), 0);
+  const totale = event.price * qty + totaleExtra;
+  const emailDiverse = email2.length > 0 && email !== email2;
+
+  async function invia(e: React.FormEvent) {
     e.preventDefault();
-    if (!emailsMatch) { setError(EMAIL_MISMATCH); return; }
-    if (!consentPrivacyTerms) { setError(tc('requiredErrorPrivacyTerms')); return; }
-    setError('');
-    setLoading(true);
-
+    if (emailDiverse) { setErrore(t('coEmailMismatch')); return; }
+    if (!consenso) { setErrore(tc('requiredErrorPrivacyTerms')); return; }
+    setErrore('');
+    setInCorso(true);
     try {
-      const upsellItems = upsellConfigs
-        .filter(c => upsellAdded.has(c.id))
-        .map(c => ({ configId: c.id, title: c.products.title, price: Number(c.products.price) }));
-
-      const res  = await fetch('/api/checkout/event', {
-        method:  'POST',
+      const res = await fetch('/api/checkout/event', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({
+        body: JSON.stringify({
           slug: event.slug,
           qty,
-          firstName,
-          lastName,
+          firstName: nome,
+          lastName: cognome,
           email,
-          phone,
-          refCode: enteredRefCode.trim().toUpperCase() || undefined,
+          phone: telefono,
+          refCode: codiceAmico.trim().toUpperCase() || undefined,
           partnerCode,
-          upsellItems,
-          consentPrivacyTerms,
-          consentMarketing,
-          consentPhotoVideo,
+          upsellItems: extra
+            .filter((c) => scelti.has(c.id))
+            .map((c) => ({ configId: c.id, title: c.products.title, price: Number(c.products.price) })),
+          consentPrivacyTerms: consenso,
+          consentMarketing: marketing,
+          consentPhotoVideo: foto,
         }),
       });
       const data = await res.json();
-
-      if (!res.ok || !data.url) {
-        throw new Error(data.error ?? 'Something went wrong. Please try again.');
-      }
-
-      pixel.initiateCheckout({ value: grandTotal, content_name: event.title });
+      if (!res.ok || !data.url) throw new Error(data.error ?? 'Qualcosa è andato storto.');
+      pixel.initiateCheckout({ value: totale, content_name: event.title });
       window.location.href = data.url;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong.');
-      setLoading(false);
+      setErrore(err instanceof Error ? err.message : 'Qualcosa è andato storto.');
+      setInCorso(false);
     }
-  };
+  }
+
+  const campo =
+    'w-full rounded-2xl border border-rule-paper bg-paper px-4 py-3.5 text-body placeholder:text-on-paper-muted/60 focus:border-accent/50 focus:outline-none [font-size:16px]';
+
+  function Campo({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+    return (
+      <label className="block">
+        <span className="mb-1.5 block text-fine font-medium">
+          {label}
+          {hint && <span className="ml-2 font-normal text-on-paper-muted">{hint}</span>}
+        </span>
+        {children}
+      </label>
+    );
+  }
 
   return (
-    <>
-      <Navbar />
-      <main className="min-h-screen pt-16">
+    <form
+      onSubmit={invia}
+      className="mx-auto max-w-[760px] px-5 pb-[calc(112px+env(safe-area-inset-bottom))] pt-7 lg:px-10 lg:pb-16"
+    >
+      <h1 className="ds-display text-[clamp(1.8rem,5vw,2.4rem)] leading-tight tracking-[-0.03em]">
+        {t('coTitle')}
+      </h1>
+      <p className="mt-2 text-body text-on-paper-muted">
+        {event.title} · {event.day} {event.month} {event.year}
+      </p>
 
-        {/* ── Back link ── */}
-        <div className="max-w-3xl mx-auto px-6 lg:px-10 pt-6">
-          <BackButton className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] text-[#7a4a4a] hover:text-[#731515] transition-colors duration-300" />
+      {/* ── Quanti ── */}
+      <section className="mt-8">
+        <p className="mb-2.5 text-fine font-medium">{t('coTickets')}</p>
+        <div className="inline-flex items-center gap-2 rounded-full border border-rule-paper p-1">
+          <button
+            type="button"
+            onClick={() => setQty((q) => Math.max(1, q - 1))}
+            aria-label="−"
+            className="grid h-12 w-12 place-items-center rounded-full hover:bg-paper-soft"
+          >
+            <Minus size={17} strokeWidth={2} />
+          </button>
+          <span className="ds-numeric min-w-[32px] text-center text-[19px] font-medium">{qty}</span>
+          <button
+            type="button"
+            onClick={() => setQty((q) => Math.min(MAX, q + 1))}
+            aria-label="+"
+            className="grid h-12 w-12 place-items-center rounded-full hover:bg-paper-soft"
+          >
+            <Plus size={17} strokeWidth={2} />
+          </button>
         </div>
+      </section>
 
-        <section className="relative overflow-hidden py-10 md:py-16">
-          <div className="fog-center" />
+      {/* ── Chi sei ── */}
+      <section className="mt-8">
+        <p className="mb-3 text-body font-medium">{t('coYou')}</p>
+        <div className="flex flex-col gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Campo label={t('coFirstName')}>
+              <input required value={nome} onChange={(e) => setNome(e.target.value)} className={campo} autoComplete="given-name" />
+            </Campo>
+            <Campo label={t('coLastName')}>
+              <input required value={cognome} onChange={(e) => setCognome(e.target.value)} className={campo} autoComplete="family-name" />
+            </Campo>
+          </div>
 
-          <div className="max-w-3xl mx-auto px-6 lg:px-10">
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            >
-              {/* ── Event image — same width as cards below, sharp edges ── */}
-            {event.image_url && (
-              <div className="relative w-full aspect-[16/7] overflow-hidden mb-8 rounded-lg">
-                <Image
-                  src={event.image_url}
-                  alt={event.title}
-                  fill
-                  className="object-cover"
-                  priority
-                  sizes="(max-width:768px) 100vw, 768px"
-                />
-                <div className="absolute inset-0 bg-[#731515]/50" />
-              </div>
-            )}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Campo label={t('coEmail')}>
+              <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={campo} autoComplete="email" placeholder="tu@email.com" />
+            </Campo>
+            <Campo label={t('coEmailConfirm')}>
+              <input required type="email" value={email2} onChange={(e) => setEmail2(e.target.value)} className={campo} autoComplete="off" placeholder="tu@email.com" />
+              {emailDiverse && <span className="mt-1.5 block text-fine text-accent">{t('coEmailMismatch')}</span>}
+            </Campo>
+          </div>
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-8">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Campo label={t('coPhone')}>
+              <input required type="tel" value={telefono} onChange={(e) => setTelefono(e.target.value)} className={campo} autoComplete="tel" placeholder="+39 000 000 0000" />
+            </Campo>
+            <Campo label={t('coRef')} hint={t('coRefHint')}>
+              <input value={codiceAmico} onChange={(e) => setCodiceAmico(e.target.value)} className={`${campo} uppercase`} />
+            </Campo>
+          </div>
+        </div>
+      </section>
 
-                {/* ── Event summary ── */}
-                <div className="glass-card p-5 sm:p-8 md:p-10">
-                  <div className="text-[9px] tracking-[0.45em] text-[#731515] mb-4">
-                    {event.type}
+      {/* ── Da aggiungere ── */}
+      {extra.length > 0 && (
+        <section className="mt-9">
+          <p className="mb-3 text-body font-medium">{t('coExtras')}</p>
+          <div className="flex flex-col gap-2">
+            {extra.map((c) => {
+              const p = c.products;
+              const img = p.images?.[0] ?? p.product_variants?.find((v) => v.images?.length)?.images[0];
+              const dentro = scelti.has(c.id);
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => toggleExtra(c)}
+                  aria-pressed={dentro}
+                  className={`flex items-center gap-3 rounded-2xl border p-3 text-left transition-colors ${
+                    dentro ? 'border-accent bg-accent/[0.05]' : 'border-rule-paper'
+                  }`}
+                >
+                  <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-paper-soft">
+                    {img && <Image src={img} alt="" fill sizes="56px" className="object-cover" />}
                   </div>
-                  <h1
-                    className="text-[clamp(1.8rem,5vw,3rem)] font-light text-[#1a0505] leading-tight mb-6"
-                    style={{ fontFamily: 'var(--font-syne)' }}
-                  >
-                    {event.title}
-                  </h1>
-
-                  <div className="flex flex-col sm:flex-row gap-4 text-sm text-[#7a4a4a]">
-                    <div className="flex items-center gap-2">
-                      <Calendar size={13} className="text-[#731515] shrink-0" />
-                      <span style={{ fontFamily: 'var(--font-nunito)' }}>
-                        {event.month} {event.day}, {event.year}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <MapPin size={13} className="text-[#731515] shrink-0" />
-                      <span style={{ fontFamily: 'var(--font-nunito)' }}>{event.locationFull}</span>
-                    </div>
-                    {event.price > 0 && (
-                      <div className="flex items-center gap-2">
-                        <Tag size={13} className="text-[#731515] shrink-0" />
-                        <span style={{ fontFamily: 'var(--font-nunito)' }}>€{event.price} per person</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="w-10 h-px bg-[#731515]/20 mt-7 mb-6" />
-
-                  <p className="text-[#7a4a4a] text-sm leading-relaxed" style={{ fontFamily: 'var(--font-nunito)' }}>
-                    {event.description}
-                  </p>
-                </div>
-
-                {/* ── Ticket selector ── */}
-                <div className="glass-card p-5 sm:p-8 md:p-10">
-                  <div className="text-[10px] tracking-[0.4em] text-[#731515] mb-6">
-                    SELECT TICKETS
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-[#1a0505]" style={{ fontFamily: 'var(--font-nunito)' }}>
-                      Number of tickets
-                    </span>
-
-                    <div className="flex items-center gap-4">
-                      <button
-                        type="button"
-                        onClick={dec}
-                        disabled={qty <= 1}
-                        className="w-11 h-11 flex items-center justify-center border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515] hover:text-[#731515] disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 rounded-lg"
-                        aria-label="Remove ticket"
-                      >
-                        <Minus size={13} />
-                      </button>
-
-                      <span
-                        className="text-2xl font-light text-[#1a0505] w-8 text-center tabular-nums"
-                        style={{ fontFamily: 'var(--font-syne)' }}
-                      >
-                        {qty}
-                      </span>
-
-                      <button
-                        type="button"
-                        onClick={inc}
-                        disabled={qty >= MAX_TICKETS}
-                        className="w-11 h-11 flex items-center justify-center border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515] hover:text-[#731515] disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 rounded-lg"
-                        aria-label="Add ticket"
-                      >
-                        <Plus size={13} />
-                      </button>
-                    </div>
-                  </div>
-
-                  {qty >= MAX_TICKETS && (
-                    <p className="mt-3 text-[10px] tracking-[0.2em] text-[#7a4a4a]/60 text-right" style={{ fontFamily: 'var(--font-nunito)' }}>
-                      Maximum {MAX_TICKETS} tickets per order.
-                    </p>
-                  )}
-                </div>
-
-                {/* ── Buyer details ── */}
-                <div className="glass-card p-5 sm:p-8 md:p-10">
-                  <div className="flex items-center gap-2 mb-6">
-                    <User size={13} className="text-[#731515]" />
-                    <div className="text-[10px] tracking-[0.4em] text-[#731515]">YOUR DETAILS</div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Field label="FIRST NAME" value={firstName} onChange={setFirstName} placeholder="Marco" autoComplete="given-name" />
-                    <Field label="LAST NAME"  value={lastName}  onChange={setLastName}  placeholder="Rossi"  autoComplete="family-name" />
-                    <Field label="EMAIL" type="email" value={email} onChange={setEmail} placeholder="marco@example.com" autoComplete="email" />
-                    <Field
-                      label="CONFIRM EMAIL"
-                      type="email"
-                      value={confirmEmail}
-                      onChange={setConfirmEmail}
-                      placeholder="marco@example.com"
-                      autoComplete="off"
-                      error={confirmEmail.length > 0 && email !== confirmEmail ? EMAIL_MISMATCH : undefined}
-                    />
-                    <Field label="PHONE NUMBER" type="tel" value={phone} onChange={setPhone} placeholder="+39 333 000 0000" autoComplete="tel" />
-                  </div>
-
-                  <p className="mt-5 text-[10px] text-[#7a4a4a]/50 leading-relaxed" style={{ fontFamily: 'var(--font-nunito)' }}>
-                    Your confirmation email with QR code entry ticket will be sent to the address above.
-                  </p>
-                </div>
-
-                {/* ── Upsell section ── */}
-                {upsellConfigs.length > 0 && (
-                  <div className="glass-card p-5 sm:p-8 md:p-10">
-                    <div className="flex items-center gap-2 mb-5">
-                      <Sparkles size={13} className="text-[#731515]" />
-                      <div className="text-[10px] tracking-[0.4em] text-[#731515]">YOU MIGHT ALSO LIKE</div>
-                    </div>
-                    <div className="flex gap-3 overflow-x-auto pb-1 -mx-1 px-1">
-                      {upsellConfigs.map(config => {
-                        const isAdded   = upsellAdded.has(config.id);
-                        // Images may live at product level or inside variants — check both
-                        const imgSrc    = config.products.images?.[0]
-                          ?? config.products.product_variants?.find(v => v.images?.length > 0)?.images?.[0]
-                          ?? null;
-                        const price     = Number(config.products.price);
-                        return (
-                          <div
-                            key={config.id}
-                            className={`shrink-0 w-[200px] sm:w-[220px] rounded-xl border transition-all duration-200 overflow-hidden ${isAdded ? 'border-[#731515]/60 shadow-md' : 'border-[#e8d5d5]'}`}
-                          >
-                            {/* Product image */}
-                            {imgSrc ? (
-                              <div className="relative w-full aspect-square bg-[#fdf6f6]">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src={imgSrc} alt={config.products.title} className="w-full h-full object-cover" />
-                              </div>
-                            ) : (
-                              <div className="w-full aspect-square bg-[#fdf6f6] flex items-center justify-center text-[#e8d5d5]">
-                                <ShoppingBag size={32} />
-                              </div>
-                            )}
-                            <div className="p-3 bg-white">
-                              <p className="text-[12px] font-medium text-[#1a0505] leading-tight mb-1" style={{ fontFamily: 'var(--font-nunito)' }}>
-                                {config.products.title}
-                              </p>
-                              <div className="flex items-center gap-1.5 mb-2.5">
-                                <span className="text-sm font-medium text-[#731515]" style={{ fontFamily: 'var(--font-syne)' }}>
-                                  €{price.toFixed(2)}
-                                </span>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => toggleUpsell(config.id, isAdded ? 'removed' : 'added')}
-                                className={`w-full min-h-[44px] flex items-center justify-center gap-1.5 rounded-lg text-[11px] tracking-[0.2em] font-medium transition-all duration-200 ${
-                                  isAdded
-                                    ? 'bg-[#731515] text-white hover:bg-[#aa4848]'
-                                    : 'border border-[#731515] text-[#731515] bg-white hover:bg-[#fdf0f0]'
-                                }`}
-                                style={{ fontFamily: 'var(--font-nunito)' }}
-                              >
-                                {isAdded ? <><Check size={13} /> AGGIUNTO</> : <><Plus size={11} /> AGGIUNGI</>}
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* ── Order summary + pay ── */}
-                <div className="glass-card p-5 sm:p-8 md:p-10">
-                  <div className="text-[10px] tracking-[0.4em] text-[#731515] mb-6">
-                    ORDER SUMMARY
-                  </div>
-
-                  {event.price > 0 ? (
-                    <>
-                      <div className="flex flex-col gap-3 mb-6">
-                        <div className="flex items-center justify-between text-sm text-[#7a4a4a]" style={{ fontFamily: 'var(--font-nunito)' }}>
-                          <span>{event.title}</span>
-                          <span>€{event.price}</span>
-                        </div>
-                        <div className="flex items-center justify-between text-sm text-[#7a4a4a]" style={{ fontFamily: 'var(--font-nunito)' }}>
-                          <span>Tickets</span>
-                          <span>× {qty}</span>
-                        </div>
-
-                        {/* Upsell items */}
-                        {Array.from(upsellAdded).map(configId => {
-                          const config = upsellConfigs.find(c => c.id === configId);
-                          if (!config) return null;
-                          return (
-                            <div key={configId} className="flex items-center justify-between text-sm text-[#7a4a4a]" style={{ fontFamily: 'var(--font-nunito)' }}>
-                              <span className="flex items-center gap-1.5">
-                                <Sparkles size={11} className="text-[#731515]" />
-                                {config.products.title}
-                              </span>
-                              <span>€{Number(config.products.price).toFixed(2)}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      <div className="w-full h-px bg-[#e8d5d5] mb-5" />
-
-                      <div className="flex items-center justify-between mb-8">
-                        <span className="text-[11px] tracking-[0.3em] text-[#7a4a4a]">TOTAL</span>
-                        <motion.span
-                          key={grandTotal}
-                          initial={{ opacity: 0, y: -6 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.25 }}
-                          className="text-3xl font-light text-[#731515]"
-                          style={{ fontFamily: 'var(--font-syne)' }}
-                        >
-                          €{grandTotal.toFixed(2)}
-                        </motion.span>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="flex flex-col gap-3 mb-6">
-                        <div className="flex items-center justify-between" style={{ fontFamily: 'var(--font-nunito)' }}>
-                          <span className="text-sm text-[#7a4a4a]">
-                            {event.title} × {qty}
-                          </span>
-                          <span className="text-xl font-light text-[#731515]" style={{ fontFamily: 'var(--font-syne)' }}>
-                            FREE
-                          </span>
-                        </div>
-
-                        {/* Upsell items for free events */}
-                        {Array.from(upsellAdded).map(configId => {
-                          const config = upsellConfigs.find(c => c.id === configId);
-                          if (!config) return null;
-                          return (
-                            <div key={configId} className="flex items-center justify-between text-sm text-[#7a4a4a]" style={{ fontFamily: 'var(--font-nunito)' }}>
-                              <span className="flex items-center gap-1.5">
-                                <Sparkles size={11} className="text-[#731515]" />
-                                {config.products.title}
-                              </span>
-                              <span>€{Number(config.products.price).toFixed(2)}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      {upsellAdded.size > 0 && (
-                        <>
-                          <div className="w-full h-px bg-[#e8d5d5] mb-5" />
-                          <div className="flex items-center justify-between mb-8">
-                            <span className="text-[11px] tracking-[0.3em] text-[#7a4a4a]">TOTAL</span>
-                            <motion.span
-                              key={grandTotal}
-                              initial={{ opacity: 0, y: -6 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ duration: 0.25 }}
-                              className="text-3xl font-light text-[#731515]"
-                              style={{ fontFamily: 'var(--font-syne)' }}
-                            >
-                              €{grandTotal.toFixed(2)}
-                            </motion.span>
-                          </div>
-                        </>
-                      )}
-
-                      {upsellAdded.size === 0 && (
-                        <div className="mb-8" />
-                      )}
-                    </>
-                  )}
-
-                  {/* ── Referral code (paid events with referral enabled) ── */}
-                  {referralEnabled && event.price > 0 && (
-                    <div className="mb-6 flex flex-col gap-1.5">
-                      <label className="flex items-center gap-1.5 text-[9px] tracking-[0.3em] text-[#7a4a4a]">
-                        <Gift size={11} className="text-[#731515]" />
-                        {refCode ? 'REFERRAL CODE' : 'HAI UN CODICE REFERRAL? INSERISCILO QUI'}
-                      </label>
-                      <input
-                        type="text"
-                        value={enteredRefCode}
-                        onChange={e => setEnteredRefCode(e.target.value)}
-                        readOnly={!!refCode}
-                        placeholder="VIVO-XXXXX (opzionale)"
-                        className={`w-full border bg-white px-4 py-3 text-sm text-[#1a0505] placeholder-[#c0a0a0] focus:outline-none transition-colors duration-200 rounded-lg uppercase tracking-widest ${refCode ? 'border-[#e8d5d5] bg-[#fdf6f6] text-[#731515] font-semibold cursor-default' : 'border-[#e8d5d5] focus:border-[#731515]'}`}
-                        style={{ fontFamily: 'var(--font-nunito)', fontSize: '14px' }}
-                      />
-                      {refCode && (
-                        <p className="text-[10px] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
-                          Codice referral applicato automaticamente dal link.
-                        </p>
-                      )}
-                    </div>
-                  )}
-
-                  {/* ── Consent ── */}
-                  <div className="flex flex-col gap-3 mb-6">
-                    {/* Required: Privacy Policy + Terms of Service */}
-                    <ConsentCheckbox
-                      id="checkout-consent-privacy-terms"
-                      required
-                      checked={consentPrivacyTerms}
-                      onChange={setConsentPrivacyTerms}
-                      label={tc.rich('privacyAndTermsRequired', {
-                        privacyLink: (chunks) => (
-                          <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline hover:text-[#731515] transition-colors">
-                            {chunks}
-                          </a>
-                        ),
-                        termsLink: (chunks) => (
-                          <a href="/terms-of-service" target="_blank" rel="noopener noreferrer" className="underline hover:text-[#731515] transition-colors">
-                            {chunks}
-                          </a>
-                        ),
-                      })}
-                    />
-                    {/* Optional: marketing — must never block submit */}
-                    <ConsentCheckbox
-                      id="checkout-consent-marketing"
-                      required={false}
-                      checked={consentMarketing}
-                      onChange={setConsentMarketing}
-                      label={tc('marketingOptional')}
-                    />
-                    {/* Optional: photo/video during the event — must never block submit */}
-                    <ConsentCheckbox
-                      id="checkout-consent-photo-video"
-                      required={false}
-                      checked={consentPhotoVideo}
-                      onChange={setConsentPhotoVideo}
-                      label={tc('photoVideoOptional')}
-                    />
-                  </div>
-
-                  {error && (
-                    <p className="mb-4 text-center text-xs text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>
-                      {error}
-                    </p>
-                  )}
-
-                  <motion.button
-                    type="submit"
-                    disabled={loading || !emailsMatch || !consentPrivacyTerms}
-                    whileTap={{ scale: 0.99 }}
-                    className="w-full py-4 bg-[#731515] text-white text-[11px] tracking-[0.4em] hover:bg-[#aa4848] disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-300 rounded-lg"
-                  >
-                    {loading
-                      ? 'PROCESSING…'
-                      : event.price > 0 || upsellAdded.size > 0
-                        ? 'PROCEED TO PAYMENT'
-                        : 'GET YOUR FREE TICKET'}
-                  </motion.button>
-
-                  <p className="mt-4 text-center text-[10px] text-[#7a4a4a]/50 leading-relaxed" style={{ fontFamily: 'var(--font-nunito)' }}>
-                    {event.price > 0 || upsellAdded.size > 0
-                      ? 'Secure payment powered by Stripe — you will not be charged yet'
-                      : 'Free entry — confirm your spot and receive your QR code by email'}
-                  </p>
-                </div>
-
-              </form>
-            </motion.div>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-body">{p.title}</span>
+                    <span className="ds-numeric text-fine text-on-paper-muted">{eur(Number(p.price))}</span>
+                  </span>
+                  <span className={`inline-flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-full px-3.5 text-fine font-medium ${
+                    dentro ? 'bg-accent text-paper' : 'border border-rule-paper'
+                  }`}>
+                    {dentro ? <Check size={14} strokeWidth={2.4} /> : <Plus size={14} strokeWidth={2.2} />}
+                    {dentro ? t('coAdded') : t('coAdd')}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </section>
-      </main>
-    </>
+      )}
+
+      {/* ── I consensi ── */}
+      <section className="mt-9 flex flex-col gap-3">
+        <label className="flex cursor-pointer items-start gap-3">
+          <input
+            type="checkbox"
+            checked={consenso}
+            onChange={(e) => { setConsenso(e.target.checked); setErrore(''); }}
+            className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--color-accent)]"
+          />
+          <span className="text-fine text-on-paper-muted">
+            {tc.rich('privacyAndTermsRequired', {
+              privacyLink: (c) => <a href="/privacy-policy" className="underline">{c}</a>,
+              termsLink: (c) => <a href="/terms-of-service" className="underline">{c}</a>,
+            })}
+          </span>
+        </label>
+        <label className="flex cursor-pointer items-start gap-3">
+          <input type="checkbox" checked={foto} onChange={(e) => setFoto(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--color-accent)]" />
+          <span className="text-fine text-on-paper-muted">{tc('photoVideoOptional')}</span>
+        </label>
+        <label className="flex cursor-pointer items-start gap-3">
+          <input type="checkbox" checked={marketing} onChange={(e) => setMarketing(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--color-accent)]" />
+          <span className="text-fine text-on-paper-muted">{tc('marketingOptional')}</span>
+        </label>
+      </section>
+
+      {errore && <p className="mt-5 text-fine font-medium text-accent">{errore}</p>}
+
+      {/* ── Il riepilogo sul computer ── */}
+      <section className="mt-9 hidden rounded-2xl border border-rule-paper p-5 lg:block">
+        <dl className="flex flex-col gap-2">
+          <div className="flex justify-between text-body">
+            <dt className="text-on-paper-muted">{t('coTicketsLine', { n: qty })}</dt>
+            <dd className="ds-numeric">{eur(event.price * qty)}</dd>
+          </div>
+          {extra.filter((c) => scelti.has(c.id)).map((c) => (
+            <div key={c.id} className="flex justify-between text-body">
+              <dt className="text-on-paper-muted">{c.products.title}</dt>
+              <dd className="ds-numeric">{eur(Number(c.products.price))}</dd>
+            </div>
+          ))}
+          <div className="flex items-baseline justify-between border-t border-rule-paper pt-3">
+            <dt className="text-body font-medium">{t('coTotal')}</dt>
+            <dd className="ds-numeric text-[24px] font-medium">{eur(totale)}</dd>
+          </div>
+        </dl>
+
+        <button
+          type="submit"
+          disabled={inCorso}
+          className="mt-5 inline-flex min-h-[56px] w-full items-center justify-center rounded-full bg-accent px-6 text-fine font-medium text-paper transition-opacity hover:opacity-90 disabled:opacity-50"
+        >
+          {inCorso ? t('coPaying') : gratis ? t('coAtDoor') : t('coPay', { total: eur(totale) })}
+        </button>
+        <p className="mt-3 text-center text-fine text-on-paper-muted">
+          {gratis ? t('paymentAtDoorNote') : t('coSecure')}
+        </p>
+      </section>
+
+      {/* ── Il totale e il pulsante, fermi in fondo sul telefono ── */}
+      <div
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-rule-paper bg-paper/95 px-5 py-3 backdrop-blur lg:hidden"
+        style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
+      >
+        <div className="flex items-center gap-3">
+          <div className="min-w-0 shrink-0">
+            <p className="text-fine text-on-paper-muted">{t('coTotal')}</p>
+            <p className="ds-numeric text-[19px] font-medium leading-none">{eur(totale)}</p>
+          </div>
+          <button
+            type="submit"
+            disabled={inCorso}
+            className="inline-flex min-h-[52px] flex-1 items-center justify-center rounded-full bg-accent px-5 text-fine font-medium text-paper disabled:opacity-50"
+          >
+            {inCorso ? t('coPaying') : gratis ? t('coAtDoor') : t('coPay', { total: eur(totale) })}
+          </button>
+        </div>
+      </div>
+    </form>
   );
 }

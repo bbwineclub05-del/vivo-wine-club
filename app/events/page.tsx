@@ -6,7 +6,6 @@ import { ClubEvents } from '@/components/ui/ClubEvents';
 import { Section } from '@/components/ui/Section';
 import { SiteFooter } from '@/components/ui/SiteFooter';
 import { SiteNav } from '@/components/ui/SiteNav';
-import CartDrawer from '@/components/CartDrawer';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { dbEventToEventData, type DbEvent, type EventData } from '@/lib/events';
 
@@ -89,9 +88,6 @@ export default async function EventsPage() {
               <ButtonLink href="/wineries" variant="paper" size="lg">
                 {t('estatesCta')}
               </ButtonLink>
-              <ButtonLink href="/wine-map" variant="outline" size="lg" className="text-on-ink">
-                {t('mapCta')}
-              </ButtonLink>
             </div>
           </div>
         </Section>
@@ -110,7 +106,6 @@ export default async function EventsPage() {
       </main>
 
       <SiteFooter />
-      <CartDrawer />
     </>
   );
 }

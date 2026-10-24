@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { supabase } from '@/lib/supabase';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { getClientIp, PRIVACY_POLICY_VERSION, TERMS_OF_SERVICE_VERSION } from '@/lib/consent';
 
@@ -35,16 +34,23 @@ export async function POST(request: Request) {
 
     if (discountCode?.trim()) {
       const code = discountCode.trim().toUpperCase();
-      const { data: discount, error: discountError } = await supabase
+      // Con la chiave pubblica questa tabella risponde sempre vuoto —
+      // ha le politiche di accesso chiuse — e ogni codice risultava
+      // "non valido", compresi quelli veri. È una rotta del server:
+      // legge con la chiave di servizio, come tutte le altre.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: discount, error: discountError } = await (getSupabaseAdmin() as any)
         .from('discount_codes')
-        .select('code, discount_percent, used, expires_at')
+        .select('code, discount_percent, used, expires_at, reusable')
         .eq('code', code)
         .single();
 
       if (discountError || !discount) {
         return NextResponse.json({ error: 'Invalid discount code.' }, { status: 400 });
       }
-      if (discount.used) {
+      // I codici dei soci non si consumano: valgono finché vale la
+      // tessera, e chi compra due volte li usa due volte.
+      if (discount.used && !discount.reusable) {
         return NextResponse.json({ error: 'This discount code has already been used.' }, { status: 400 });
       }
       if (new Date(discount.expires_at) < new Date()) {

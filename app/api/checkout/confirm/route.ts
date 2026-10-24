@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { supabase } from '@/lib/supabase';
 import { dbEventToEventData, type DbEvent } from '@/lib/events';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { sendEventConfirmationEmails } from '@/app/api/checkout/event/route';
@@ -126,11 +125,28 @@ export async function GET(request: Request) {
     // ── Merch order — mark discount code as used + save to merch_orders ─────────
     const code = meta.discount_code;
     if (code) {
-      await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: dc } = await (getSupabaseAdmin() as any)
         .from('discount_codes')
-        .update({ used: true })
+        .select('id, reusable, uses')
         .eq('code', code)
-        .eq('used', false);
+        .maybeSingle();
+
+      if (dc?.reusable) {
+        // Il codice dei soci resta valido: si tiene solo il conto.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (getSupabaseAdmin() as any)
+          .from('discount_codes')
+          .update({ uses: (dc.uses ?? 0) + 1 })
+          .eq('id', dc.id);
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (getSupabaseAdmin() as any)
+          .from('discount_codes')
+          .update({ used: true })
+          .eq('code', code)
+          .eq('used', false);
+      }
     }
 
     // Persist order for admin panel (idempotent via stripe_session_id UNIQUE)

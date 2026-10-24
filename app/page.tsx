@@ -9,7 +9,6 @@ import { Section } from '@/components/ui/Section';
 import { VideoCard } from '@/components/ui/VideoCard';
 import { SiteFooter } from '@/components/ui/SiteFooter';
 import { SiteNav } from '@/components/ui/SiteNav';
-import CartDrawer from '@/components/CartDrawer';
 
 // Placeholder reels. Swap `src` for the finished vertical clips; the row
 // reads the same whatever lands here, as long as the clips are 9:16.
@@ -120,7 +119,10 @@ export default async function Home() {
             <p>{t('studio.body1')}</p>
             <p>{t('studio.body2')}</p>
           </div>
-          <ButtonLink href="/brands" size="lg" className="mt-10">
+          {/* Dritto al modulo: chi arriva qui ha già letto cosa
+              facciamo, e un'altra pagina di spiegazioni in mezzo è un
+              passaggio in cui si perde gente. */}
+          <ButtonLink href="/apply?kind=company" size="lg" className="mt-10">
             {t('studio.cta')}
           </ButtonLink>
         </Section>
@@ -150,7 +152,6 @@ export default async function Home() {
       </main>
 
       <SiteFooter />
-      <CartDrawer />
     </>
   );
 }

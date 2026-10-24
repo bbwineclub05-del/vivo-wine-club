@@ -7,7 +7,6 @@ import { useTranslations } from 'next-intl';
 import { SiteNav } from '@/components/ui/SiteNav';
 import { Chapter } from '@/components/ui/Chapter';
 import { Section } from '@/components/ui/Section';
-import CartDrawer from '@/components/CartDrawer';
 import PartnerLogo from '@/components/PartnerLogo';
 import EstatesGrid from '@/components/EstatesGrid';
 import { PARTNERS, type Partner } from '@/lib/partners';
@@ -113,7 +112,6 @@ export default function PartnersPage() {
           </div>
         </section>
       </main>
-      <CartDrawer />
     </>
   );
 }

@@ -1,9 +1,9 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import Image from 'next/image';
-import { MapPin, CalendarDays } from 'lucide-react';
-import Navbar from '@/components/Navbar';
+import { getTranslations } from 'next-intl/server';
+import { SiteNav } from '@/components/ui/SiteNav';
+import { SiteFooter } from '@/components/ui/SiteFooter';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { dbEventToEventData, getEventDisplayStatus, type EventData, type DbEvent } from '@/lib/events';
 import CheckoutForm from './CheckoutForm';
@@ -96,93 +96,72 @@ export default async function CheckoutPage({
   // Past or closed event: show "concluso" page instead of checkout form
   const today         = new Date().toISOString().slice(0, 10);
   const displayStatus = getEventDisplayStatus(event, today);
-  if (displayStatus === 'past' || displayStatus === 'closed') {
-    return <EventConclusoPage event={event} isClosed={displayStatus === 'closed'} />;
+  if (displayStatus === 'past' || displayStatus === 'closed' || displayStatus === 'soldout') {
+    return <EventChiuso event={event} stato={displayStatus} />;
   }
 
-  // Pass raw image_url from DB (dbEventToEventData already includes it)
-  return <CheckoutForm event={event} refCode={refCode} partnerCode={partnerCode} referralEnabled={referralEnabled} />;
-}
-
-/* ── Evento concluso / iscrizioni chiuse ── */
-function EventConclusoPage({ event, isClosed = false }: { event: EventData; isClosed?: boolean }) {
   return (
     <>
-      <Navbar />
-      <main className="min-h-screen pt-16 bg-[#fdf9f9]">
-        <div className="max-w-2xl mx-auto px-6 py-20 text-center">
+      <SiteNav />
+      <main className="ds bg-paper text-on-paper">
+        <CheckoutForm
+          event={event}
+          refCode={refCode}
+          partnerCode={partnerCode}
+          referralEnabled={referralEnabled}
+        />
+      </main>
+      <SiteFooter />
+    </>
+  );
+}
 
-          {event.image_url && (
-            <div className="relative w-full h-56 sm:h-72 rounded-2xl overflow-hidden mb-10 shadow-md mx-auto">
-              <Image
-                src={event.image_url}
-                alt={event.title}
-                fill
-                className="object-cover opacity-60 grayscale"
-                sizes="(max-width:768px) 100vw, 672px"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-              <div className="absolute bottom-5 left-6 right-6 text-left">
-                <span className="inline-block text-[8px] tracking-[0.4em] bg-[#7a4a4a]/80 text-[#f5e8e8] px-3 py-1 rounded-full mb-2">
-                  {isClosed ? 'ISCRIZIONI CHIUSE' : 'EVENTO CONCLUSO'}
-                </span>
-                <h1
-                  className="text-2xl sm:text-3xl font-light text-white leading-snug"
-                  style={{ fontFamily: 'var(--font-syne)' }}
-                >
-                  {event.title}
-                </h1>
-              </div>
-            </div>
-          )}
+/**
+ * Quando non si può più comprare.
+ *
+ * Una pagina sola per i tre casi — concluso, chiuso, esaurito — che
+ * dice cosa è successo e dove andare adesso, invece di lasciare la
+ * persona su un vicolo cieco.
+ */
+async function EventChiuso({ event, stato }: { event: EventData; stato: string }) {
+  const t = await getTranslations('events');
 
-          {!event.image_url && (
-            <div className="mb-8">
-              <span className="inline-block text-[8px] tracking-[0.4em] bg-[#eddada] text-[#7a4a4a] px-3 py-1.5 rounded-full mb-6">
-                {isClosed ? 'ISCRIZIONI CHIUSE' : 'EVENTO CONCLUSO'}
-              </span>
-              <h1
-                className="text-3xl sm:text-4xl font-light text-[#1a0505] mb-4"
-                style={{ fontFamily: 'var(--font-syne)' }}
-              >
-                {event.title}
-              </h1>
-            </div>
-          )}
+  const titolo =
+    stato === 'closed' ? t('coClosedTitle')
+    : stato === 'soldout' ? t('coSoldOutTitle')
+    : t('coPastTitle');
 
-          <p
-            className="text-xl text-[#7a4a4a] mb-3"
-            style={{ fontFamily: 'var(--font-nunito)' }}
-          >
-            {isClosed ? 'Le iscrizioni per questo evento sono chiuse.' : 'Questo evento è già concluso.'}
+  return (
+    <>
+      <SiteNav />
+      <main className="ds flex min-h-[70vh] items-center bg-paper text-on-paper">
+        <div className="mx-auto w-full max-w-[560px] px-5 py-16 text-center lg:px-10">
+          <h1 className="ds-display text-[clamp(1.8rem,5vw,2.4rem)] leading-tight tracking-[-0.03em]">
+            {titolo}
+          </h1>
+          <p className="mt-4 text-lead text-on-paper-muted">{event.title}</p>
+          <p className="mt-2 text-body text-on-paper-muted">
+            {event.day} {event.month} {event.year} · {event.location}
           </p>
-          <p
-            className="text-sm text-[#7a4a4a]/70 mb-8"
-            style={{ fontFamily: 'var(--font-nunito)' }}
-          >
-            Le iscrizioni non sono più disponibili.
-          </p>
+          <p className="mt-6 text-body text-on-paper-muted">{t('coPastBody')}</p>
 
-          <div className="flex items-center justify-center gap-6 text-sm text-[#7a4a4a]/70 mb-10">
-            <span className="flex items-center gap-1.5">
-              <CalendarDays size={13} className="text-[#731515]/50" />
-              {event.day} {event.month} {event.year}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <MapPin size={13} className="text-[#731515]/50" />
-              {event.locationFull}
-            </span>
+          <div className="mt-9 flex flex-wrap justify-center gap-3">
+            <Link
+              href="/events"
+              className="inline-flex min-h-[52px] items-center rounded-full bg-accent px-6 text-fine font-medium text-paper"
+            >
+              {t('coSeeEvents')}
+            </Link>
+            <Link
+              href="/membership"
+              className="inline-flex min-h-[52px] items-center rounded-full border border-rule-paper px-6 text-fine font-medium"
+            >
+              Diventa socio
+            </Link>
           </div>
-
-          <Link
-            href="/events"
-            className="inline-flex items-center gap-2 px-7 py-3 bg-[#731515] text-white text-[10px] tracking-[0.35em] hover:bg-[#9b2323] transition-colors rounded-lg"
-            style={{ fontFamily: 'var(--font-nunito)' }}
-          >
-            SCOPRI GLI EVENTI IN PROGRAMMA →
-          </Link>
         </div>
       </main>
+      <SiteFooter />
     </>
   );
 }

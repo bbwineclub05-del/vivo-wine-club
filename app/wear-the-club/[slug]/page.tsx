@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
+import { SiteNav } from '@/components/ui/SiteNav';
+import { SiteFooter } from '@/components/ui/SiteFooter';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import ProductDetailClient from './ProductDetailClient';
 
@@ -221,11 +221,11 @@ export default async function ProductDetailPage(
 
   return (
     <>
-      <Navbar />
-      <main className="min-h-screen bg-[#faf7f7] pt-16">
+      <SiteNav />
+      <main className="ds bg-paper text-on-paper">
         <ProductDetailClient product={product} />
       </main>
-      <Footer />
+      <SiteFooter />
     </>
   );
 }
