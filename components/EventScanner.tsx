@@ -1,77 +1,73 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  X, ScanLine, CheckCircle2, Circle, Users, RefreshCw,
-  Camera, CameraOff, AlertTriangle, XCircle, ArrowRight, Phone,
+  ArrowRight, Camera, CameraOff, Check, Loader2, RefreshCw, ScanLine, X,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { ActionButton, EmptyState } from '@/components/admin/ui';
 
-/* ─────────────────────────────────────────────
-   Types
-───────────────────────────────────────────── */
+/**
+ * Il controllo dei biglietti all'ingresso.
+ *
+ * Si usa in piedi sulla porta, al buio, con una mano sola e la gente
+ * che aspetta: per questo è a tutto schermo sul telefono, il tondo
+ * del check-in manuale è grande e l'esito di una scansione occupa
+ * l'inquadratura intera.
+ *
+ * **I colori dell'esito restano il semaforo** — verde, ambra, rosso —
+ * e sono l'unico posto in tutta l'area riservata dove il bordeaux non
+ * comanda. Alla porta "è entrato" e "non è valido" devono
+ * distinguersi in un decimo di secondo e di sguardo; perché non
+ * dipenda solo dal colore, ognuno porta la sua icona e la sua frase.
+ *
+ * Note sulla fotocamera (da non smontare per ragioni estetiche):
+ *  · Le due schede stanno **sempre** nel DOM e si nascondono con i
+ *    CSS. Se il div della fotocamera viene smontato mentre
+ *    html5-qrcode ci scrive dentro, al rimontaggio sfarfalla.
+ *  · Il div `qr-reader-*` non cambia mai display: gli stati
+ *    "verifica" ed "esito" sono veli sopra, non al posto suo.
+ *  · `lockRef` impedisce chiamate sovrapposte dai dieci fotogrammi
+ *    al secondo; `lastCodeRef` ignora lo stesso codice per cinque
+ *    secondi. Sono ref, non stato, così la callback legge sempre il
+ *    valore attuale.
+ */
+
 interface Ticket {
-  order_id:   string;
-  qr_code:    string | null;
-  name:       string;
-  email:      string;
-  phone:      string | null;
+  order_id: string;
+  qr_code: string | null;
+  name: string;
+  email: string;
+  phone: string | null;
   checked_in: boolean | null;
   scanned_at: string | null;
   scanned_by: string | null;
 }
 
 interface ScanResult {
-  type:       'success' | 'already' | 'invalid' | 'error';
-  name?:      string;
-  email?:     string;
+  type: 'success' | 'already' | 'invalid' | 'error';
+  name?: string;
+  email?: string;
   scannedBy?: string;
   scannedAt?: string;
 }
 
-/* ─────────────────────────────────────────────
-   Helpers
-───────────────────────────────────────────── */
-function fmtTime(iso: string | null | undefined) {
+function ora(iso: string | null | undefined) {
   if (!iso) return '';
   return new Date(iso).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
 }
 
-function extractToken(raw: string): string {
+function estraiToken(raw: string): string {
   try {
-    const url = new URL(raw);
-    return url.searchParams.get('token') ?? raw;
+    return new URL(raw).searchParams.get('token') ?? raw;
   } catch {
     return raw;
   }
 }
 
-// How long (ms) to ignore the same QR code after it has been processed once.
-// Prevents the camera from instantly re-scanning while the result overlay is visible.
+/** Per quanto ignorare lo stesso QR dopo averlo appena letto. */
 const DEBOUNCE_MS = 5000;
 
-/* ─────────────────────────────────────────────
-   Main component
-
-   Architecture notes
-   ──────────────────
-   • Both the List tab and the Scanner tab are ALWAYS rendered in the DOM.
-     We use CSS (display: none / flex) to hide the inactive tab, never React
-     conditional rendering. This ensures the html5-qrcode camera div is never
-     unmounted while the camera is running.
-
-   • The camera div (`id="qr-reader-{slug}"`) is ALWAYS display:block.
-     The "verifying" and "result" states are shown as absolute overlays that
-     stack on top of the camera feed without touching the camera div itself.
-     This eliminates the flickering that occurred when display:none was toggled
-     on the camera container while html5-qrcode was writing video frames.
-
-   • lockRef prevents concurrent API calls from the 10fps scan callback.
-   • lastCodeRef + lastCodeAtRef debounce same-code rescans for DEBOUNCE_MS.
-   • Both refs are mutable (not state) so the html5-qrcode closure always
-     reads the current value without stale-closure issues.
-───────────────────────────────────────────── */
 export default function EventScanner({
   event,
   accessToken,
@@ -81,41 +77,37 @@ export default function EventScanner({
   accessToken: string;
   onClose: () => void;
 }) {
-  /* ── Ticket list ── */
-  const [tickets,    setTickets]    = useState<Ticket[]>([]);
-  const [loading,    setLoading]    = useState(true);
-  const [tab,        setTab]        = useState<'list' | 'scanner'>('list');
-  const [checkingIn, setCheckingIn] = useState<string | null>(null); // order_id being toggled
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [caricando, setCaricando] = useState(true);
+  const [scheda, setScheda] = useState<'list' | 'scanner'>('list');
+  const [inCorso, setInCorso] = useState<string | null>(null);
 
-  /* ── Scanner ── */
-  const [cameraOn,  setCameraOn]  = useState(false);
+  const [cameraOn, setCameraOn] = useState(false);
   const [cameraErr, setCameraErr] = useState('');
-  const [verifying, setVerifying] = useState(false);
-  const [scanResult, setScanResult] = useState<ScanResult | null>(null);
+  const [verifica, setVerifica] = useState(false);
+  const [esito, setEsito] = useState<ScanResult | null>(null);
 
-  // Refs — never cause stale closures inside html5-qrcode callbacks
-  const scannerRef     = useRef<{ stop: () => Promise<void> } | null>(null);
-  const lockRef        = useRef(false);   // true while API in flight OR result shown
-  const lastCodeRef    = useRef('');      // last scanned token
-  const lastCodeAtRef  = useRef(0);       // timestamp of last scan
+  const scannerRef = useRef<{ stop: () => Promise<void> } | null>(null);
+  const lockRef = useRef(false);
+  const lastCodeRef = useRef('');
+  const lastCodeAtRef = useRef(0);
 
-  /* ── Load tickets ── */
   const load = useCallback(() => {
-    setLoading(true);
-    fetch(`/api/tickets?event_id=${event.slug}`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    })
-      .then(r => r.json())
-      .then(j => setTickets(Array.isArray(j.tickets) ? j.tickets : []))
+    setCaricando(true);
+    fetch(`/api/tickets?event_id=${event.slug}`, { headers: { Authorization: `Bearer ${accessToken}` } })
+      .then((r) => r.json())
+      .then((j) => setTickets(Array.isArray(j.tickets) ? j.tickets : []))
       .catch(console.error)
-      .finally(() => setLoading(false));
+      .finally(() => setCaricando(false));
   }, [event.slug, accessToken]);
 
-  useEffect(() => { load(); }, [load]);
-
-  /* ── Supabase Realtime: live participant list updates across all devices ── */
   useEffect(() => {
-    // Authenticate so RLS policies allow the subscription
+    load();
+  }, [load]);
+
+  /* Due persone sulla porta con due telefoni: ognuna vede i check-in
+     dell'altra senza ricaricare. */
+  useEffect(() => {
     supabase.realtime.setAuth(accessToken);
     const channel = supabase
       .channel(`tickets:event_id:${event.slug}`)
@@ -124,76 +116,56 @@ export default function EventScanner({
         { event: '*', schema: 'public', table: 'tickets', filter: `event_id=eq.${event.slug}` },
         (payload) => {
           if (payload.eventType === 'UPDATE') {
-            const updated = payload.new as Ticket;
-            setTickets(prev =>
-              prev.map(t => t.order_id === updated.order_id ? { ...t, ...updated } : t),
-            );
+            const agg = payload.new as Ticket;
+            setTickets((prev) => prev.map((t) => (t.order_id === agg.order_id ? { ...t, ...agg } : t)));
           } else {
             load();
           }
         },
       )
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [event.slug, accessToken, load]);
 
-  /* ── Start camera ── */
-  const startCamera = useCallback(async () => {
+  const accendiCamera = useCallback(async () => {
     setCameraErr('');
-    setScanResult(null);
-    // Reset lock + debounce so the first scan of the session goes through
-    lockRef.current    = false;
-    lastCodeRef.current  = '';
+    setEsito(null);
+    lockRef.current = false;
+    lastCodeRef.current = '';
     lastCodeAtRef.current = 0;
 
-    // Make the camera div visible BEFORE html5-qrcode initialises.
-    // We set cameraOn=true here so the React re-render (which switches
-    // the div from the placeholder area to a real block) happens before
-    // the camera starts writing video frames.
+    // Il div deve essere già dipinto prima che html5-qrcode parta.
     setCameraOn(true);
-
-    // Wait one animation frame so the browser has painted the now-visible div.
-    await new Promise<void>(r => requestAnimationFrame(() => r()));
+    await new Promise<void>((r) => requestAnimationFrame(() => r()));
 
     try {
       const { Html5Qrcode } = await import('html5-qrcode');
-      const containerId = `qr-reader-${event.slug}`;
-      const scanner = new Html5Qrcode(containerId);
+      const scanner = new Html5Qrcode(`qr-reader-${event.slug}`);
       scannerRef.current = scanner;
 
       await scanner.start(
         { facingMode: 'environment' },
         { fps: 10, qrbox: { width: 240, height: 240 } },
 
-        // ── Success callback — fires every ~100ms while a QR is in frame ────────
         async (decodedText) => {
-          // Synchronous lock check first — before any await.
-          // Using a ref (not state) guarantees the closure reads the current value.
+          // Controllo sincrono prima di qualunque await.
           if (lockRef.current) return;
 
-          const token = extractToken(decodedText);
-          const now   = Date.now();
+          const token = estraiToken(decodedText);
+          const adesso = Date.now();
+          if (token === lastCodeRef.current && adesso - lastCodeAtRef.current < DEBOUNCE_MS) return;
 
-          // Debounce: ignore the same code within DEBOUNCE_MS of its last scan.
-          if (
-            token === lastCodeRef.current &&
-            now - lastCodeAtRef.current < DEBOUNCE_MS
-          ) return;
-
-          // Lock immediately — all subsequent frames will be rejected until unlock.
-          lockRef.current      = true;
-          lastCodeRef.current  = token;
-          lastCodeAtRef.current = now;
-
-          setVerifying(true);
+          lockRef.current = true;
+          lastCodeRef.current = token;
+          lastCodeAtRef.current = adesso;
+          setVerifica(true);
 
           try {
-            const res  = await fetch('/api/checkin', {
-              method:  'POST',
-              headers: {
-                'Content-Type':  'application/json',
-                Authorization:   `Bearer ${accessToken}`,
-              },
+            const res = await fetch('/api/checkin', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
               body: JSON.stringify({ token }),
             });
             const data = await res.json();
@@ -201,11 +173,11 @@ export default function EventScanner({
             let result: ScanResult;
             if (data.valid) {
               result = { type: 'success', name: data.buyerName, email: data.buyerEmail };
-              load(); // refresh participant list
+              load();
             } else if (data.reason === 'already_scanned') {
               result = {
-                type:      'already',
-                name:      data.buyerName,
+                type: 'already',
+                name: data.buyerName,
                 scannedBy: data.scannedBy,
                 scannedAt: data.scannedAt,
               };
@@ -213,41 +185,41 @@ export default function EventScanner({
               result = { type: 'invalid' };
             }
 
-            setVerifying(false);
-            setScanResult(result);
-            // lockRef stays true — result overlay is stable until user presses "Scan Next"
-
+            setVerifica(false);
+            setEsito(result);
+            // Il lock resta: l'esito sta fermo finché non si tocca "prossimo".
           } catch {
-            setVerifying(false);
-            setScanResult({ type: 'error' });
-            // On network error: unlock so user can retry without pressing a button
+            setVerifica(false);
+            setEsito({ type: 'error' });
+            // Errore di rete: si sblocca, così si riprova senza toccare nulla.
             lockRef.current = false;
           }
         },
 
-        undefined, // suppress per-frame decode errors (normal when no QR in view)
+        undefined, // gli errori per fotogramma sono normali: niente QR in vista
       );
-
     } catch (err) {
-      console.error('[EventScanner] camera init error:', err);
-      setCameraErr('Impossibile accedere alla fotocamera. Controlla i permessi del browser.');
+      console.error('[EventScanner] fotocamera', err);
+      setCameraErr('Non riesco ad accedere alla fotocamera. Controlla i permessi del browser.');
       setCameraOn(false);
     }
   }, [accessToken, event.slug, load]);
 
-  /* ── Stop camera ── */
-  const stopCamera = useCallback(async () => {
+  const spegniCamera = useCallback(async () => {
     if (scannerRef.current) {
-      try { await scannerRef.current.stop(); } catch { /* already stopped */ }
+      try {
+        await scannerRef.current.stop();
+      } catch {
+        /* già ferma */
+      }
       scannerRef.current = null;
     }
     setCameraOn(false);
-    setScanResult(null);
-    setVerifying(false);
+    setEsito(null);
+    setVerifica(false);
     lockRef.current = false;
   }, []);
 
-  /* ── Cleanup camera on modal close ── */
   useEffect(() => {
     return () => {
       if (scannerRef.current) {
@@ -257,432 +229,259 @@ export default function EventScanner({
     };
   }, []);
 
-  /* ── "Scan Next": clear result overlay, unlock scanner ── */
-  // The camera keeps running underneath — the feed is immediately visible
-  // again because the camera div was NEVER hidden.
-  const handleNext = useCallback(() => {
-    setScanResult(null);
+  /* Toglie il velo dell'esito: la fotocamera sotto non si è mai fermata. */
+  const prossimo = useCallback(() => {
+    setEsito(null);
     lockRef.current = false;
   }, []);
 
-  /* ── Manual check-in toggle ── */
-  const toggleCheckIn = useCallback(async (ticket: Ticket) => {
-    if (checkingIn) return;
-    const newValue = !ticket.checked_in;
-    setCheckingIn(ticket.order_id);
+  const segnaPresenza = useCallback(
+    async (ticket: Ticket) => {
+      if (inCorso) return;
+      const nuovo = !ticket.checked_in;
+      setInCorso(ticket.order_id);
 
-    // Optimistic update
-    setTickets(prev => prev.map(t =>
-      t.order_id === ticket.order_id
-        ? { ...t, checked_in: newValue, scanned_at: newValue ? new Date().toISOString() : null, scanned_by: newValue ? 'manuale' : null }
-        : t,
-    ));
+      setTickets((prev) =>
+        prev.map((t) =>
+          t.order_id === ticket.order_id
+            ? {
+                ...t,
+                checked_in: nuovo,
+                scanned_at: nuovo ? new Date().toISOString() : null,
+                scanned_by: nuovo ? 'manuale' : null,
+              }
+            : t,
+        ),
+      );
 
-    const { error } = await supabase
-      .from('tickets')
-      .update({
-        checked_in: newValue,
-        scanned_at: newValue ? new Date().toISOString() : null,
-        scanned_by: newValue ? 'manuale' : null,
-      })
-      .eq('order_id', ticket.order_id);
+      const { error } = await supabase
+        .from('tickets')
+        .update({
+          checked_in: nuovo,
+          scanned_at: nuovo ? new Date().toISOString() : null,
+          scanned_by: nuovo ? 'manuale' : null,
+        })
+        .eq('order_id', ticket.order_id);
 
-    if (error) {
-      // Revert on failure
-      setTickets(prev => prev.map(t =>
-        t.order_id === ticket.order_id ? { ...t, ...ticket } : t,
-      ));
-    }
+      if (error) {
+        setTickets((prev) => prev.map((t) => (t.order_id === ticket.order_id ? { ...t, ...ticket } : t)));
+      }
+      setInCorso(null);
+    },
+    [inCorso],
+  );
 
-    setCheckingIn(null);
-  }, [checkingIn]);
-
-  /* ── ESC to close ── */
   useEffect(() => {
-    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const h = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
     window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);
   }, [onClose]);
 
-  /* ── Stats ── */
-  const total   = tickets.length;
-  const present = tickets.filter(t => t.checked_in).length;
+  const totale = tickets.length;
+  const presenti = tickets.filter((t) => t.checked_in).length;
 
-  /* ── Result overlay config ── */
-  const resultOverlay = scanResult
+  const velo = esito
     ? ({
         success: {
-          bg:       'bg-emerald-500',
-          icon:     <CheckCircle2 size={60} className="text-white drop-shadow" />,
-          title:    'Accesso confermato',
-          nameCls:  'text-white/95',
-          subCls:   'text-white/75',
-          sub:      scanResult.email,
+          sfondo: 'bg-emerald-600',
+          icona: <Check size={64} strokeWidth={2.5} />,
+          titolo: 'Può entrare',
+          sotto: esito.email,
         },
         already: {
-          bg:       'bg-amber-500',
-          icon:     <AlertTriangle size={60} className="text-white drop-shadow" />,
-          title:    'Già scannerizzato',
-          nameCls:  'text-white/95',
-          subCls:   'text-white/75',
-          sub:      scanResult.scannedBy
-                      ? `Da ${scanResult.scannedBy} alle ${fmtTime(scanResult.scannedAt)}`
-                      : undefined,
+          sfondo: 'bg-amber-500',
+          icona: <RefreshCw size={60} strokeWidth={2} />,
+          titolo: 'Già entrato',
+          sotto: esito.scannedBy ? `Segnato da ${esito.scannedBy} alle ${ora(esito.scannedAt)}` : undefined,
         },
         invalid: {
-          bg:       'bg-red-500',
-          icon:     <XCircle size={60} className="text-white drop-shadow" />,
-          title:    'Biglietto non valido',
-          nameCls:  'text-white/95',
-          subCls:   'text-white/75',
-          sub:      undefined,
+          sfondo: 'bg-red-600',
+          icona: <X size={64} strokeWidth={2.5} />,
+          titolo: 'Biglietto non valido',
+          sotto: 'Non risulta nessun biglietto con questo codice.',
         },
         error: {
-          bg:       'bg-slate-600',
-          icon:     <XCircle size={60} className="text-white drop-shadow" />,
-          title:    'Errore di connessione',
-          nameCls:  'text-white/90',
-          subCls:   'text-white/65',
-          sub:      'Riprova',
+          sfondo: 'bg-ink',
+          icona: <X size={60} strokeWidth={2} />,
+          titolo: 'Connessione assente',
+          sotto: 'Riprova fra un istante.',
         },
-      } as const)[scanResult.type]
+      } as const)[esito.type]
     : null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
-      className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ scale: 0.95, opacity: 0, y: 12 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.95, opacity: 0, y: 12 }}
-        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden"
-        onClick={e => e.stopPropagation()}
-      >
-
-        {/* ── Header ── */}
-        <div className="flex items-start justify-between px-6 py-5 border-b border-[var(--color-rule-paper)] shrink-0">
-          <div>
-            <div className="text-[12px] font-medium tracking-[0.08em] text-[var(--color-accent)] mb-0.5">EVENT SCANNER</div>
-            <h2
-              className="text-lg font-light text-[var(--color-ink)] leading-tight"
-              style={{ fontFamily: 'var(--font-syne)' }}
-            >
-              {event.title}
-            </h2>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="text-center">
-              <div
-                className="text-[28px] font-light text-[var(--color-accent)] leading-none"
-                style={{ fontFamily: 'var(--font-syne)' }}
-              >
-                {present}<span className="text-base text-[var(--color-on-paper-muted)]/40">/{total}</span>
-              </div>
-              <div className="text-[12px] font-medium tracking-[0.06em] text-[var(--color-on-paper-muted)]/50 mt-0.5">PRESENTI</div>
-            </div>
-            <button
-              onClick={onClose}
-              className="p-2.5 rounded-xl text-[var(--color-on-paper-muted)] hover:text-[var(--color-ink)] hover:bg-[var(--color-paper-soft)] transition-colors"
-              aria-label="Chiudi scanner"
-            >
-              <X size={18} />
-            </button>
+    <div className="ds fixed inset-0 z-[80] flex flex-col bg-paper text-on-paper lg:items-center lg:justify-center lg:bg-ink/60 lg:p-10 lg:backdrop-blur-sm">
+      <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden bg-paper lg:max-h-[90vh] lg:max-w-[680px] lg:flex-none lg:rounded-3xl">
+        <div
+          className="flex shrink-0 items-center gap-3 border-b border-rule-paper px-4 py-3 sm:px-6"
+          style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}
+        >
+          <button
+            onClick={onClose}
+            aria-label="Chiudi lo scanner"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-full transition-colors hover:bg-paper-soft"
+          >
+            <X size={21} strokeWidth={1.8} />
+          </button>
+          <div className="min-w-0 flex-1">
+            <h2 className="ds-display truncate text-[19px] tracking-[-0.02em]">{event.title}</h2>
+            <p className="mt-0.5 text-fine text-on-paper-muted">
+              <span className="ds-numeric text-on-paper">{presenti}</span> presenti su{' '}
+              <span className="ds-numeric text-on-paper">{totale}</span>
+            </p>
           </div>
         </div>
 
-        {/* ── Tab bar ── */}
-        <div className="flex border-b border-[var(--color-rule-paper)] shrink-0">
-          {(['list', 'scanner'] as const).map((t) => (
+        <div className="flex shrink-0 gap-2 border-b border-rule-paper px-4 pb-3 sm:px-6">
+          {(
+            [
+              { id: 'list', label: 'Partecipanti' },
+              { id: 'scanner', label: 'Scanner QR' },
+            ] as const
+          ).map((t) => (
             <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`flex-1 min-h-[48px] text-[13px] font-medium tracking-normal transition-colors ${
-                tab === t
-                  ? 'text-[var(--color-accent)] border-b-2 border-[var(--color-accent)] -mb-px'
-                  : 'text-[var(--color-on-paper-muted)]/50 hover:text-[var(--color-on-paper-muted)]'
+              key={t.id}
+              onClick={() => setScheda(t.id)}
+              aria-pressed={scheda === t.id}
+              className={`min-h-[44px] flex-1 rounded-full border px-3 text-fine font-medium transition-colors ${
+                scheda === t.id ? 'border-accent bg-accent text-paper' : 'border-rule-paper text-on-paper'
               }`}
             >
-              {t === 'list' ? (
-                <span className="inline-flex items-center gap-1.5">
-                  <Users size={11} />PARTECIPANTI
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" title="Live updates active" />
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1.5"><ScanLine size={11} />SCANNER QR</span>
-              )}
+              {t.label}
             </button>
           ))}
         </div>
 
-        {/* ── Content area — BOTH tabs always in DOM ── */}
-        <div className="flex-1 overflow-y-auto">
-
-          {/* ── LIST TAB ── */}
-          {/* Hidden via CSS, never unmounted */}
-          <div style={{ display: tab === 'list' ? 'block' : 'none' }} className="px-6 py-5">
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-[13px] font-medium tracking-normal text-[var(--color-on-paper-muted)]/50">
-                {total} {total === 1 ? 'prenotazione' : 'prenotazioni'} · {present} presenti
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+          {/* Nascosta con i CSS, mai smontata. */}
+          <div style={{ display: scheda === 'list' ? 'block' : 'none' }} className="px-4 py-4 sm:px-6">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <p className="text-fine text-on-paper-muted">
+                {totale} {totale === 1 ? 'biglietto' : 'biglietti'}
               </p>
-              <button
-                onClick={load}
-                className="p-1.5 rounded-xl text-[var(--color-on-paper-muted)]/50 hover:text-[var(--color-accent)] hover:bg-[var(--color-paper-soft)] transition-colors"
-                title="Aggiorna"
-              >
-                <RefreshCw size={13} />
-              </button>
+              <ActionButton variant="quiet" onClick={load}>
+                <RefreshCw size={15} strokeWidth={1.8} />
+                Aggiorna
+              </ActionButton>
             </div>
 
-            {loading ? (
-              <div className="flex justify-center py-10">
-                <div className="w-5 h-5 rounded-full border-2 border-[var(--color-accent)] border-t-transparent animate-spin" />
+            {caricando ? (
+              <div className="flex justify-center py-12">
+                <Loader2 size={22} className="animate-spin text-accent/50" />
               </div>
             ) : tickets.length === 0 ? (
-              <div
-                className="text-center py-10 text-[var(--color-on-paper-muted)]/40 text-sm"
-                style={{ fontFamily: 'var(--font-geist)' }}
-              >
-                <Users size={28} className="mx-auto mb-2 text-[var(--color-rule-paper)]" />
-                Nessun biglietto acquistato per questo evento.
-              </div>
+              <EmptyState title="Nessun biglietto" body="Per questo evento non risulta ancora nessun acquisto." />
             ) : (
-              <div className="space-y-2 pb-4">
+              <ul className="flex flex-col gap-2">
                 {tickets.map((ticket) => {
-                  const isUpdating = checkingIn === ticket.order_id;
+                  const attesa = inCorso === ticket.order_id;
                   return (
-                    <div
+                    <li
                       key={ticket.order_id}
-                      className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${
-                        ticket.checked_in
-                          ? 'bg-emerald-50 border-emerald-200'
-                          : 'bg-white border-[var(--color-rule-paper)]'
+                      className={`flex items-center gap-3 rounded-2xl border px-3.5 py-3 ${
+                        ticket.checked_in ? 'border-accent/35 bg-accent/5' : 'border-rule-paper'
                       }`}
                     >
-                      {ticket.checked_in ? (
-                        <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
-                      ) : (
-                        <Circle size={16} className="text-[#e0c5c5] shrink-0" />
-                      )}
-
-                      <div className="flex-1 min-w-0">
-                        <div
-                          className={`text-sm font-medium truncate ${ticket.checked_in ? 'text-emerald-800' : 'text-[var(--color-ink)]'}`}
-                          style={{ fontFamily: 'var(--font-syne)' }}
-                        >
-                          {ticket.name}
-                        </div>
-                        <div className="flex flex-wrap items-center gap-x-3 mt-0.5">
-                          <span
-                            className={`text-[13px] truncate ${ticket.checked_in ? 'text-emerald-700/60' : 'text-[var(--color-on-paper-muted)]/50'}`}
-                            style={{ fontFamily: 'var(--font-geist)' }}
-                          >
-                            {ticket.email}
-                          </span>
-                          {ticket.phone && (
-                            <span
-                              className={`flex items-center gap-1 text-[13px] shrink-0 ${ticket.checked_in ? 'text-emerald-700/60' : 'text-[var(--color-on-paper-muted)]/50'}`}
-                              style={{ fontFamily: 'var(--font-geist)' }}
-                            >
-                              <Phone size={9} className="shrink-0" />{ticket.phone}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-body font-medium">{ticket.name}</p>
+                        <p className="mt-0.5 flex flex-wrap gap-x-3 truncate text-fine text-on-paper-muted">
+                          <span>{ticket.email}</span>
+                          {ticket.phone && <span>{ticket.phone}</span>}
+                          {ticket.checked_in && ticket.scanned_at && (
+                            <span>
+                              {ticket.scanned_by === 'manuale' ? 'a mano' : 'scansionato'} alle {ora(ticket.scanned_at)}
                             </span>
                           )}
-                        </div>
+                        </p>
                       </div>
 
-                      {/* Scanned-at time (QR scanner) */}
-                      {ticket.checked_in && ticket.scanned_at && ticket.scanned_by !== 'manuale' && (
-                        <div
-                          className="text-[13px] text-emerald-600/70 shrink-0"
-                          style={{ fontFamily: 'var(--font-geist)' }}
-                        >
-                          {fmtTime(ticket.scanned_at)}
-                        </div>
-                      )}
-
-                      {/* Manual check-in button */}
-                      {ticket.checked_in ? (
-                        <button
-                          onClick={() => toggleCheckIn(ticket)}
-                          disabled={isUpdating}
-                          title="Clicca per annullare il check-in"
-                          className="shrink-0 inline-flex items-center gap-1.5 min-h-[44px] px-4 rounded-xl bg-emerald-100 border border-emerald-200 text-emerald-700 text-[13px] font-medium tracking-normal hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-all disabled:opacity-50 disabled:cursor-wait"
-                          style={{ fontFamily: 'var(--font-geist)' }}
-                        >
-                          {isUpdating
-                            ? <span className="w-3 h-3 rounded-full border border-current/40 border-t-current animate-spin" />
-                            : <X size={10} />}
-                          PRESENTE
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => toggleCheckIn(ticket)}
-                          disabled={isUpdating}
-                          title="Check-in manuale"
-                          className="shrink-0 inline-flex items-center gap-1.5 min-h-[44px] px-4 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-[13px] font-medium tracking-normal transition-colors disabled:opacity-50 disabled:cursor-wait"
-                          style={{ fontFamily: 'var(--font-geist)' }}
-                        >
-                          {isUpdating
-                            ? <span className="w-3 h-3 rounded-full border border-white/40 border-t-white animate-spin" />
-                            : <CheckCircle2 size={11} />}
-                          CHECK IN
-                        </button>
-                      )}
-                    </div>
+                      <button
+                        type="button"
+                        onClick={() => segnaPresenza(ticket)}
+                        disabled={attesa}
+                        aria-pressed={!!ticket.checked_in}
+                        aria-label={ticket.checked_in ? 'Togli la presenza' : 'Segna come presente'}
+                        style={{ touchAction: 'manipulation' }}
+                        className={`grid h-12 w-12 shrink-0 place-items-center rounded-full border transition-colors active:scale-95 ${
+                          ticket.checked_in
+                            ? 'border-accent bg-accent text-paper'
+                            : 'border-rule-paper text-on-paper-muted/40 hover:border-accent/50 hover:text-accent'
+                        }`}
+                      >
+                        {attesa ? (
+                          <Loader2 size={18} className="animate-spin" />
+                        ) : (
+                          <Check size={20} strokeWidth={ticket.checked_in ? 2.5 : 1.6} />
+                        )}
+                      </button>
+                    </li>
                   );
                 })}
-              </div>
+              </ul>
             )}
           </div>
 
-          {/* ── SCANNER TAB ── */}
-          {/*
-            Hidden via CSS, NEVER unmounted — this is the core of the flicker fix.
-
-            The html5-qrcode library injects a <video> element into the camera div
-            and continuously writes frames to it. If that div is unmounted (e.g. by
-            switching tabs with React conditional rendering), html5-qrcode throws and
-            the DOM enters an inconsistent state on remount, causing the visible
-            glitching/flickering.
-
-            By keeping this tab in the DOM at all times and controlling visibility
-            with CSS only, html5-qrcode always has a stable DOM target.
-          */}
+          {/* Anche questa resta nel DOM: è il punto di tutta l'architettura. */}
           <div
-            style={{ display: tab === 'scanner' ? 'flex' : 'none' }}
-            className="flex-col items-center gap-5 px-6 py-6"
+            style={{ display: scheda === 'scanner' ? 'flex' : 'none' }}
+            className="flex-col items-center gap-5 px-4 py-5 sm:px-6"
           >
-
-            {/*
-              Camera container — uses position:relative so overlays can stack on top.
-
-              The key insight: the camera div (#qr-reader-*) is ALWAYS display:block.
-              We never toggle its display or remove it from the DOM.
-              Instead, the "placeholder", "verifying", and "result" states are
-              absolutely-positioned overlays that sit in FRONT of the camera feed.
-              The camera feed itself is never disturbed — only overlays change.
-            */}
             <div className="relative w-full max-w-sm" style={{ minHeight: 280 }}>
-
-              {/*
-                html5-qrcode writes its video+canvas here.
-                NEVER toggled display, NEVER unmounted.
-                When camera is off this div is empty with a tiny min-height;
-                the placeholder overlay covers it visually.
-              */}
+              {/* html5-qrcode scrive qui dentro: mai nascosto, mai smontato. */}
               <div
                 id={`qr-reader-${event.slug}`}
-                className="w-full rounded-xl overflow-hidden bg-black"
+                className="w-full overflow-hidden rounded-2xl bg-ink"
                 style={{ minHeight: cameraOn ? undefined : 1 }}
               />
 
-              {/* ── Placeholder overlay (camera off, no result) ── */}
-              {!cameraOn && !scanResult && (
-                <div className="absolute inset-0 rounded-xl border-2 border-dashed border-[var(--color-rule-paper)] bg-[#fdf8f8] flex flex-col items-center justify-center gap-4 text-[#9a6060]/50">
-                  <ScanLine size={52} strokeWidth={1} />
-                  <p
-                    className="text-sm text-center px-8 leading-relaxed"
-                    style={{ fontFamily: 'var(--font-geist)' }}
-                  >
-                    Premi il pulsante qui sotto per attivare la fotocamera e iniziare la scansione
-                  </p>
+              {!cameraOn && !esito && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-rule-paper bg-paper-soft px-8 text-center text-on-paper-muted">
+                  <ScanLine size={48} strokeWidth={1} />
+                  <p className="text-body">Accendi la fotocamera e inquadra il QR del biglietto.</p>
                 </div>
               )}
 
-              {/* ── Verifying overlay (API call in flight) ── */}
-              {verifying && (
-                <div className="absolute inset-0 bg-black/65 rounded-xl flex flex-col items-center justify-center gap-3">
-                  <div className="w-9 h-9 rounded-full border-[3px] border-white border-t-transparent animate-spin" />
-                  <span
-                    className="text-[13px] tracking-[0.35em] text-white/80"
-                    style={{ fontFamily: 'var(--font-geist)' }}
-                  >
-                    VERIFICA…
-                  </span>
+              {verifica && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-2xl bg-ink/70 text-on-ink">
+                  <Loader2 size={34} className="animate-spin" />
+                  <span className="text-body">Verifico…</span>
                 </div>
               )}
 
-              {/* ── Result overlay ── */}
-              {/*
-                This overlay appears ON TOP of the camera div. The camera div is untouched —
-                html5-qrcode keeps writing frames underneath but lockRef prevents any new
-                scan from firing. No DOM change to the camera = no flickering.
-                The overlay stays visible until the user presses "SCANSIONA PROSSIMO".
-              */}
-              {scanResult && resultOverlay && (
+              {esito && velo && (
                 <div
-                  className={`absolute inset-0 rounded-xl ${resultOverlay.bg} flex flex-col items-center justify-center gap-4 p-6 text-center`}
+                  className={`absolute inset-0 flex flex-col items-center justify-center gap-4 rounded-2xl p-6 text-center text-white ${velo.sfondo}`}
                 >
-                  {resultOverlay.icon}
+                  {velo.icona}
                   <div>
-                    <div
-                      className="text-[22px] font-bold text-white leading-tight"
-                      style={{ fontFamily: 'var(--font-syne)' }}
-                    >
-                      {resultOverlay.title}
-                    </div>
-                    {scanResult.name && (
-                      <div
-                        className={`text-base font-semibold mt-1 ${resultOverlay.nameCls}`}
-                        style={{ fontFamily: 'var(--font-geist)' }}
-                      >
-                        {scanResult.name}
-                      </div>
-                    )}
-                    {resultOverlay.sub && (
-                      <div
-                        className={`text-sm mt-0.5 ${resultOverlay.subCls}`}
-                        style={{ fontFamily: 'var(--font-geist)' }}
-                      >
-                        {resultOverlay.sub}
-                      </div>
-                    )}
+                    <p className="ds-display text-[24px] leading-tight tracking-[-0.02em]">{velo.titolo}</p>
+                    {esito.name && <p className="mt-1 text-lead">{esito.name}</p>}
+                    {velo.sotto && <p className="mt-1 text-fine text-white/80">{velo.sotto}</p>}
                   </div>
                   <button
-                    onClick={handleNext}
-                    className="mt-1 inline-flex items-center gap-2 px-6 py-3 bg-white/20 hover:bg-white/30 border border-white/30 text-white text-[13px] font-medium tracking-normal rounded-xl transition-colors"
+                    onClick={prossimo}
+                    className="mt-1 inline-flex min-h-[48px] items-center gap-2 rounded-full border border-white/35 bg-white/15 px-6 text-fine font-medium transition-colors hover:bg-white/25"
                   >
-                    <ArrowRight size={13} />
-                    SCANSIONA PROSSIMO
+                    <ArrowRight size={16} strokeWidth={2} />
+                    Prossimo
                   </button>
                 </div>
               )}
             </div>
 
-            {/* Camera error message */}
-            {cameraErr && (
-              <p
-                className="text-sm text-red-600 text-center max-w-xs"
-                style={{ fontFamily: 'var(--font-geist)' }}
-              >
-                {cameraErr}
-              </p>
-            )}
+            {cameraErr && <p className="max-w-xs text-center text-fine text-accent">{cameraErr}</p>}
 
-            {/* Camera toggle button — hidden while result overlay is showing */}
-            {!scanResult && (
-              <button
-                onClick={cameraOn ? stopCamera : startCamera}
-                className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl text-[13px] font-medium tracking-normal transition-colors ${
-                  cameraOn
-                    ? 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    : 'bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-lift)]'
-                }`}
-              >
-                {cameraOn ? <CameraOff size={14} /> : <Camera size={14} />}
-                {cameraOn ? 'SPEGNI FOTOCAMERA' : 'ATTIVA FOTOCAMERA'}
-              </button>
+            {!esito && (
+              <ActionButton variant={cameraOn ? 'quiet' : 'accent'} onClick={cameraOn ? spegniCamera : accendiCamera}>
+                {cameraOn ? <CameraOff size={16} strokeWidth={1.8} /> : <Camera size={16} strokeWidth={1.8} />}
+                {cameraOn ? 'Spegni la fotocamera' : 'Accendi la fotocamera'}
+              </ActionButton>
             )}
-
           </div>
         </div>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 }

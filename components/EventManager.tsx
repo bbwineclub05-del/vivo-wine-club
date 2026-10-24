@@ -3,13 +3,11 @@
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Plus, Pencil, Trash2, Eye, EyeOff, ChevronDown, ChevronUp,
-  CalendarDays, MapPin, Tag, X, Check, ImagePlus, Loader2, ClipboardList, UserCheck, Link2, } from 'lucide-react';
+import { X, Check, ImagePlus, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import {
   ActionButton, DataList, EmptyState, FilterPills, NewButton, PageHead,
-  SearchField, Sheet, StatusPill as Pill, Toolbar, type Column,
+  SearchField, Sheet, StatusPill as Pill, Toolbar, fieldClass, type Column,
 } from '@/components/admin/ui';
 import EventScanner from '@/components/EventScanner';
 import EventGuestPanel from '@/components/EventGuestPanel';
@@ -76,38 +74,34 @@ const EVENT_TYPES = [
 /* ─────────────────────────────────────────────
    Helpers
 ───────────────────────────────────────────── */
+/** «5 nov 2026», come la scrive chi legge il calendario. */
 function fmtDate(iso: string) {
   if (!iso) return '—';
   const [y, m, d] = iso.split('-');
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  return `${months[parseInt(m) - 1]} ${parseInt(d)}, ${y}`;
+  const mesi = ['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
+  return `${parseInt(d)} ${mesi[parseInt(m) - 1]} ${y}`;
 }
 
+/** Lo stato dell'evento, in italiano e nei toni dell'area. */
 function StatusPill({ status }: { status: DbEvent['status'] }) {
-  const map: Record<DbEvent['status'], { label: string; cls: string }> = {
-    open:      { label: 'OPEN',      cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-    soldout:   { label: 'SOLD OUT',  cls: 'bg-slate-100 text-slate-500 border-slate-200' },
-    soon:      { label: 'COMING SOON', cls: 'bg-amber-50 text-amber-700 border-amber-200' },
-    completed: { label: 'COMPLETED', cls: 'bg-[#f5f0f0] text-[#9a7070] border-[#e8d5d5]' },
+  const map: Record<DbEvent['status'], { label: string; tone: 'good' | 'warn' | 'off' | 'neutral' }> = {
+    open:      { label: 'prenotabile',  tone: 'good' },
+    soldout:   { label: 'tutto esaurito', tone: 'neutral' },
+    soon:      { label: 'in arrivo',    tone: 'warn' },
+    completed: { label: 'concluso',     tone: 'off' },
   };
-  const { label, cls } = map[status] ?? map.open;
-  return (
-    <span className={`inline-block text-[8px] tracking-[0.3em] border px-2 py-0.5 rounded-full ${cls}`}>
-      {label}
-    </span>
-  );
+  const { label, tone } = map[status] ?? map.open;
+  return <Pill tone={tone}>{label}</Pill>;
 }
 
 /* ─────────────────────────────────────────────
    Input helpers
 ───────────────────────────────────────────── */
-const inputCls =
-  'w-full rounded-2xl border border-[#E4D6D3] bg-[#FDFBFA] px-4 py-3.5 text-[#1A0505] ' +
-  'placeholder:text-[#7A5252]/55 transition-colors focus:border-[#731515]/50 focus:outline-none [font-size:16px]';
+const inputCls = fieldClass;
 
 function Label({ children }: { children: React.ReactNode }) {
   return (
-    <label className="mb-2 block text-[13px] font-medium text-[#1A0505]">
+    <label className="mb-2 block text-fine font-medium text-on-paper">
       {children}
     </label>
   );
@@ -116,9 +110,9 @@ function Label({ children }: { children: React.ReactNode }) {
 /** A titled band inside the form, so twenty-two fields read as five groups. */
 function FormGroup({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
-    <section className="border-t border-[#E4D6D3] pt-6 first:border-0 first:pt-0">
-      <h4 className="ds-display text-[17px] tracking-[-0.02em] text-[#1A0505]">{title}</h4>
-      {hint && <p className="mt-1.5 text-[13px] text-[#7A5252]">{hint}</p>}
+    <section className="border-t border-rule-paper pt-6 first:border-0 first:pt-0">
+      <h4 className="ds-display text-[17px] tracking-[-0.02em]">{title}</h4>
+      {hint && <p className="mt-1.5 text-fine text-on-paper-muted">{hint}</p>}
       <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2">{children}</div>
     </section>
   );
@@ -132,23 +126,23 @@ function Toggle({
       type="button"
       onClick={() => onChange(!checked)}
       aria-pressed={checked}
-      className="flex w-full min-h-[56px] items-center gap-4 rounded-2xl px-1 text-left transition-colors hover:bg-[#F4EDEB]"
+      className="flex w-full min-h-[56px] items-center gap-4 rounded-2xl px-1 text-left transition-colors hover:bg-paper-soft"
     >
       <span
         aria-hidden="true"
         className={`relative h-7 w-12 shrink-0 rounded-full transition-colors duration-200 ${
-          checked ? 'bg-[#731515]' : 'bg-[#E4D6D3]'
+          checked ? 'bg-accent' : 'bg-rule-paper'
         }`}
       >
         <span
-          className={`absolute left-1 top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+          className={`absolute left-1 top-1 h-5 w-5 rounded-full bg-paper shadow-sm transition-transform duration-200 ${
             checked ? 'translate-x-5' : 'translate-x-0'
           }`}
         />
       </span>
       <span className="min-w-0">
-        <span className="block text-[15px] text-[#1A0505]">{label}</span>
-        {hint && <span className="mt-0.5 block text-[13px] text-[#7A5252]">{hint}</span>}
+        <span className="block text-body">{label}</span>
+        {hint && <span className="mt-0.5 block text-fine text-on-paper-muted">{hint}</span>}
       </span>
     </button>
   );
@@ -201,9 +195,9 @@ function EventForm({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.2 }}
-      className="mb-6 rounded-2xl border border-[#E4D6D3] bg-white p-5 md:p-7"
+      className="mb-6 rounded-2xl border border-rule-paper bg-paper p-5 md:p-7"
     >
-      <h3 className="ds-display mb-7 text-[22px] tracking-[-0.025em] text-[#1A0505]">
+      <h3 className="ds-display mb-7 text-[22px] tracking-[-0.025em] text-on-paper">
         {initial.title ? 'Modifica evento' : 'Nuovo evento'}
       </h3>
 
@@ -232,7 +226,7 @@ function EventForm({
           <select className={inputCls} value={f.section} onChange={e => set('section', e.target.value)}>
             {SECTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
           </select>
-          <p className="mt-1 text-[10px] text-[#7a4a4a]/50">
+          <p className="mt-1 text-fine text-on-paper-muted">
             Determina in quale pagina experience appare l&apos;evento.
           </p>
         </div>
@@ -287,12 +281,12 @@ function EventForm({
                   }}
                   className={`rounded-2xl border px-4 py-4 text-left transition-colors ${
                     active
-                      ? 'border-[#731515] bg-[#731515] text-white'
-                      : 'border-[#E4D6D3] bg-[#FDFBFA] hover:border-[#731515]/40'
+                      ? 'border-accent bg-accent text-paper'
+                      : 'border-rule-paper bg-paper hover:border-accent/40'
                   }`}
                 >
-                  <span className="block text-[15px] font-medium">{opt.title}</span>
-                  <span className={`mt-1 block text-[13px] ${active ? 'text-white/75' : 'text-[#7A5252]'}`}>
+                  <span className="block text-body font-medium">{opt.title}</span>
+                  <span className={`mt-1 block text-fine ${active ? 'text-paper/75' : 'text-on-paper-muted'}`}>
                     {opt.hint}
                   </span>
                 </button>
@@ -340,7 +334,7 @@ function EventForm({
           <input className={inputCls} type="url" value={f.location_map_url ?? ''}
             onChange={e => set('location_map_url', e.target.value || null)}
             placeholder="https://maps.google.com/..." />
-          <p className="mt-1 text-[10px] text-[#7a4a4a]/50">
+          <p className="mt-1 text-fine text-on-paper-muted">
             Se compilato, nell&apos;email di conferma iscrizione lista la parola &quot;Luogo&quot; diventa cliccabile e apre questa mappa.
           </p>
         </div>
@@ -358,7 +352,7 @@ function EventForm({
             onChange={e => set('parking_map_url_2', e.target.value || null)}
             placeholder="https://maps.google.com/..." />
         </div>
-        <p className="md:col-span-2 -mt-3 text-[10px] text-[#7a4a4a]/50">
+        <p className="md:col-span-2 -mt-3 text-fine text-on-paper-muted">
           Se compilati, compaiono nell&apos;email di conferma iscrizione lista come link a Google Maps.
         </p>
 
@@ -372,12 +366,12 @@ function EventForm({
           <input className={inputCls} type="number" min={0} step={1} value={f.price}
             onChange={e => set('price', parseFloat(e.target.value) || 0)} />
           {f.price > 0 && !f.is_list_only && (
-            <p className="mt-1 text-[10px] text-[#731515]/70" style={{ fontFamily: 'var(--font-nunito)' }}>
+            <p className="mt-1 text-fine text-accent">
               Prodotto Stripe creato automaticamente al salvataggio
             </p>
           )}
           {f.price > 0 && f.is_list_only && (
-            <p className="mt-1 text-[10px] text-[#731515]/70" style={{ fontFamily: 'var(--font-nunito)' }}>
+            <p className="mt-1 text-fine text-accent">
               Mostrato come &ldquo;pagamento all&apos;ingresso&rdquo; sulla pagina pubblica
             </p>
           )}
@@ -392,35 +386,38 @@ function EventForm({
             placeholder="50" />
         </div>
 
-        {/* Image upload */}
+        {/* Immagine: il cestino è un pulsante vero, non un quadratino
+            da cinque pixel che compare al passaggio del mouse. */}
         <div className="md:col-span-2">
-          <Label>Immagine evento (opzionale)</Label>
-          <div className="flex items-start gap-4">
-            {/* Preview */}
+          <Label>Immagine dell’evento</Label>
+          <div className="flex flex-wrap items-center gap-4">
             {f.image_url && (
-              <div className="relative w-20 h-20 rounded-lg overflow-hidden shrink-0 border border-[#eddada] bg-[#fdf6f6]">
-                <Image src={f.image_url} alt="Anteprima" fill className="object-cover" sizes="80px" />
-                <button type="button" onClick={() => set('image_url', null)}
-                  className="absolute top-0.5 right-0.5 bg-black/50 text-white rounded-full p-0.5 hover:bg-black/70 transition-colors">
-                  <X size={10} />
+              <div className="relative shrink-0">
+                <Image
+                  src={f.image_url}
+                  alt="Anteprima"
+                  width={96}
+                  height={96}
+                  className="h-24 w-24 rounded-2xl border border-rule-paper object-cover"
+                />
+                <button
+                  type="button"
+                  aria-label="Togli l’immagine"
+                  onClick={() => set('image_url', null)}
+                  className="absolute -right-2 -top-2 grid h-8 w-8 place-items-center rounded-full border border-rule-paper bg-paper transition-colors hover:border-accent hover:text-accent"
+                >
+                  <X size={15} strokeWidth={2} />
                 </button>
               </div>
             )}
-            <div className="flex flex-col gap-2 flex-1">
-              <button type="button" disabled={imgUploading}
-                onClick={() => fileRef.current?.click()}
-                className="flex items-center gap-2 px-3 py-2 border border-[#eddada] rounded-lg text-[11px] tracking-[0.2em] text-[#7a4a4a] hover:border-[#731515] hover:text-[#731515] disabled:opacity-50 transition-colors bg-[#fdf6f6] w-fit">
-                {imgUploading
-                  ? <Loader2 size={13} className="animate-spin" />
-                  : <ImagePlus size={13} />}
-                {imgUploading ? 'CARICAMENTO…' : 'CARICA IMMAGINE'}
-              </button>
-              {f.image_url && (
-                <p className="text-[9px] text-[#7a4a4a]/50 truncate max-w-xs" style={{ fontFamily: 'var(--font-nunito)' }}>
-                  {f.image_url}
-                </p>
-              )}
-            </div>
+            <ActionButton
+              variant="quiet"
+              onClick={() => fileRef.current?.click()}
+              disabled={imgUploading}
+            >
+              {imgUploading ? <Loader2 size={16} className="animate-spin" /> : <ImagePlus size={16} strokeWidth={1.8} />}
+              {imgUploading ? 'Carico…' : f.image_url ? 'Cambia immagine' : 'Carica immagine'}
+            </ActionButton>
             <input ref={fileRef} type="file" accept="image/*" className="hidden"
               onChange={e => { const file = e.target.files?.[0]; if (file) handleImageFile(file); e.target.value = ''; }} />
           </div>
@@ -458,8 +455,8 @@ function EventForm({
             />
           )}
           {f.is_list_only && (
-            <div className="flex items-center gap-2 text-[11px] text-[#731515]/60" style={{ fontFamily: 'var(--font-nunito)' }}>
-              <span className="text-[#731515]">✓</span> Lista invitati attiva automaticamente (Solo lista)
+            <div className="flex items-center gap-2 text-fine text-accent">
+              <span className="text-accent">✓</span> Lista invitati attiva automaticamente (Solo lista)
             </div>
           )}
           {!f.is_list_only && f.price > 0 && (
@@ -482,13 +479,13 @@ function EventForm({
       </div>
 
       {error && (
-        <p role="alert" className="mt-6 text-[14px] text-[#731515]">{error}</p>
+        <p role="alert" className="mt-6 text-body text-accent">{error}</p>
       )}
 
       {/* Sticky on a phone, so Salva is reachable without scrolling back
           up through twenty-two fields. */}
       <div
-        className="sticky bottom-0 -mx-5 mt-8 flex gap-3 border-t border-[#E4D6D3] bg-white px-5 pt-4 md:-mx-7 md:px-7"
+        className="sticky bottom-0 -mx-5 mt-8 flex gap-3 border-t border-rule-paper bg-paper px-5 pt-4 md:-mx-7 md:px-7"
         style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
       >
         <ActionButton variant="quiet" onClick={onCancel} className="flex-1 md:flex-none">
@@ -549,60 +546,45 @@ function CollaboratorAssignPanel({ event, accessToken }: { event: DbEvent; acces
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <Loader2 size={20} className="text-[#731515]/40 animate-spin" />
+      <div className="flex justify-center py-16">
+        <Loader2 size={22} className="animate-spin text-accent/50" />
       </div>
     );
   }
 
   if (collaborators.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center px-6">
-        <div className="w-12 h-12 rounded-full bg-[#7a4a4a]/6 flex items-center justify-center mb-3">
-          <UserCheck size={20} className="text-[#7a4a4a]/30" strokeWidth={1.5} />
-        </div>
-        <p className="text-xs text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
-          Nessun account collaboratore trovato.
-        </p>
+      <div className="px-4 py-10 sm:px-6">
+        <EmptyState title="Nessun collaboratore" body="Non ci sono account collaboratore da assegnare." />
       </div>
     );
   }
 
   return (
-    <div className="py-2">
-      {collaborators.map(c => {
-        const isBusy = toggling.has(c.id);
+    <ul>
+      {collaborators.map((c) => {
+        const attesa = toggling.has(c.id);
         return (
-          <div key={c.id} className="flex items-center gap-3 px-6 py-3.5 border-b border-[#eddada]/50 last:border-0 hover:bg-[#fdf6f6] transition-colors">
-            <div className="flex-1 min-w-0">
-              <div className="text-[13px] font-medium text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>
-                {c.name}
-              </div>
-              <div className="text-[11px] text-[#7a4a4a]/50 mt-0.5" style={{ fontFamily: 'var(--font-nunito)' }}>
-                {c.email}
-              </div>
+          <li
+            key={c.id}
+            className="flex items-center gap-3 border-b border-rule-paper px-4 py-3.5 last:border-0 sm:px-6"
+          >
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-body font-medium">{c.name}</p>
+              <p className="mt-0.5 truncate text-fine text-on-paper-muted">{c.email}</p>
             </div>
-            <button
+            <ActionButton
+              variant={c.assigned ? 'accent' : 'quiet'}
               onClick={() => toggle(c)}
-              disabled={isBusy}
-              className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] tracking-[0.25em] transition-all duration-200 ${
-                c.assigned
-                  ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/30 hover:bg-emerald-500/20'
-                  : 'bg-[#7a4a4a]/6 text-[#7a4a4a]/60 border border-[#eddada] hover:bg-[#731515]/8 hover:text-[#731515]'
-              } ${isBusy ? 'opacity-50' : ''}`}
-              style={{ fontFamily: 'var(--font-nunito)' }}
+              disabled={attesa}
             >
-              {isBusy
-                ? <Loader2 size={11} className="animate-spin" />
-                : c.assigned
-                  ? <><Check size={11} strokeWidth={2.5} /> ASSEGNATO</>
-                  : <>ASSEGNA</>
-              }
-            </button>
-          </div>
+              {attesa ? <Loader2 size={15} className="animate-spin" /> : c.assigned ? <Check size={15} strokeWidth={2.4} /> : null}
+              {c.assigned ? 'Assegnato' : 'Assegna'}
+            </ActionButton>
+          </li>
         );
       })}
-    </div>
+    </ul>
   );
 }
 
@@ -610,9 +592,9 @@ function CollaboratorAssignPanel({ event, accessToken }: { event: DbEvent; acces
    Guest List — schermo intero
 ───────────────────────────────────────────── */
 const DRAWER_TABS = [
-  { id: 'guests'        as const, icon: ClipboardList, label: 'INVITATI',      short: 'INVITATI' },
-  { id: 'collaborators' as const, icon: UserCheck,     label: 'COLLABORATORI', short: 'COLLAB.'  },
-  { id: 'partners'      as const, icon: Link2,         label: 'PARTNER',       short: 'PARTNER'  },
+  { id: 'guests' as const,        label: 'Invitati',      short: 'Invitati' },
+  { id: 'collaborators' as const, label: 'Collaboratori', short: 'Collab.' },
+  { id: 'partners' as const,      label: 'Partner',       short: 'Partner' },
 ];
 
 function GuestListDrawer({
@@ -648,7 +630,7 @@ function GuestListDrawer({
 
   return (
     <motion.div
-      className="ds fixed inset-0 z-[70] flex flex-col overflow-hidden bg-[#FDFBFA] text-[#1A0505]"
+      className="ds fixed inset-0 z-[70] flex flex-col overflow-hidden bg-paper text-on-paper"
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{    opacity: 0, y: 16 }}
@@ -659,14 +641,14 @@ function GuestListDrawer({
            what this is. The close button sits on the left, where a
            thumb reaches it on a phone held one-handed. */}
       <div
-        className="flex shrink-0 items-center gap-3 border-b border-[#E4D6D3] bg-white px-4 py-3 sm:px-6"
+        className="flex shrink-0 items-center gap-3 border-b border-rule-paper bg-paper px-4 py-3 sm:px-6"
         style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}
       >
         <button
           onClick={onClose}
           aria-label="Chiudi"
           title="Chiudi (Esc)"
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-[#1A0505] transition-colors hover:bg-[#F4EDEB]"
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-on-paper transition-colors hover:bg-paper-soft"
           style={{ touchAction: 'manipulation' }}
         >
           <X size={21} strokeWidth={1.8} />
@@ -674,29 +656,29 @@ function GuestListDrawer({
 
         <div className="min-w-0 flex-1">
           <h2
-            className="ds-display truncate text-[19px] tracking-[-0.02em] text-[#1A0505]"
+            className="ds-display truncate text-[19px] tracking-[-0.02em] text-on-paper"
             title={event.title}
           >
             {event.title}
           </h2>
-          <p className="mt-0.5 truncate text-[13px] text-[#7A5252]">
+          <p className="mt-0.5 truncate text-fine text-on-paper-muted">
             {event.date ? fmtDate(event.date) : ''}{event.location ? ` · ${event.location}` : ''}
           </p>
         </div>
       </div>
 
       {/* ── Tabs — 3-column grid so each tab is perfectly centred in its cell ── */}
-      <div className="shrink-0 border-b border-[#E4D6D3] bg-white px-4 pb-3 sm:px-6">
+      <div className="shrink-0 border-b border-rule-paper bg-paper px-4 pb-3 sm:px-6">
         <div className="flex gap-2">
           {DRAWER_TABS.map(({ id, label, short }) => (
             <button
               key={id}
               onClick={() => changeTab(id)}
               aria-pressed={tab === id}
-              className={`min-h-[44px] flex-1 rounded-full border px-3 text-[13px] font-medium transition-colors ${
+              className={`min-h-[44px] flex-1 rounded-full border px-3 text-fine font-medium transition-colors ${
                 tab === id
-                  ? 'border-[#731515] bg-[#731515] text-white'
-                  : 'border-[#E4D6D3] text-[#1A0505] hover:border-[#731515]/40'
+                  ? 'border-accent bg-accent text-paper'
+                  : 'border-rule-paper text-on-paper hover:border-accent/40'
               }`}
               style={{ touchAction: 'manipulation' }}
             >
@@ -794,10 +776,10 @@ function EventActions({
           <li key={r.label}>
             <button
               onClick={() => { r.run(); onClose(); }}
-              className="w-full rounded-2xl px-4 py-3.5 text-left transition-colors hover:bg-[#F4EDEB]"
+              className="w-full rounded-2xl px-4 py-3.5 text-left transition-colors hover:bg-paper-soft"
             >
-              <span className="block text-[16px] font-medium text-[#1A0505]">{r.label}</span>
-              {r.hint && <span className="mt-0.5 block text-[13px] text-[#7A5252]">{r.hint}</span>}
+              <span className="block text-body font-medium text-on-paper">{r.label}</span>
+              {r.hint && <span className="mt-0.5 block text-fine text-on-paper-muted">{r.hint}</span>}
             </button>
           </li>
         ))}
@@ -805,10 +787,10 @@ function EventActions({
 
       {!isPast && (
         <>
-          <div className="my-4 h-px bg-[#E4D6D3]" />
+          <div className="my-4 h-px bg-rule-paper" />
           <button
             onClick={() => { onDelete(); onClose(); }}
-            className="w-full rounded-2xl px-4 py-3.5 text-left text-[16px] font-medium text-[#731515] transition-colors hover:bg-[#731515]/5"
+            className="w-full rounded-2xl px-4 py-3.5 text-left text-body font-medium text-accent transition-colors hover:bg-accent/5"
           >
             Elimina evento
           </button>
@@ -919,7 +901,7 @@ export default function EventManager() {
       label: 'Evento',
       primary: true,
       render: (e) => (
-        <span className={e.title_strikethrough ? 'line-through decoration-[#731515]/60' : ''}>
+        <span className={e.title_strikethrough ? 'line-through decoration-accent/60' : ''}>
           {e.title}
         </span>
       ),
@@ -938,7 +920,7 @@ export default function EventManager() {
       key: 'place',
       label: 'Luogo',
       desktopOnly: true,
-      render: (e) => <span className="text-[#7A5252]">{e.location_full || e.location || '—'}</span>,
+      render: (e) => <span className="text-on-paper-muted">{e.location_full || e.location || '—'}</span>,
     },
     {
       key: 'status',
@@ -1157,7 +1139,7 @@ export default function EventManager() {
 
       {loading ? (
         <div className="flex justify-center py-16">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#731515] border-t-transparent" />
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
         </div>
       ) : (
         <DataList

@@ -5,6 +5,8 @@ import { MockDocuments } from './MockDocuments';
 import { MockFinance } from './MockFinance';
 import QuoteGenerator from '@/components/QuoteGenerator';
 import { MockCrm } from './MockCrm';
+import { MockMerch } from './MockMerch';
+import { MockEventi } from './MockEventi';
 
 /**
  * Task and the editorial plan, mounted outside the login so the layout
@@ -50,6 +52,16 @@ export default function AreaPreviewPage() {
 
         {/* Rubrica finta: vedi MockCrm. */}
         <MockCrm />
+
+        <hr className="my-16 border-rule-paper" />
+
+        {/* Merch finto: vedi MockMerch. */}
+        <MockMerch />
+
+        <hr className="my-16 border-rule-paper" />
+
+        {/* Pannelli evento finti: vedi MockEventi. */}
+        <MockEventi />
       </div>
     </div>
   );
