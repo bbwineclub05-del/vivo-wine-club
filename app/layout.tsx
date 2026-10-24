@@ -4,7 +4,7 @@ import "./globals.css";
 import { CartProvider } from "@/contexts/CartContext";
 import { AuthProvider } from "@/lib/auth";
 import CartDrawer from "@/components/CartDrawer";
-import CookieBanner from "@/components/CookieBanner";
+import EntryGate from "@/components/ui/EntryGate";
 import ConsentGatedScripts from "@/components/ConsentGatedScripts";
 import WineAssistantWidget from "@/components/WineAssistantWidget";
 import { NextIntlClientProvider } from 'next-intl';
@@ -108,7 +108,7 @@ export default async function RootLayout({
             <CartProvider>
               {children}
               <CartDrawer />
-              <CookieBanner />
+              <EntryGate />
               <WineAssistantWidget />
             </CartProvider>
           </AuthProvider>

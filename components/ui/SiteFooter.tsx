@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import { ManageCookiesLink } from '@/components/ui/ManageCookiesLink';
 
 const PAGES = [
   { href: '/brands', key: 'studio' },
@@ -9,6 +10,7 @@ const PAGES = [
   { href: '/wear-the-club', key: 'shop' },
   { href: '/manifesto', key: 'manifesto' },
   { href: '/membership', key: 'join' },
+  { href: '/faq', key: 'faq' },
 ] as const;
 
 const SOCIALS = [
@@ -104,6 +106,9 @@ export async function SiteFooter() {
                 </Link>
               </li>
             ))}
+            <li>
+              <ManageCookiesLink label={tLegal('manageCookies')} />
+            </li>
           </ul>
         </div>
       </div>
