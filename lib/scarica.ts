@@ -46,6 +46,94 @@ export function salvaBlob(blob: Blob, nomeFile: string): boolean {
   return true;
 }
 
+/**
+ * Chiede il file con un modulo, non con `fetch`.
+ *
+ * E' il modo che funziona ovunque: un modulo inviato dentro un
+ * riquadro nascosto e' una navigazione, e il browser prende il nome
+ * del file da `Content-Disposition`, deciso dal server. Con `fetch`
+ * il nome lo deve dare la pagina tramite l'attributo `download`, e
+ * se il browser quell'attributo lo ignora — succede in Chrome dentro
+ * certi profili, e nei browser incorporati delle app — il file viene
+ * salvato come `4526eaf8-92db-…`, senza estensione e inapribile.
+ *
+ * Se qualcosa va storto il server risponde con del JSON invece che
+ * con il file, e quel JSON resta nel riquadro: lo leggiamo da li' e
+ * lo riportiamo su, invece di lasciare l'utente a guardare un
+ * pulsante che non fa niente.
+ */
+export function scaricaConModulo(
+  url: string,
+  campi: Record<string, string>,
+): Promise<EsitoScarico> {
+  return new Promise((risolvi) => {
+    const riquadro = document.createElement('iframe');
+    riquadro.style.display = 'none';
+    riquadro.name = `scarico-${Date.now()}`;
+    document.body.appendChild(riquadro);
+
+    const modulo = document.createElement('form');
+    modulo.method = 'POST';
+    modulo.action = url;
+    modulo.target = riquadro.name;
+    modulo.style.display = 'none';
+
+    for (const [nome, valore] of Object.entries(campi)) {
+      const campo = document.createElement('input');
+      campo.type = 'hidden';
+      campo.name = nome;
+      campo.value = valore;
+      modulo.appendChild(campo);
+    }
+
+    document.body.appendChild(modulo);
+    modulo.submit();
+    modulo.remove();
+
+    // Se il file scende, il riquadro resta vuoto. Se invece il server
+    // ha risposto con un errore, dentro c'e' del testo.
+    window.setTimeout(() => {
+      let messaggio = '';
+      try {
+        const testo = riquadro.contentDocument?.body?.innerText?.trim() ?? '';
+        if (testo) {
+          try {
+            messaggio = JSON.parse(testo).error ?? testo;
+          } catch {
+            messaggio = testo;
+          }
+        }
+      } catch {
+        /* niente da leggere: il file e' partito */
+      }
+      riquadro.remove();
+      risolvi(messaggio ? { ok: false, messaggio } : { ok: true });
+    }, 2500);
+  });
+}
+
+/**
+ * Un PDF nato nel browser, salvato col nome giusto.
+ *
+ * Fa un giro dal server — `/api/download` — solo per riscendere con
+ * `Content-Disposition`. Costa una richiesta, e vale: e' l'unico modo
+ * perche' il file si chiami come deve su tutti i browser.
+ */
+export async function scaricaBlobGenerato(
+  blob: Blob,
+  nomeFile: string,
+  token: string,
+): Promise<EsitoScarico> {
+  const base64 = await new Promise<string>((risolvi, rifiuta) => {
+    const lettore = new FileReader();
+    lettore.onload = () => risolvi(String(lettore.result).split(',')[1] ?? '');
+    lettore.onerror = () => rifiuta(lettore.error);
+    lettore.readAsDataURL(blob);
+  });
+
+  return scaricaConModulo('/api/download', { token, nome: nomeFile, contenuto: base64 });
+}
+
 export interface EsitoScarico {
   ok: boolean;
   /** Pronto da mostrare: se non e' andata, dice perche'. */

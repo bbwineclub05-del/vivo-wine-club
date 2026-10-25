@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { scaricaDalServer } from '@/lib/scarica';
+import { scaricaConModulo } from '@/lib/scarica';
 import { ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { ActionButton, EmptyState, PageHead } from '@/components/admin/ui';
@@ -240,32 +240,28 @@ export default function BilancioManager() {
         breakdown[name] = cur;
       }
 
-      const esito = await scaricaDalServer(
-        '/api/bilancio/pdf',
-        `bilancio-${label.replace(/\s+/g, '-').toLowerCase()}.pdf`,
-        {
-          token,
-          body: {
-            periodLabel: label,
-            from,
-            to,
-            entrate: stats.entrate / 100,
-            uscite: stats.uscite / 100,
-            saldoPeriodo: stats.risultato / 100,
-            saldoCumulativo: stats.cumulato / 100,
-            categoryBreakdown: breakdown,
-            revenueCategories: Object.entries(breakdown)
-              .filter(([, r]) => r.entrate > 0 && r.uscite === 0)
-              .map(([name, r]) => ({ name, amount: r.entrate })),
-            costCategories: Object.entries(breakdown)
-              .filter(([, r]) => r.uscite > 0 && r.entrate === 0)
-              .map(([name, r]) => ({ name, amount: r.uscite })),
-            mixedCategories: Object.entries(breakdown)
-              .filter(([, r]) => r.entrate > 0 && r.uscite > 0)
-              .map(([name, r]) => ({ name, entrate: r.entrate, uscite: r.uscite, saldo: r.saldo })),
-          },
-        },
-      );
+      const esito = await scaricaConModulo('/api/bilancio/pdf', {
+        token,
+        payload: JSON.stringify({
+          periodLabel: label,
+          from,
+          to,
+          entrate: stats.entrate / 100,
+          uscite: stats.uscite / 100,
+          saldoPeriodo: stats.risultato / 100,
+          saldoCumulativo: stats.cumulato / 100,
+          categoryBreakdown: breakdown,
+          revenueCategories: Object.entries(breakdown)
+            .filter(([, r]) => r.entrate > 0 && r.uscite === 0)
+            .map(([name, r]) => ({ name, amount: r.entrate })),
+          costCategories: Object.entries(breakdown)
+            .filter(([, r]) => r.uscite > 0 && r.entrate === 0)
+            .map(([name, r]) => ({ name, amount: r.uscite })),
+          mixedCategories: Object.entries(breakdown)
+            .filter(([, r]) => r.entrate > 0 && r.uscite > 0)
+            .map(([name, r]) => ({ name, entrate: r.entrate, uscite: r.uscite, saldo: r.saldo })),
+        }),
+      });
       setEsitoPdf(esito.messaggio ?? '');
     } finally {
       setExporting(false);

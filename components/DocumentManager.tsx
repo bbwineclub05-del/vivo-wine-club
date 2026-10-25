@@ -21,7 +21,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { salvaBlob } from '@/lib/scarica';
+import { scaricaConModulo } from '@/lib/scarica';
 import { useOverlayBackClose } from '@/lib/useMobileOverlay';
 import {
   ActionButton,
@@ -198,9 +198,8 @@ function DocDetail({
     setBusy('download');
     setError('');
     try {
-      const blob = await fetchBlob(false);
-      const salvato = salvaBlob(blob, doc!.file_name);
-      if (!salvato) setError('Aperto in una scheda: usa «Condividi» per salvarlo.');
+      const esito = await scaricaConModulo(`/api/documents/${doc!.id}/download`, { token });
+      if (!esito.ok) setError(esito.messaggio ?? 'Non sono riuscito a scaricare il file.');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Errore.');
     } finally {

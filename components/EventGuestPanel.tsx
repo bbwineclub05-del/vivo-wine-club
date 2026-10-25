@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Check, FileDown, Loader2, Plus, Star, Trash2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { ActionButton, EmptyState, SearchField } from '@/components/admin/ui';
-import { salvaBlob } from '@/lib/scarica';
+import { scaricaBlobGenerato } from '@/lib/scarica';
 
 /**
  * Chi si è iscritto a un evento, e chi è entrato.
@@ -216,14 +216,16 @@ export default function EventGuestPanel({ event, accessToken, onGuestEnabled }: 
         },
       });
 
-      // `doc.save()` fa da se' il link e lo clicca, e dentro i browser
-      // incorporati delle app non succede niente: qui il blob passa
-      // dall'unico punto che sa anche aprirlo in una scheda.
-      const salvato = salvaBlob(
+      // Non `doc.save()`: quel metodo crea un link e lo clicca, e il
+      // nome del file lo decide il browser — che a volte lo ignora e
+      // salva l'id del blob. Il PDF fa un giro dal server e torna
+      // indietro con il nome scritto nell'intestazione.
+      const esito = await scaricaBlobGenerato(
         doc.output('blob'),
         `lista_invitati_${event.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`,
+        accessToken,
       );
-      setEsitoPdf(salvato ? '' : 'Aperto in una scheda: usa «Condividi» per salvarlo.');
+      setEsitoPdf(esito.ok ? '' : esito.messaggio ?? 'Non sono riuscito a scaricare la lista.');
     } catch (err) {
       console.error('[lista invitati PDF]', err);
       setEsitoPdf('Non sono riuscito a creare il PDF.');

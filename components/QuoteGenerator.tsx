@@ -13,7 +13,7 @@ import {
   TextInput,
 } from '@/components/admin/ui';
 import { formatEur, toCents } from '@/lib/ledger';
-import { scaricaDalServer } from '@/lib/scarica';
+import { scaricaConModulo } from '@/lib/scarica';
 
 /**
  * Preventivi.
@@ -389,9 +389,9 @@ export default function QuoteGenerator() {
     setPdfLoading(true);
     setMessage(null);
     try {
-      const esito = await scaricaDalServer('/api/quotes/pdf', `preventivo-${number}.pdf`, {
+      const esito = await scaricaConModulo('/api/quotes/pdf', {
         token,
-        body: payload(),
+        payload: JSON.stringify(payload()),
       });
       if (!esito.ok) throw new Error(esito.messaggio ?? 'Non sono riuscito a generare il PDF.');
       if (esito.messaggio) setMessage({ tone: 'ok', text: esito.messaggio });

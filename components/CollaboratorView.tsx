@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Users, CheckCheck, Check, Loader2, LogOut, Wine, ChevronDown, Link2, X, FileDown, Phone, Mail, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import { salvaBlob } from '@/lib/scarica';
+import { scaricaBlobGenerato } from '@/lib/scarica';
 
 interface Guest {
   id:          string;
@@ -190,10 +190,10 @@ export default function CollaboratorView({ token, onLogout, name }: Props) {
         },
       });
 
-      // Non `doc.save()`: dentro i browser incorporati delle app il
-      // link che si crea da solo non scarica niente.
-      const salvato = salvaBlob(doc.output('blob'), `lista_invitati_${safeName}.pdf`);
-      setEsitoPdf(salvato ? '' : 'Aperto in una scheda: usa «Condividi» per salvarlo.');
+      // Non `doc.save()`: il nome lo deve dare il server, altrimenti
+      // certi browser salvano l'id del blob senza estensione.
+      const esito = await scaricaBlobGenerato(doc.output('blob'), `lista_invitati_${safeName}.pdf`, token);
+      setEsitoPdf(esito.ok ? '' : esito.messaggio ?? 'Non sono riuscito a scaricare la lista.');
     } catch (err) {
       console.error('[PDF collaboratore]', err);
       setEsitoPdf('Non sono riuscito a creare il PDF.');

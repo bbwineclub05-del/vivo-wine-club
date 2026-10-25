@@ -23,10 +23,25 @@ interface AuthFail {
 
 type AuthResult = AuthOk | AuthFail;
 
+/**
+ * Il token della richiesta.
+ *
+ * Di norma arriva nell'intestazione `Authorization`. I pulsanti che
+ * scaricano un file lo mandano invece dentro un modulo, perche' un
+ * modulo e' una navigazione vera e il nome del file lo decide il
+ * server con `Content-Disposition`: un `fetch` quel nome lo butta
+ * via, e alcuni browser salvano l'id del blob al posto suo.
+ */
+export function tokenDellaRichiesta(request: Request, fromForm?: string | null): string {
+  const authHeader = request.headers.get('Authorization');
+  const header = authHeader?.replace('Bearer ', '').trim();
+  return header || (fromForm ?? '').trim();
+}
+
 /** Validates the Bearer token and returns the authenticated user with role flags. */
-export async function getAuthUser(request: Request): Promise<AuthResult> {
+export async function getAuthUser(request: Request, tokenEsplicito?: string): Promise<AuthResult> {
   const authHeader  = request.headers.get('Authorization');
-  const accessToken = authHeader?.replace('Bearer ', '').trim();
+  const accessToken = tokenEsplicito?.trim() || authHeader?.replace('Bearer ', '').trim();
 
   if (!accessToken) {
     return { ok: false, response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
@@ -90,8 +105,11 @@ export async function requireAdmin(request: Request): Promise<AuthOk | AuthFail>
 }
 
 /** Requires admin OR staff role. Returns 401/403 or the user. */
-export async function requireAdminOrStaff(request: Request): Promise<AuthOk | AuthFail> {
-  const result = await getAuthUser(request);
+export async function requireAdminOrStaff(
+  request: Request,
+  tokenEsplicito?: string,
+): Promise<AuthOk | AuthFail> {
+  const result = await getAuthUser(request, tokenEsplicito);
   if (!result.ok) return result;
   // Spento in Team Management vuol dire spento anche qui: prima le API
   // rispondevano lo stesso a chi era stato disattivato.

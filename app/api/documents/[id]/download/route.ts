@@ -25,8 +25,34 @@ export async function GET(
 ) {
   const auth = await requireAdminOrStaff(request);
   if (!auth.ok) return auth.response;
+  const { id } = await params;
+  const wantsInline = new URL(request.url).searchParams.get('inline') === '1';
+  return consegna(id, wantsInline);
+}
+
+/**
+ * POST — lo stesso file, chiesto da un modulo.
+ *
+ * Un modulo e' una navigazione, e in una navigazione il nome del
+ * file lo impone `Content-Disposition`. Con un `fetch` quel nome si
+ * perde per strada e certi browser salvano l'identificativo del
+ * blob: un file senza estensione, che non si apre con niente. Il
+ * token viaggia in un campo, perche' a una navigazione non si
+ * possono attaccare intestazioni.
+ */
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const form = await request.formData();
+  const auth = await requireAdminOrStaff(request, String(form.get('token') ?? ''));
+  if (!auth.ok) return auth.response;
 
   const { id } = await params;
+  return consegna(id, form.get('inline') === '1');
+}
+
+async function consegna(id: string, wantsInline: boolean) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabase = getSupabaseAdmin() as any;
 
@@ -51,7 +77,6 @@ export async function GET(
   const buffer = Buffer.from(await blob.arrayBuffer());
   const safeName = doc.file_name.replace(/[^\w.\- ]/g, '_');
 
-  const wantsInline = new URL(request.url).searchParams.get('inline') === '1';
   const inline = wantsInline && canOpenInline(doc.file_name);
 
   return new NextResponse(buffer, {
