@@ -226,7 +226,7 @@ export default function BilancioManager() {
   }, [rows, from, to]);
 
   /* ── PDF: stessa struttura di prima, in euro ── */
-  async function exportPdf() {
+  function exportPdf(inline = false) {
     setExporting(true);
     try {
       const breakdown: Record<string, { entrate: number; uscite: number; saldo: number }> = {};
@@ -242,6 +242,7 @@ export default function BilancioManager() {
 
       const esito = scaricaConModulo('/api/bilancio/pdf', {
         token,
+        ...(inline ? { inline: '1' } : {}),
         payload: JSON.stringify({
           periodLabel: label,
           from,
@@ -278,10 +279,18 @@ export default function BilancioManager() {
         title="Bilancio"
         subtitle="Quanto è entrato e quanto è uscito, e da dove."
         action={
-          <ActionButton onClick={exportPdf} disabled={exporting || loading}>
-            <Download size={17} strokeWidth={1.9} />
-            {exporting ? 'Preparo…' : 'Esporta PDF'}
-          </ActionButton>
+          <div className="flex gap-2.5">
+            {/* «Apri» esiste per chi ha, nel browser, un'estensione che
+                si mette in mezzo ai download e rinomina i file: dal
+                visualizzatore il PDF si salva col nome giusto. */}
+            <ActionButton variant="quiet" onClick={() => exportPdf(true)} disabled={exporting || loading}>
+              Apri
+            </ActionButton>
+            <ActionButton onClick={() => exportPdf()} disabled={exporting || loading}>
+              <Download size={17} strokeWidth={1.9} />
+              {exporting ? 'Preparo…' : 'Esporta PDF'}
+            </ActionButton>
+          </div>
         }
       />
 

@@ -7,7 +7,7 @@ export async function POST(request: Request) {
   try {
     // Prima il corpo, poi il controllo: con un modulo il token sta
     // dentro al corpo, e il corpo si puo' leggere una volta sola.
-    const { dati: data, token } = await leggiRichiestaFile<QuoteData>(request);
+    const { dati: data, token, inline } = await leggiRichiestaFile<QuoteData>(request);
 
     const auth = await requireAdminOrStaff(request, token);
     if (!auth.ok) return auth.response;
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     return new Response(Buffer.from(pdfBytes), {
       headers: {
         'Content-Type':        'application/pdf',
-        'Content-Disposition': `attachment; filename="preventivo-${data.quoteNumber}.pdf"`,
+        'Content-Disposition': `${inline ? 'inline' : 'attachment'}; filename="preventivo-${data.quoteNumber}.pdf"`,
       },
     });
   } catch (err) {

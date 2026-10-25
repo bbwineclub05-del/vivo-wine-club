@@ -385,12 +385,13 @@ export default function QuoteGenerator() {
     }
   }
 
-  async function downloadPdf() {
+  function downloadPdf(inline = false) {
     setPdfLoading(true);
     setMessage(null);
     try {
       const esito = scaricaConModulo('/api/quotes/pdf', {
         token,
+        ...(inline ? { inline: '1' } : {}),
         payload: JSON.stringify(payload()),
       });
       if (!esito.ok) throw new Error(esito.messaggio ?? 'Non sono riuscito a generare il PDF.');
@@ -432,7 +433,10 @@ export default function QuoteGenerator() {
         subtitle={`N° ${number} · ${issueDate}`}
         action={
           <div className="flex flex-wrap gap-2.5">
-            <ActionButton variant="quiet" onClick={downloadPdf} disabled={pdfLoading || !ready}>
+            <ActionButton variant="quiet" onClick={() => downloadPdf(true)} disabled={pdfLoading || !ready}>
+              Apri
+            </ActionButton>
+            <ActionButton variant="quiet" onClick={() => downloadPdf()} disabled={pdfLoading || !ready}>
               <Download size={17} strokeWidth={1.9} />
               {pdfLoading ? 'Preparo…' : 'PDF'}
             </ActionButton>

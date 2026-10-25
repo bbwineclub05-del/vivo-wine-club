@@ -16,7 +16,7 @@ import { tokenDellaRichiesta } from '@/lib/auth-guard';
  */
 export async function leggiRichiestaFile<T>(
   request: Request,
-): Promise<{ dati: T; token: string }> {
+): Promise<{ dati: T; token: string; inline: boolean }> {
   const tipo = request.headers.get('content-type') ?? '';
 
   if (tipo.includes('form')) {
@@ -25,9 +25,13 @@ export async function leggiRichiestaFile<T>(
     return {
       dati: JSON.parse(payload) as T,
       token: tokenDellaRichiesta(request, String(form.get('token') ?? '')),
+      // `inline` apre il PDF nel visualizzatore invece di scaricarlo:
+      // serve a chi ha, nel browser, qualcosa che si mette in mezzo
+      // ai download.
+      inline: form.get('inline') === '1',
     };
   }
 
   const dati = (await request.json().catch(() => ({}))) as T;
-  return { dati, token: tokenDellaRichiesta(request) };
+  return { dati, token: tokenDellaRichiesta(request), inline: false };
 }

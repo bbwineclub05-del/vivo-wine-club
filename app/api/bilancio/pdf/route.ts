@@ -7,7 +7,7 @@ import { generateBilancioPdf, BilancioData } from '@/lib/bilancio-pdf';
 export async function POST(request: Request) {
   // Il corpo si legge per primo: quando il pulsante manda un modulo,
   // il token sta li' dentro insieme ai dati.
-  const { dati: body, token } = await leggiRichiestaFile<BilancioData>(request);
+  const { dati: body, token, inline } = await leggiRichiestaFile<BilancioData>(request);
 
   if (!token) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   return new NextResponse(buffer, {
     headers: {
       'Content-Type':        'application/pdf',
-      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Content-Disposition': `${inline ? 'inline' : 'attachment'}; filename="${filename}"`,
     },
   });
 }
