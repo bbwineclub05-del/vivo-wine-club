@@ -10,6 +10,11 @@ import type { ReactNode } from 'react';
  * The track is duplicated once and translated by exactly -50%, so the
  * loop is seamless regardless of content width. Reduced motion stops it
  * and lets the row scroll by hand instead.
+ *
+ * Non si ferma passandoci sopra col mouse. Si fermava, ed e' una di
+ * quelle cortesie che sembrano giuste finche' non le vedi: la fila
+ * inchioda mentre il mouse attraversa la pagina per arrivare
+ * altrove, e una cosa che doveva scorrere da sola sembra inceppata.
  */
 export function Marquee({
   children,
@@ -23,7 +28,7 @@ export function Marquee({
 }) {
   return (
     <div
-      className={`group relative flex overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden motion-safe:overflow-hidden ${className}`}
+      className={`relative flex overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden motion-safe:overflow-hidden ${className}`}
       // The fade tells the eye the row continues past the edge, without
       // drawing a hard crop line.
       style={{
@@ -34,7 +39,7 @@ export function Marquee({
       }}
     >
       <div
-        className="ds-marquee__track flex w-max shrink-0 motion-safe:animate-[ds-marquee_var(--ds-marquee-speed)_linear_infinite] motion-safe:group-hover:[animation-play-state:paused]"
+        className="ds-marquee__track flex w-max shrink-0 motion-safe:animate-[ds-marquee_var(--ds-marquee-speed)_linear_infinite]"
         style={{ '--ds-marquee-speed': `${speed}s` } as React.CSSProperties}
       >
         {/* Two identical halves, so translating the track by exactly
