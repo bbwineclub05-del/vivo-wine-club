@@ -53,7 +53,7 @@ export default function MemberPortal({ user, token, onLogout, initialSection = '
   const mostra = (s: MemberSection) => (section === s ? '' : 'hidden');
 
   return (
-    <MemberShell active={section} onNavigate={vai} userName={user.name ?? user.email}>
+    <MemberShell active={section} onNavigate={vai} userName={user.name ?? user.email} onLogout={onLogout}>
       {viste.includes('tessera') && (
         <div className={mostra('tessera')}>
           <TesseraSection token={token} name={user.name ?? ''} />

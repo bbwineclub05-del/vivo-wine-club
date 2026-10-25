@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { CalendarDays, CreditCard, Grape, Star, Tag, User } from 'lucide-react';
+import { CalendarDays, CreditCard, Grape, LogOut, Star, Tag, User } from 'lucide-react';
 
 /**
  * L'area del socio, con le stesse mani dell'area riservata.
@@ -31,11 +31,13 @@ export const SECTIONS: { id: MemberSection; key: string; icon: React.ElementType
 ];
 
 export function MemberShell({
-  active, onNavigate, userName, children,
+  active, onNavigate, userName, onLogout, children,
 }: {
   active: MemberSection;
   onNavigate: (s: MemberSection) => void;
   userName?: string | null;
+  /** Uscire era possibile solo in fondo al profilo: ora e' sempre a vista. */
+  onLogout?: () => void;
   children: React.ReactNode;
 }) {
   const t = useTranslations('member');
@@ -76,14 +78,32 @@ export function MemberShell({
             })}
           </ul>
         </nav>
-        {userName && (
-          <div className="border-t border-rule-ink px-5 py-4 text-fine text-on-ink-muted">{userName}</div>
-        )}
+        <div className="border-t border-rule-ink px-3 py-3">
+          {userName && <p className="px-2 pb-2 text-fine text-on-ink-muted">{userName}</p>}
+          {onLogout && (
+            <button
+              onClick={onLogout}
+              className="flex min-h-[48px] w-full items-center gap-3 rounded-xl px-3 text-left text-on-ink-muted transition-colors hover:bg-ink-soft hover:text-on-ink"
+            >
+              <LogOut size={20} strokeWidth={1.7} />
+              <span className="text-body">{t('esci')}</span>
+            </button>
+          )}
+        </div>
       </aside>
 
       {/* ── Barra del telefono ── */}
       <header className="ds-on-ink sticky top-0 z-30 flex h-[56px] items-center gap-3 bg-ink px-4 text-on-ink lg:hidden">
         <h1 className="ds-display flex-1 truncate text-[18px] tracking-[-0.02em]">{label}</h1>
+        {onLogout && (
+          <button
+            onClick={onLogout}
+            className="-mr-2 inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-3 text-fine text-on-ink-muted transition-colors hover:text-on-ink"
+          >
+            <LogOut size={18} strokeWidth={1.8} />
+            {t('esci')}
+          </button>
+        )}
       </header>
 
       <main className="min-w-0 flex-1 pb-[calc(76px+env(safe-area-inset-bottom))] lg:pb-0">

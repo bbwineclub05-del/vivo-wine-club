@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   BarChart3, CalendarDays, CheckSquare, ChevronLeft, Database, FileText, FolderOpen,
-  Images, Inbox, LayoutGrid, Search, Settings, ShoppingBag,
+  Images, Inbox, LayoutGrid, LogOut, Search, Settings, ShoppingBag,
   Tag, Users, UsersRound, Wallet, X,
 } from 'lucide-react';
 
@@ -36,11 +36,18 @@ export interface AdminShellProps {
    * non compaiono: né nella barra, né in "Tutto", né nella ricerca.
    */
   can?: (id: string) => boolean;
+  /**
+   * Uscire dall'area.
+   *
+   * Non c'era: chi entrava col portatile di qualcun altro non aveva
+   * un modo per uscirne se non cancellando i dati del browser.
+   */
+  onLogout?: () => void;
   children: React.ReactNode;
 }
 
 export function AdminShell({
-  role, active, onNavigate, userName, pendingApplications, can, children,
+  role, active, onNavigate, userName, pendingApplications, can, onLogout, children,
 }: AdminShellProps) {
   const bar = useMemo(() => barFor(role, can), [role, can]);
   const main = useMemo(() => mainFor(role, can), [role, can]);
@@ -153,6 +160,16 @@ export function AdminShell({
             <span className="min-w-0 flex-1 truncate text-body">{userName ?? 'Profilo'}</span>
             <Settings size={18} strokeWidth={1.7} className="text-on-ink-muted" />
           </button>
+
+          {onLogout && (
+            <button
+              onClick={onLogout}
+              className="flex min-h-[48px] w-full items-center gap-3 rounded-xl px-3 text-left text-on-ink-muted transition-colors hover:bg-ink-soft hover:text-on-ink"
+            >
+              <LogOut size={18} strokeWidth={1.7} />
+              <span className="text-body">Esci</span>
+            </button>
+          )}
         </div>
       </aside>
 
@@ -252,7 +269,7 @@ export function AdminShell({
                 onClose={() => setSheet(null)}
               />
             ) : (
-              <ProfileSheet userName={userName} onGo={go} onClose={() => setSheet(null)} />
+              <ProfileSheet userName={userName} onGo={go} onLogout={onLogout} onClose={() => setSheet(null)} />
             )}
           </div>
         </div>
@@ -438,10 +455,11 @@ function SheetList({
 }
 
 function ProfileSheet({
-  userName, onGo, onClose,
+  userName, onGo, onLogout, onClose,
 }: {
   userName?: string;
   onGo: (id: string) => void;
+  onLogout?: () => void;
   onClose: () => void;
 }) {
   return (
@@ -477,6 +495,23 @@ function ProfileSheet({
               </span>
             </button>
           </li>
+
+          {onLogout && (
+            <li>
+              <button
+                onClick={onLogout}
+                className="flex min-h-[64px] w-full items-center gap-4 rounded-2xl px-4 text-left hover:bg-paper-soft"
+              >
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-paper-soft text-accent">
+                  <LogOut size={20} strokeWidth={1.7} />
+                </span>
+                <span>
+                  <span className="block text-body font-medium">Esci</span>
+                  <span className="block text-fine text-on-paper-muted">Chiudi la sessione su questo dispositivo</span>
+                </span>
+              </button>
+            </li>
+          )}
         </ul>
       </div>
     </>

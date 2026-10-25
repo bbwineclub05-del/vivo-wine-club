@@ -804,6 +804,7 @@ function MembersPageInner() {
       userName={displayName}
       pendingApplications={pendingApplications}
       can={canOpen}
+      onLogout={handleLogout}
     >
       <div id="members-scroll-root" className="mx-auto max-w-[1180px] px-5 py-7 lg:px-10 lg:py-10">
         <SectionTabs destination={destination} active={activeSection} onPick={navigate} />
