@@ -13,6 +13,7 @@ import {
   TextInput,
 } from '@/components/admin/ui';
 import { formatEur, toCents } from '@/lib/ledger';
+import { scaricaDalServer } from '@/lib/scarica';
 
 /**
  * Preventivi.
@@ -388,21 +389,12 @@ export default function QuoteGenerator() {
     setPdfLoading(true);
     setMessage(null);
     try {
-      const res = await fetch('/api/quotes/pdf', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(payload()),
+      const esito = await scaricaDalServer('/api/quotes/pdf', `preventivo-${number}.pdf`, {
+        token,
+        body: payload(),
       });
-      if (!res.ok) throw new Error('Non sono riuscito a generare il PDF.');
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `preventivo-${number}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 10_000);
+      if (!esito.ok) throw new Error(esito.messaggio ?? 'Non sono riuscito a generare il PDF.');
+      if (esito.messaggio) setMessage({ tone: 'ok', text: esito.messaggio });
     } catch (e) {
       setMessage({ tone: 'err', text: e instanceof Error ? e.message : 'Errore.' });
     } finally {

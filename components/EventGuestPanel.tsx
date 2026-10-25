@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Check, FileDown, Loader2, Plus, Star, Trash2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { ActionButton, EmptyState, SearchField } from '@/components/admin/ui';
+import { salvaBlob } from '@/lib/scarica';
 
 /**
  * Chi si è iscritto a un evento, e chi è entrato.
@@ -54,6 +55,7 @@ export default function EventGuestPanel({ event, accessToken, onGuestEnabled }: 
   const [cerca, setCerca] = useState('');
   const [inCorso, setInCorso] = useState<Set<string>>(new Set());
   const [esportando, setEsportando] = useState(false);
+  const [esitoPdf, setEsitoPdf] = useState('');
   const [partner, setPartner] = useState<Map<string, string>>(new Map());
 
   const carica = useCallback(() => {
@@ -214,9 +216,17 @@ export default function EventGuestPanel({ event, accessToken, onGuestEnabled }: 
         },
       });
 
-      doc.save(`lista_invitati_${event.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`);
+      // `doc.save()` fa da se' il link e lo clicca, e dentro i browser
+      // incorporati delle app non succede niente: qui il blob passa
+      // dall'unico punto che sa anche aprirlo in una scheda.
+      const salvato = salvaBlob(
+        doc.output('blob'),
+        `lista_invitati_${event.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`,
+      );
+      setEsitoPdf(salvato ? '' : 'Aperto in una scheda: usa «Condividi» per salvarlo.');
     } catch (err) {
       console.error('[lista invitati PDF]', err);
+      setEsitoPdf('Non sono riuscito a creare il PDF.');
     } finally {
       setEsportando(false);
     }
@@ -285,6 +295,12 @@ export default function EventGuestPanel({ event, accessToken, onGuestEnabled }: 
             </ActionButton>
           </div>
         </div>
+
+        {esitoPdf && (
+          <p className="mt-3 rounded-2xl border border-rule-paper px-4 py-3 text-fine text-on-paper-muted">
+            {esitoPdf}
+          </p>
+        )}
 
         {conferma && (
           <div className="mt-3 flex flex-wrap items-center gap-3 rounded-2xl border border-accent/35 bg-accent/5 px-4 py-3">

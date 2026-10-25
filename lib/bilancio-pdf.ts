@@ -63,10 +63,11 @@ export async function generateBilancioPdf(data: BilancioData): Promise<Uint8Arra
   // ── HEADER ─────────────────────────────────────────────────────────
   const HEADER_TOP = H - 28;
 
-  // Logo — top-left  (main-logo.png: colored RGBA, visible on white background)
+  // Logo in alto a sinistra. La versione piccola: l'originale e' un
+  // PNG da 1024 pixel che pesa 1,3 MB e qui occupa 110 punti.
   let headerY = HEADER_TOP;
   try {
-    const logoBytes = readFileSync(join(process.cwd(), 'public', 'main-logo.png'));
+    const logoBytes = readFileSync(join(process.cwd(), 'public', 'pdf-logo.png'));
     const logoImg   = await pdfDoc.embedPng(logoBytes);
     const logoDims  = logoImg.scaleToFit(110, 36);
     page.drawImage(logoImg, { x: ML, y: headerY - logoDims.height, width: logoDims.width, height: logoDims.height });

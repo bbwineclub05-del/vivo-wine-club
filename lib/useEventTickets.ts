@@ -29,18 +29,32 @@ export function useEventTickets(eventSlug: string, accessToken: string) {
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  const reload = useCallback(() => {
-    setLoading(true);
-    fetch(`/api/tickets?event_id=${eventSlug}`, { headers: { Authorization: `Bearer ${accessToken}` } })
-      .then((r) => r.json())
-      .then((j) => setTickets(Array.isArray(j.tickets) ? j.tickets : []))
-      .catch(console.error)
-      .finally(() => setLoading(false));
+  /* Niente `setLoading(true)` prima della chiamata: al montaggio
+     sarebbe uno stato cambiato dentro a un effetto in modo sincrono,
+     e `loading` parte gia' da vero. Il giro a vuoto lo fa solo chi
+     preme "Aggiorna". */
+  const carica = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/tickets?event_id=${eventSlug}`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      const j = await res.json();
+      setTickets(Array.isArray(j.tickets) ? j.tickets : []);
+    } catch (err) {
+      console.error('[biglietti]', err);
+    } finally {
+      setLoading(false);
+    }
   }, [eventSlug, accessToken]);
 
+  const reload = useCallback(() => {
+    setLoading(true);
+    carica();
+  }, [carica]);
+
   useEffect(() => {
-    reload();
-  }, [reload]);
+    carica();
+  }, [carica]);
 
   /* Due telefoni sulla stessa porta: ognuno vede i check-in dell'altro. */
   useEffect(() => {
@@ -55,7 +69,7 @@ export function useEventTickets(eventSlug: string, accessToken: string) {
             const agg = payload.new as Ticket;
             setTickets((prev) => prev.map((t) => (t.order_id === agg.order_id ? { ...t, ...agg } : t)));
           } else {
-            reload();
+            carica();
           }
         },
       )
@@ -63,7 +77,7 @@ export function useEventTickets(eventSlug: string, accessToken: string) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [eventSlug, accessToken, reload]);
+  }, [eventSlug, accessToken, carica]);
 
   const toggle = useCallback(
     async (ticket: Ticket) => {

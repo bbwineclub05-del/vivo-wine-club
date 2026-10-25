@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Users, CheckCheck, Check, Loader2, LogOut, Wine, ChevronDown, Link2, X, FileDown, Phone, Mail, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { salvaBlob } from '@/lib/scarica';
 
 interface Guest {
   id:          string;
@@ -46,6 +47,7 @@ export default function CollaboratorView({ token, onLogout, name }: Props) {
   const [activeSlug,      setActiveSlug]      = useState<string | null>(null);
   const [toggling,        setToggling]        = useState<Set<string>>(new Set());
   const [search,          setSearch]          = useState('');
+  const [esitoPdf,        setEsitoPdf]        = useState('');
   const [activeTab,       setActiveTab]       = useState<'guests' | 'partners'>('guests');
   const [partners,        setPartners]        = useState<Partner[]>([]);
   const [eventTotal,      setEventTotal]      = useState(0);
@@ -188,11 +190,13 @@ export default function CollaboratorView({ token, onLogout, name }: Props) {
         },
       });
 
-      doc.save(`lista_invitati_${safeName}.pdf`);
+      // Non `doc.save()`: dentro i browser incorporati delle app il
+      // link che si crea da solo non scarica niente.
+      const salvato = salvaBlob(doc.output('blob'), `lista_invitati_${safeName}.pdf`);
+      setEsitoPdf(salvato ? '' : 'Aperto in una scheda: usa «Condividi» per salvarlo.');
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      console.error('[PDF collaborator] error:', err);
-      alert(`Errore PDF: ${msg}`);
+      console.error('[PDF collaboratore]', err);
+      setEsitoPdf('Non sono riuscito a creare il PDF.');
     } finally {
       setExporting(false);
     }
@@ -385,6 +389,12 @@ export default function CollaboratorView({ token, onLogout, name }: Props) {
                   </button>
                 </div>
               </div>
+
+              {esitoPdf && (
+                <p className="border-b border-[#f0e4e4] bg-white px-4 py-2.5 text-[13px] text-[#7a4a4a]">
+                  {esitoPdf}
+                </p>
+              )}
 
               {/* Tab bar */}
               <div className="flex border-b border-[#f0e4e4] bg-white shrink-0">

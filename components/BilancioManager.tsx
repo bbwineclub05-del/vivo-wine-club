@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { scaricaDalServer } from '@/lib/scarica';
 import { ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { ActionButton, EmptyState, PageHead } from '@/components/admin/ui';
@@ -107,6 +108,8 @@ export default function BilancioManager() {
   const [error, setError] = useState('');
   const [token, setToken] = useState('');
   const [exporting, setExporting] = useState(false);
+  /** Cosa e' successo all'ultimo scarico: prima non lo sapeva nessuno. */
+  const [esitoPdf, setEsitoPdf] = useState('');
 
   const [kind, setKind] = useState<PeriodType>('monthly');
   const [year, setYear] = useState(now.getFullYear());
@@ -237,39 +240,33 @@ export default function BilancioManager() {
         breakdown[name] = cur;
       }
 
-      const res = await fetch('/api/bilancio/pdf', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          periodLabel: label,
-          from,
-          to,
-          entrate: stats.entrate / 100,
-          uscite: stats.uscite / 100,
-          saldoPeriodo: stats.risultato / 100,
-          saldoCumulativo: stats.cumulato / 100,
-          categoryBreakdown: breakdown,
-          revenueCategories: Object.entries(breakdown)
-            .filter(([, r]) => r.entrate > 0 && r.uscite === 0)
-            .map(([name, r]) => ({ name, amount: r.entrate })),
-          costCategories: Object.entries(breakdown)
-            .filter(([, r]) => r.uscite > 0 && r.entrate === 0)
-            .map(([name, r]) => ({ name, amount: r.uscite })),
-          mixedCategories: Object.entries(breakdown)
-            .filter(([, r]) => r.entrate > 0 && r.uscite > 0)
-            .map(([name, r]) => ({ name, entrate: r.entrate, uscite: r.uscite, saldo: r.saldo })),
-        }),
-      });
-      if (!res.ok) return;
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `bilancio-${label.replace(/\s+/g, '-').toLowerCase()}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 10_000);
+      const esito = await scaricaDalServer(
+        '/api/bilancio/pdf',
+        `bilancio-${label.replace(/\s+/g, '-').toLowerCase()}.pdf`,
+        {
+          token,
+          body: {
+            periodLabel: label,
+            from,
+            to,
+            entrate: stats.entrate / 100,
+            uscite: stats.uscite / 100,
+            saldoPeriodo: stats.risultato / 100,
+            saldoCumulativo: stats.cumulato / 100,
+            categoryBreakdown: breakdown,
+            revenueCategories: Object.entries(breakdown)
+              .filter(([, r]) => r.entrate > 0 && r.uscite === 0)
+              .map(([name, r]) => ({ name, amount: r.entrate })),
+            costCategories: Object.entries(breakdown)
+              .filter(([, r]) => r.uscite > 0 && r.entrate === 0)
+              .map(([name, r]) => ({ name, amount: r.uscite })),
+            mixedCategories: Object.entries(breakdown)
+              .filter(([, r]) => r.entrate > 0 && r.uscite > 0)
+              .map(([name, r]) => ({ name, entrate: r.entrate, uscite: r.uscite, saldo: r.saldo })),
+          },
+        },
+      );
+      setEsitoPdf(esito.messaggio ?? '');
     } finally {
       setExporting(false);
     }
@@ -291,6 +288,12 @@ export default function BilancioManager() {
           </ActionButton>
         }
       />
+
+      {esitoPdf && (
+        <p className="mb-4 rounded-2xl border border-rule-paper px-4 py-3 text-fine text-on-paper-muted">
+          {esitoPdf}
+        </p>
+      )}
 
       {/* Periodo */}
       <div className="mb-3 flex rounded-full border border-rule-paper p-1 lg:w-fit">

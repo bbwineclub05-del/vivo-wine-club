@@ -21,6 +21,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { salvaBlob } from '@/lib/scarica';
 import { useOverlayBackClose } from '@/lib/useMobileOverlay';
 import {
   ActionButton,
@@ -198,14 +199,8 @@ function DocDetail({
     setError('');
     try {
       const blob = await fetchBlob(false);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = doc!.file_name;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 10_000);
+      const salvato = salvaBlob(blob, doc!.file_name);
+      if (!salvato) setError('Aperto in una scheda: usa «Condividi» per salvarlo.');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Errore.');
     } finally {

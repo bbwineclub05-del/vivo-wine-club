@@ -106,14 +106,18 @@ export async function generateQuotePdf(data: QuoteData): Promise<Uint8Array> {
   // ── HEADER ───────────────────────────────────────────────────────────
   const HEADER_TOP = H - 30;
 
-  // Logo — single static path so the file tracer picks up exactly this file.
-  // (A dynamic loop would cause the tracer to include the entire public/ dir.)
+  // Un percorso statico solo, cosi' il tracciatore dei file include
+  // esattamente questo e non tutta la cartella public.
+  //
+  // Era `logobianco.png`: il logo bianco, disegnato su una pagina
+  // bianca. Il commento diceva che "si legge bene a dimensioni
+  // piccole"; in realta' nei preventivi mandati ai clienti il logo
+  // non c'era. Ora e' quello colorato, nella versione piccola:
+  // l'originale pesa due mega per occupare tre centimetri.
   try {
-    const logoBytes = readFileSync(join(process.cwd(), 'public', 'logobianco.png'));
+    const logoBytes = readFileSync(join(process.cwd(), 'public', 'pdf-logo.png'));
     const logoImg   = await pdfDoc.embedPng(logoBytes);
     const logoDims  = logoImg.scaleToFit(120, 38);
-    // Draw on white: tint with a bordeaux-ish overlay using opacity isn't available
-    // in pdf-lib, so we draw it as-is — logobianco on white reads well at small size.
     page.drawImage(logoImg, {
       x: ML,
       y: HEADER_TOP - logoDims.height,
