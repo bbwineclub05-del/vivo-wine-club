@@ -1,17 +1,21 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import { CREATOR_VISIBILE } from '@/lib/flags';
 import { ManageCookiesLink } from '@/components/ui/ManageCookiesLink';
 
-const PAGES = [
+const TUTTE = [
   { href: '/brands', key: 'studio' },
-  { href: '/talents', key: 'creators' },
+  { href: '/talents', key: 'creators', soloSeCreator: true },
   { href: '/events', key: 'club' },
   { href: '/wear-the-club', key: 'shop' },
   { href: '/manifesto', key: 'manifesto' },
   { href: '/membership', key: 'join' },
   { href: '/faq', key: 'faq' },
 ] as const;
+
+/** Vedi `lib/flags.ts`: la voce Creator torna quando ci sono i contratti. */
+const PAGES = TUTTE.filter((p) => !('soloSeCreator' in p) || CREATOR_VISIBILE);
 
 const SOCIALS = [
   { label: 'Instagram', href: 'https://www.instagram.com/vivo.wineclub/' },

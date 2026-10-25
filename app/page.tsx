@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 
 import { SLOGAN_LINES } from '@/lib/brand';
+import { CREATOR_VISIBILE } from '@/lib/flags';
 import { ButtonLink } from '@/components/ui/Button';
 import { Chapter, Statement } from '@/components/ui/Chapter';
 import { DoorCard } from '@/components/ui/DoorCard';
@@ -77,9 +78,11 @@ export default async function Home() {
           <Statement className="max-w-[18ch]">{t('statement.line')}</Statement>
         </Section>
 
-        {/* ── Three doors ───────────────────────────────────────── */}
+        {/* ── Le porte ───────────────────────────────────────────
+            Tre quando i creator si possono mostrare, due finche' non
+            ci sono contratti firmati: vedi `lib/flags.ts`. */}
         <Section>
-          <div className="grid gap-5 md:grid-cols-3">
+          <div className={`grid gap-5 ${CREATOR_VISIBILE ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
             <DoorCard
               index={0}
               href="/events"
@@ -87,16 +90,18 @@ export default async function Home() {
               body={t('doors.eventsBody')}
               cta={t('doors.eventsCta')}
             />
+            {CREATOR_VISIBILE && (
+              <DoorCard
+                index={1}
+                ground="ink"
+                href="/talents"
+                title={t('doors.creatorsTitle')}
+                body={t('doors.creatorsBody')}
+                cta={t('doors.creatorsCta')}
+              />
+            )}
             <DoorCard
-              index={1}
-              ground="ink"
-              href="/talents"
-              title={t('doors.creatorsTitle')}
-              body={t('doors.creatorsBody')}
-              cta={t('doors.creatorsCta')}
-            />
-            <DoorCard
-              index={2}
+              index={CREATOR_VISIBILE ? 2 : 1}
               ground="accent"
               href="/brands"
               title={t('doors.brandsTitle')}

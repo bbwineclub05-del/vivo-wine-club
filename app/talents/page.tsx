@@ -1,5 +1,8 @@
 import Image from 'next/image';
+import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+
+import { CREATOR_VISIBILE } from '@/lib/flags';
 
 import { ButtonLink } from '@/components/ui/Button';
 import { Chapter, Statement } from '@/components/ui/Chapter';
@@ -14,6 +17,11 @@ export async function generateMetadata() {
 }
 
 export default async function TalentsPage() {
+  // La pagina resta scritta e compilata, ma chi arriva all'indirizzo
+  // a mano trova una pagina inesistente: finche' non ci sono
+  // contratti, questi nomi non si mostrano. Vedi `lib/flags.ts`.
+  if (!CREATOR_VISIBILE) notFound();
+
   const t = await getTranslations('site.talents');
   const creators = getCreators();
 

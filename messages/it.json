@@ -840,5 +840,25 @@
     "wrong": "Email o password non corrette.",
     "noAccount": "Non sei ancora socio?",
     "join": "Diventa member"
+  },
+  "reset": {
+    "back": "Torna all’accesso",
+    "title": "Scegli una nuova password",
+    "subtitle": "Da adesso entrerai con questa.",
+    "newPassword": "Nuova password",
+    "repeat": "Ripeti la password",
+    "rule": "Almeno otto caratteri.",
+    "show": "Mostra la password",
+    "hide": "Nascondi la password",
+    "save": "Salva la password",
+    "saving": "Salvo…",
+    "mismatch": "Le due password non coincidono.",
+    "tooShort": "Servono almeno otto caratteri.",
+    "failed": "Non sono riuscito a cambiare la password.",
+    "expired": "Questo link è scaduto o è già stato usato.",
+    "noToken": "Questo indirizzo va aperto dal link che ti abbiamo mandato per email.",
+    "askAgain": "Chiedine un altro",
+    "doneTitle": "Fatto",
+    "doneBody": "Password cambiata. Ti stiamo portando nella tua area."
   }
 }

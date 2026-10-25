@@ -7,6 +7,7 @@ import { Chapter, Statement } from '@/components/ui/Chapter';
 import { Section } from '@/components/ui/Section';
 import { SiteFooter } from '@/components/ui/SiteFooter';
 import { SiteNav } from '@/components/ui/SiteNav';
+import { CREATOR_VISIBILE } from '@/lib/flags';
 import { PartnerLogos } from '@/components/ui/PartnerLogos';
 
 export async function generateMetadata() {
@@ -82,17 +83,20 @@ export default async function BrandsPage() {
         </Section>
 
         {/* ── The creators ────────────────────────────────────── */}
-        <Section ground="ink">
-          <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
-            <div>
-              <h2 className="ds-display text-title">{t('talentsTitle')}</h2>
-              <p className="mt-4 max-w-[46ch] text-lead text-on-ink-muted">{t('talentsBody')}</p>
+        {/* Il richiamo ai creator torna con loro: vedi `lib/flags.ts`. */}
+        {CREATOR_VISIBILE && (
+          <Section ground="ink">
+            <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
+              <div>
+                <h2 className="ds-display text-title">{t('talentsTitle')}</h2>
+                <p className="mt-4 max-w-[46ch] text-lead text-on-ink-muted">{t('talentsBody')}</p>
+              </div>
+              <ButtonLink href="/talents" variant="paper" size="lg">
+                {t('talentsCta')}
+              </ButtonLink>
             </div>
-            <ButtonLink href="/talents" variant="paper" size="lg">
-              {t('talentsCta')}
-            </ButtonLink>
-          </div>
-        </Section>
+          </Section>
+        )}
 
         {/* ── Case studies ────────────────────────────────────
             Placeholders: fill in once the first numbers are agreed. */}

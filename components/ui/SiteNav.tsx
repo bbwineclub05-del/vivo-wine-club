@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Menu, ShoppingBag, User, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { CREATOR_VISIBILE } from '@/lib/flags';
 import { useAuth } from '@/lib/auth';
 import { useCart } from '@/contexts/CartContext';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
@@ -17,13 +18,16 @@ import { SocialRow } from '@/components/ui/SocialIcons';
  * Keeps the cart, the account entry and the language switcher that the
  * rest of the app depends on.
  */
-const LINKS = [
+const TUTTE = [
   { href: '/brands', key: 'studio' },
-  { href: '/talents', key: 'creators' },
+  { href: '/talents', key: 'creators', soloSeCreator: true },
   { href: '/events', key: 'club' },
   { href: '/wear-the-club', key: 'shop' },
   { href: '/manifesto', key: 'manifesto' },
 ] as const;
+
+/** Creator resta nell'elenco ma non si vede finche' l'interruttore e' spento. */
+const LINKS = TUTTE.filter((l) => !('soloSeCreator' in l) || CREATOR_VISIBILE);
 
 export function SiteNav() {
   const t = useTranslations('site.nav');

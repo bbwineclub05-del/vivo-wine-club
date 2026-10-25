@@ -840,5 +840,25 @@
     "wrong": "That email and password do not match.",
     "noAccount": "Not a member yet?",
     "join": "Become a member"
+  },
+  "reset": {
+    "back": "Back to sign in",
+    "title": "Choose a new password",
+    "subtitle": "From now on you will sign in with this one.",
+    "newPassword": "New password",
+    "repeat": "Repeat the password",
+    "rule": "At least eight characters.",
+    "show": "Show password",
+    "hide": "Hide password",
+    "save": "Save the password",
+    "saving": "Saving…",
+    "mismatch": "The two passwords do not match.",
+    "tooShort": "Eight characters at least.",
+    "failed": "I could not change the password.",
+    "expired": "This link has expired, or has already been used.",
+    "noToken": "Open this page from the link we emailed you.",
+    "askAgain": "Ask for another one",
+    "doneTitle": "Done",
+    "doneBody": "Password changed. Taking you to your area."
   }
 }

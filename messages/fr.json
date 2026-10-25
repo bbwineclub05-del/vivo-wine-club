@@ -840,5 +840,25 @@
     "wrong": "Cet email et ce mot de passe ne correspondent pas.",
     "noAccount": "Pas encore membre ?",
     "join": "Devenir membre"
+  },
+  "reset": {
+    "back": "Retour à la connexion",
+    "title": "Choisissez un nouveau mot de passe",
+    "subtitle": "C’est celui-ci que vous utiliserez désormais.",
+    "newPassword": "Nouveau mot de passe",
+    "repeat": "Répétez le mot de passe",
+    "rule": "Huit caractères au minimum.",
+    "show": "Afficher le mot de passe",
+    "hide": "Masquer le mot de passe",
+    "save": "Enregistrer",
+    "saving": "Enregistrement…",
+    "mismatch": "Les deux mots de passe ne correspondent pas.",
+    "tooShort": "Huit caractères au minimum.",
+    "failed": "Je n’ai pas pu changer le mot de passe.",
+    "expired": "Ce lien a expiré, ou a déjà été utilisé.",
+    "noToken": "Ouvrez cette page depuis le lien envoyé par email.",
+    "askAgain": "En demander un autre",
+    "doneTitle": "C’est fait",
+    "doneBody": "Mot de passe changé. Nous vous emmenons dans votre espace."
   }
 }

@@ -49,8 +49,21 @@ export default function LoginPage() {
       return;
     }
     setResetAttesa(true);
+    // Dritto alla pagina dove si sceglie la password nuova.
+    //
+    // Prima puntava a `/auth/callback`, che e' una rotta server e si
+    // aspetta un `code` nell'indirizzo. Ma questo progetto Supabase
+    // manda la sessione dopo il cancelletto — e quello che sta dopo il
+    // cancelletto al server non arriva mai. Risultato: la rotta non
+    // trovava niente, rimbalzava su /login, e chi aveva chiesto una
+    // password nuova si ritrovava dentro l'area senza averla cambiata.
+    //
+    // L'indirizzo lo prendiamo da dove siamo: in produzione e'
+    // autorizzato in Supabase. Da localhost non lo e', quindi il link
+    // ripiega sulla home del sito vero: per provarlo in locale va
+    // aggiunto fra i Redirect URL del progetto.
     await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: 'https://vivowineclub.com/auth/callback',
+      redirectTo: `${window.location.origin}/reset-password`,
     });
     setResetAttesa(false);
     setResetMandato(true);
