@@ -5,8 +5,8 @@ import Image from 'next/image';
 import { useReducedMotion } from 'framer-motion';
 
 export interface VideoCardSource {
-  /** Vertical clip, 9:16. Swap for the finished reels when they land. */
-  src: string;
+  /** Il filmato. Senza, la scheda resta la sola fotografia. */
+  src?: string;
   /** First frame, shown until the clip can play and whenever it cannot. */
   poster?: string;
   label?: string;
@@ -93,7 +93,7 @@ export function VideoCard({
         />
       )}
 
-      {!reduce && (
+      {!reduce && source.src && (
         <video
           ref={ref}
           muted

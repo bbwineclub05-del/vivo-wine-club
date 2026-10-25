@@ -16,12 +16,16 @@ import { join } from 'node:path';
  * vede prima che il video parta e resta a chi ha chiesto al telefono
  * di non far muovere niente.
  *
+ * Un'immagine *senza* un video che si chiami come lei diventa invece
+ * una scheda per conto suo: nella fila ci stanno anche le foto.
+ *
  * I due gruppi vengono alternati, cosi' la riga non e' prima tutta
  * verticale e poi tutta orizzontale.
  */
 
 export interface HomeReel {
-  src: string;
+  /** Manca quando la scheda e' una fotografia e basta. */
+  src?: string;
   poster?: string;
   orientamento: 'verticale' | 'orizzontale';
 }
@@ -33,18 +37,27 @@ function leggi(sotto: 'verticali' | 'orizzontali'): HomeReel[] {
   const dir = join(CARTELLA, sotto);
   if (!existsSync(dir)) return [];
 
-  return readdirSync(dir)
-    .filter((f) => f.toLowerCase().endsWith('.mp4'))
+  const verso = sotto === 'verticali' ? ('verticale' as const) : ('orizzontale' as const);
+  const indirizzo = (f: string) => `/home/${sotto}/${encodeURIComponent(f)}`;
+  const tutti = readdirSync(dir).filter((f) => !f.startsWith('.'));
+
+  const video = tutti.filter((f) => f.toLowerCase().endsWith('.mp4'));
+  const nomiVideo = new Set(video.map((f) => f.replace(/\.mp4$/i, '').toLowerCase()));
+
+  const schedeVideo: HomeReel[] = video.sort((a, b) => a.localeCompare(b, 'it')).map((file) => {
+    const nudo = file.replace(/\.mp4$/i, '');
+    const poster = POSTER.map((e) => `${nudo}${e}`).find((n) => existsSync(join(dir, n)));
+    return { src: indirizzo(file), poster: poster ? indirizzo(poster) : undefined, orientamento: verso };
+  });
+
+  // Le foto rimaste sole: quelle che non fanno da copertina a un video.
+  const schedeFoto: HomeReel[] = tutti
+    .filter((f) => POSTER.some((e) => f.toLowerCase().endsWith(e)))
+    .filter((f) => !nomiVideo.has(f.replace(/\.[^.]+$/, '').toLowerCase()))
     .sort((a, b) => a.localeCompare(b, 'it'))
-    .map((file) => {
-      const nudo = file.replace(/\.mp4$/i, '');
-      const poster = POSTER.map((e) => `${nudo}${e}`).find((n) => existsSync(join(dir, n)));
-      return {
-        src: `/home/${sotto}/${encodeURIComponent(file)}`,
-        poster: poster ? `/home/${sotto}/${encodeURIComponent(poster)}` : undefined,
-        orientamento: sotto === 'verticali' ? ('verticale' as const) : ('orizzontale' as const),
-      };
-    });
+    .map((file) => ({ poster: indirizzo(file), orientamento: verso }));
+
+  return [...schedeVideo, ...schedeFoto];
 }
 
 /** Il video di prima, finche' le cartelle sono vuote. */
