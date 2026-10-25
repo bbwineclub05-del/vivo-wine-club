@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 
 import { SLOGAN_LINES } from '@/lib/brand';
+import { homeReels } from '@/lib/home-reels';
 import { CREATOR_VISIBILE } from '@/lib/flags';
 import { ButtonLink } from '@/components/ui/Button';
 import { Chapter, Statement } from '@/components/ui/Chapter';
@@ -11,19 +12,10 @@ import { VideoCard } from '@/components/ui/VideoCard';
 import { SiteFooter } from '@/components/ui/SiteFooter';
 import { SiteNav } from '@/components/ui/SiteNav';
 
-// Placeholder reels. Swap `src` for the finished vertical clips; the row
-// reads the same whatever lands here, as long as the clips are 9:16.
-const REELS = [
-  { src: '/videosito-corto.mp4', poster: '/vigna.jpg' },
-  { src: '/videosito-corto.mp4', poster: '/vigna.jpg' },
-  { src: '/videosito-corto.mp4', poster: '/vigna.jpg' },
-  { src: '/videosito-corto.mp4', poster: '/vigna.jpg' },
-  { src: '/videosito-corto.mp4', poster: '/vigna.jpg' },
-  { src: '/videosito-corto.mp4', poster: '/vigna.jpg' },
-];
-
 export default async function Home() {
   const t = await getTranslations('site');
+  // Vedi `public/home/LEGGIMI.md`: i file li carica chi fa i video.
+  const reels = homeReels();
 
   return (
     <>
@@ -65,9 +57,19 @@ export default async function Home() {
         </Section>
 
         <Section bleed width="full" tight className="pt-0">
-          <Marquee speed={56}>
-            {REELS.map((r, i) => (
-              <VideoCard key={i} source={r} className="w-[172px] md:w-[216px]" />
+          {/* Le schede hanno tutte la stessa altezza e la larghezza
+              gliela da' la forma del video: le verticali strette, le
+              orizzontali larghe. Cosi' la riga resta dritta anche
+              mescolandole. */}
+          <Marquee speed={44}>
+            {reels.map((r, i) => (
+              <VideoCard
+                key={`${r.src}-${i}`}
+                source={{ src: r.src, poster: r.poster }}
+                aspect={r.orientamento === 'orizzontale' ? 'wide' : 'reel'}
+                sizes={r.orientamento === 'orizzontale' ? '(max-width: 768px) 440px, 560px' : '(max-width: 768px) 140px, 176px'}
+                className="h-[248px] w-auto shrink-0 md:h-[312px]"
+              />
             ))}
           </Marquee>
         </Section>

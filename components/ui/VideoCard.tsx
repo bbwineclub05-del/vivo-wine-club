@@ -29,12 +29,15 @@ export function VideoCard({
   priority = false,
   aspect = 'reel',
   rounded = 'rounded-2xl',
+  sizes,
   className = '',
 }: {
   source: VideoCardSource;
   priority?: boolean;
   aspect?: keyof typeof ASPECT;
   rounded?: string;
+  /** Quanto sara' larga davvero: serve a non scaricare una foto da 2000px per una scheda da 140. */
+  sizes?: string;
   className?: string;
 }) {
   const ref = useRef<HTMLVideoElement>(null);
@@ -84,7 +87,7 @@ export function VideoCard({
           src={source.poster}
           alt=""
           fill
-          sizes={aspect === 'reel' ? '(max-width: 768px) 60vw, 22vw' : '100vw'}
+          sizes={sizes ?? (aspect === 'reel' ? '(max-width: 768px) 60vw, 22vw' : '100vw')}
           className="object-cover"
           priority={priority}
         />
