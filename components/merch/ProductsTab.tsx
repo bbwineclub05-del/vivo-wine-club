@@ -139,13 +139,20 @@ function ProductCard({ product, onManage }: { product: Product; onManage: (p: Pr
   const copertina = (product.product_variants ?? []).flatMap((v) => v.images).find(Boolean) ?? '';
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-rule-paper">
-      <div className="relative aspect-square bg-paper-soft">
+    // `h-full` + colonna: le schede di una riga finiscono tutte alla
+    // stessa altezza e il pulsante si allinea, anche quando una ha le
+    // taglie e i colori e quella accanto no.
+    <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-rule-paper">
+      {/* La foto sta *sopra* il riquadro, non dentro al flusso.
+          Dentro, la sua altezza naturale diventava l'altezza del
+          riquadro e il quadrato saltava: ecco perche' alcune schede
+          venivano piu' alte di altre pur avendo lo stesso contenuto. */}
+      <div className="relative aspect-square shrink-0 overflow-hidden bg-paper-soft">
         {copertina ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={copertina} alt="" className="h-full w-full object-cover" />
+          <img src={copertina} alt="" className="absolute inset-0 h-full w-full object-cover" />
         ) : (
-          <div className="grid h-full place-items-center text-on-paper-muted/40">
+          <div className="absolute inset-0 grid place-items-center text-on-paper-muted/40">
             <Package size={30} strokeWidth={1.5} />
           </div>
         )}
@@ -156,14 +163,14 @@ function ProductCard({ product, onManage }: { product: Product; onManage: (p: Pr
         )}
       </div>
 
-      <div className="p-4">
-        <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-1 flex-col p-4">
+        <div className="mb-4 flex items-start justify-between gap-3">
           <p className="min-w-0 text-body font-medium">{product.title}</p>
           <p className="ds-numeric shrink-0 text-body text-accent">{euro(product.price)}</p>
         </div>
 
         {(product.sizes.length > 0 || product.colors.length > 0) && (
-          <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-fine text-on-paper-muted">
+          <p className="mb-4 mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-fine text-on-paper-muted">
             {product.sizes.length > 0 && <span>{product.sizes.join(' · ')}</span>}
             {product.colors.length > 0 && (
               <span className="inline-flex items-center gap-1.5">
@@ -182,7 +189,9 @@ function ProductCard({ product, onManage }: { product: Product; onManage: (p: Pr
           </p>
         )}
 
-        <ActionButton variant="quiet" onClick={() => onManage(product)} className="mt-4 w-full">
+        {/* `mt-auto`: il pulsante va in fondo alla scheda, quindi su
+            una riga sono tutti alla stessa altezza. */}
+        <ActionButton variant="quiet" onClick={() => onManage(product)} className="mt-auto w-full">
           Gestisci
           <ChevronRight size={16} strokeWidth={1.8} />
         </ActionButton>
@@ -280,7 +289,11 @@ export function ProductsTab({
       {products.length === 0 ? (
         <EmptyState title="Nessun prodotto" body="Creane uno con «Nuovo prodotto» qui sopra." />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        // `auto-rows-fr`: tutte le righe alte uguale, non solo le schede
+        // dentro la stessa riga. Senza, una riga con un titolo su due
+        // righe diventa piu' alta delle altre, e l'occhio lo legge come
+        // un errore.
+        <div className="grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {products.map((p) => (
             <ProductCard key={p.id} product={p} onManage={setAzioniSu} />
           ))}

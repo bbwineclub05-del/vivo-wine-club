@@ -1,8 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
-import { Eye, EyeOff, ImagePlus, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Eye, EyeOff, ImagePlus, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useOverlayBackClose } from '@/lib/useMobileOverlay';
 import {
@@ -86,7 +86,6 @@ function DiscountSheet({
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const fileRef = useRef<HTMLInputElement>(null);
 
   function set<K extends keyof typeof form>(k: K, v: (typeof form)[K]) {
     setForm((p) => ({ ...p, [k]: v }));
@@ -204,18 +203,12 @@ function DiscountSheet({
           />
         </Field>
 
-        <Field label="Logo">
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) upload(f);
-              e.target.value = '';
-            }}
-          />
+        {/* Non un `Field`: quello e' una `<label>`, e un pulsante dentro
+            una label fa partire due volte lo stesso selettore di file —
+            uno apre, l'altro chiude, e sembra che il pulsante sia rotto.
+            Qui la label *e'* il pulsante, come si fa da sempre. */}
+        <div>
+          <p className="mb-2 text-fine font-medium text-on-paper">Logo</p>
           <div className="flex items-center gap-3">
             {form.logo_url ? (
               <span className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-rule-paper">
@@ -226,10 +219,27 @@ function DiscountSheet({
                 <ImagePlus size={20} strokeWidth={1.7} />
               </span>
             )}
+
             <div className="flex flex-wrap gap-2">
-              <ActionButton variant="quiet" onClick={() => fileRef.current?.click()} disabled={uploading}>
+              <label
+                className={`inline-flex min-h-[48px] cursor-pointer items-center gap-2 rounded-full border border-rule-paper px-5 text-fine font-medium transition-colors hover:border-accent/40 ${
+                  uploading ? 'pointer-events-none opacity-45' : ''
+                }`}
+              >
+                {uploading ? <Loader2 size={16} className="animate-spin" /> : <ImagePlus size={16} strokeWidth={1.8} />}
                 {uploading ? 'Carico…' : form.logo_url ? 'Cambia' : 'Carica'}
-              </ActionButton>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) upload(f);
+                    e.target.value = '';
+                  }}
+                />
+              </label>
+
               {form.logo_url && (
                 <ActionButton variant="quiet" onClick={() => set('logo_url', '')}>
                   Togli
@@ -237,7 +247,7 @@ function DiscountSheet({
               )}
             </div>
           </div>
-        </Field>
+        </div>
 
         <button
           type="button"
