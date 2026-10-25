@@ -57,7 +57,19 @@ function leggi(sotto: 'verticali' | 'orizzontali'): HomeReel[] {
     .sort((a, b) => a.localeCompare(b, 'it'))
     .map((file) => ({ poster: indirizzo(file), orientamento: verso }));
 
-  return [...schedeVideo, ...schedeFoto];
+  // Mescolate, non prima tutti i video e poi tutte le foto: in fila
+  // due gruppi separati si leggono come due file diverse attaccate.
+  return alterna(schedeVideo, schedeFoto);
+}
+
+/** Uno di qua, uno di la', e in coda quelli avanzati. */
+function alterna(a: HomeReel[], b: HomeReel[]): HomeReel[] {
+  const fuori: HomeReel[] = [];
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    if (a[i]) fuori.push(a[i]);
+    if (b[i]) fuori.push(b[i]);
+  }
+  return fuori;
 }
 
 /** Il video di prima, finche' le cartelle sono vuote. */
@@ -75,12 +87,7 @@ export function homeReels(): HomeReel[] {
   const orizzontali = leggi('orizzontali');
   if (verticali.length === 0 && orizzontali.length === 0) return RIPIEGO;
 
-  // Alternati: uno di qua, uno di la', e in coda quelli avanzati.
-  const misti: HomeReel[] = [];
-  for (let i = 0; i < Math.max(verticali.length, orizzontali.length); i++) {
-    if (verticali[i]) misti.push(verticali[i]);
-    if (orizzontali[i]) misti.push(orizzontali[i]);
-  }
+  const misti = alterna(verticali, orizzontali);
 
   // Con due o tre clip la fila finirebbe prima del bordo dello schermo
   // e si vedrebbe il vuoto girare: si ripetono finche' bastano. Con

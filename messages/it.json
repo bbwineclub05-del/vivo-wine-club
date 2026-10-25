@@ -710,6 +710,9 @@
       "error": "Non sono riuscito a inviare. Riprova.",
       "doneTitle": "Ci siamo.",
       "doneBody": "Abbiamo ricevuto la tua candidatura. Ti rispondiamo appena l'abbiamo letta."
+    },
+    "reels": {
+      "line": "Quello che succede alle nostre serate."
     }
   },
   "winery": {

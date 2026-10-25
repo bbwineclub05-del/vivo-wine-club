@@ -710,6 +710,9 @@
       "error": "L'envoi a échoué. Réessayez.",
       "doneTitle": "C'est fait.",
       "doneBody": "Nous avons reçu votre candidature. Nous revenons vers vous dès que nous l'aurons lue."
+    },
+    "reels": {
+      "line": "À quoi ressemblent vraiment nos soirées."
     }
   },
   "winery": {

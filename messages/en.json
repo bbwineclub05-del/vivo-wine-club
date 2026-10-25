@@ -710,6 +710,9 @@
       "error": "I couldn't send it. Please try again.",
       "doneTitle": "That's it.",
       "doneBody": "We've got your application. We'll get back to you as soon as we've read it."
+    },
+    "reels": {
+      "line": "What our evenings actually look like."
     }
   },
   "winery": {

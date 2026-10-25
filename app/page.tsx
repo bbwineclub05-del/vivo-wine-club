@@ -56,6 +56,14 @@ export default async function Home() {
           />
         </Section>
 
+        {/* Una riga fra il film e la fila: senza, il taglio fra i due
+            e' secco. Non ci rimettiamo lo slogan, che e' il titolo
+            grande qui sopra e a quattro centimetri di distanza
+            suonerebbe come una ripetizione. */}
+        <Section width="wide" tight className="pb-6 pt-10">
+          <p className="ds-display max-w-[22ch] text-title">{t('reels.line')}</p>
+        </Section>
+
         <Section bleed width="full" tight className="pt-0">
           {/* Le schede hanno tutte la stessa altezza e la larghezza
               gliela da' la forma del video: le verticali strette, le
