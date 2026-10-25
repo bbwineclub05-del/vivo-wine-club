@@ -822,5 +822,23 @@
     "no": "Pas encore",
     "deniedTitle": "À bientôt, alors",
     "deniedBody": "On parle de vin : le site est réservé aux majeurs. Revenez nous voir."
+  },
+  "login": {
+    "back": "Retour au site",
+    "title": "Bon retour",
+    "subtitle": "Connectez-vous avec l’email de votre inscription.",
+    "email": "Email",
+    "password": "Mot de passe",
+    "show": "Afficher le mot de passe",
+    "hide": "Masquer le mot de passe",
+    "enter": "Entrer",
+    "entering": "Un instant…",
+    "forgot": "Mot de passe oublié ?",
+    "sending": "Envoi…",
+    "resetSent": "Nous vous avons envoyé un lien pour en créer un nouveau : regardez vos emails.",
+    "emailFirst": "Saisissez d’abord votre email ci-dessus.",
+    "wrong": "Cet email et ce mot de passe ne correspondent pas.",
+    "noAccount": "Pas encore membre ?",
+    "join": "Devenir membre"
   }
 }

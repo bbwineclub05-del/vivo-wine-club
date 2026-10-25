@@ -822,5 +822,23 @@
     "no": "Not yet",
     "deniedTitle": "See you in a while",
     "deniedBody": "We talk about wine, so the site is for adults only. Come back and find us."
+  },
+  "login": {
+    "back": "Back to the site",
+    "title": "Welcome back",
+    "subtitle": "Sign in with the email you joined with.",
+    "email": "Email",
+    "password": "Password",
+    "show": "Show password",
+    "hide": "Hide password",
+    "enter": "Sign in",
+    "entering": "One moment…",
+    "forgot": "Forgotten your password?",
+    "sending": "Sending…",
+    "resetSent": "We have sent you a link to set a new one: check your inbox.",
+    "emailFirst": "Type your email above first.",
+    "wrong": "That email and password do not match.",
+    "noAccount": "Not a member yet?",
+    "join": "Become a member"
   }
 }

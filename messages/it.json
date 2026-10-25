@@ -822,5 +822,23 @@
     "no": "Non ancora",
     "deniedTitle": "Ci vediamo più avanti",
     "deniedBody": "Parliamo di vino, quindi il sito è riservato ai maggiorenni. Torna a trovarci."
+  },
+  "login": {
+    "back": "Torna al sito",
+    "title": "Bentornato",
+    "subtitle": "Entra con la mail con cui ti sei iscritto.",
+    "email": "Email",
+    "password": "Password",
+    "show": "Mostra la password",
+    "hide": "Nascondi la password",
+    "enter": "Entra",
+    "entering": "Un attimo…",
+    "forgot": "Password dimenticata?",
+    "sending": "Mando…",
+    "resetSent": "Ti abbiamo mandato il link per rifarla: controlla la mail.",
+    "emailFirst": "Scrivi prima la tua email qui sopra.",
+    "wrong": "Email o password non corrette.",
+    "noAccount": "Non sei ancora socio?",
+    "join": "Diventa member"
   }
 }
