@@ -198,7 +198,7 @@ function DocDetail({
     setBusy('download');
     setError('');
     try {
-      const esito = await scaricaConModulo(`/api/documents/${doc!.id}/download`, { token });
+      const esito = scaricaConModulo(`/api/documents/${doc!.id}/download`, { token });
       if (!esito.ok) setError(esito.messaggio ?? 'Non sono riuscito a scaricare il file.');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Errore.');

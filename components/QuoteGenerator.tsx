@@ -389,7 +389,7 @@ export default function QuoteGenerator() {
     setPdfLoading(true);
     setMessage(null);
     try {
-      const esito = await scaricaConModulo('/api/quotes/pdf', {
+      const esito = scaricaConModulo('/api/quotes/pdf', {
         token,
         payload: JSON.stringify(payload()),
       });

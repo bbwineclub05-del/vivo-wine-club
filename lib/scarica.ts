@@ -65,59 +65,44 @@ export function salvaBlob(blob: Blob, nomeFile: string): boolean {
 export function scaricaConModulo(
   url: string,
   campi: Record<string, string>,
-): Promise<EsitoScarico> {
-  return new Promise((risolvi) => {
-    const riquadro = document.createElement('iframe');
-    riquadro.style.display = 'none';
-    riquadro.name = `scarico-${Date.now()}`;
-    document.body.appendChild(riquadro);
+): EsitoScarico {
+  const modulo = document.createElement('form');
+  modulo.method = 'POST';
+  modulo.action = url;
+  // Una scheda nuova, non un riquadro nascosto: Chrome puo' bloccare
+  // un download che parte da dentro un iframe, e quando lo fa non
+  // avvisa nessuno. Con `_blank` e' la stessa cosa che succede
+  // cliccando un link a un PDF su un sito qualsiasi: la scheda si
+  // apre, il file scende, la scheda si richiude da sola.
+  modulo.target = '_blank';
+  modulo.style.display = 'none';
 
-    const modulo = document.createElement('form');
-    modulo.method = 'POST';
-    modulo.action = url;
-    modulo.target = riquadro.name;
-    modulo.style.display = 'none';
+  for (const [nome, valore] of Object.entries(campi)) {
+    const campo = document.createElement('input');
+    campo.type = 'hidden';
+    campo.name = nome;
+    campo.value = valore;
+    modulo.appendChild(campo);
+  }
 
-    for (const [nome, valore] of Object.entries(campi)) {
-      const campo = document.createElement('input');
-      campo.type = 'hidden';
-      campo.name = nome;
-      campo.value = valore;
-      modulo.appendChild(campo);
-    }
+  document.body.appendChild(modulo);
+  modulo.submit();
+  modulo.remove();
 
-    document.body.appendChild(modulo);
-    modulo.submit();
-    modulo.remove();
-
-    // Se il file scende, il riquadro resta vuoto. Se invece il server
-    // ha risposto con un errore, dentro c'e' del testo.
-    window.setTimeout(() => {
-      let messaggio = '';
-      try {
-        const testo = riquadro.contentDocument?.body?.innerText?.trim() ?? '';
-        if (testo) {
-          try {
-            messaggio = JSON.parse(testo).error ?? testo;
-          } catch {
-            messaggio = testo;
-          }
-        }
-      } catch {
-        /* niente da leggere: il file e' partito */
-      }
-      riquadro.remove();
-      risolvi(messaggio ? { ok: false, messaggio } : { ok: true });
-    }, 2500);
-  });
+  // Da qui non si puo' sapere com'e' andata: la scheda e' un'altra
+  // pagina. Se il server risponde con un errore, l'errore si legge
+  // li'. In cambio il file arriva col nome giusto ovunque.
+  return { ok: true };
 }
 
 /**
  * Un PDF nato nel browser, salvato col nome giusto.
  *
- * Fa un giro dal server — `/api/download` — solo per riscendere con
- * `Content-Disposition`. Costa una richiesta, e vale: e' l'unico modo
- * perche' il file si chiami come deve su tutti i browser.
+ * Le liste invitati le fabbrica jsPDF qui dentro, quindi non hanno un
+ * indirizzo da cui scendere: i byte fanno un giro da `/api/download`
+ * e tornano indietro con `Content-Disposition`. Costa una richiesta,
+ * e vale: e' l'unico modo perche' il file si chiami come deve su
+ * tutti i browser.
  */
 export async function scaricaBlobGenerato(
   blob: Blob,

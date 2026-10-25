@@ -240,7 +240,7 @@ export default function BilancioManager() {
         breakdown[name] = cur;
       }
 
-      const esito = await scaricaConModulo('/api/bilancio/pdf', {
+      const esito = scaricaConModulo('/api/bilancio/pdf', {
         token,
         payload: JSON.stringify({
           periodLabel: label,
