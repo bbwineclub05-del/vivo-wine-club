@@ -11,6 +11,7 @@ import {
 } from '@/components/admin/ui';
 import EventScanner from '@/components/EventScanner';
 import EventGuestPanel from '@/components/EventGuestPanel';
+import EventTicketsPanel from '@/components/EventTicketsPanel';
 import EventPartnerPanel from '@/components/EventPartnerPanel';
 import EventInvite, { type CustomCategoryInfo } from '@/components/admin/EventInvite';
 import { useMobileOverlay, useOverlayBackClose } from '@/lib/useMobileOverlay';
@@ -592,6 +593,7 @@ function CollaboratorAssignPanel({ event, accessToken }: { event: DbEvent; acces
    Guest List — schermo intero
 ───────────────────────────────────────────── */
 const DRAWER_TABS = [
+  { id: 'tickets' as const,       label: 'Biglietti',     short: 'Biglietti' },
   { id: 'guests' as const,        label: 'Invitati',      short: 'Invitati' },
   { id: 'collaborators' as const, label: 'Collaboratori', short: 'Collab.' },
   { id: 'partners' as const,      label: 'Partner',       short: 'Partner' },
@@ -600,15 +602,19 @@ const DRAWER_TABS = [
 function GuestListDrawer({
   event,
   accessToken,
+  isPast,
   onClose,
   onGuestEnabled,
 }: {
   event:          DbEvent;
   accessToken:    string;
+  isPast:         boolean;
   onClose:        () => void;
   onGuestEnabled: () => void;
 }) {
-  const [tab, setTab] = useState<'guests' | 'collaborators' | 'partners'>('guests');
+  // Si apre sui biglietti: di un evento a pagamento e' la domanda
+  // che ci si fa per prima, e dopo la serata e' l'unica che resta.
+  const [tab, setTab] = useState<'tickets' | 'guests' | 'collaborators' | 'partners'>('tickets');
   // Single stable scroll container — never remounted across tab changes.
   // This prevents iOS Safari from losing its touch-scroll tracking.
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -669,13 +675,13 @@ function GuestListDrawer({
 
       {/* ── Tabs — 3-column grid so each tab is perfectly centred in its cell ── */}
       <div className="shrink-0 border-b border-rule-paper bg-paper px-4 pb-3 sm:px-6">
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {DRAWER_TABS.map(({ id, label, short }) => (
             <button
               key={id}
               onClick={() => changeTab(id)}
               aria-pressed={tab === id}
-              className={`min-h-[44px] flex-1 rounded-full border px-3 text-fine font-medium transition-colors ${
+              className={`min-h-[44px] min-w-[5.5rem] flex-1 rounded-full border px-3 text-fine font-medium transition-colors ${
                 tab === id
                   ? 'border-accent bg-accent text-paper'
                   : 'border-rule-paper text-on-paper hover:border-accent/40'
@@ -701,6 +707,9 @@ function GuestListDrawer({
           overscrollBehavior:       'contain',
         }}
       >
+        {tab === 'tickets' && (
+          <EventTicketsPanel event={{ slug: event.slug }} accessToken={accessToken} isPast={isPast} />
+        )}
         {tab === 'guests' && (
           <EventGuestPanel
             event={{
@@ -759,9 +768,12 @@ function EventActions({
 
   const rows: { label: string; hint?: string; run: () => void; hidden?: boolean }[] = [
     { label: 'Modifica evento', hint: 'Data, luogo, prezzo, capienza', run: onEdit, hidden: isPast },
-    { label: 'Lista ospiti', hint: 'Chi si è iscritto e chi è entrato', run: onGuestList },
+    { label: 'Chi viene', hint: 'Biglietti venduti, iscritti alla lista, partner', run: onGuestList },
     { label: 'Invita', hint: 'Manda l’email a una lista di contatti', run: onInvite, hidden: isPast },
     { label: 'Scanner', hint: 'Controlla i biglietti all’ingresso', run: onScan, hidden: isPast },
+    // Lo scanner resta solo per gli eventi futuri: a serata finita
+    // non c'e' piu' niente da scansionare, e chi e' venuto si legge
+    // in «Chi viene», che resta aperta anche dopo.
     {
       label: event.published ? 'Nascondi dal sito' : 'Pubblica sul sito',
       hint: event.published ? 'Smette di comparire nel calendario' : 'Compare subito nel calendario pubblico',
@@ -1051,6 +1063,7 @@ export default function EventManager() {
             key={guestListEvent.id}
             event={guestListEvent}
             accessToken={accessToken}
+            isPast={guestListEvent.date < new Date().toISOString().slice(0, 10)}
             onClose={() => setGuestListEventId(null)}
             onGuestEnabled={load}
           />

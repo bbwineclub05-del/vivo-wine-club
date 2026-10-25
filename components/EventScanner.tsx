@@ -4,8 +4,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ArrowRight, Camera, CameraOff, Check, Loader2, RefreshCw, ScanLine, X,
 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
-import { ActionButton, EmptyState } from '@/components/admin/ui';
+import { ActionButton } from '@/components/admin/ui';
+import { EventTicketList } from '@/components/EventTicketList';
+import { useEventTickets } from '@/lib/useEventTickets';
 
 /**
  * Il controllo dei biglietti all'ingresso.
@@ -32,17 +33,6 @@ import { ActionButton, EmptyState } from '@/components/admin/ui';
  *    secondi. Sono ref, non stato, così la callback legge sempre il
  *    valore attuale.
  */
-
-interface Ticket {
-  order_id: string;
-  qr_code: string | null;
-  name: string;
-  email: string;
-  phone: string | null;
-  checked_in: boolean | null;
-  scanned_at: string | null;
-  scanned_by: string | null;
-}
 
 interface ScanResult {
   type: 'success' | 'already' | 'invalid' | 'error';
@@ -77,10 +67,9 @@ export default function EventScanner({
   accessToken: string;
   onClose: () => void;
 }) {
-  const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [caricando, setCaricando] = useState(true);
+  const { tickets, loading: caricando, busyId, reload: load, toggle, presenti, totale } =
+    useEventTickets(event.slug, accessToken);
   const [scheda, setScheda] = useState<'list' | 'scanner'>('list');
-  const [inCorso, setInCorso] = useState<string | null>(null);
 
   const [cameraOn, setCameraOn] = useState(false);
   const [cameraErr, setCameraErr] = useState('');
@@ -91,43 +80,6 @@ export default function EventScanner({
   const lockRef = useRef(false);
   const lastCodeRef = useRef('');
   const lastCodeAtRef = useRef(0);
-
-  const load = useCallback(() => {
-    setCaricando(true);
-    fetch(`/api/tickets?event_id=${event.slug}`, { headers: { Authorization: `Bearer ${accessToken}` } })
-      .then((r) => r.json())
-      .then((j) => setTickets(Array.isArray(j.tickets) ? j.tickets : []))
-      .catch(console.error)
-      .finally(() => setCaricando(false));
-  }, [event.slug, accessToken]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  /* Due persone sulla porta con due telefoni: ognuna vede i check-in
-     dell'altra senza ricaricare. */
-  useEffect(() => {
-    supabase.realtime.setAuth(accessToken);
-    const channel = supabase
-      .channel(`tickets:event_id:${event.slug}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'tickets', filter: `event_id=eq.${event.slug}` },
-        (payload) => {
-          if (payload.eventType === 'UPDATE') {
-            const agg = payload.new as Ticket;
-            setTickets((prev) => prev.map((t) => (t.order_id === agg.order_id ? { ...t, ...agg } : t)));
-          } else {
-            load();
-          }
-        },
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [event.slug, accessToken, load]);
 
   const accendiCamera = useCallback(async () => {
     setCameraErr('');
@@ -235,42 +187,6 @@ export default function EventScanner({
     lockRef.current = false;
   }, []);
 
-  const segnaPresenza = useCallback(
-    async (ticket: Ticket) => {
-      if (inCorso) return;
-      const nuovo = !ticket.checked_in;
-      setInCorso(ticket.order_id);
-
-      setTickets((prev) =>
-        prev.map((t) =>
-          t.order_id === ticket.order_id
-            ? {
-                ...t,
-                checked_in: nuovo,
-                scanned_at: nuovo ? new Date().toISOString() : null,
-                scanned_by: nuovo ? 'manuale' : null,
-              }
-            : t,
-        ),
-      );
-
-      const { error } = await supabase
-        .from('tickets')
-        .update({
-          checked_in: nuovo,
-          scanned_at: nuovo ? new Date().toISOString() : null,
-          scanned_by: nuovo ? 'manuale' : null,
-        })
-        .eq('order_id', ticket.order_id);
-
-      if (error) {
-        setTickets((prev) => prev.map((t) => (t.order_id === ticket.order_id ? { ...t, ...ticket } : t)));
-      }
-      setInCorso(null);
-    },
-    [inCorso],
-  );
-
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -278,9 +194,6 @@ export default function EventScanner({
     window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);
   }, [onClose]);
-
-  const totale = tickets.length;
-  const presenti = tickets.filter((t) => t.checked_in).length;
 
   const velo = esito
     ? ({
@@ -357,70 +270,13 @@ export default function EventScanner({
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
           {/* Nascosta con i CSS, mai smontata. */}
           <div style={{ display: scheda === 'list' ? 'block' : 'none' }} className="px-4 py-4 sm:px-6">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <p className="text-fine text-on-paper-muted">
-                {totale} {totale === 1 ? 'biglietto' : 'biglietti'}
-              </p>
-              <ActionButton variant="quiet" onClick={load}>
-                <RefreshCw size={15} strokeWidth={1.8} />
-                Aggiorna
-              </ActionButton>
-            </div>
-
-            {caricando ? (
-              <div className="flex justify-center py-12">
-                <Loader2 size={22} className="animate-spin text-accent/50" />
-              </div>
-            ) : tickets.length === 0 ? (
-              <EmptyState title="Nessun biglietto" body="Per questo evento non risulta ancora nessun acquisto." />
-            ) : (
-              <ul className="flex flex-col gap-2">
-                {tickets.map((ticket) => {
-                  const attesa = inCorso === ticket.order_id;
-                  return (
-                    <li
-                      key={ticket.order_id}
-                      className={`flex items-center gap-3 rounded-2xl border px-3.5 py-3 ${
-                        ticket.checked_in ? 'border-accent/35 bg-accent/5' : 'border-rule-paper'
-                      }`}
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-body font-medium">{ticket.name}</p>
-                        <p className="mt-0.5 flex flex-wrap gap-x-3 truncate text-fine text-on-paper-muted">
-                          <span>{ticket.email}</span>
-                          {ticket.phone && <span>{ticket.phone}</span>}
-                          {ticket.checked_in && ticket.scanned_at && (
-                            <span>
-                              {ticket.scanned_by === 'manuale' ? 'a mano' : 'scansionato'} alle {ora(ticket.scanned_at)}
-                            </span>
-                          )}
-                        </p>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => segnaPresenza(ticket)}
-                        disabled={attesa}
-                        aria-pressed={!!ticket.checked_in}
-                        aria-label={ticket.checked_in ? 'Togli la presenza' : 'Segna come presente'}
-                        style={{ touchAction: 'manipulation' }}
-                        className={`grid h-12 w-12 shrink-0 place-items-center rounded-full border transition-colors active:scale-95 ${
-                          ticket.checked_in
-                            ? 'border-accent bg-accent text-paper'
-                            : 'border-rule-paper text-on-paper-muted/40 hover:border-accent/50 hover:text-accent'
-                        }`}
-                      >
-                        {attesa ? (
-                          <Loader2 size={18} className="animate-spin" />
-                        ) : (
-                          <Check size={20} strokeWidth={ticket.checked_in ? 2.5 : 1.6} />
-                        )}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
+            <EventTicketList
+              tickets={tickets}
+              loading={caricando}
+              busyId={busyId}
+              onToggle={toggle}
+              onReload={load}
+            />
           </div>
 
           {/* Anche questa resta nel DOM: è il punto di tutta l'architettura. */}

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ActionButton, PageHead } from '@/components/admin/ui';
 import EventGuestPanel from '@/components/EventGuestPanel';
 import EventPartnerPanel from '@/components/EventPartnerPanel';
+import EventTicketsPanel from '@/components/EventTicketsPanel';
 import EventScanner from '@/components/EventScanner';
 
 /**
@@ -24,7 +25,7 @@ const EVENTO = {
 };
 
 export function MockEventi() {
-  const [scheda, setScheda] = useState<'invitati' | 'partner'>('invitati');
+  const [scheda, setScheda] = useState<'biglietti' | 'invitati' | 'partner' | 'passato'>('biglietti');
   const [scanner, setScanner] = useState(false);
 
   return (
@@ -34,8 +35,10 @@ export function MockEventi() {
       <div className="mb-5 flex flex-wrap gap-2">
         {(
           [
+            { id: 'biglietti' as const, label: 'Biglietti' },
             { id: 'invitati' as const, label: 'Invitati' },
             { id: 'partner' as const, label: 'Partner' },
+            { id: 'passato' as const, label: 'Biglietti (evento passato)' },
           ]
         ).map((t) => (
           <button
@@ -55,7 +58,11 @@ export function MockEventi() {
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-rule-paper">
-        {scheda === 'invitati' ? (
+        {scheda === 'biglietti' ? (
+          <EventTicketsPanel event={EVENTO} accessToken="" isPast={false} />
+        ) : scheda === 'passato' ? (
+          <EventTicketsPanel event={EVENTO} accessToken="" isPast />
+        ) : scheda === 'invitati' ? (
           <EventGuestPanel event={EVENTO} accessToken="" onGuestEnabled={() => undefined} />
         ) : (
           <EventPartnerPanel event={EVENTO} accessToken="" />
