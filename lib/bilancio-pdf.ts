@@ -232,7 +232,8 @@ export async function generateBilancioPdf(data: BilancioData): Promise<Uint8Arra
 
   // ── NOTA A PIÈ DI PAGINA ─────────────────────────────────────────
   const FOOTER_H  = 30;
-  const SIG_H     = 90;
+  // Lo spazio che prima teneva le firme: ora il testo arriva piu' giu'.
+  const SIG_H     = 0;
   const NOTE_H    = 40;
   const NOTE_Y    = FOOTER_H + SIG_H + NOTE_H + 6;
 
@@ -256,32 +257,12 @@ export async function generateBilancioPdf(data: BilancioData): Promise<Uint8Arra
     }
   }
 
-  // ── FIRME ────────────────────────────────────────────────────────
-  const SIG_TOP = FOOTER_H + SIG_H;
-
-  page.drawLine({ start: { x: ML, y: SIG_TOP + 4 }, end: { x: W - MR, y: SIG_TOP + 4 }, thickness: 0.5, color: BLACK });
-  page.drawText('Il presente documento è sottoscritto dai membri del Consiglio Direttivo.', {
-    x: ML, y: SIG_TOP - 4, size: 7.5, font: italic, color: MED_GRAY,
-  });
-
-  const sigData = [
-    { role: 'Il Presidente',  name: 'Filippo Lombardi'     },
-    { role: 'Consigliere',    name: 'Giacomo Gallo'        },
-    { role: 'Consigliere',    name: 'Cristiano Michelotti' },
-    { role: 'Consigliere',    name: 'Marcello Abbadati'    },
-  ];
-  const sigColW  = CW / 4;
-  const sigLineY = SIG_TOP - 34;
-  const sigNameY = sigLineY - 12;
-  const sigRoleY = sigLineY - 22;
-
-  sigData.forEach(({ role, name }, i) => {
-    const fx      = ML + i * sigColW;
-    const lineEnd = fx + sigColW - 12;
-    page.drawLine({ start: { x: fx, y: sigLineY }, end: { x: lineEnd, y: sigLineY }, thickness: 0.6, color: BLACK });
-    page.drawText(name, { x: fx, y: sigNameY, size: 7.5, font: regular, color: DARK_GRAY });
-    page.drawText(role, { x: fx, y: sigRoleY, size: 7,   font: italic,  color: MED_GRAY  });
-  });
+  // Le firme non ci sono piu'. Erano quattro righe vuote con sotto i
+  // nomi del consiglio: un documento che si scarica per guardare i
+  // conti non e' il verbale che si firma, e stampare i nomi sotto una
+  // riga vuota fa sembrare firmato qualcosa che nessuno ha firmato.
+  // La nota qui sopra dice gia' chi l'ha predisposto e che va
+  // approvato dall'Assemblea.
 
   // ── FOOTER ───────────────────────────────────────────────────────
   page.drawLine({ start: { x: ML, y: FOOTER_H + 4 }, end: { x: W - MR, y: FOOTER_H + 4 }, thickness: 0.5, color: BLACK });
