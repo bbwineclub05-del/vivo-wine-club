@@ -10,6 +10,7 @@ import { Marquee } from '@/components/ui/Marquee';
 import { Section } from '@/components/ui/Section';
 import { VideoCard } from '@/components/ui/VideoCard';
 import { SiteFooter } from '@/components/ui/SiteFooter';
+import { SponsorRows } from '@/components/ui/SponsorRows';
 import { SiteNav } from '@/components/ui/SiteNav';
 
 export default async function Home() {
@@ -163,6 +164,11 @@ export default async function Home() {
               </ButtonLink>
             </div>
           </div>
+        </Section>
+        {/* Chi lavora con noi, l'ultima cosa prima del piede. */}
+        <Section width="wide" ground="paper-soft">
+          <h2 className="ds-display mb-10 text-title">{t('sponsors.title')}</h2>
+          <SponsorRows />
         </Section>
       </main>
 

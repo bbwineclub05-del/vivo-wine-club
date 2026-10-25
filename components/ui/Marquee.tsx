@@ -19,11 +19,14 @@ import type { ReactNode } from 'react';
 export function Marquee({
   children,
   speed = 42,
+  reverse = false,
   className = '',
 }: {
   children: ReactNode;
   /** Seconds for one full pass. Longer is calmer. */
   speed?: number;
+  /** Verso opposto: due file che si incrociano si leggono come una cosa sola. */
+  reverse?: boolean;
   className?: string;
 }) {
   return (
@@ -39,7 +42,9 @@ export function Marquee({
       }}
     >
       <div
-        className="ds-marquee__track flex w-max shrink-0 motion-safe:animate-[ds-marquee_var(--ds-marquee-speed)_linear_infinite]"
+        className={`ds-marquee__track flex w-max shrink-0 motion-safe:animate-[ds-marquee_var(--ds-marquee-speed)_linear_infinite] ${
+          reverse ? 'motion-safe:[animation-direction:reverse]' : ''
+        }`}
         style={{ '--ds-marquee-speed': `${speed}s` } as React.CSSProperties}
       >
         {/* Two identical halves, so translating the track by exactly
