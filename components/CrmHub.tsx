@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { useCallback, useEffect, useState } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import { CalendarPlus, Plus, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import MemberCRM from '@/components/MemberCRM';
@@ -10,7 +10,7 @@ import { RecordTable } from '@/components/admin/RecordTable';
 import { SPONSORS, CANTINE, BORDEAUX, INFLUENCER, listaPersonalizzata } from '@/lib/crm-resources';
 import EventInvite from '@/components/admin/EventInvite';
 import { useMobileOverlay, useOverlayBackClose } from '@/lib/useMobileOverlay';
-import { ActionButton } from '@/components/admin/ui';
+import { ActionButton, Field, Sheet, TextInput } from '@/components/admin/ui';
 
 /* ── Types ── */
 type BuiltinTab = 'membri' | 'persone' | 'sponsors' | 'vino' | 'bordeaux' | 'influencer';
@@ -43,70 +43,69 @@ const TAB_SUBTITLES: Record<BuiltinTab, string> = {
   influencer: 'Creator e influencer — Instagram, TikTok e collaborazioni.',
 };
 
-/* ── Add category modal ── */
-function AddCategoryModal({
+/**
+ * Una lista nuova nel CRM.
+ *
+ * Era una finestrella fatta a mano, con le etichette in maiuscolo da
+ * nove pixel e i colori scritti a mano: l'ultimo angolo del CRM
+ * rimasto al vecchio stile, e si vedeva solo aprendolo. Adesso e' il
+ * foglio di tutta l'area riservata, quindi si chiude col tasto
+ * indietro del telefono come tutti gli altri.
+ */
+function NuovaCategoria({
   onConfirm,
   onClose,
 }: {
   onConfirm: (name: string) => Promise<void>;
   onClose: () => void;
 }) {
-  const [name, setName] = useState('');
-  const [saving, setSaving] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [nome, setNome] = useState('');
+  const [salvando, setSalvando] = useState(false);
 
-  useEffect(() => { inputRef.current?.focus(); }, []);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!name.trim()) return;
-    setSaving(true);
-    try { await onConfirm(name.trim()); }
-    finally { setSaving(false); }
+  async function salva() {
+    if (!nome.trim()) return;
+    setSalvando(true);
+    try {
+      await onConfirm(nome.trim());
+    } finally {
+      setSalvando(false);
+    }
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 8 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        transition={{ duration: 0.15 }}
-        className="bg-white w-full max-w-sm rounded-xl shadow-xl p-6"
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <div className="text-[10px] tracking-[0.35em] text-[#731515]">NUOVA CATEGORIA CRM</div>
-          <button onClick={onClose} className="text-[#7a4a4a]/40 hover:text-[#731515] transition-colors"><X size={16} /></button>
+    <Sheet
+      open
+      title="Nuova lista"
+      onClose={onClose}
+      footer={
+        <div className="flex gap-3">
+          <ActionButton variant="quiet" onClick={onClose} className="flex-1">
+            Annulla
+          </ActionButton>
+          <ActionButton onClick={salva} disabled={!nome.trim() || salvando} className="flex-1">
+            <Plus size={16} strokeWidth={2} />
+            {salvando ? 'Creo…' : 'Crea la lista'}
+          </ActionButton>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-[9px] tracking-[0.25em] text-[#7a4a4a]/60 mb-2">NOME CATEGORIA</label>
-            <input
-              ref={inputRef}
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="es. Ristoranti, DJ, Location…"
-              className="w-full border border-[#e8d5d5] bg-[#fdf6f6] px-3 py-2.5 text-sm text-[#1a0505] placeholder-[#c0a0a0] focus:outline-none focus:border-[#731515]/50 transition-colors rounded-lg"
-              style={{ fontFamily: 'var(--font-nunito)' }}
-            />
-          </div>
-          <div className="flex gap-2">
-            <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-[#e8d5d5] text-[10px] tracking-[0.2em] text-[#7a4a4a] hover:border-[#731515]/30 transition-colors rounded-lg">
-              ANNULLA
-            </button>
-            <button
-              type="submit"
-              disabled={!name.trim() || saving}
-              className="flex-1 py-2.5 bg-[#731515] text-white text-[10px] tracking-[0.2em] hover:bg-[#aa4848] disabled:opacity-40 transition-colors rounded-lg flex items-center justify-center gap-1.5"
-            >
-              <Plus size={12} />
-              {saving ? 'CREAZIONE…' : 'CREA'}
-            </button>
-          </div>
-        </form>
-      </motion.div>
-    </div>
+      }
+    >
+      <Field label="Come si chiama" hint="es. Ristoranti, DJ, Location">
+        <TextInput
+          autoFocus
+          value={nome}
+          onChange={(e) => setNome(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') salva();
+          }}
+          placeholder="Nome della lista"
+        />
+      </Field>
+
+      <p className="mt-4 text-fine text-on-paper-muted">
+        Diventa una scheda qui sopra, accanto alle altre. I contatti che ci metti dentro
+        restano comunque in Persone.
+      </p>
+    </Sheet>
   );
 }
 
@@ -122,6 +121,7 @@ export default function CrmHub() {
   // AddCategoryModal has no scroll lock of its own — use the full treatment.
   useMobileOverlay(showAddCatModal, () => setShowAddCatModal(false));
   const [deletingCat,       setDeletingCat]       = useState<string | null>(null);
+  const [daEliminare,       setDaEliminare]       = useState<CustomCategory | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -129,16 +129,38 @@ export default function CrmHub() {
     });
   }, []);
 
-  const loadCats = async () => {
+  /**
+   * Le liste del CRM.
+   *
+   * Il caricamento sta dentro l'effetto e non in una funzione
+   * chiamata dall'effetto: cosi' React vede che lo stato cambia solo
+   * dopo la risposta, e non all'istante del montaggio. E se la
+   * sezione viene chiusa mentre la richiesta e' in volo, la risposta
+   * non va a scrivere su un componente che non c'e' piu'.
+   */
+  const loadCats = useCallback(async () => {
     if (!accessToken) return;
     try {
       const res = await fetch('/api/crm/categories', { headers: { Authorization: `Bearer ${accessToken}` } });
       const j = await res.json();
       setCustomCats(j.categories ?? []);
     } catch { /* non-fatal */ }
-  };
+  }, [accessToken]);
 
-  useEffect(() => { loadCats(); }, [accessToken]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!accessToken) return;
+    let vivo = true;
+    (async () => {
+      try {
+        const res = await fetch('/api/crm/categories', { headers: { Authorization: `Bearer ${accessToken}` } });
+        const j = await res.json();
+        if (vivo) setCustomCats(j.categories ?? []);
+      } catch { /* non-fatal */ }
+    })();
+    return () => {
+      vivo = false;
+    };
+  }, [accessToken]);
 
   async function handleCreateCategory(name: string) {
     const res = await fetch('/api/crm/categories', {
@@ -167,25 +189,31 @@ export default function CrmHub() {
    * sicuro — e in quel caso non si perde niente. Quando invece
    * qualcuno esiste solo lì, lo si scrive con il suo numero.
    */
-  async function handleDeleteCategory(id: string, name: string) {
-    const cat = customCats.find(c => c.id === id);
-    const contacts = cat?.contacts ?? 0;
-    const onlyHere = cat?.onlyHere ?? 0;
+  /**
+   * Cosa succede davvero eliminando una lista.
+   *
+   * Prima stava dentro un `confirm()` del browser — una finestra
+   * grigia di sistema, fuori posto e che su alcuni telefoni si puo'
+   * silenziare. Ora e' un foglio come gli altri, e il testo e' lo
+   * stesso perche' quello era gia' scritto bene.
+   */
+  function conseguenze(cat: CustomCategory): string {
+    const contacts = cat.contacts ?? 0;
+    const onlyHere = cat.onlyHere ?? 0;
+    if (contacts === 0) return 'È vuota: non si perde niente.';
+    if (onlyHere === 0)
+      return `I suoi ${contacts} contatti restano in Persone: si elimina solo la lista.`;
+    return `Contiene ${contacts} contatti, e ${onlyHere} ${onlyHere === 1 ? 'esiste' : 'esistono'} soltanto qui: ${onlyHere === 1 ? 'quello andrebbe perso' : 'quelli andrebbero persi'} per sempre.`;
+  }
 
-    const message =
-      contacts === 0
-        ? `Eliminare la lista "${name}"? È vuota.`
-        : onlyHere === 0
-          ? `Eliminare la lista "${name}"?\n\nI suoi ${contacts} contatti restano in Persone: si elimina solo la lista.`
-          : `Eliminare la lista "${name}"?\n\nContiene ${contacts} contatti, e ${onlyHere} ${onlyHere === 1 ? 'esiste' : 'esistono'} soltanto qui: ${onlyHere === 1 ? 'quello andrebbe perso' : 'quelli andrebbero persi'} per sempre.`;
-
-    if (!confirm(message)) return;
+  async function handleDeleteCategory(id: string) {
     setDeletingCat(id);
     await fetch(`/api/crm/categories/${id}`, {
       method:  'DELETE',
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     setDeletingCat(null);
+    setDaEliminare(null);
     if (activeTab === id) setActiveTab('membri');
     await loadCats();
   }
@@ -248,18 +276,19 @@ export default function CrmHub() {
               >
                 {cat.name}
               </button>
-              {/* Delete custom category button */}
+              {/* Si vedeva solo passandoci sopra col mouse, ed era
+                  grande dieci pixel: col dito non esisteva. */}
               <button
-                onClick={() => handleDeleteCategory(cat.id, cat.name)}
+                onClick={() => setDaEliminare(cat)}
                 disabled={deletingCat === cat.id}
-                title={`Elimina categoria "${cat.name}"`}
-                className={`absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded transition-all disabled:opacity-40 ${
+                aria-label={`Elimina la lista ${cat.name}`}
+                className={`absolute right-1 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full transition-colors disabled:opacity-40 ${
                   activeTab === cat.id
-                    ? 'text-white/60 hover:text-white'
-                    : 'text-[#7a4a4a]/30 hover:text-red-500 opacity-0 group-hover/cattab:opacity-100'
+                    ? 'text-paper/70 hover:bg-paper/15 hover:text-paper'
+                    : 'text-on-paper-muted/60 hover:bg-paper-soft hover:text-accent'
                 }`}
               >
-                <X size={10} />
+                <X size={14} strokeWidth={2} />
               </button>
             </div>
           ))}
@@ -303,9 +332,36 @@ export default function CrmHub() {
           />
         )}
         {showAddCatModal && (
-          <AddCategoryModal key="add-cat-modal" onConfirm={handleCreateCategory} onClose={() => setShowAddCatModal(false)} />
+          <NuovaCategoria key="add-cat-modal" onConfirm={handleCreateCategory} onClose={() => setShowAddCatModal(false)} />
         )}
       </AnimatePresence>
+
+      {/* Eliminare una lista: cosa si perde, scritto prima di farlo. */}
+      {daEliminare && (
+        <Sheet
+          open
+          title={daEliminare.name}
+          onClose={() => setDaEliminare(null)}
+          footer={
+            <div className="flex gap-3">
+              <ActionButton variant="quiet" onClick={() => setDaEliminare(null)} className="flex-1">
+                Annulla
+              </ActionButton>
+              <ActionButton
+                variant="danger"
+                onClick={() => handleDeleteCategory(daEliminare.id)}
+                disabled={deletingCat === daEliminare.id}
+                className="flex-1"
+              >
+                {deletingCat === daEliminare.id ? 'Elimino…' : 'Elimina la lista'}
+              </ActionButton>
+            </div>
+          }
+        >
+          <p className="text-body">Elimino questa lista?</p>
+          <p className="mt-2 text-body text-on-paper-muted">{conseguenze(daEliminare)}</p>
+        </Sheet>
+      )}
     </div>
   );
 }
