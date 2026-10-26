@@ -44,3 +44,6 @@ next-env.d.ts
 # Gli originali dei video della home: pesano 700 MB e sul sito ci
 # vanno le versioni leggere in public/home. Restano sul disco.
 /_originali-home/
+
+# Foto convertite in attesa di essere ricaricate a mano.
+/_foto-da-ricaricare/

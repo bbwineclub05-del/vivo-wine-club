@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { ArrowLeft, MapPin } from 'lucide-react';
+import { SiteFooter } from '@/components/ui/SiteFooter';
 import { SiteNav } from '@/components/ui/SiteNav';
 import { Section } from '@/components/ui/Section';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
@@ -88,7 +89,11 @@ export default async function WineryPage({ params }: { params: Promise<{ slug: s
       <SiteNav />
       <main className="ds bg-paper text-on-paper">
         {/* ── Chi è ── */}
-        <Section bleed width="full" className="pt-band">
+        {/* Non `bleed`: quello toglie il margine laterale, e va bene
+            per i titoli a tutta pagina. Qui dentro c'e' del testo, e
+            senza margine il nome della cantina toccava il bordo
+            dello schermo. */}
+        <Section width="wide" className="pt-band">
           <Link
             href="/wineries"
             className="ds-link group mb-8 inline-flex min-h-[48px] items-center gap-2 text-body no-underline hover:text-accent"
@@ -173,6 +178,8 @@ export default async function WineryPage({ params }: { params: Promise<{ slug: s
           </Section>
         )}
       </main>
+
+      <SiteFooter />
     </>
   );
 }
