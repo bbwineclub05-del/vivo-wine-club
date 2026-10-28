@@ -30,6 +30,7 @@ export interface DbEvent {
   is_list_only?: boolean;        // true = no checkout, show guest registration form
   referral_enabled?: boolean;    // true = referral widget shown after paid checkout
   registration_closed?: boolean; // true = registrations/checkout manually closed by admin
+  members_only?: boolean;        // true = riservato ai soci
   created_at: string;
   updated_at?: string;
 }
@@ -66,6 +67,7 @@ export function dbEventToEventData(e: DbEvent): EventData {
     isListOnly:          e.is_list_only ?? false,
     referralEnabled:     e.referral_enabled ?? false,
     registrationClosed:  e.registration_closed ?? false,
+    membersOnly:         e.members_only ?? false,
   };
 }
 
@@ -105,6 +107,7 @@ export interface EventData {
   isListOnly?: boolean;
   referralEnabled?: boolean;
   registrationClosed?: boolean;
+  membersOnly?: boolean;
 }
 
 /**

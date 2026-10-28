@@ -39,6 +39,7 @@ interface DbEvent {
   is_list_only: boolean;
   referral_enabled: boolean;
   registration_closed: boolean;
+  members_only: boolean;
   image_url: string | null;
   location_map_url: string | null;
   parking_map_url: string | null;
@@ -57,6 +58,7 @@ const BLANK: FormData = {
   price: 0, capacity: null, status: 'open',
   published: false, title_strikethrough: false, guest_list_enabled: false,
   is_list_only: false, referral_enabled: false, registration_closed: false,
+  members_only: false,
   image_url: null, location_map_url: null, parking_map_url: null, parking_map_url_2: null, sort_order: 0,
 };
 
@@ -468,6 +470,12 @@ function EventForm({
               onChange={v => set('referral_enabled', v)}
             />
           )}
+          <Toggle
+            label="Solo soci"
+            hint="Il calendario mostra la targhetta «Solo soci» accanto al pulsante."
+            checked={f.members_only ?? false}
+            onChange={v => set('members_only', v)}
+          />
           <Toggle
             label="Iscrizioni chiuse"
             hint="Il pubblico vede «Iscrizioni chiuse»: niente checkout, niente form."
@@ -1132,6 +1140,7 @@ export default function EventManager() {
                   is_list_only:         mode.edit.is_list_only ?? false,
                   referral_enabled:     mode.edit.referral_enabled ?? false,
                   registration_closed:  mode.edit.registration_closed ?? false,
+                  members_only:         mode.edit.members_only ?? false,
                   image_url:           mode.edit.image_url,
                   location_map_url:    mode.edit.location_map_url ?? null,
                   parking_map_url:     mode.edit.parking_map_url ?? null,

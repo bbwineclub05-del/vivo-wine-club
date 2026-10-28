@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowLeft, MapPin, CalendarDays, Clock, Users, Ticket } from 'lucide-react';
+import { ArrowLeft, CalendarDays, Clock, Lock, MapPin, Ticket, Users } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { SiteNav } from '@/components/ui/SiteNav';
 import { SiteFooter } from '@/components/ui/SiteFooter';
@@ -226,6 +226,11 @@ export default async function EventPage({ params, searchParams }: {
                   sub={raw.location_full ?? undefined}
                 />
                 <Info icon={<Ticket size={18} strokeWidth={1.8} />} label={t('labelPrice')} value={prezzo} />
+                <Info
+                  icon={<Lock size={18} strokeWidth={1.8} />}
+                  label={t('labelAccess')}
+                  value={event.membersOnly ? t('membersOnly') : t('openToAll')}
+                />
                 {capienza && (
                   <Info
                     icon={<Users size={18} strokeWidth={1.8} />}

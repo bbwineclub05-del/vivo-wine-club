@@ -77,7 +77,7 @@ export async function POST(request: Request) {
     const {
       title, type, date, time, location, location_full, description,
       price, capacity, status, published, title_strikethrough, image_url, sort_order,
-      is_list_only, guest_list_enabled, referral_enabled, registration_closed,
+      is_list_only, guest_list_enabled, referral_enabled, registration_closed, members_only,
       location_map_url, parking_map_url, parking_map_url_2,
     } = body as {
       title: string; type?: string; date: string; time?: string;
@@ -87,6 +87,7 @@ export async function POST(request: Request) {
       image_url?: string; sort_order?: number;
       is_list_only?: boolean; guest_list_enabled?: boolean;
       referral_enabled?: boolean; registration_closed?: boolean;
+      members_only?: boolean;
       location_map_url?: string | null;
       parking_map_url?: string | null;
       parking_map_url_2?: string | null;
@@ -124,10 +125,7 @@ export async function POST(request: Request) {
     }
 
     const supabase = getSupabaseAdmin();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('events')
-      .insert({
+    const riga = {
         slug,
         title,
         type:               type || 'PARTY',
@@ -151,11 +149,25 @@ export async function POST(request: Request) {
         guest_list_enabled:   guest_list_enabled ?? (is_list_only ? true : false),
         referral_enabled:     (!is_list_only && (price ?? 0) > 0) ? (referral_enabled ?? false) : false,
         registration_closed:  registration_closed ?? false,
+        members_only:         members_only ?? false,
         stripe_product_id,
         stripe_price_id,
-      })
-      .select()
-      .single();
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const inserisci = (r: Record<string, unknown>) => (supabase as any)
+      .from('events').insert(r).select().single();
+
+    let { data, error } = await inserisci(riga);
+
+    /* `members_only` e' arrivato dopo. Finche' la migration non e'
+       applicata la colonna non esiste, e un evento nuovo non deve
+       fallire per una targhetta: si riprova senza. */
+    if (error && /members_only/.test(error.message ?? '')) {
+      console.warn('[events POST] colonna members_only assente: migration da applicare');
+      const { members_only: _ignorato, ...senza } = riga;
+      ({ data, error } = await inserisci(senza));
+    }
 
     if (error) {
       console.error('[events POST] DB error:', error);
