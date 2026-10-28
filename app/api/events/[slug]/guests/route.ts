@@ -75,7 +75,7 @@ ${divider('20px 0')}
   ${eventPrice && eventPrice > 0 ? `<tr>
     <td style="padding:8px 0;border-top:1px solid #eddada;border-bottom:1px solid #eddada;" class="em-row">
       <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#7a4a4a;" class="em-label">Ingresso</p>
-      <p style="margin:4px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1a0505;" class="em-value">€${eventPrice} — pagamento all&apos;ingresso</p>
+      <p style="margin:4px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1a0505;" class="em-value">€${eventPrice}, pagamento all&apos;ingresso</p>
     </td>
   </tr>` : ''}
 </table>
@@ -275,7 +275,7 @@ export async function POST(
       from:     'Vivo Wine Club <noreply@vivowineclub.com>',
       replyTo:  'info@vivowineclub.com',
       to:       email,
-      subject:  `Vivo Wine Club List — ${eventRow.title}`,
+      subject:  `Vivo Wine Club List: ${eventRow.title}`,
       html:     buildConfirmationEmail({
         firstName,
         eventTitle:    eventRow.title,

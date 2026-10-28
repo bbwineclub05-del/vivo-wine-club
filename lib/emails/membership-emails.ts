@@ -99,13 +99,13 @@ export interface MembershipEmailData {
 const COPY = {
   it: {
     benvenutoOggetto: (id: string | null) =>
-      id ? `Wine but make it VIVO — la tua tessera ${id}` : 'Wine but make it VIVO',
+      id ? `Wine but make it VIVO: la tua tessera ${id}` : 'Wine but make it VIVO',
     benvenutoTitolo: 'Wine but make it VIVO',
     ciao: (n: string) => (n ? `Ciao ${n},` : 'Ciao,'),
     chiSiamo:
       'Siamo una community di giovani con un’idea fissa: <strong>cambiare il modo in cui si ' +
       'racconta il vino</strong>. Troppo esclusivo, troppo complicato, troppo riservato a chi già ' +
-      'sapeva tutto — e invece è una delle cose più belle da condividere a vent’anni.',
+      'sapeva tutto. E invece è una delle cose più belle da condividere a vent’anni.',
     comeLoFacciamo:
       'Lo facciamo nell’unico modo che conosciamo: portandoti dentro le cantine a conoscere chi il ' +
       'vino lo fa davvero, e organizzando serate che ti ricordi il giorno dopo. ' +
@@ -125,7 +125,7 @@ const COPY = {
     rispondi: 'A questa mail puoi rispondere: la leggiamo noi.',
 
     attivazioneOggetto: (id: string | null) =>
-      id ? `La tua tessera VIVO è attiva — ${id}` : 'La tua tessera VIVO è attiva',
+      id ? `La tua tessera VIVO è attiva: ${id}` : 'La tua tessera VIVO è attiva',
     attivazioneTitolo: 'La tua tessera è attiva',
     ceriPrima:
       'Ci sei da prima che tutto questo avesse un nome e un numero. Adesso il club ha le sue ' +
@@ -142,13 +142,13 @@ const COPY = {
 
   en: {
     benvenutoOggetto: (id: string | null) =>
-      id ? `Wine but make it VIVO — your card ${id}` : 'Wine but make it VIVO',
+      id ? `Wine but make it VIVO: your card ${id}` : 'Wine but make it VIVO',
     benvenutoTitolo: 'Wine but make it VIVO',
     ciao: (n: string) => (n ? `Hi ${n},` : 'Hi,'),
     chiSiamo:
       'We’re a community of young people with one fixed idea: <strong>changing the way wine is ' +
       'talked about</strong>. Too exclusive, too complicated, too reserved for those who already ' +
-      'knew everything — when it’s one of the best things to share in your twenties.',
+      'knew everything. And it’s one of the best things to share in your twenties.',
     comeLoFacciamo:
       'We do it the only way we know: taking you inside the estates to meet the people who ' +
       'actually make the wine, and throwing nights you still remember the morning after. ' +
@@ -165,10 +165,10 @@ const COPY = {
       'members’ discounts.',
     bottone: 'Open your area',
     firma: 'See you at the next toast.<br />The VIVO team',
-    rispondi: 'You can reply to this email — we read them.',
+    rispondi: 'You can reply to this email. We read them.',
 
     attivazioneOggetto: (id: string | null) =>
-      id ? `Your VIVO membership is active — ${id}` : 'Your VIVO membership is active',
+      id ? `Your VIVO membership is active: ${id}` : 'Your VIVO membership is active',
     attivazioneTitolo: 'Your membership is active',
     ceriPrima:
       'You were here before any of this had a name and a number. The club has its cards now, and ' +
@@ -185,13 +185,13 @@ const COPY = {
 
   fr: {
     benvenutoOggetto: (id: string | null) =>
-      id ? `Wine but make it VIVO — ta carte ${id}` : 'Wine but make it VIVO',
+      id ? `Wine but make it VIVO : ta carte ${id}` : 'Wine but make it VIVO',
     benvenutoTitolo: 'Wine but make it VIVO',
     ciao: (n: string) => (n ? `Salut ${n},` : 'Salut,'),
     chiSiamo:
       'Nous sommes une communauté de jeunes avec une idée fixe : <strong>changer la façon dont on ' +
       'raconte le vin</strong>. Trop exclusif, trop compliqué, trop réservé à ceux qui savaient ' +
-      'déjà tout — alors que c’est l’une des plus belles choses à partager à vingt ans.',
+      'déjà tout. Alors que c’est l’une des plus belles choses à partager à vingt ans.',
     comeLoFacciamo:
       'On le fait de la seule manière qu’on connaisse : en t’emmenant dans les domaines rencontrer ' +
       'ceux qui font vraiment le vin, et en organisant des soirées dont tu te souviens le ' +
@@ -211,7 +211,7 @@ const COPY = {
     rispondi: 'Tu peux répondre à cet e-mail : c’est nous qui le lisons.',
 
     attivazioneOggetto: (id: string | null) =>
-      id ? `Ta carte VIVO est active — ${id}` : 'Ta carte VIVO est active',
+      id ? `Ta carte VIVO est active : ${id}` : 'Ta carte VIVO est active',
     attivazioneTitolo: 'Ta carte est active',
     ceriPrima:
       'Tu es là depuis avant que tout cela ait un nom et un numéro. Le club a ses cartes ' +

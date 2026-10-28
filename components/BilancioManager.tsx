@@ -60,7 +60,7 @@ function periodRange(kind: PeriodType, year: number, month: number, quarter: num
     return {
       from: `${year}-${String(start + 1).padStart(2, '0')}-01`,
       to: `${year}-${String(end + 1).padStart(2, '0')}-${String(last).padStart(2, '0')}`,
-      label: `${MONTHS[start].slice(0, 3)}–${MONTHS[end].slice(0, 3)} ${year}`,
+      label: `${MONTHS[start].slice(0, 3)}-${MONTHS[end].slice(0, 3)} ${year}`,
     };
   }
   return { from: `${year}-01-01`, to: `${year}-12-31`, label: `Anno ${year}` };

@@ -64,7 +64,7 @@ const ORDINI: MerchOrder[] = [
     customer_name: 'Mario Rossi',
     customer_email: 'mario@example.com',
     items: [
-      { name: 'Maglietta di prova — M', qty: 2, price: 35 },
+      { name: 'Maglietta di prova, taglia M', qty: 2, price: 35 },
       { name: 'Cappellino di prova', qty: 1, price: 25 },
     ],
     total: 95,
@@ -89,7 +89,7 @@ const ORDINI: MerchOrder[] = [
     stripe_session_id: null,
     customer_name: 'Giulia Bianchi',
     customer_email: 'giulia@example.com',
-    items: [{ name: 'Maglietta di prova — S', qty: 1, price: 35 }],
+    items: [{ name: 'Maglietta di prova, taglia S', qty: 1, price: 35 }],
     total: 35,
     status: 'da_evadere',
     created_at: new Date(Date.now() - 86_400_000).toISOString(),

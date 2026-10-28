@@ -24,7 +24,7 @@ const KINDS: Kind[] = ['ambassador', 'company', 'creator', 'staff'];
 
 export async function generateMetadata() {
   const t = await getTranslations('site.apply');
-  return { title: `${t('metaTitle')} — Vivo Wine Club`, description: t('metaDescription') };
+  return { title: `${t('metaTitle')} | Vivo Wine Club`, description: t('metaDescription') };
 }
 
 export default async function ApplyPage({

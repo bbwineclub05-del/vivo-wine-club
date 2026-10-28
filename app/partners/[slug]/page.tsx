@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!partner) return {};
   const locale = await getLocale();
   return {
-    title: `${partner.name} — Vivo Wine Club`,
+    title: `${partner.name} | Vivo Wine Club`,
     description: localized(partner.shortDesc, locale),
   };
 }
@@ -169,7 +169,7 @@ export default async function PartnerPage({ params }: { params: Promise<{ slug: 
                   </p>
                   {partner.quoteAuthor && (
                     <div className="mt-5 text-[11px] tracking-[0.2em] text-[#7a4a4a]/70">
-                      — {partner.quoteAuthor}
+                      {partner.quoteAuthor}
                     </div>
                   )}
                 </div>

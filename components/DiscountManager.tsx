@@ -177,7 +177,7 @@ function DiscountSheet({
               placeholder="Chi offre lo sconto"
             />
           </Field>
-          <Field label="Codice" hint="— se serve">
+          <Field label="Codice" hint="(se serve)">
             <TextInput
               value={form.code}
               onChange={(e) => set('code', e.target.value)}
@@ -195,7 +195,7 @@ function DiscountSheet({
           />
         </Field>
 
-        <Field label="Scade il" hint="— lascia vuoto se non scade">
+        <Field label="Scade il" hint="(lascia vuoto se non scade)">
           <TextInput
             type="date"
             value={form.expires_at}

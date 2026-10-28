@@ -163,7 +163,7 @@ export default function CollaboratorView({ token, onLogout, name }: Props) {
       const safeName  = activeEvent.title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
 
       doc.setFontSize(16);
-      doc.text(`Lista Invitati — ${activeEvent.title}`, 14, 20);
+      doc.text(`Lista invitati: ${activeEvent.title}`, 14, 20);
       doc.setFontSize(9);
       doc.text(`Generato: ${now}`, 14, 28);
       doc.text(`Iscritti: ${sorted.length}   Presenti: ${checkedIn}   Assenti: ${sorted.length - checkedIn}`, 14, 34);

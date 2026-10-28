@@ -37,10 +37,10 @@ const BUILTIN_TABS: { id: BuiltinTab; label: string }[] = [
 const TAB_SUBTITLES: Record<BuiltinTab, string> = {
   membri:     'Chi ha la membership del club.',
   persone:    'Chi è passato dagli eventi del club. Filtra per evento o per gruppo e scrivi a tutti insieme.',
-  sponsors:   'Gestione degli sponsor del club — contatti, siti web e note.',
-  vino:       'Contatti del settore vitivinicolo — produttori, hospitality, industry.',
-  bordeaux:   'Châteaux e produttori di Bordeaux — richieste visita e follow-up.',
-  influencer: 'Creator e influencer — Instagram, TikTok e collaborazioni.',
+  sponsors:   'Gestione degli sponsor del club: contatti, siti web e note.',
+  vino:       'Contatti del settore vitivinicolo: produttori, hospitality, industry.',
+  bordeaux:   'Châteaux e produttori di Bordeaux: richieste visita e follow-up.',
+  influencer: 'Creator e influencer: Instagram, TikTok e collaborazioni.',
 };
 
 /**

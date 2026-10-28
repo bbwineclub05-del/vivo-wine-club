@@ -9,7 +9,7 @@ import { SiteNav } from '@/components/ui/SiteNav';
 
 export async function generateMetadata() {
   const t = await getTranslations('site.manifesto');
-  return { title: 'Manifesto — Vivo Wine Club', description: t('statement') };
+  return { title: 'Manifesto | Vivo Wine Club', description: t('statement') };
 }
 
 const FOUNDERS = [

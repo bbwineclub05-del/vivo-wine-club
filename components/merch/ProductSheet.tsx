@@ -309,7 +309,7 @@ export function ProductSheet({
                 rows={2}
                 value={dettagli.shipping}
                 onChange={(e) => setDettagli((d) => ({ ...d, shipping: e.target.value }))}
-                placeholder="es. Spedito in 5–7 giorni lavorativi."
+                placeholder="es. Spedito in 5-7 giorni lavorativi."
               />
             </Field>
           </div>

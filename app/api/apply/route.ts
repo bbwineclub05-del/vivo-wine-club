@@ -79,7 +79,7 @@ export async function POST(request: Request) {
       from:     'Vivo Wine Club <noreply@vivowineclub.com>',
       replyTo: 'info@vivowineclub.com',
       to:       email,
-      subject:  'We received your application — Vivo Wine Club',
+      subject:  'We received your application | Vivo Wine Club',
       html:     confirmationHtml(),
     }),
     resend.emails.send({

@@ -226,8 +226,8 @@ export function Calendar({
           const end = addDays(weekAnchor, 6);
           const sameMonth = end.getMonth() === weekAnchor.getMonth();
           return sameMonth
-            ? `${weekAnchor.getDate()}–${end.getDate()} ${MONTHS[weekAnchor.getMonth()]}`
-            : `${weekAnchor.getDate()} ${MONTHS[weekAnchor.getMonth()].slice(0, 3)} – ${end.getDate()} ${MONTHS[end.getMonth()].slice(0, 3)}`;
+            ? `${weekAnchor.getDate()}-${end.getDate()} ${MONTHS[weekAnchor.getMonth()]}`
+            : `${weekAnchor.getDate()} ${MONTHS[weekAnchor.getMonth()].slice(0, 3)} - ${end.getDate()} ${MONTHS[end.getMonth()].slice(0, 3)}`;
         })()
       : `${MONTHS[cursor.month]} ${cursor.year}`;
 

@@ -114,7 +114,7 @@ function SendSheet({
   onSend: (to: string, subject: string) => void;
 }) {
   const [to, setTo] = useState(defaultEmail);
-  const [subject, setSubject] = useState(`Proposta evento — Vivo Wine Club (N° ${number})`);
+  const [subject, setSubject] = useState(`Proposta evento, Vivo Wine Club (N° ${number})`);
 
   return (
     <Sheet
@@ -495,7 +495,7 @@ export default function QuoteGenerator() {
                   placeholder="Nome del cliente"
                 />
               </Field>
-              <Field label="Email" hint="— per l'invio">
+              <Field label="Email" hint="(per l'invio)">
                 <TextInput
                   type="email"
                   value={form.clientEmail}
@@ -646,7 +646,7 @@ export default function QuoteGenerator() {
             <h3 className="mb-3 text-subtitle font-medium">Testi</h3>
             <div className="flex flex-col gap-5">
               <div>
-                <Field label="Descrizione" hint="— quella che legge il cliente">
+                <Field label="Descrizione" hint="(quella che legge il cliente)">
                   <TextArea
                     rows={5}
                     value={form.description}
@@ -665,7 +665,7 @@ export default function QuoteGenerator() {
                 </button>
               </div>
 
-              <Field label="Condizioni di pagamento" hint="— opzionale">
+              <Field label="Condizioni di pagamento" hint="(opzionale)">
                 <TextArea
                   rows={2}
                   value={form.paymentConditions}
@@ -674,7 +674,7 @@ export default function QuoteGenerator() {
                 />
               </Field>
 
-              <Field label="Note" hint="— opzionale">
+              <Field label="Note" hint="(opzionale)">
                 <TextArea
                   rows={2}
                   value={form.notes}

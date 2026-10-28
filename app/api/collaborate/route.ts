@@ -65,13 +65,13 @@ export async function POST(request: Request) {
       from:     'Vivo Wine Club <noreply@vivowineclub.com>',
       replyTo: 'info@vivowineclub.com',
       to:       email,
-      subject:  'We received your proposal — Vivo Wine Club',
+      subject:  'We received your proposal | Vivo Wine Club',
       html:     confirmationHtml(name),
     }),
     resend.emails.send({
       from:    'Vivo Wine Club <noreply@vivowineclub.com>',
       to:      'info@vivowineclub.com',
-      subject: `New collaboration request — ${type || 'General'}`,
+      subject: `New collaboration request: ${type || 'General'}`,
       html: notificationHtml({ name, email, type, proposal }),
     }),
   ]);

@@ -341,7 +341,7 @@ function OverviewSection({
       if (!res.ok) { setAvatarError(data.error ?? 'Caricamento fallito.'); return; }
       if (data.url) setAvatarUrl(data.url);
     } catch {
-      setAvatarError('Caricamento fallito — riprova.');
+      setAvatarError('Caricamento fallito, riprova.');
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';

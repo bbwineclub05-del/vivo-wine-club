@@ -94,7 +94,7 @@ const FAQ: Record<FaqLocale, FaqItem[]> = {
     {
       q: 'How do I become a member?',
       a:
-        'You buy the card on the [Join](/membership) page — there is no application to be approved. ' +
+        'You buy the card on the [Join](/membership) page. There is no application to be approved. ' +
         'You are a member the moment you have signed up.',
     },
     {
@@ -126,7 +126,7 @@ const FAQ: Record<FaqLocale, FaqItem[]> = {
     {
       q: 'Can I come to an event without a card?',
       a:
-        'To some of them, yes — the ticket is on the event page. Most winery nights and everything at the ' +
+        'To some of them, yes: the ticket is on the event page. Most winery nights and everything at the ' +
         'VIVO Maison are for members only.',
     },
     {
@@ -141,7 +141,7 @@ const FAQ: Record<FaqLocale, FaqItem[]> = {
     },
     {
       q: 'My question is not here.',
-      a: 'Write to [info@vivowineclub.com](mailto:info@vivowineclub.com) — a person answers.',
+      a: 'Write to [info@vivowineclub.com](mailto:info@vivowineclub.com). A person answers.',
     },
   ],
 
@@ -188,7 +188,7 @@ const FAQ: Record<FaqLocale, FaqItem[]> = {
     {
       q: 'Peut-on venir à un événement sans carte ?',
       a:
-        'À certains, oui — le billet est sur la page de l’événement. La plupart des soirées en domaine et ' +
+        'À certains, oui : le billet est sur la page de l’événement. La plupart des soirées en domaine et ' +
         'tout ce qui se passe à la VIVO Maison sont réservés aux membres.',
     },
     {

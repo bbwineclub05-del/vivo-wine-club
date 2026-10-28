@@ -276,9 +276,9 @@ function EntryForm({
             hint={
               memberEmail
                 ? type === 'income'
-                  ? '— dovrà versarli al club'
-                  : '— il club glieli dovrà'
-                : '— dal conto del club'
+                  ? '(dovrà versarli al club)'
+                  : '(il club glieli dovrà)'
+                : '(dal conto del club)'
             }
           >
             <div className="flex flex-wrap gap-2">
@@ -322,7 +322,7 @@ function EntryForm({
           className="flex min-h-[44px] items-center gap-2 text-left text-fine font-medium text-accent"
         >
           {showMore ? <Minus size={15} strokeWidth={2} /> : <Plus size={15} strokeWidth={2} />}
-          {showMore ? 'Meno dettagli' : `Altro — data, categoria, note`}
+          {showMore ? 'Meno dettagli' : `Altro: data, categoria, note`}
         </button>
 
         {showMore && (
@@ -330,7 +330,7 @@ function EntryForm({
             <Field label="Data">
               <TextInput type="date" value={date} onChange={(e) => setDate(e.target.value)} />
             </Field>
-            <Field label="Categoria" hint="— opzionale">
+            <Field label="Categoria" hint="(opzionale)">
               <Select value={category} onChange={(e) => setCategory(e.target.value)}>
                 <option value="">Nessuna</option>
                 {usable.map((c) => (
@@ -340,7 +340,7 @@ function EntryForm({
                 ))}
               </Select>
             </Field>
-            <Field label="Note" hint="— opzionale">
+            <Field label="Note" hint="(opzionale)">
               <TextArea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
             </Field>
           </div>

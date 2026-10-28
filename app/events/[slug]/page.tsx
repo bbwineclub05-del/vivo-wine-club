@@ -24,7 +24,7 @@ export async function generateMetadata(
     const { data } = await (supabase as any).from('events').select('*').eq('slug', slug).single();
     if (!data) return {};
     const event = dbEventToEventData(data as DbEvent);
-    const title = `${event.title} — Vivo Wine Club`;
+    const title = `${event.title} | Vivo Wine Club`;
     const description = event.description || `Scopri e prenota il tuo posto per ${event.title}.`;
     const raw = event.image_url;
     const imageUrl = raw
@@ -163,7 +163,7 @@ export default async function EventPage({ params, searchParams }: {
     event.price === 0
       ? t('freeEntry')
       : raw.status === 'open' && isListOnly
-        ? `${event.price} € — ${t('paymentAtDoor')}`
+        ? `${event.price} €, ${t('paymentAtDoor')}`
         : `${event.price} € / ${t('perPerson')}`;
 
   return (

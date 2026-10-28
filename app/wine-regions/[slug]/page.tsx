@@ -221,7 +221,7 @@ export default async function WineRegionPage({
                   className="mt-3 text-sm text-[#7a4a4a] font-light italic"
                   style={{ fontFamily: 'var(--font-nunito)' }}
                 >
-                  Winery profiles coming soon — we&apos;re curating each story carefully.
+                  Winery profiles coming soon. We&apos;re curating each story carefully.
                 </p>
               )}
             </div>

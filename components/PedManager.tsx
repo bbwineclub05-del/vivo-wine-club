@@ -455,7 +455,7 @@ function EntryForm({
             <TextInput type="date" value={form.date} onChange={(e) => set('date', e.target.value)} />
           </Field>
 
-          <Field label="Responsabile" hint="— opzionale">
+          <Field label="Responsabile" hint="(opzionale)">
             <Select value={form.assigned_to} onChange={(e) => set('assigned_to', e.target.value)}>
               <option value="">Nessuno</option>
               {members.map((m) => (
@@ -468,7 +468,7 @@ function EntryForm({
           </Field>
         </div>
 
-        <Field label="Descrizione" hint="— opzionale">
+        <Field label="Descrizione" hint="(opzionale)">
           <TextArea
             rows={3}
             value={form.description}
@@ -477,7 +477,7 @@ function EntryForm({
           />
         </Field>
 
-        <Field label="Note interne" hint="— opzionale">
+        <Field label="Note interne" hint="(opzionale)">
           <TextArea
             rows={2}
             value={form.notes}
@@ -487,7 +487,7 @@ function EntryForm({
         </Field>
 
         {!isEdit && (
-          <Field label="Allegato" hint="— opzionale, solo alla creazione">
+          <Field label="Allegato" hint="(opzionale, solo alla creazione)">
             <input
               type="file"
               accept="image/*,video/*,application/pdf"
@@ -667,7 +667,7 @@ export default function PedManager() {
     <div>
       <PageHead
         title="Piano editoriale"
-        subtitle="Cosa esce, dove e quando — accanto agli eventi del club."
+        subtitle="Cosa esce, dove e quando, accanto agli eventi del club."
         action={<NewButton label="Nuovo contenuto" onClick={() => setFormFor({})} />}
       />
 

@@ -413,7 +413,7 @@ export default function EventInvite({
           {sources.has('persone') && events.length > 0 && (
             <Field
               label="Solo chi è venuto a"
-              hint="— tiene solo chi risulta esserci stato"
+              hint="(tiene solo chi risulta esserci stato)"
             >
               <div className="relative">
                 <select
@@ -424,7 +424,7 @@ export default function EventInvite({
                   <option value="">Qualunque evento</option>
                   {events.map((e) => (
                     <option key={e.slug} value={e.slug}>
-                      {e.title} — {e.count}
+                      {e.title} ({e.count})
                     </option>
                   ))}
                 </select>
@@ -519,7 +519,7 @@ export default function EventInvite({
             </button>
           </p>
 
-          <Field label="Titolo dell'evento" hint="— è anche l'oggetto della mail">
+          <Field label="Titolo dell'evento" hint="(è anche l'oggetto della mail)">
             <TextInput
               autoFocus
               value={form.eventTitle}

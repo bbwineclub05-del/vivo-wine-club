@@ -9,7 +9,7 @@ import { SiteNav } from '@/components/ui/SiteNav';
 
 export async function generateMetadata() {
   const t = await getTranslations('membership');
-  return { title: `${t('heading')} — Vivo Wine Club`, description: t('subtitle') };
+  return { title: `${t('heading')} | Vivo Wine Club`, description: t('subtitle') };
 }
 
 export default async function MembershipPage() {

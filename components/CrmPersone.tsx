@@ -176,7 +176,7 @@ function ComposeSheet({
           />
         </Field>
 
-        <Field label="Messaggio" hint="— {{name}} diventa il nome di chi legge">
+        <Field label="Messaggio" hint="({{name}} diventa il nome di chi legge)">
           <TextArea
             rows={8}
             value={text}
@@ -314,10 +314,10 @@ export default function CrmPersone() {
           <div className="mb-3">
             <Field label="Evento">
               <Select value={event} onChange={(e) => setEvent(e.target.value)}>
-                <option value="">Tutti gli eventi — {people.length} persone</option>
+                <option value="">Tutti gli eventi ({people.length} persone)</option>
                 {eventOptions.map((o) => (
                   <option key={o.slug} value={o.slug}>
-                    {o.title} — {o.count}
+                    {o.title} ({o.count})
                   </option>
                 ))}
               </Select>

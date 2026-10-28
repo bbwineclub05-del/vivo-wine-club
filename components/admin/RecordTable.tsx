@@ -313,7 +313,7 @@ function RecordSheet<T extends Record_>({
               ))}
             </Select>
           </Field>
-          <Field label="Da riprendere il" hint="— opzionale">
+          <Field label="Da riprendere il" hint="(opzionale)">
             <TextInput
               type="date"
               value={draft.next_action_at}

@@ -185,7 +185,7 @@ export default function EventGuestPanel({ event, accessToken, onGuestEnabled }: 
       const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
       doc.setFontSize(16);
-      doc.text(`Lista invitati — ${event.title}`, 14, 20);
+      doc.text(`Lista invitati: ${event.title}`, 14, 20);
       doc.setFontSize(9);
       doc.text(`Generato: ${new Date().toLocaleString('it-IT')}`, 14, 28);
       doc.text(
@@ -362,7 +362,7 @@ export default function EventGuestPanel({ event, accessToken, onGuestEnabled }: 
                       <Star
                         size={14}
                         className="shrink-0 fill-amber-400 text-amber-500"
-                        aria-label={`Premio referral${guest.referral_reward_code ? ` — ${guest.referral_reward_code}` : ''}`}
+                        aria-label={`Premio referral${guest.referral_reward_code ? `: ${guest.referral_reward_code}` : ''}`}
                       />
                     )}
                   </p>

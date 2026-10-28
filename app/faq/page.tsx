@@ -8,7 +8,7 @@ import { faqFor } from '@/lib/faq';
 
 export async function generateMetadata() {
   const t = await getTranslations('faq');
-  return { title: `${t('title')} — Vivo Wine Club`, description: t('intro') };
+  return { title: `${t('title')} | Vivo Wine Club`, description: t('intro') };
 }
 
 /**

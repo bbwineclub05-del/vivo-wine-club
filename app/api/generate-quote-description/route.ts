@@ -35,7 +35,7 @@ Scrivi una descrizione di 3-4 paragrafi in italiano, in prima persona plurale ("
 3. Enfatizzi la cura, la professionalità e l'esclusività di Vivo Wine Club
 4. Chiuda con un invito caldo a procedere
 
-Tono: sofisticato, caldo, professionale — non eccessivamente formale. Niente bullet points, solo prosa fluente.`;
+Tono: sofisticato, caldo, professionale, non eccessivamente formale. Niente bullet points, solo prosa fluente.`;
 
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {

@@ -237,7 +237,7 @@ function EventForm({
           <Label>Stato</Label>
           <select className={inputCls} value={f.status}
             onChange={e => set('status', e.target.value as FormData['status'])}>
-            <option value="open">Open — prenotabile</option>
+            <option value="open">Open, prenotabile</option>
             <option value="soldout">Sold Out</option>
             <option value="soon">Coming Soon</option>
             <option value="completed">Completato</option>
@@ -326,7 +326,7 @@ function EventForm({
           <Label>Location completa *</Label>
           <input className={inputCls} value={f.location_full}
             onChange={e => set('location_full', e.target.value)}
-            placeholder="Ca' del Bosco, Erbusco — ore 11:00" required />
+            placeholder="Ca' del Bosco, Erbusco, ore 11:00" required />
         </div>
 
         {/* Location map link */}
@@ -363,7 +363,7 @@ function EventForm({
 
         {/* Price */}
         <div>
-          <Label>Prezzo (€) — 0 = gratuito</Label>
+          <Label>Prezzo (€), 0 = gratuito</Label>
           <input className={inputCls} type="number" min={0} step={1} value={f.price}
             onChange={e => set('price', parseFloat(e.target.value) || 0)} />
           {f.price > 0 && !f.is_list_only && (
@@ -590,7 +590,7 @@ function CollaboratorAssignPanel({ event, accessToken }: { event: DbEvent; acces
 }
 
 /* ─────────────────────────────────────────────
-   Guest List — schermo intero
+   Guest List a schermo intero
 ───────────────────────────────────────────── */
 const DRAWER_TABS = [
   { id: 'tickets' as const,       label: 'Biglietti',     short: 'Biglietti' },

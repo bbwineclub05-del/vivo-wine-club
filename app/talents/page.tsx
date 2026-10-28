@@ -13,7 +13,7 @@ import { getCreators, PLATFORM_LABEL } from '@/lib/creators';
 
 export async function generateMetadata() {
   const t = await getTranslations('site.talents');
-  return { title: 'Creator — Vivo Wine Club', description: t('intro') };
+  return { title: 'Creator | Vivo Wine Club', description: t('intro') };
 }
 
 export default async function TalentsPage() {

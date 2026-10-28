@@ -8,18 +8,18 @@ import { ArrowRight, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 const PARTY_GALLERY = [
-  { id: 1,  src: '/events/wp1.jpg',          alt: 'Wine Party — photo 1' },
-  { id: 2,  src: '/events/wp2.jpg',          alt: 'Wine Party — photo 2' },
-  { id: 3,  src: '/events/wp3.jpg',          alt: 'Wine Party — photo 3' },
-  { id: 4,  src: '/events/wp4.jpg',          alt: 'Wine Party — photo 4' },
-  { id: 5,  src: '/events/wine-party1.JPG',  alt: 'Wine Party — photo 5' },
-  { id: 6,  src: '/events/wine-party2.jpg',  alt: 'Wine Party — photo 6' },
-  { id: 7,  src: '/events/wine-party3.jpg',  alt: 'Wine Party — photo 7' },
-  { id: 8,  src: '/events/wine-party4.jpg',  alt: 'Wine Party — photo 8' },
-  { id: 9,  src: '/events/wine-party5.jpg',  alt: 'Wine Party — photo 9' },
-  { id: 10, src: '/events/wine-party6.jpg',  alt: 'Wine Party — photo 10' },
-  { id: 11, src: '/events/wine-party7.jpg',  alt: 'Wine Party — photo 11' },
-  { id: 12, src: '/events/wine-party8.jpg',  alt: 'Wine Party — photo 12' },
+  { id: 1,  src: '/events/wp1.jpg',          alt: 'Wine Party photo 1' },
+  { id: 2,  src: '/events/wp2.jpg',          alt: 'Wine Party photo 2' },
+  { id: 3,  src: '/events/wp3.jpg',          alt: 'Wine Party photo 3' },
+  { id: 4,  src: '/events/wp4.jpg',          alt: 'Wine Party photo 4' },
+  { id: 5,  src: '/events/wine-party1.JPG',  alt: 'Wine Party photo 5' },
+  { id: 6,  src: '/events/wine-party2.jpg',  alt: 'Wine Party photo 6' },
+  { id: 7,  src: '/events/wine-party3.jpg',  alt: 'Wine Party photo 7' },
+  { id: 8,  src: '/events/wine-party4.jpg',  alt: 'Wine Party photo 8' },
+  { id: 9,  src: '/events/wine-party5.jpg',  alt: 'Wine Party photo 9' },
+  { id: 10, src: '/events/wine-party6.jpg',  alt: 'Wine Party photo 10' },
+  { id: 11, src: '/events/wine-party7.jpg',  alt: 'Wine Party photo 11' },
+  { id: 12, src: '/events/wine-party8.jpg',  alt: 'Wine Party photo 12' },
 ];
 
 function Lightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
@@ -72,7 +72,7 @@ export default function WinePartyGallery({ limit }: { limit?: number }) {
           const dynamicImgs = data.images.map((img: { url: string }, i: number) => ({
             id: -1 - i,
             src: img.url,
-            alt: `Wine Party — uploaded photo ${i + 1}`,
+            alt: `Wine Party uploaded photo ${i + 1}`,
           }));
           setGallery([...dynamicImgs, ...PARTY_GALLERY]);
         }

@@ -620,7 +620,7 @@ function UploadSheet({
           </div>
         )}
 
-        <Field label="Descrizione" hint="— opzionale, vale per tutti i file di questo caricamento">
+        <Field label="Descrizione" hint="(opzionale, vale per tutti i file di questo caricamento)">
           <TextArea
             rows={2}
             value={description}
@@ -630,8 +630,8 @@ function UploadSheet({
         </Field>
 
         <p className="text-fine text-on-paper-muted">
-          Si carica qualunque tipo di file — PDF, Word, Excel, PowerPoint,
-          immagini, archivi — fino a 50 MB l&apos;uno. Sono esclusi solo i
+          Si carica qualunque tipo di file (PDF, Word, Excel, PowerPoint,
+          immagini, archivi) fino a 50 MB l&apos;uno. Sono esclusi solo i
           programmi eseguibili.
         </p>
       </div>

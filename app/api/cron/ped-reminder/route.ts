@@ -112,7 +112,7 @@ export async function GET(request: Request) {
       from:     FROM,
       replyTo: 'info@vivowineclub.com',
       to:       RECIPIENTS,
-      subject:  `Vivo Wine Club — Contenuti da pubblicare oggi ${dateLabel}`,
+      subject:  `Vivo Wine Club: contenuti da pubblicare oggi ${dateLabel}`,
       html:     buildHtml(entries, today),
     });
 

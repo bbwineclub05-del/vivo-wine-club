@@ -189,7 +189,7 @@ function ComposeSheet({
         <Field label="Oggetto">
           <TextInput autoFocus value={subject} onChange={(e) => setSubject(e.target.value)} />
         </Field>
-        <Field label="Messaggio" hint="— {{name}} diventa il nome di chi legge">
+        <Field label="Messaggio" hint="({{name}} diventa il nome di chi legge)">
           <TextArea
             rows={8}
             value={text}

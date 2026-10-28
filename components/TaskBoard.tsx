@@ -493,7 +493,7 @@ function TaskForm({
           </Select>
         </Field>
 
-        <Field label="Assegna a" hint={team ? `— ${team.name}` : undefined}>
+        <Field label="Assegna a" hint={team ? `(${team.name})` : undefined}>
           <div className="flex flex-wrap gap-2">
             {assignable.map((m) => {
               const on = form.assignee_emails.includes(m.email);
@@ -524,7 +524,7 @@ function TaskForm({
         </Field>
 
         <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="Scadenza" hint="— opzionale">
+          <Field label="Scadenza" hint="(opzionale)">
             <TextInput
               type="date"
               value={form.due_date}
@@ -551,7 +551,7 @@ function TaskForm({
           </Field>
         </div>
 
-        <Field label="Dettagli" hint="— opzionale">
+        <Field label="Dettagli" hint="(opzionale)">
           <TextArea
             rows={3}
             value={form.description}

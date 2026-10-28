@@ -35,9 +35,9 @@ function getLocale(): 'it' | 'en' | 'fr' {
 }
 
 const WELCOME: Record<'it' | 'en' | 'fr', string> = {
-  it: 'Ciao! Sono il sommelier virtuale di Vivo Wine Club. Chiedimi tutto sul vino — bottiglie, abbinamenti, regioni, annate. 🍷',
-  en: "Hi! I'm Vivo Wine Club's virtual sommelier. Ask me anything about wine — bottles, pairings, regions, vintages. 🍷",
-  fr: 'Bonjour! Je suis le sommelier virtuel de Vivo Wine Club. Posez-moi toutes vos questions sur le vin — bouteilles, accords, régions, millésimes. 🍷',
+  it: 'Ciao! Sono il sommelier virtuale di Vivo Wine Club. Chiedimi tutto sul vino: bottiglie, abbinamenti, regioni, annate. 🍷',
+  en: "Hi! I'm Vivo Wine Club's virtual sommelier. Ask me anything about wine: bottles, pairings, regions, vintages. 🍷",
+  fr: 'Bonjour! Je suis le sommelier virtuel de Vivo Wine Club. Posez-moi toutes vos questions sur le vin : bouteilles, accords, régions, millésimes. 🍷',
 };
 
 const SUGGESTIONS: Record<'it' | 'en' | 'fr', string[]> = {

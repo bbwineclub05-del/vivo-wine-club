@@ -12,7 +12,7 @@ import { PartnerLogos } from '@/components/ui/PartnerLogos';
 
 export async function generateMetadata() {
   const t = await getTranslations('site.brands');
-  return { title: 'Vivo Studio — Vivo Wine Club', description: t('statement') };
+  return { title: 'Vivo Studio | Vivo Wine Club', description: t('statement') };
 }
 
 const STEPS = ['step1', 'step2', 'step3', 'step4'] as const;

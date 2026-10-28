@@ -8,7 +8,7 @@ import { MembershipSuccess } from '@/components/ui/MembershipSuccess';
 
 export async function generateMetadata() {
   const t = await getTranslations('membership');
-  return { title: `${t('paidHeading')} — Vivo Wine Club` };
+  return { title: `${t('paidHeading')} | Vivo Wine Club` };
 }
 
 export default async function MembershipSuccessPage({

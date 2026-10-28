@@ -25,7 +25,7 @@ export async function generateMetadata(
     if (!data) return {};
 
     const event = dbEventToEventData(data as DbEvent);
-    const title       = `${event.title} — Vivo Wine Club`;
+    const title       = `${event.title} | Vivo Wine Club`;
     const description = event.description || `Get your ticket for ${event.title}.`;
 
     // Ensure absolute URL — Supabase storage URLs already start with https://

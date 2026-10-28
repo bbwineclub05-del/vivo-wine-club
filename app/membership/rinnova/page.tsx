@@ -8,7 +8,7 @@ import { MembershipRenew } from '@/components/ui/MembershipRenew';
 
 export async function generateMetadata() {
   const t = await getTranslations('membership');
-  return { title: `${t('renewHeading')} — Vivo Wine Club` };
+  return { title: `${t('renewHeading')} | Vivo Wine Club` };
 }
 
 export default async function MembershipRenewPage() {

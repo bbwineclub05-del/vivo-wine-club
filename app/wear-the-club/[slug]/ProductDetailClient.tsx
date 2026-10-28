@@ -129,7 +129,7 @@ export default function ProductDetailClient({ product }: { product: ProductFull 
     addItem({
       id: product.id,
       cartKey: `${product.id}:${colore?.id ?? ''}:${taglia}:${incisione?.id ?? ''}`,
-      name: parti.join(' — '),
+      name: parti.join(', '),
       price: product.price,
       icon: '',
       image: immagini[fotoSicura] ?? '',

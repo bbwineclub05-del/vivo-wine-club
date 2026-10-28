@@ -140,7 +140,7 @@ export async function POST(request: Request) {
       from: 'Vivo Wine Club <noreply@vivowineclub.com>',
       replyTo: data.email,
       to: 'info@vivowineclub.com',
-      subject: `New brand enquiry — ${data.company}`,
+      subject: `New brand enquiry: ${data.company}`,
       html: notificationHtml([
         ['Company', data.company],
         ['Contact', data.contact_name],
@@ -149,7 +149,7 @@ export async function POST(request: Request) {
         ['Project type', data.project_type],
         ['Message', data.message],
         ['Page language', data.locale],
-        ['Saved to database', stored ? 'yes' : 'NO — table missing, this email is the only record'],
+        ['Saved to database', stored ? 'yes' : 'NO, table missing: this email is the only record'],
       ]),
     }),
   ]);

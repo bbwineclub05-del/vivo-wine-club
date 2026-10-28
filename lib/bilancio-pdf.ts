@@ -80,12 +80,12 @@ export async function generateBilancioPdf(data: BilancioData): Promise<Uint8Arra
   // Company info block — left-aligned, below logo, generous line spacing
   const infoLines = [
     { text: 'VIVO WINE CLUB',                                                              size: 9.5, font: bold    },
-    { text: 'Associazione Culturale — Ente non commerciale',                               size: 8,   font: regular },
+    { text: 'Associazione Culturale · Ente non commerciale',                               size: 8,   font: regular },
     { text: 'C.F. 95023200223',                                                            size: 8,   font: regular },
-    { text: 'Natura Giuridica: 12 — Associazioni non riconosciute e comitati',             size: 7.5, font: regular },
-    { text: 'Codice Attività: 949920 — Att. di organizzazioni associative culturali',      size: 7.5, font: regular },
+    { text: 'Natura Giuridica: 12 · Associazioni non riconosciute e comitati',             size: 7.5, font: regular },
+    { text: 'Codice Attività: 949920 · Att. di organizzazioni associative culturali',      size: 7.5, font: regular },
     { text: 'Sede legale: Via Conti Lodron 62, 38089 Storo (TN)',                          size: 8,   font: regular },
-    { text: 'Email: info@vivowineclub.com  —  Web: vivowineclub.com',                      size: 7.5, font: regular },
+    { text: 'Email: info@vivowineclub.com  ·  Web: vivowineclub.com',                      size: 7.5, font: regular },
     { text: 'Rappresentante legale: Filippo Lombardi',                                     size: 8,   font: regular },
   ];
 
@@ -266,7 +266,7 @@ export async function generateBilancioPdf(data: BilancioData): Promise<Uint8Arra
 
   // ── FOOTER ───────────────────────────────────────────────────────
   page.drawLine({ start: { x: ML, y: FOOTER_H + 4 }, end: { x: W - MR, y: FOOTER_H + 4 }, thickness: 0.5, color: BLACK });
-  const footerText = 'VIVO Wine Club — Associazione Culturale — C.F. 95023200223 — Sede legale: Via Conti Lodron 62, 38089 Storo (TN)';
+  const footerText = 'VIVO Wine Club · Associazione Culturale · C.F. 95023200223 · Sede legale: Via Conti Lodron 62, 38089 Storo (TN)';
   const footerW    = regular.widthOfTextAtSize(footerText, 7);
   page.drawText(footerText, {
     x: (W - footerW) / 2, y: FOOTER_H - 4,

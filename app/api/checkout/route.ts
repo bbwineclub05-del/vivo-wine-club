@@ -111,7 +111,7 @@ export async function POST(request: Request) {
             name: discountPercent > 0
               ? `${item.name} (−${discountPercent}%)`
               : item.name,
-            description: `Vivo Wine Club — ${item.name}`,
+            description: `Vivo Wine Club: ${item.name}`,
           },
         },
       })),
@@ -123,7 +123,7 @@ export async function POST(request: Request) {
           unit_amount:  Math.round(shippingEur * 100),
           product_data: {
             name:        'Spedizione',
-            description: 'Costo di spedizione — Vivo Wine Club',
+            description: 'Costo di spedizione | Vivo Wine Club',
           },
         },
       }] : []),

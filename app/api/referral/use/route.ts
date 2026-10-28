@@ -19,7 +19,7 @@ ${divider('20px 0')}
 <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#3a1a1a;text-align:center;line-height:1.7;">
   Ciao <strong>${name}</strong>,
 </p>
-${para('Hai raggiunto 10 referral confermati — benissimo! Il tuo drink gratuito ti aspetta.')}
+${para('Hai raggiunto 10 referral confermati, benissimo! Il tuo drink gratuito ti aspetta.')}
 ${divider('20px 0')}
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
   <tr>
@@ -142,7 +142,7 @@ export async function POST(request: Request) {
         from:    'Vivo Wine Club <noreply@vivowineclub.com>',
         replyTo: 'info@vivowineclub.com',
         to:      rc.owner_email,
-        subject: '🍷 Hai sbloccato il tuo drink gratuito — Vivo Wine Club',
+        subject: '🍷 Hai sbloccato il tuo drink gratuito | Vivo Wine Club',
         html:    buildRewardEmail({
           name:       rc.owner_name || rc.owner_email,
           eventTitle: eventRow?.title ?? 'Vivo Wine Club',

@@ -71,7 +71,7 @@ export async function sendMerchOrderConfirmation({
   await resend.emails.send({
     from:    FROM,
     to,
-    subject: 'Il tuo ordine Vivo Wine Club — conferma ricevuta ✓',
+    subject: 'Il tuo ordine Vivo Wine Club: conferma ricevuta ✓',
     html:    emailShell(body),
   });
 }
@@ -139,7 +139,7 @@ export async function sendMerchShippingNotification({
   await resend.emails.send({
     from:    FROM,
     to,
-    subject: 'Vivo Wine Club — Il tuo ordine è stato spedito! 🚚',
+    subject: 'Vivo Wine Club: il tuo ordine è stato spedito! 🚚',
     html:    emailShell(body),
   });
 }

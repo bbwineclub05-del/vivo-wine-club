@@ -233,7 +233,7 @@ function Detail({
               <span className="text-body">
                 {p.period_start.slice(0, 4)}
                 {p.period_end.slice(0, 4) !== p.period_start.slice(0, 4) &&
-                  `–${p.period_end.slice(0, 4)}`}
+                  `-${p.period_end.slice(0, 4)}`}
               </span>
               <span className="text-fine text-on-paper-muted">
                 {PAYMENT_LABEL[p.status]} · {p.amount_cents === 0 ? 'gratuito' : eur(p.amount_cents)}

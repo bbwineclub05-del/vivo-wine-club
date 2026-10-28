@@ -109,7 +109,7 @@ const TESTI: Record<BenefitLocale, Record<string, { title: string; body: string 
     },
     riservati: {
       title: 'Members-only nights',
-      body: 'Most of what we do — in wineries, in bars, at the VIVO Maison — is open to members only.',
+      body: 'Most of what we do, in wineries, in bars and at the VIVO Maison, is open to members only.',
     },
     mappa: {
       title: 'The winery map',
@@ -160,7 +160,7 @@ const TESTI: Record<BenefitLocale, Record<string, { title: string; body: string 
     },
     riservati: {
       title: 'Soirées réservées aux membres',
-      body: 'La plupart de nos événements — domaines, bars, VIVO Maison — sont réservés aux membres.',
+      body: 'La plupart de nos événements, en domaine, en bar et à la VIVO Maison, sont réservés aux membres.',
     },
     mappa: {
       title: 'La carte des domaines',

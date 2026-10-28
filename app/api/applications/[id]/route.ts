@@ -23,7 +23,7 @@ ${para(`We're excited to have you as part of Vivo Wine Club. You now have access
 ${para('Set your password to access your members area, explore upcoming events, and stay up to date with everything happening at Vivo.')}
 ${ctaBlock}
 ${divider('28px 0 0')}
-${para('Have questions? Reach us at <a href="mailto:info@vivowineclub.com" style="color:#731515;">info@vivowineclub.com</a> — we\'re always happy to help.', 'font-size:13px;')}`;
+${para('Have questions? Reach us at <a href="mailto:info@vivowineclub.com" style="color:#731515;">info@vivowineclub.com</a>. We\'re always happy to help.', 'font-size:13px;')}`;
   return emailShell(body);
 }
 
@@ -32,7 +32,7 @@ function rejectionHtml(name: string): string {
   const body = `
 ${heading(`Thank you for applying, ${firstName}.`)}
 ${divider()}
-${para(`We truly appreciate your interest in Vivo Wine Club. After careful review, we're unable to offer you a membership at this time — our current intake is limited and we receive many applications.`)}
+${para(`We truly appreciate your interest in Vivo Wine Club. After careful review, we're unable to offer you a membership at this time: our current intake is limited and we receive many applications.`)}
 ${para('We hope to welcome you in a future round. In the meantime, you can still attend our open events and follow us on LinkedIn for updates.')}
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top:28px;">
   <tr><td align="center">${ctaButton('VIEW UPCOMING EVENTS →', 'https://vivowineclub.com/events')}</td></tr>

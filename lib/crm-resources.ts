@@ -94,7 +94,7 @@ export const BORDEAUX: ResourceDef<Record_> = {
     { key: 'phone', label: 'Telefono', type: 'tel' },
     // Resta testo libero: in archivio ci sono valori come "22/04/2026"
     // e trasformarli in date adesso significherebbe perderne qualcuno.
-    { key: 'last_follow_up', label: 'Ultimo contatto', hint: '— testo libero' },
+    { key: 'last_follow_up', label: 'Ultimo contatto', hint: '(testo libero)' },
     { key: 'note', label: 'Note', type: 'textarea' },
   ],
 };

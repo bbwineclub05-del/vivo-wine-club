@@ -24,7 +24,7 @@ export const WINE_REGIONS: WineRegion[] = [
     shortDesc:
       'The "King of Italian wines". Barolo produces powerful, tannic Nebbiolo-based reds that age for decades in the rolling hills of Piedmont.',
     description:
-      'Barolo is often called the King of Italian wines — a DOCG appellation in the Langhe hills of Piedmont producing some of the most age-worthy reds on earth. Made exclusively from Nebbiolo, the wines are characterised by high tannin, high acidity, and haunting aromas of dried roses, tar, cherry, and leather. The best crus — Cannubi, Brunate, Cerequio, Castiglione Falletto — can age for 30+ years. The zone is divided between traditionalist and modernist producers, creating a rich diversity of styles.',
+      'Barolo is often called the King of Italian wines, a DOCG appellation in the Langhe hills of Piedmont producing some of the most age-worthy reds on earth. Made exclusively from Nebbiolo, the wines are characterised by high tannin, high acidity, and haunting aromas of dried roses, tar, cherry, and leather. The best crus (Cannubi, Brunate, Cerequio, Castiglione Falletto) can age for 30+ years. The zone is divided between traditionalist and modernist producers, creating a rich diversity of styles.',
     grapes: ['Nebbiolo'],
     mustTry: ['Barolo DOCG', 'Barolo Riserva', 'Single-vineyard Cru Barolo'],
     wineries: [
@@ -76,7 +76,7 @@ export const WINE_REGIONS: WineRegion[] = [
     shortDesc:
       'The birthplace of sparkling wine. Chalky soils and a cool northern climate give Champagne its signature freshness, minerality and elegance.',
     description:
-      'Champagne is the only region in the world legally entitled to produce Champagne. Located in northeastern France around Reims and Épernay, its vineyards sit on deep chalk subsoils that drain perfectly and reflect heat onto the vines. The méthode champenoise — secondary fermentation in bottle — creates the iconic bubbles. Blending across villages, vintages and grape varieties (Chardonnay, Pinot Noir, Pinot Meunier) is the art. Grandes Marques like Krug, Dom Pérignon, Salon and Cristal set the benchmark, while Grower Champagnes reveal terroir in an entirely new way.',
+      'Champagne is the only region in the world legally entitled to produce Champagne. Located in northeastern France around Reims and Épernay, its vineyards sit on deep chalk subsoils that drain perfectly and reflect heat onto the vines. The méthode champenoise, secondary fermentation in bottle, creates the iconic bubbles. Blending across villages, vintages and grape varieties (Chardonnay, Pinot Noir, Pinot Meunier) is the art. Grandes Marques like Krug, Dom Pérignon, Salon and Cristal set the benchmark, while Grower Champagnes reveal terroir in an entirely new way.',
     grapes: ['Chardonnay', 'Pinot Noir', 'Pinot Meunier'],
     mustTry: ['Krug Grande Cuvée', 'Dom Pérignon', 'Salon Blanc de Blancs', 'Billecart-Salmon'],
     wineries: [
@@ -91,9 +91,9 @@ export const WINE_REGIONS: WineRegion[] = [
     lat: 47.05,
     lng: 4.85,
     shortDesc:
-      'The world\'s most coveted Pinot Noir and Chardonnay. Burgundy\'s concept of terroir — each parcel expressing a unique character — has shaped fine wine culture globally.',
+      'The world\'s most coveted Pinot Noir and Chardonnay. Burgundy\'s concept of terroir, where each parcel expresses a unique character, has shaped fine wine culture globally.',
     description:
-      'Burgundy is the spiritual home of Pinot Noir and Chardonnay, and no region on earth has done more to define the concept of terroir. The Côte d\'Or — a narrow limestone escarpment running south from Dijon — is divided into thousands of named parcels (lieux-dits and Grands Crus) whose soils, exposures and microclimates create wines of extraordinary individuality. Domaine de la Romanée-Conti, Rousseau, Leroy, Leflaive, Raveneau: these names represent the pinnacle of winemaking. Even modest Bourgogne rouge from a great producer can move you deeply.',
+      'Burgundy is the spiritual home of Pinot Noir and Chardonnay, and no region on earth has done more to define the concept of terroir. The Côte d\'Or, a narrow limestone escarpment running south from Dijon, is divided into thousands of named parcels (lieux-dits and Grands Crus) whose soils, exposures and microclimates create wines of extraordinary individuality. Domaine de la Romanée-Conti, Rousseau, Leroy, Leflaive, Raveneau: these names represent the pinnacle of winemaking. Even modest Bourgogne rouge from a great producer can move you deeply.',
     grapes: ['Pinot Noir', 'Chardonnay', 'Aligoté'],
     mustTry: ['Romanée-Conti', 'La Tâche', 'Montrachet', 'Chambolle-Musigny'],
   },
@@ -107,7 +107,7 @@ export const WINE_REGIONS: WineRegion[] = [
     shortDesc:
       'Barolo\'s elegant neighbour. Barbaresco is also made from Nebbiolo but grown on sandy soils that yield a more refined, earlier-drinking style.',
     description:
-      'Barbaresco is Barolo\'s twin DOCG — both made from Nebbiolo in the Langhe hills of Piedmont, both world-class, both deeply Italian. Yet Barbaresco is often described as more feminine, more approachable in youth, with a silkier texture that comes from its lower altitude and sandier soils. The late Angelo Gaja transformed the appellation from the 1970s onwards, proving it could match Burgundy\'s finest. Key villages include Barbaresco, Treiso and Neive. Crus like Asili, Rabajà, Santo Stefano and Starderi produce wines of astonishing complexity.',
+      'Barbaresco is Barolo\'s twin DOCG: both made from Nebbiolo in the Langhe hills of Piedmont, both world-class, both deeply Italian. Yet Barbaresco is often described as more feminine, more approachable in youth, with a silkier texture that comes from its lower altitude and sandier soils. The late Angelo Gaja transformed the appellation from the 1970s onwards, proving it could match Burgundy\'s finest. Key villages include Barbaresco, Treiso and Neive. Crus like Asili, Rabajà, Santo Stefano and Starderi produce wines of astonishing complexity.',
     grapes: ['Nebbiolo'],
     mustTry: ['Gaja Barbaresco', 'Produttori del Barbaresco', 'Bruno Giacosa Asili'],
     wineries: [
@@ -125,7 +125,7 @@ export const WINE_REGIONS: WineRegion[] = [
     shortDesc:
       'Italy\'s answer to Champagne. Franciacorta produces méthode champenoise sparkling wines of exceptional quality near Lake Iseo in Lombardy.',
     description:
-      'Franciacorta is the only Italian DOCG for méthode classique sparkling wine — produced, like Champagne, with secondary fermentation in the bottle. Located on the glacial moraine soils south of Lake Iseo in Lombardy, the zone was pioneered by Ca\' del Bosco and Bellavista in the 1970s. Today Franciacorta Satèn (blanc de blancs), Rosé and Riserva wines compete seriously with grower Champagnes. The unique combination of Alpine freshness, lake influence and mineral soils gives Franciacorta its distinctive identity.',
+      'Franciacorta is the only Italian DOCG for méthode classique sparkling wine, produced like Champagne with secondary fermentation in the bottle. Located on the glacial moraine soils south of Lake Iseo in Lombardy, the zone was pioneered by Ca\' del Bosco and Bellavista in the 1970s. Today Franciacorta Satèn (blanc de blancs), Rosé and Riserva wines compete seriously with grower Champagnes. The unique combination of Alpine freshness, lake influence and mineral soils gives Franciacorta its distinctive identity.',
     grapes: ['Chardonnay', 'Pinot Nero', 'Pinot Bianco'],
     mustTry: ['Ca\' del Bosco Annamaria Clementi', 'Bellavista Teatro', 'Berlucchi'],
     wineries: [
@@ -146,7 +146,7 @@ export const WINE_REGIONS: WineRegion[] = [
     shortDesc:
       'The heart of Tuscany. Chianti Classico produces Sangiovese wines of remarkable elegance and terroir expression from the hills between Florence and Siena.',
     description:
-      'Chianti Classico is the historic heartland between Florence and Siena, where Sangiovese reigns supreme. The Gran Selezione category — introduced in 2014 — has elevated the appellation to new heights, with single-vineyard expressions from producers like Fontodi, Castello di Ama, Isole e Olena, and Antinori pushing Sangiovese to world-class status. Galestro and alberese soils give the wines their characteristic cherry-red fruit, firm acidity and herbal complexity. The black cockerel (Gallo Nero) on the label is the sign of a true Classico.',
+      'Chianti Classico is the historic heartland between Florence and Siena, where Sangiovese reigns supreme. The Gran Selezione category, introduced in 2014, has elevated the appellation to new heights, with single-vineyard expressions from producers like Fontodi, Castello di Ama, Isole e Olena, and Antinori pushing Sangiovese to world-class status. Galestro and alberese soils give the wines their characteristic cherry-red fruit, firm acidity and herbal complexity. The black cockerel (Gallo Nero) on the label is the sign of a true Classico.',
     grapes: ['Sangiovese', 'Canaiolo', 'Colorino'],
     mustTry: ['Fontodi Vigna del Sorbo', 'Isole e Olena', 'Castello di Ama L\'Apparita'],
     wineries: [
@@ -163,7 +163,7 @@ export const WINE_REGIONS: WineRegion[] = [
     shortDesc:
       'Home of the Super Tuscans. Bolgheri burst onto the world stage with Sassicaia in 1968 and became the template for Bordeaux-variety winemaking in Italy.',
     description:
-      'Bolgheri is a relatively young wine zone on the Tuscan coast that changed Italian wine history forever. Sassicaia, first released commercially in 1968, showed that Cabernet Sauvignon could thrive in Tuscany as well as Bordeaux. Ornellaia followed, then Masseto — now one of Italy\'s most expensive wines — and a slew of "Super Tuscans" that ignored DOC rules to blend international varieties outside tradition. The warm Mediterranean climate, coastal breezes and unique gravelly soils make Bolgheri one of Italy\'s most exciting appellations.',
+      'Bolgheri is a relatively young wine zone on the Tuscan coast that changed Italian wine history forever. Sassicaia, first released commercially in 1968, showed that Cabernet Sauvignon could thrive in Tuscany as well as Bordeaux. Ornellaia followed, then Masseto, now one of Italy\'s most expensive wines, and a slew of "Super Tuscans" that ignored DOC rules to blend international varieties outside tradition. The warm Mediterranean climate, coastal breezes and unique gravelly soils make Bolgheri one of Italy\'s most exciting appellations.',
     grapes: ['Cabernet Sauvignon', 'Merlot', 'Cabernet Franc', 'Petit Verdot'],
     mustTry: ['Sassicaia', 'Ornellaia', 'Masseto', 'Le Macchiole Messorio'],
   },
@@ -175,9 +175,9 @@ export const WINE_REGIONS: WineRegion[] = [
     lat: 41.15,
     lng: -7.8,
     shortDesc:
-      'The home of Port wine. The steep schist terraces of the Douro Valley produce some of the world\'s most complex fortified wines — and increasingly, exceptional dry reds.',
+      'The home of Port wine. The steep schist terraces of the Douro Valley produce some of the world\'s most complex fortified wines, and increasingly exceptional dry reds.',
     description:
-      'The Douro Valley is one of the oldest demarcated wine regions in the world, designated in 1756. Carved by the Douro river through layers of schist rock, its dramatic terraced vineyards are a UNESCO World Heritage Site. The region is best known for Port — a fortified wine produced from indigenous varieties including Touriga Nacional, Touriga Franca, Tinta Roriz and Tinto Cão — but in recent decades has gained international recognition for its powerful, age-worthy dry red wines. The combination of extreme heat, thin schist soils and century-old vines gives Douro wines an intensity and complexity that is entirely their own.',
+      'The Douro Valley is one of the oldest demarcated wine regions in the world, designated in 1756. Carved by the Douro river through layers of schist rock, its dramatic terraced vineyards are a UNESCO World Heritage Site. The region is best known for Port, a fortified wine produced from indigenous varieties including Touriga Nacional, Touriga Franca, Tinta Roriz and Tinto Cão, but in recent decades has gained international recognition for its powerful, age-worthy dry red wines. The combination of extreme heat, thin schist soils and century-old vines gives Douro wines an intensity and complexity that is entirely their own.',
     grapes: ['Touriga Nacional', 'Touriga Franca', 'Tinta Roriz', 'Tinto Cão'],
     mustTry: ['Quinta do Noval Nacional', "Graham's Vintage Port", 'Niepoort Charme', 'Ramos Pinto'],
     wineries: [
@@ -195,7 +195,7 @@ export const WINE_REGIONS: WineRegion[] = [
     shortDesc:
       'Home of Amarone. Valpolicella produces some of Italy\'s most powerful and complex red wines from indigenous Corvina-based varieties grown on the hills northwest of Verona.',
     description:
-      'Valpolicella is one of Italy\'s most important red wine appellations, located in the hills northwest of Verona in the Veneto. Its fame rests above all on Amarone della Valpolicella — a dry red wine of extraordinary concentration made from partially dried grapes (appassimento), a process that intensifies sugar, colour and flavour over three to four months. The result is a wine of immense power, with flavours of dried cherry, chocolate, leather and spice that can age for decades. Ripasso — made by re-fermenting Valpolicella on the leftover Amarone skins — offers a more accessible expression of the same terroir. The zone is divided into the historic Classico area (Negrar, Marano, Fumane, Sant\'Ambrogio and San Pietro in Cariano) and the broader DOC. Legendary producers like Quintarelli have defined the style for generations.',
+      'Valpolicella is one of Italy\'s most important red wine appellations, located in the hills northwest of Verona in the Veneto. Its fame rests above all on Amarone della Valpolicella, a dry red wine of extraordinary concentration made from partially dried grapes (appassimento), a process that intensifies sugar, colour and flavour over three to four months. The result is a wine of immense power, with flavours of dried cherry, chocolate, leather and spice that can age for decades. Ripasso, made by re-fermenting Valpolicella on the leftover Amarone skins, offers a more accessible expression of the same terroir. The zone is divided into the historic Classico area (Negrar, Marano, Fumane, Sant\'Ambrogio and San Pietro in Cariano) and the broader DOC. Legendary producers like Quintarelli have defined the style for generations.',
     grapes: ['Corvina', 'Rondinella', 'Molinara', 'Oseleta', 'Corvinone'],
     mustTry: ['Amarone della Valpolicella', 'Ripasso', 'Recioto della Valpolicella', 'Quintarelli Amarone'],
     wineries: [
@@ -215,7 +215,7 @@ export const WINE_REGIONS: WineRegion[] = [
     shortDesc:
       'Home of Brunello. Montalcino produces Tuscany\'s most age-worthy red wines from a single clone of Sangiovese grown on a sunbaked hilltop south of Siena.',
     description:
-      'Brunello di Montalcino is Italy\'s most prestigious red wine appellation — a DOCG producing Sangiovese Grosso (Brunello) from the hillside town of Montalcino south of Siena. The wines require years of ageing: Brunello must spend at least five years in the cellar before release, Riserva six. The result is extraordinary complexity — dried fruit, tobacco, leather, iron — with an acid-tannin structure that allows the wines to age for 30–50 years. Biondi-Santi created the style in the 19th century; today Soldera, Poggio di Sotto and Canalicchio di Sopra are among the finest producers.',
+      'Brunello di Montalcino is Italy\'s most prestigious red wine appellation, a DOCG producing Sangiovese Grosso (Brunello) from the hillside town of Montalcino south of Siena. The wines require years of ageing: Brunello must spend at least five years in the cellar before release, Riserva six. The result is extraordinary complexity (dried fruit, tobacco, leather, iron) with an acid-tannin structure that allows the wines to age for 30-50 years. Biondi-Santi created the style in the 19th century; today Soldera, Poggio di Sotto and Canalicchio di Sopra are among the finest producers.',
     grapes: ['Sangiovese Grosso (Brunello)'],
     mustTry: ['Biondi-Santi Brunello', 'Soldera Case Basse', 'Poggio di Sotto', 'Canalicchio di Sopra'],
   },

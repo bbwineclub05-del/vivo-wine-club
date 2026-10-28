@@ -64,9 +64,9 @@ export const AMBASSADOR_AREAS = (Object.keys(AMBASSADOR_REGIONS) as AmbassadorCo
     country,
     region,
     label: {
-      it: `${AMBASSADOR_COUNTRY_LABELS[country].it} — ${region}`,
-      en: `${AMBASSADOR_COUNTRY_LABELS[country].en} — ${region}`,
-      fr: `${AMBASSADOR_COUNTRY_LABELS[country].fr} — ${region}`,
+      it: `${AMBASSADOR_COUNTRY_LABELS[country].it}, ${region}`,
+      en: `${AMBASSADOR_COUNTRY_LABELS[country].en}, ${region}`,
+      fr: `${AMBASSADOR_COUNTRY_LABELS[country].fr}, ${region}`,
     } as Record<AmbassadorLocale, string>,
   })),
 );

@@ -188,10 +188,10 @@ export async function generateMetadata(
   const pageUrl     = `${BASE}/wear-the-club/${product.slug ?? slug}`;
 
   const metadata: Metadata = {
-    title:       `${product.title} — Vivo Wine Club`,
+    title:       `${product.title} | Vivo Wine Club`,
     description,
     openGraph: {
-      title:       `${product.title} — Vivo Wine Club`,
+      title:       `${product.title} | Vivo Wine Club`,
       description,
       url:         pageUrl,
       siteName:    'Vivo Wine Club',
@@ -200,7 +200,7 @@ export async function generateMetadata(
     },
     twitter: {
       card:        'summary_large_image',
-      title:       `${product.title} — Vivo Wine Club`,
+      title:       `${product.title} | Vivo Wine Club`,
       description,
       images:      [imageUrl],
     },

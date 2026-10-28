@@ -248,7 +248,7 @@ export default function UpsellManager() {
             </Field>
 
             {context === 'event' && (
-              <Field label="Per quale evento" hint="— o per tutti">
+              <Field label="Per quale evento" hint="(o per tutti)">
                 <Select value={target} onChange={(e) => setTarget(e.target.value)}>
                   <option value="">Tutti gli eventi</option>
                   {events.map((ev) => (
@@ -261,7 +261,7 @@ export default function UpsellManager() {
             )}
 
             {context === 'merch' && (
-              <Field label="Per quale prodotto" hint="— o per tutti">
+              <Field label="Per quale prodotto" hint="(o per tutti)">
                 <Select value={target} onChange={(e) => setTarget(e.target.value)}>
                   <option value="">Tutto il merch</option>
                   {products.map((p) => (

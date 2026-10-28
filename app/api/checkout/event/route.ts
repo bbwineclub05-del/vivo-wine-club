@@ -125,7 +125,7 @@ function adminEmailHtml(params: {
     </tr>`).join('');
 
   const body = `
-<h2 style="margin:0 0 20px;font-family:Georgia,'Times New Roman',serif;font-size:20px;font-weight:400;color:#1a0505;" class="em-h1">New ticket order — ${event.title}</h2>
+<h2 style="margin:0 0 20px;font-family:Georgia,'Times New Roman',serif;font-size:20px;font-weight:400;color:#1a0505;" class="em-h1">New ticket order: ${event.title}</h2>
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;border:1px solid #eddada;border-radius:4px;overflow:hidden;">
   ${rows}
 </table>`;
@@ -231,7 +231,7 @@ async function syncMacchiaContacts({
       last_name:        lastName,
       email:            email,
       phone:            phone || '',
-      notes:            `Auto — biglietto pranzo ${MACCHIA_EVENT_SLUG} (order ${orderId})`,
+      notes:            `Auto, biglietto pranzo ${MACCHIA_EVENT_SLUG} (order ${orderId})`,
     }));
 
     const { error: insertErr } = await db
@@ -368,7 +368,7 @@ export async function sendEventConfirmationEmails(params: {
       from:     'Vivo Wine Club <noreply@vivowineclub.com>',
       replyTo: 'info@vivowineclub.com',
       to:       email,
-      subject:  `Your ticket${qty > 1 ? 's' : ''} for ${event.title} — Vivo Wine Club`,
+      subject:  `Your ticket${qty > 1 ? 's' : ''} for ${event.title} | Vivo Wine Club`,
       html:    buyerEmailHtml({ firstName, event, qty, total, orderId }),
       attachments,
     });
@@ -383,7 +383,7 @@ export async function sendEventConfirmationEmails(params: {
     const adminResult = await resend.emails.send({
       from:    'Vivo Wine Club <noreply@vivowineclub.com>',
       to:      'info@vivowineclub.com',
-      subject: `New ticket — ${event.title} (${qty} ticket${qty > 1 ? 's' : ''})`,
+      subject: `New ticket: ${event.title} (${qty} ticket${qty > 1 ? 's' : ''})`,
 
       html:    adminEmailHtml({ firstName, lastName, email, phone, event, qty, total, orderId }),
     });

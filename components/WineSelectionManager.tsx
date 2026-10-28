@@ -238,7 +238,7 @@ function VinoSheet({
 
         <Field label="Cantina" hint="se è una che abbiamo visitato, il socio ci arriva con un tocco">
           <Select value={draft.winery_slug ?? ''} onChange={(e) => set('winery_slug', e.target.value)}>
-            <option value="">— nessuna —</option>
+            <option value="">Nessuna</option>
             {cantine.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
           </Select>
         </Field>

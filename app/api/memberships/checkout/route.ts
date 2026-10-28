@@ -70,7 +70,7 @@ export async function POST(request: Request) {
             currency: 'eur',
             unit_amount: price.cents,
             product_data: {
-              name: `Membership VIVO Wine Club — ${periodEnd.slice(0, 4)}`,
+              name: `Membership VIVO Wine Club ${periodEnd.slice(0, 4)}`,
               description: price.discounted
                 ? `Rinnovo anticipato${membership.member_id ? ` · tessera ${membership.member_id}` : ''}`
                 : `Tessera annuale${membership.member_id ? ` · ${membership.member_id}` : ''}`,
