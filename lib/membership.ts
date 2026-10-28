@@ -124,11 +124,10 @@ export function priceFor(m: Membership, now = today()): Price {
  *
  *  · Fino al 31/12/2026 l'iscrizione è gratuita e la membership copre
  *    il resto del 2026.
- *  · Chi diventa socio entro il 30/11/2026 può rinnovare il 2027 a
- *    venti euro invece di trenta, purché lo faccia entro fine anno.
- *    È un invito a muoversi in anticipo, non una scadenza anticipata.
- *  · Chi arriva dal 1/12 in poi non ha lo sconto: avrebbe pagato per
- *    undici giorni di socio, e l'anno prossimo rientra fra i nuovi.
+ *  · Chi diventa socio in quella finestra rinnova il 2027 a venti
+ *    euro invece di trenta, purché lo faccia entro fine anno. Il
+ *    periodo gratuito e lo sconto finiscono lo stesso giorno: non
+ *    c'è una seconda scadenza da spiegare alla gente.
  *  · Dal 1/01/2027 si entra pagando trenta euro per l'anno solare.
  *
  * Non c'è niente da approvare: una tessera si compra, non si chiede.
@@ -136,7 +135,6 @@ export function priceFor(m: Membership, now = today()): Price {
  * siamo ancora nel periodo gratuito.
  */
 export const FREE_UNTIL = '2026-12-31';
-export const OFFER_CUTOFF = '2026-11-30';
 export const STANDARD_PRICE_CENTS = 3000;
 export const FOUNDING_OFFER_CENTS = 2000;
 
@@ -155,14 +153,13 @@ export function newMembershipFor(now = today()): NewMembership {
   const free = daysBetween(now, FREE_UNTIL) >= 0;
 
   if (free) {
-    const eligibleForOffer = daysBetween(now, OFFER_CUTOFF) >= 0;
     return {
       tier: 'founding',
       started_at: now,
       expires_at: FREE_UNTIL,
       standard_price_cents: STANDARD_PRICE_CENTS,
-      offer_price_cents: eligibleForOffer ? FOUNDING_OFFER_CENTS : null,
-      offer_expires_at: eligibleForOffer ? FREE_UNTIL : null,
+      offer_price_cents: FOUNDING_OFFER_CENTS,
+      offer_expires_at: FREE_UNTIL,
       dueNowCents: 0,
     };
   }

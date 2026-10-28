@@ -435,7 +435,7 @@
     "emailMismatch": "Les adresses email ne correspondent pas.",
     "backToHome": "RETOUR À L'ACCUEIL",
     "sending": "ENVOI EN COURS…",
-    "priceFree": "Gratuite jusqu'au 31 décembre 2026",
+    "priceFree": "Gratuite jusqu’au 31 décembre 2026",
     "priceFreeNote": "Ensuite, renouveler pour 2027 coûte 20 € au lieu de 30 si vous le faites avant la fin de l'année.",
     "pricePaid": "30 € par an",
     "pricePaidNote": "L'adhésion couvre l'année civile.",
@@ -464,7 +464,7 @@
     "priceTitle": "Combien ça coûte",
     "priceFreeNow": "En ce moment, c’est gratuit.",
     "priceFreeUntil": "L’adhésion ne coûte rien jusqu’au {free} : vous devenez membre aujourd’hui et vous l’êtes pour le reste de l’année.",
-    "priceRenew": "En adhérant avant le {cutoff}, vous renouvelez 2027 à {offer} au lieu de {full}.",
+    "priceRenew": "En adhérant maintenant, vous renouvelez 2027 à {offer} au lieu de {full}.",
     "priceAfter": "À partir du 1er janvier 2027, la carte coûte {full} par an.",
     "priceWhy": "C’est le prix de deux verres. Cela fait vivre les soirées, ce n’est pas là que nous gagnons.",
     "joinNow": "Rejoindre"

@@ -40,8 +40,8 @@ const FAQ: Record<FaqLocale, FaqItem[]> = {
       q: 'Quanto costa la tessera?',
       a:
         `Fino al 31 dicembre 2026 l’iscrizione è gratuita e la tessera copre il resto del 2026. Chi diventa ` +
-        `socio entro il 30 novembre 2026 rinnova il 2027 a ${SCONTO} € invece di ${PIENO} €, se lo fa entro ` +
-        `fine anno. Dal 1° gennaio 2027 si entra a ${PIENO} € per l’anno solare.`,
+        `socio entro quella data rinnova il 2027 a ${SCONTO} € invece di ${PIENO} €, se lo fa entro fine ` +
+        `anno. Dal 1° gennaio 2027 si entra a ${PIENO} € per l’anno solare.`,
     },
     {
       q: 'Cosa comprende la tessera?',
@@ -100,8 +100,8 @@ const FAQ: Record<FaqLocale, FaqItem[]> = {
     {
       q: 'How much does the card cost?',
       a:
-        `Until 31 December 2026 joining is free and the card covers the rest of 2026. Join by 30 November ` +
-        `2026 and you renew 2027 for €${SCONTO} instead of €${PIENO}, as long as you do it before the year ` +
+        `Until 31 December 2026 joining is free and the card covers the rest of 2026. Join by that date ` +
+        `and you renew 2027 for €${SCONTO} instead of €${PIENO}, as long as you do it before the year ` +
         `is out. From 1 January 2027 it is €${PIENO} for the calendar year.`,
     },
     {
@@ -162,7 +162,7 @@ const FAQ: Record<FaqLocale, FaqItem[]> = {
       q: 'Combien coûte la carte ?',
       a:
         `Jusqu’au 31 décembre 2026 l’adhésion est gratuite et la carte couvre la fin de 2026. En devenant ` +
-        `membre avant le 30 novembre 2026, vous renouvelez 2027 à ${SCONTO} € au lieu de ${PIENO} €, à ` +
+        `membre avant cette date, vous renouvelez 2027 à ${SCONTO} € au lieu de ${PIENO} €, à ` +
         `condition de le faire avant la fin de l’année. À partir du 1er janvier 2027, c’est ${PIENO} € pour ` +
         `l’année civile.`,
     },

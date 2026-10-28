@@ -5,7 +5,7 @@ import {
 
 import { benefitsFor } from '@/lib/member-benefits';
 import {
-  FOUNDING_OFFER_CENTS, FREE_UNTIL, OFFER_CUTOFF, STANDARD_PRICE_CENTS,
+  FOUNDING_OFFER_CENTS, FREE_UNTIL, STANDARD_PRICE_CENTS,
 } from '@/lib/membership';
 
 /**
@@ -105,7 +105,6 @@ export async function MembershipValue({
           <p>{t('priceFreeUntil', { free: giorno(FREE_UNTIL, locale) })}</p>
           <p>
             {t('priceRenew', {
-              cutoff: giorno(OFFER_CUTOFF, locale),
               offer: euro(FOUNDING_OFFER_CENTS),
               full: euro(STANDARD_PRICE_CENTS),
             })}
