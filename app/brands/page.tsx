@@ -1,4 +1,4 @@
-import { getTranslations } from 'next-intl/server';
+import { getLocale, getTranslations } from 'next-intl/server';
 import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
@@ -7,6 +7,7 @@ import { Chapter, Statement } from '@/components/ui/Chapter';
 import { Section } from '@/components/ui/Section';
 import { SiteFooter } from '@/components/ui/SiteFooter';
 import { SiteNav } from '@/components/ui/SiteNav';
+import { caseStudiesFor } from '@/lib/case-studies';
 import { CREATOR_VISIBILE } from '@/lib/flags';
 import { PartnerLogos } from '@/components/ui/PartnerLogos';
 
@@ -17,10 +18,10 @@ export async function generateMetadata() {
 
 const STEPS = ['step1', 'step2', 'step3', 'step4'] as const;
 const PACKS = ['pack1', 'pack2', 'pack3'] as const;
-const CASES = ['case1', 'case2'] as const;
 
 export default async function BrandsPage() {
   const t = await getTranslations('site.brands');
+  const casi = caseStudiesFor(await getLocale());
 
   return (
     <>
@@ -99,28 +100,44 @@ export default async function BrandsPage() {
         )}
 
         {/* ── Case studies ────────────────────────────────────
-            Placeholders: fill in once the first numbers are agreed. */}
+            Un caso alla volta, con i numeri veri in vista: la pagina
+            intera sta a un clic, qui basta che si capisca cos'e'
+            successo e quanto e' andato lontano. */}
         <Section>
           <h2 className="ds-display text-title">{t('casesTitle')}</h2>
           <p className="mt-4 max-w-[58ch] text-lead text-on-paper-muted">{t('casesNote')}</p>
 
-          <div className="mt-12 grid gap-10 md:grid-cols-2">
-            {CASES.map((c) => (
-              <article key={c} className="border-t border-rule-paper pt-6">
-                <h3 className="text-subtitle font-medium">{t(`${c}Title`)}</h3>
-                <p className="ds-numeric mt-1 text-fine text-on-paper-muted">{t(`${c}Meta`)}</p>
-                <p className="mt-4 text-body text-on-paper-muted">{t(`${c}Body`)}</p>
+          <div className="mt-12 flex flex-col gap-8">
+            {casi.map((c) => (
+              <article key={c.slug} className="rounded-2xl border border-rule-paper p-7 sm:p-9">
+                <p className="text-fine font-medium uppercase tracking-[0.16em] text-accent-soft">
+                  {c.occhiello}
+                </p>
+                <h3 className="ds-display mt-2 max-w-[20ch] text-subtitle">{c.marchio}</h3>
+                <p className="mt-2 text-fine text-on-paper-muted">{c.sottotitolo}</p>
+                <p className="mt-5 max-w-[56ch] text-body text-on-paper-muted">{c.sintesi}</p>
+
+                <dl className="mt-8 grid grid-cols-2 gap-x-8 gap-y-6 lg:grid-cols-4">
+                  {c.numeri.map((n) => (
+                    <div key={n.etichetta}>
+                      <dd className="ds-display ds-numeric text-[clamp(1.7rem,3.4vw,2.3rem)] leading-none text-accent">
+                        {n.valore}
+                      </dd>
+                      <dt className="mt-2 text-fine text-on-paper-muted">{n.etichetta}</dt>
+                    </div>
+                  ))}
+                </dl>
+
+                <Link
+                  href={`/brands/${c.slug}`}
+                  className="ds-link mt-8 inline-flex min-h-[48px] items-center gap-2.5 text-body font-medium no-underline hover:text-accent"
+                >
+                  {t('casesCta')}
+                  <ArrowRight size={16} strokeWidth={1.75} />
+                </Link>
               </article>
             ))}
           </div>
-
-          <Link
-            href="/events"
-            className="ds-link mt-10 inline-flex min-h-[48px] items-center gap-2.5 text-body font-medium no-underline hover:text-accent"
-          >
-            {t('casesCta')}
-            <ArrowRight size={16} strokeWidth={1.75} />
-          </Link>
         </Section>
 
         {/* ── Partners ────────────────────────────────────────
