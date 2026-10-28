@@ -66,18 +66,26 @@ export async function MembershipValue({
   // arriva a casa, e si tocca.
   const voci = benefitsFor(locale).filter((b) => b.id !== 'pack');
 
+  // Tre colonne: nove voci riempiono esattamente tre righe. Se un
+  // giorno diventano dieci, l'ultima si allarga sul buco invece di
+  // lasciarlo li' come una casella dimenticata.
+  const avanzo = voci.length % 3;
+  const ultimaLarga =
+    avanzo === 1 ? 'md:col-span-3' : avanzo === 2 ? 'md:col-span-2' : '';
+
   return (
     <div className="flex flex-col gap-12">
       <div>
         {titolo && <h2 className="ds-display text-title">{t('whatTitle')}</h2>}
 
-        <ul className={`${titolo ? 'mt-8' : ''} grid gap-px overflow-hidden rounded-2xl border sm:grid-cols-2 ${bordo} ${
+        <ul className={`${titolo ? 'mt-8' : ''} grid gap-px overflow-hidden rounded-2xl border md:grid-cols-3 ${bordo} ${
           scuro ? 'bg-rule-ink' : 'bg-rule-paper'
         }`}>
-          {voci.map((b) => {
+          {voci.map((b, i) => {
             const Icon = ICONE[b.icon];
+            const larga = i === voci.length - 1 ? ultimaLarga : '';
             return (
-              <li key={b.id} className={`flex gap-4 ${scuro ? 'bg-ink' : 'bg-paper'} p-5`}>
+              <li key={b.id} className={`flex gap-4 ${larga} ${scuro ? 'bg-ink' : 'bg-paper'} p-5`}>
                 <span className="mt-0.5 shrink-0 text-accent">
                   <Icon size={20} strokeWidth={1.8} />
                 </span>
