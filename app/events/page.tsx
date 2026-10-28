@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import { ButtonLink } from '@/components/ui/Button';
 import { Chapter, Statement } from '@/components/ui/Chapter';
 import { ClubEvents } from '@/components/ui/ClubEvents';
+import { MembershipValue } from '@/components/ui/MembershipValue';
 import { Section } from '@/components/ui/Section';
 import { SiteFooter } from '@/components/ui/SiteFooter';
 import { SiteNav } from '@/components/ui/SiteNav';
@@ -90,6 +91,12 @@ export default async function EventsPage() {
               </ButtonLink>
             </div>
           </div>
+        </Section>
+
+        {/* ── Cosa apre la tessera ────────────────────────────
+            Il prezzo no: quello sta dove si paga, un clic sotto. */}
+        <Section ground="paper-soft">
+          <MembershipValue prezzo={false} />
         </Section>
 
         <Section>

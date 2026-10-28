@@ -47,10 +47,13 @@ function giorno(iso: string, locale: string): string {
 export async function MembershipValue({
   ground = 'paper',
   titolo = true,
+  prezzo = true,
 }: {
   ground?: 'paper' | 'ink';
   /** Spento dove il titolo lo mette gia' la pagina attorno. */
   titolo?: boolean;
+  /** Spento dove il prezzo lo dice la pagina dove si paga. */
+  prezzo?: boolean;
 }) {
   const t = await getTranslations('membership');
   const locale = await getLocale();
@@ -96,6 +99,7 @@ export async function MembershipValue({
         <p className={`mt-2 max-w-[52ch] text-body ${smorzato}`}>{t('packBody')}</p>
       </div>
 
+      {prezzo && (
       <div>
         <h2 className="ds-display text-title">{t('priceTitle')}</h2>
         <p className="ds-display mt-6 text-[clamp(2rem,5vw,3.2rem)] leading-none tracking-[-0.03em] text-accent">
@@ -113,6 +117,7 @@ export async function MembershipValue({
           <p>{t('priceWhy')}</p>
         </div>
       </div>
+      )}
     </div>
   );
 }
