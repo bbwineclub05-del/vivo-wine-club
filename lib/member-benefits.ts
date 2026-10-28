@@ -13,21 +13,39 @@ export interface Benefit {
   id: string;
   title: string;
   body: string;
-  icon: 'grapes' | 'ticket' | 'lock' | 'map' | 'shirt' | 'percent' | 'star';
+  icon: 'grapes' | 'ticket' | 'lock' | 'map' | 'shirt' | 'percent' | 'star' | 'home' | 'plane' | 'gift';
 }
 
 const ICONE: Record<string, Benefit['icon']> = {
-  visite: 'grapes',
   eventi: 'ticket',
-  riservati: 'lock',
-  mappa: 'map',
-  merch: 'shirt',
+  visite: 'grapes',
+  trips: 'plane',
+  maison: 'home',
   rete: 'percent',
+  merch: 'shirt',
   selection: 'star',
+  mappa: 'map',
+  riservati: 'lock',
+  pack: 'gift',
 };
 
 const TESTI: Record<BenefitLocale, Record<string, { title: string; body: string }>> = {
   it: {
+    trips: {
+      title: 'VIVO Wine Trips',
+      body:
+        'Qualche giorno in un territorio del vino, con le visite e le cene organizzate da noi. Si parte in gruppo e si torna conoscendo venti persone in piu’.',
+    },
+    maison: {
+      title: 'VIVO Maison',
+      body:
+        'La casa del club: cene private, degustazioni e appuntamenti a porte chiuse. Ci si entra da soci.',
+    },
+    pack: {
+      title: 'Il pacco di benvenuto',
+      body:
+        'Il cappellino del club, spedito a casa quando diventi socio. Si riconosce da lontano.',
+    },
     visite: {
       title: 'Visite in cantina',
       body:
@@ -64,6 +82,21 @@ const TESTI: Record<BenefitLocale, Record<string, { title: string; body: string 
     },
   },
   en: {
+    trips: {
+      title: 'VIVO Wine Trips',
+      body:
+        'A few days in a wine country, with the visits and the dinners arranged by us. You leave in a group and come back knowing twenty more people.',
+    },
+    maison: {
+      title: 'VIVO Maison',
+      body:
+        'The club’s house: private dinners, tastings and gatherings behind closed doors. Members walk in.',
+    },
+    pack: {
+      title: 'The welcome pack',
+      body:
+        'The club cap, posted to you when you join. You can spot it across a room.',
+    },
     visite: {
       title: 'Winery visits',
       body:
@@ -100,6 +133,21 @@ const TESTI: Record<BenefitLocale, Record<string, { title: string; body: string 
     },
   },
   fr: {
+    trips: {
+      title: 'VIVO Wine Trips',
+      body:
+        'Quelques jours dans une région viticole, avec les visites et les dîners organisés par nous. On part en groupe et on revient avec vingt personnes de plus.',
+    },
+    maison: {
+      title: 'VIVO Maison',
+      body:
+        'La maison du club : dîners privés, dégustations et rendez-vous à huis clos. Les membres entrent.',
+    },
+    pack: {
+      title: 'Le pack de bienvenue',
+      body:
+        'La casquette du club, envoyée chez vous dès l’adhésion. Elle se reconnaît de loin.',
+    },
     visite: {
       title: 'Visites de domaines',
       body:
@@ -137,7 +185,19 @@ const TESTI: Record<BenefitLocale, Record<string, { title: string; body: string 
   },
 };
 
-const ORDINE = ['visite', 'eventi', 'riservati', 'selection', 'mappa', 'merch', 'rete'] as const;
+/**
+ * L'ordine in cui si leggono.
+ *
+ * Prima quello per cui uno si iscrive davvero — le serate riservate,
+ * le cantine, i viaggi, la Maison — e dopo le cose che contano ma
+ * non fanno alzare nessuno dal divano: gli sconti, la mappa, la
+ * lista delle bottiglie. Il pacco di benvenuto chiude, perche' e'
+ * l'unica cosa che arriva a casa.
+ */
+const ORDINE = [
+  'riservati', 'eventi', 'visite', 'trips', 'maison',
+  'rete', 'merch', 'selection', 'mappa', 'pack',
+] as const;
 
 export function benefitsFor(locale: string | null | undefined): Benefit[] {
   const l: BenefitLocale = locale === 'en' || locale === 'fr' ? locale : 'it';

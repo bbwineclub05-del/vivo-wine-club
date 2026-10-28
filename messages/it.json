@@ -454,7 +454,20 @@
     "paidHeading": "Rinnovata.",
     "paidBody": "La tua tessera {memberId} vale fino al {expires}.",
     "paidChecking": "Controllo il pagamento…",
-    "paidFailed": "Il pagamento non risulta completato. Se pensi sia un errore, scrivici."
+    "paidFailed": "Il pagamento non risulta completato. Se pensi sia un errore, scrivici.",
+    "valueEyebrow": "Soci VIVO",
+    "valueStatement": "Dentro si entra una volta sola.",
+    "valueLead": "Quasi tutto quello che facciamo è riservato ai soci: le serate, le cantine che non aprono al pubblico, le cene alla Maison. La tessera è il modo per esserci.",
+    "whatTitle": "Cosa apre la tessera",
+    "packTitle": "E arriva il pacco di benvenuto",
+    "packBody": "Il cappellino del club, spedito a casa appena ti iscrivi. L’indirizzo te lo chiediamo al momento dell’iscrizione.",
+    "priceTitle": "Quanto costa",
+    "priceFreeNow": "Adesso è gratis.",
+    "priceFreeUntil": "L’iscrizione non si paga fino al {free}: diventi socio oggi e lo sei per tutto il resto dell’anno.",
+    "priceRenew": "Chi entra entro il {cutoff} rinnova il 2027 a {offer} invece di {full}.",
+    "priceAfter": "Dal 1° gennaio 2027 la tessera costa {full} all’anno.",
+    "priceWhy": "È il prezzo di due calici. Serve a tenere in piedi le serate, non a fare margine.",
+    "joinNow": "Iscriviti"
   },
   "wearTheClub": {
     "vivoLabel": "VIVO WINE CLUB",
@@ -582,7 +595,9 @@
       "formatsTitle": "I tre formati",
       "estatesTitle": "Le cantine che apriamo",
       "estatesBody": "Le tenute che abbiamo visitato e con cui lavoriamo. Sono loro a rendere possibile ogni visita: porte che di solito restano chiuse.",
-      "estatesCta": "Guarda le cantine"
+      "estatesCta": "Guarda le cantine",
+      "valueTitle": "Cosa apre la tessera",
+      "memberLine": "Quasi tutto quello che facciamo è riservato ai soci."
     },
     "statement": {
       "line": "Il vino non ha un problema di qualità. Ha un problema di racconto."

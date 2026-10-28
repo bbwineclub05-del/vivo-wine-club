@@ -28,6 +28,11 @@ const PAGINE: { href: string; label: string }[] = [
   { href: '/faq', label: 'FAQ' },
   { href: '/login', label: 'Accesso' },
   { href: '/privacy-policy', label: 'Privacy' },
+  // Le due aree dietro l'accesso. La prima e' quella vera e chiede
+  // una sessione; la seconda e' l'anteprima del socio, che la
+  // sessione se la costruisce da se'.
+  { href: '/members', label: 'Area riservata' },
+  { href: '/anteprima-socio?schermo=1', label: 'Area socio' },
 ];
 
 /** Le misure di schermo su cui vale la pena guardare. */

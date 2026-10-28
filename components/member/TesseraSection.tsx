@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import {
-  Grape, Lock, MapPin, Percent, Shirt, Star, Ticket,
+  Gift, Grape, Home, Lock, MapPin, Percent, Plane, Shirt, Star, Ticket,
 } from 'lucide-react';
 import MembershipCard from '@/components/MembershipCard';
 import { benefitsFor } from '@/lib/member-benefits';
@@ -23,6 +23,7 @@ import BottigliaPanel from '@/components/member/BottigliaPanel';
 const ICONE = {
   grapes: Grape, ticket: Ticket, lock: Lock, map: MapPin,
   shirt: Shirt, percent: Percent, star: Star,
+  home: Home, plane: Plane, gift: Gift,
 };
 
 interface Tessera {

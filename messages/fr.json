@@ -454,7 +454,20 @@
     "paidHeading": "Renouvelée.",
     "paidBody": "Votre carte {memberId} est valable jusqu'au {expires}.",
     "paidChecking": "Vérification du paiement…",
-    "paidFailed": "Le paiement n'apparaît pas comme effectué. Si c'est une erreur, écrivez-nous."
+    "paidFailed": "Le paiement n'apparaît pas comme effectué. Si c'est une erreur, écrivez-nous.",
+    "valueEyebrow": "Membres VIVO",
+    "valueStatement": "On entre une fois.",
+    "valueLead": "Presque tout ce que nous faisons est réservé aux membres : les soirées, les domaines fermés au public, les dîners à la Maison. La carte, c’est la façon d’y être.",
+    "whatTitle": "Ce que la carte ouvre",
+    "packTitle": "Et le pack de bienvenue arrive",
+    "packBody": "La casquette du club, envoyée chez vous dès l’adhésion. L’adresse, nous la demandons au moment de l’inscription.",
+    "priceTitle": "Combien ça coûte",
+    "priceFreeNow": "En ce moment, c’est gratuit.",
+    "priceFreeUntil": "L’adhésion ne coûte rien jusqu’au {free} : vous devenez membre aujourd’hui et vous l’êtes pour le reste de l’année.",
+    "priceRenew": "En adhérant avant le {cutoff}, vous renouvelez 2027 à {offer} au lieu de {full}.",
+    "priceAfter": "À partir du 1er janvier 2027, la carte coûte {full} par an.",
+    "priceWhy": "C’est le prix de deux verres. Cela fait vivre les soirées, ce n’est pas là que nous gagnons.",
+    "joinNow": "Rejoindre"
   },
   "wearTheClub": {
     "vivoLabel": "VIVO WINE CLUB",
@@ -582,7 +595,9 @@
       "formatsTitle": "Les trois formats",
       "estatesTitle": "Les domaines que nous ouvrons",
       "estatesBody": "Les domaines que nous avons visités et avec lesquels nous travaillons. Ce sont eux qui rendent chaque visite possible : des portes qui restent d'habitude fermées.",
-      "estatesCta": "Voir les domaines"
+      "estatesCta": "Voir les domaines",
+      "valueTitle": "Ce que la carte ouvre",
+      "memberLine": "Presque tout ce que nous faisons est réservé aux membres."
     },
     "statement": {
       "line": "Le vin n'a pas un problème de qualité. Il a un problème de récit."

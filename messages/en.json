@@ -454,7 +454,20 @@
     "paidHeading": "Renewed.",
     "paidBody": "Your card {memberId} runs until {expires}.",
     "paidChecking": "Checking the payment…",
-    "paidFailed": "The payment doesn't show as complete. If you think that's wrong, get in touch."
+    "paidFailed": "The payment doesn't show as complete. If you think that's wrong, get in touch.",
+    "valueEyebrow": "VIVO members",
+    "valueStatement": "You get in once.",
+    "valueLead": "Nearly everything we do is for members only: the nights, the estates that stay closed to the public, the dinners at the Maison. The card is how you are there.",
+    "whatTitle": "What the card opens",
+    "packTitle": "And the welcome pack arrives",
+    "packBody": "The club cap, posted to you as soon as you join. We ask for your address when you sign up.",
+    "priceTitle": "What it costs",
+    "priceFreeNow": "Right now it is free.",
+    "priceFreeUntil": "Joining costs nothing until {free}: become a member today and you are one for the rest of the year.",
+    "priceRenew": "Join by {cutoff} and you renew 2027 for {offer} instead of {full}.",
+    "priceAfter": "From 1 January 2027 the card is {full} a year.",
+    "priceWhy": "That is two glasses of wine. It keeps the nights running; it is not where we make money.",
+    "joinNow": "Join"
   },
   "wearTheClub": {
     "vivoLabel": "VIVO WINE CLUB",
@@ -582,7 +595,9 @@
       "formatsTitle": "The three formats",
       "estatesTitle": "The estates we open",
       "estatesBody": "The estates we have visited and work with. They are what makes every visit possible: doors that usually stay shut.",
-      "estatesCta": "See the estates"
+      "estatesCta": "See the estates",
+      "valueTitle": "What the card opens",
+      "memberLine": "Nearly everything we do is for members only."
     },
     "statement": {
       "line": "Wine does not have a quality problem. It has a storytelling problem."

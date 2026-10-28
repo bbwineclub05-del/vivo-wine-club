@@ -9,6 +9,7 @@ import { DoorCard } from '@/components/ui/DoorCard';
 import { Marquee } from '@/components/ui/Marquee';
 import { Section } from '@/components/ui/Section';
 import { VideoCard } from '@/components/ui/VideoCard';
+import { MembershipValue } from '@/components/ui/MembershipValue';
 import { SiteFooter } from '@/components/ui/SiteFooter';
 import { SponsorRows } from '@/components/ui/SponsorRows';
 import { SiteNav } from '@/components/ui/SiteNav';
@@ -155,14 +156,27 @@ export default async function Home() {
               <p>{t('club.body1')}</p>
               <p>{t('club.body2')}</p>
             </div>
-            <div className="mt-10 flex flex-wrap justify-center gap-3">
-              <ButtonLink href="/events" variant="paper" size="lg">
-                {t('club.ctaEvents')}
-              </ButtonLink>
-              <ButtonLink href="/membership" variant="outline" size="lg" className="text-on-ink">
-                {t('club.ctaJoin')}
-              </ButtonLink>
-            </div>
+          </div>
+        </Section>
+
+        {/* Cosa si prende davvero iscrivendosi. Prima la home diceva
+            che il club e' bello e mandava al modulo: chi non c'era
+            mai stato non aveva modo di sapere cosa comprava. */}
+        <Section ground="ink" tight className="pt-0">
+          <p className="text-fine uppercase tracking-[0.22em] text-rose">{t('club.memberLine')}</p>
+          <h3 className="ds-display mt-4 text-title">{t('club.valueTitle')}</h3>
+
+          <div className="mt-10">
+            <MembershipValue ground="ink" titolo={false} />
+          </div>
+
+          <div className="mt-12 flex flex-wrap items-center gap-x-6 gap-y-4">
+            <ButtonLink href="/membership" variant="paper" size="lg">
+              {t('club.ctaJoin')}
+            </ButtonLink>
+            <ButtonLink href="/events" variant="outline" size="lg" className="text-on-ink">
+              {t('club.ctaEvents')}
+            </ButtonLink>
           </div>
         </Section>
         {/* Chi lavora con noi, l'ultima cosa prima del piede. */}
