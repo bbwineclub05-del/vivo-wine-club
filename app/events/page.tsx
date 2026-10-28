@@ -2,11 +2,13 @@ import { getTranslations } from 'next-intl/server';
 
 import { ButtonLink } from '@/components/ui/Button';
 import { Chapter, Statement } from '@/components/ui/Chapter';
+import { ClubCollage } from '@/components/ui/ClubCollage';
 import { ClubEvents } from '@/components/ui/ClubEvents';
 import { MembershipValue } from '@/components/ui/MembershipValue';
 import { Section } from '@/components/ui/Section';
 import { SiteFooter } from '@/components/ui/SiteFooter';
 import { SiteNav } from '@/components/ui/SiteNav';
+import { homeReels } from '@/lib/home-reels';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { dbEventToEventData, type DbEvent, type EventData } from '@/lib/events';
 
@@ -54,6 +56,11 @@ export default async function EventsPage() {
             <Statement>{t('pageStatement')}</Statement>
             <p className="mt-10 text-lead text-on-ink-muted">{t('body1')}</p>
           </div>
+        </Section>
+
+        {/* ── Com'e' una serata, prima di leggere le date ── */}
+        <Section tight>
+          <ClubCollage reels={homeReels()} />
         </Section>
 
         {/* ── The calendar ────────────────────────────────────── */}

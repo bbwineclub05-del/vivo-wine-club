@@ -118,42 +118,39 @@ export default function TesseraSection({ token, name }: { token: string; name: s
     <>
       <Head title={primoNome ? t('ciao', { name: primoNome }) : t('tesseraTitolo')} />
 
-      {/* ── Il banner: cosa succede il 1° gennaio ── */}
+      {/* ── Il banner: cosa succede il 1° gennaio ──
+          Deve farsi notare, non occupare mezzo schermo: il prezzo e
+          il pulsante stanno sulla stessa riga appena c'e' spazio, e
+          le due note in fondo sono una riga sola. */}
       {tessera && rinnovo && (
         <div className="mb-5 overflow-hidden rounded-2xl bg-accent text-paper">
-          <div className="p-5 lg:p-7">
-            <p className="text-fine uppercase tracking-[0.18em] opacity-80">{t('bannerSopra')}</p>
+          <div className="p-4 lg:p-5">
+            <p className="text-fine uppercase tracking-[0.16em] opacity-80">{t('bannerSopra')}</p>
 
-            <p className="ds-display mt-3 text-[26px] leading-[1.05] tracking-[-0.02em] lg:text-[34px]">
-              {rinnovo.discounted
-                ? t('bannerPrezzo', { price: eur(rinnovo.cents), full: eur(rinnovo.fullCents) })
-                : t('bannerPrezzoPieno', { price: eur(rinnovo.cents) })}
-            </p>
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+              <p className="ds-display text-[20px] leading-[1.1] tracking-[-0.02em] lg:text-[26px]">
+                {rinnovo.discounted
+                  ? t('bannerPrezzo', { price: eur(rinnovo.cents), full: eur(rinnovo.fullCents) })
+                  : t('bannerPrezzoPieno', { price: eur(rinnovo.cents) })}
+              </p>
 
-            <p className="mt-3 max-w-[52ch] text-body opacity-90">
-              {rinnovo.discounted ? t('bannerFedelta') : t('bannerNormale')}
-            </p>
-
-            <div className="mt-5 flex flex-wrap items-center gap-3">
               <button
                 onClick={rinnova}
                 disabled={pagando}
-                className="inline-flex min-h-[52px] items-center justify-center rounded-full bg-paper px-6 text-fine font-medium text-accent transition-opacity hover:opacity-90 disabled:opacity-60"
+                className="inline-flex min-h-[44px] shrink-0 items-center justify-center rounded-full bg-paper px-5 text-fine font-medium text-accent transition-opacity hover:opacity-90 disabled:opacity-60"
               >
                 {pagando ? t('rinnovaInCorso') : t('rinnova', { price: eur(rinnovo.cents) })}
               </button>
-              <span className="text-fine opacity-80">
-                {t('scadeIl', { date: data(tessera.expires_at) })}
-              </span>
             </div>
 
-            {rinnovo.discounted && rinnovo.offerUntil && (
-              <p className="mt-3 text-fine opacity-80">
-                {t('offertaFino', { date: data(rinnovo.offerUntil), full: eur(rinnovo.fullCents) })}
-              </p>
-            )}
+            <p className="mt-2.5 text-fine opacity-80">
+              {t('scadeIl', { date: data(tessera.expires_at) })}
+              {rinnovo.discounted && rinnovo.offerUntil && (
+                <> · {t('offertaFino', { date: data(rinnovo.offerUntil), full: eur(rinnovo.fullCents) })}</>
+              )}
+            </p>
 
-            {errore && <p className="mt-3 text-fine font-medium">{errore}</p>}
+            {errore && <p className="mt-2 text-fine font-medium">{errore}</p>}
           </div>
         </div>
       )}

@@ -31,157 +31,40 @@ const ICONE: Record<string, Benefit['icon']> = {
 
 const TESTI: Record<BenefitLocale, Record<string, { title: string; body: string }>> = {
   it: {
-    trips: {
-      title: 'VIVO Wine Trips',
-      body:
-        'Qualche giorno in un territorio del vino, con le visite e le cene organizzate da noi. Si parte in gruppo e si torna conoscendo venti persone in piu’.',
-    },
-    maison: {
-      title: 'VIVO Maison',
-      body:
-        'La casa del club: cene private, degustazioni e appuntamenti a porte chiuse. Ci si entra da soci.',
-    },
-    pack: {
-      title: 'Il pacco di benvenuto',
-      body:
-        'Il cappellino del club, spedito a casa quando diventi socio. Si riconosce da lontano.',
-    },
-    visite: {
-      title: 'Visite in cantina',
-      body:
-        'Italia, Francia e Spagna: Barolo, Bolgheri, Franciacorta, Bordeaux. Un numero garantito ' +
-        'di cantine visitate ogni anno, fra le più note dei loro territori.',
-    },
-    eventi: {
-      title: 'Eventi VIVO',
-      body: 'Agli eventi itineranti entri gratis o con uno sconto riservato, su invito.',
-    },
-    riservati: {
-      title: 'Serate solo per soci',
-      body: 'La maggior parte degli eventi in cantina, nei locali e alla VIVO Maison è riservata ai soci.',
-    },
-    mappa: {
-      title: 'La mappa delle cantine',
-      body:
-        'Tutte le cantine che conosciamo, con i contatti. Prenotare una visita presentandosi da ' +
-        'parte del club funziona molto meglio che scrivere da soli.',
-    },
-    merch: {
-      title: 'Sconto su capi e gadget',
-      body: 'Prezzo riservato ai soci su tutto quello che produciamo.',
-    },
-    rete: {
-      title: 'Rete di sconti sul vino',
-      body: 'Enoteche e cantine convenzionate: sconto sull’acquisto di bottiglie.',
-    },
-    selection: {
-      title: 'VIVO Selection',
-      body:
-        'La lista delle bottiglie che abbiamo bevuto noi, da cantine in cui siamo stati: ' +
-        'rapporto qualità prezzo prima di tutto. La vedono solo i soci.',
-    },
+    trips:     { title: 'VIVO Wine Trips',            body: 'Qualche giorno in un territorio del vino, in gruppo.' },
+    maison:    { title: 'VIVO Maison',                body: 'La casa del club: cene e degustazioni a porte chiuse.' },
+    pack:      { title: 'Il pacco di benvenuto',      body: 'Il cappellino del club, spedito a casa.' },
+    visite:    { title: 'Visite in cantina',          body: 'Barolo, Bolgheri, Franciacorta, Bordeaux.' },
+    eventi:    { title: 'Eventi VIVO',                body: 'Ingresso gratuito o prezzo riservato.' },
+    riservati: { title: 'Serate solo per soci',       body: 'Quasi tutte le nostre serate.' },
+    mappa:     { title: 'La mappa delle cantine',     body: 'Con i contatti, per prenotare da parte del club.' },
+    merch:     { title: 'Sconto su capi e gadget',    body: 'Su tutto quello che produciamo.' },
+    rete:      { title: 'Rete di sconti sul vino',    body: 'Enoteche e cantine convenzionate.' },
+    selection: { title: 'VIVO Selection',             body: 'Le bottiglie che beviamo noi. La vedono solo i soci.' },
   },
   en: {
-    trips: {
-      title: 'VIVO Wine Trips',
-      body:
-        'A few days in a wine country, with the visits and the dinners arranged by us. You leave in a group and come back knowing twenty more people.',
-    },
-    maison: {
-      title: 'VIVO Maison',
-      body:
-        'The club’s house: private dinners, tastings and gatherings behind closed doors. Members walk in.',
-    },
-    pack: {
-      title: 'The welcome pack',
-      body:
-        'The club cap, posted to you when you join. You can spot it across a room.',
-    },
-    visite: {
-      title: 'Winery visits',
-      body:
-        'Italy, France and Spain: Barolo, Bolgheri, Franciacorta, Bordeaux. A guaranteed number ' +
-        'of estates every year, among the best known in their regions.',
-    },
-    eventi: {
-      title: 'VIVO events',
-      body: 'Free entry or a members’ price at our travelling events, by invitation.',
-    },
-    riservati: {
-      title: 'Members-only nights',
-      body: 'Most of what we do, in wineries, in bars and at the VIVO Maison, is open to members only.',
-    },
-    mappa: {
-      title: 'The winery map',
-      body:
-        'Every estate we know, with contacts. Asking for a visit on behalf of the club works far ' +
-        'better than writing on your own.',
-    },
-    merch: {
-      title: 'Discount on clothing and gear',
-      body: 'A members’ price on everything we make.',
-    },
-    rete: {
-      title: 'A network of wine discounts',
-      body: 'Partner wine shops and estates: a discount when you buy bottles.',
-    },
-    selection: {
-      title: 'VIVO Selection',
-      body:
-        'Our list of bottles we drank ourselves, from estates we visited: value for money above ' +
-        'all. Members only.',
-    },
+    trips:     { title: 'VIVO Wine Trips',            body: 'A few days in a wine country, as a group.' },
+    maison:    { title: 'VIVO Maison',                body: 'The club house: dinners and tastings behind closed doors.' },
+    pack:      { title: 'The welcome pack',           body: 'The club cap, posted to you.' },
+    visite:    { title: 'Winery visits',              body: 'Barolo, Bolgheri, Franciacorta, Bordeaux.' },
+    eventi:    { title: 'VIVO events',                body: 'Free entry or a members’ price.' },
+    riservati: { title: 'Members-only nights',        body: 'Nearly every night we throw.' },
+    mappa:     { title: 'The winery map',             body: 'With the contacts, so you book as the club.' },
+    merch:     { title: 'Discount on clothing and gear', body: 'On everything we make.' },
+    rete:      { title: 'A network of wine discounts', body: 'Partner wine shops and estates.' },
+    selection: { title: 'VIVO Selection',             body: 'The bottles we drink. Members only.' },
   },
   fr: {
-    trips: {
-      title: 'VIVO Wine Trips',
-      body:
-        'Quelques jours dans une région viticole, avec les visites et les dîners organisés par nous. On part en groupe et on revient avec vingt personnes de plus.',
-    },
-    maison: {
-      title: 'VIVO Maison',
-      body:
-        'La maison du club : dîners privés, dégustations et rendez-vous à huis clos. Les membres entrent.',
-    },
-    pack: {
-      title: 'Le pack de bienvenue',
-      body:
-        'La casquette du club, envoyée chez vous dès l’adhésion. Elle se reconnaît de loin.',
-    },
-    visite: {
-      title: 'Visites de domaines',
-      body:
-        'Italie, France et Espagne : Barolo, Bolgheri, Franciacorta, Bordeaux. Un nombre garanti ' +
-        'de domaines chaque année, parmi les plus réputés de leurs régions.',
-    },
-    eventi: {
-      title: 'Événements VIVO',
-      body: 'Entrée gratuite ou tarif membre à nos soirées itinérantes, sur invitation.',
-    },
-    riservati: {
-      title: 'Soirées réservées aux membres',
-      body: 'La plupart de nos événements, en domaine, en bar et à la VIVO Maison, sont réservés aux membres.',
-    },
-    mappa: {
-      title: 'La carte des domaines',
-      body:
-        'Tous les domaines que nous connaissons, avec leurs contacts. Demander une visite de la ' +
-        'part du club marche bien mieux que d’écrire seul.',
-    },
-    merch: {
-      title: 'Remise sur les vêtements et les accessoires',
-      body: 'Un tarif membre sur tout ce que nous produisons.',
-    },
-    rete: {
-      title: 'Un réseau de remises sur le vin',
-      body: 'Cavistes et domaines partenaires : remise à l’achat de bouteilles.',
-    },
-    selection: {
-      title: 'VIVO Selection',
-      body:
-        'La liste des bouteilles que nous avons bues nous-mêmes, dans des domaines où nous sommes ' +
-        'allés : le rapport qualité-prix avant tout. Réservée aux membres.',
-    },
+    trips:     { title: 'VIVO Wine Trips',            body: 'Quelques jours dans une région du vin, en groupe.' },
+    maison:    { title: 'VIVO Maison',                body: 'La maison du club : dîners et dégustations à huis clos.' },
+    pack:      { title: 'Le pack de bienvenue',       body: 'La casquette du club, envoyée chez vous.' },
+    visite:    { title: 'Visites de domaines',        body: 'Barolo, Bolgheri, Franciacorta, Bordeaux.' },
+    eventi:    { title: 'Événements VIVO',            body: 'Entrée gratuite ou tarif membre.' },
+    riservati: { title: 'Soirées réservées aux membres', body: 'Presque toutes nos soirées.' },
+    mappa:     { title: 'La carte des domaines',      body: 'Avec les contacts, pour réserver de la part du club.' },
+    merch:     { title: 'Remise sur les vêtements et les accessoires', body: 'Sur tout ce que nous produisons.' },
+    rete:      { title: 'Un réseau de remises sur le vin', body: 'Cavistes et domaines partenaires.' },
+    selection: { title: 'VIVO Selection',             body: 'Les bouteilles que nous buvons. Réservée aux membres.' },
   },
 };
 
