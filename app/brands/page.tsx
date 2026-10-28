@@ -100,44 +100,28 @@ export default async function BrandsPage() {
         )}
 
         {/* ── Case studies ────────────────────────────────────
-            Un caso alla volta, con i numeri veri in vista: la pagina
-            intera sta a un clic, qui basta che si capisca cos'e'
-            successo e quanto e' andato lontano. */}
+            Una riga per caso, come le date del calendario: il nome,
+            dove e quando, e il pulsante. Tutto il resto, numeri
+            compresi, sta nella sua pagina. */}
         <Section>
           <h2 className="ds-display text-title">{t('casesTitle')}</h2>
-          <p className="mt-4 max-w-[58ch] text-lead text-on-paper-muted">{t('casesNote')}</p>
 
-          <div className="mt-12 flex flex-col gap-8">
+          <ul className="mt-10 border-t border-rule-paper">
             {casi.map((c) => (
-              <article key={c.slug} className="rounded-2xl border border-rule-paper p-7 sm:p-9">
-                <p className="text-fine font-medium uppercase tracking-[0.16em] text-accent-soft">
-                  {c.occhiello}
-                </p>
-                <h3 className="ds-display mt-2 max-w-[20ch] text-subtitle">{c.marchio}</h3>
-                <p className="mt-2 text-fine text-on-paper-muted">{c.sottotitolo}</p>
-                <p className="mt-5 max-w-[56ch] text-body text-on-paper-muted">{c.sintesi}</p>
-
-                <dl className="mt-8 grid grid-cols-2 gap-x-8 gap-y-6 lg:grid-cols-4">
-                  {c.numeri.map((n) => (
-                    <div key={n.etichetta}>
-                      <dd className="ds-display ds-numeric text-[clamp(1.7rem,3.4vw,2.3rem)] leading-none text-accent">
-                        {n.valore}
-                      </dd>
-                      <dt className="mt-2 text-fine text-on-paper-muted">{n.etichetta}</dt>
-                    </div>
-                  ))}
-                </dl>
-
-                <Link
-                  href={`/brands/${c.slug}`}
-                  className="ds-link mt-8 inline-flex min-h-[48px] items-center gap-2.5 text-body font-medium no-underline hover:text-accent"
-                >
+              <li
+                key={c.slug}
+                className="flex flex-wrap items-center justify-between gap-x-10 gap-y-5 border-b border-rule-paper py-7"
+              >
+                <div className="min-w-0">
+                  <h3 className="ds-display text-subtitle">{c.marchio}</h3>
+                  <p className="mt-1.5 text-fine text-on-paper-muted">{c.sottotitolo}</p>
+                </div>
+                <ButtonLink href={`/brands/${c.slug}`} variant="outline" size="sm">
                   {t('casesCta')}
-                  <ArrowRight size={16} strokeWidth={1.75} />
-                </Link>
-              </article>
+                </ButtonLink>
+              </li>
             ))}
-          </div>
+          </ul>
         </Section>
 
         {/* ── Partners ────────────────────────────────────────
