@@ -23,8 +23,8 @@ export interface CaseTappa {
   titolo: string;
   corpo: string;
   numeri?: CaseNumero[];
-  /** Una foto accanto alla tappa. Senza, la tappa e' solo testo. */
-  foto?: string;
+  /** Un'immagine accanto alla tappa, e il filmato se esiste. Senza, la tappa e' solo testo. */
+  media?: { poster: string; src?: string };
   /** Verticale o orizzontale: decide la forma della scheda. */
   verso?: 'alto' | 'largo';
 }
@@ -47,12 +47,15 @@ export interface CaseStudy {
   cta: string;
 }
 
-const FOTO = {
-  serata: '/home/orizzontali/utopia-1610.jpg',
-  brindisi: '/home/verticali/festa-0620.jpg',
-  sala: '/events/wp2.jpg',
-  gente: '/home/verticali/serata-1021.jpg',
-  tavolo: '/events/wine-party3.jpg',
+const MEDIA = {
+  // Dove c'e' anche l'mp4 la scheda si muove da sola; dove no, resta
+  // una fotografia. Alternate di proposito: sei clip di fila sulla
+  // stessa pagina sono rumore, non ritmo.
+  serata:   { poster: '/home/orizzontali/utopia-1610.jpg', src: '/home/orizzontali/utopia-1610.mp4' },
+  brindisi: { poster: '/events/wp2.jpg' },
+  sala:     { poster: '/home/orizzontali/serata-1015.jpg', src: '/home/orizzontali/serata-1015.mp4' },
+  gente:    { poster: '/home/verticali/serata-1021.jpg',   src: '/home/verticali/serata-1021.mp4' },
+  tavolo:   { poster: '/events/wine-party3.jpg' },
 } as const;
 
 const SAVOYE: Record<CaseLocale, CaseStudy> = {
@@ -80,7 +83,7 @@ const SAVOYE: Record<CaseLocale, CaseStudy> = {
           { valore: '75 %', etichetta: 'italiani' },
           { valore: '58 %', etichetta: 'donne' },
         ],
-        foto: FOTO.serata,
+        media: MEDIA.serata,
         verso: 'largo',
       },
       {
@@ -92,8 +95,8 @@ const SAVOYE: Record<CaseLocale, CaseStudy> = {
           { valore: '24', etichetta: 'bottiglie aperte' },
           { valore: '168', etichetta: 'calici serviti' },
         ],
-        foto: FOTO.brindisi,
-        verso: 'alto',
+        media: MEDIA.brindisi,
+        verso: 'largo',
       },
       {
         occhiello: 'Carosello, 20 ottobre',
@@ -105,7 +108,7 @@ const SAVOYE: Record<CaseLocale, CaseStudy> = {
           { valore: '9,1 %', etichetta: 'tasso di interazione' },
           { valore: '74 %', etichetta: 'ha fra 18 e 34 anni' },
         ],
-        foto: FOTO.sala,
+        media: MEDIA.sala,
         verso: 'largo',
       },
       {
@@ -118,7 +121,7 @@ const SAVOYE: Record<CaseLocale, CaseStudy> = {
           { valore: '2 789', etichetta: 'account raggiunti' },
           { valore: '92 %', etichetta: 'ha fra 18 e 34 anni' },
         ],
-        foto: FOTO.gente,
+        media: MEDIA.gente,
         verso: 'alto',
       },
       {
@@ -130,7 +133,7 @@ const SAVOYE: Record<CaseLocale, CaseStudy> = {
           { valore: '2 950', etichetta: 'account in Italia' },
           { valore: '1 080', etichetta: 'account in Francia' },
         ],
-        foto: FOTO.tavolo,
+        media: MEDIA.tavolo,
         verso: 'largo',
       },
     ],
@@ -183,7 +186,7 @@ const SAVOYE: Record<CaseLocale, CaseStudy> = {
           { valore: '75%', etichetta: 'Italian' },
           { valore: '58%', etichetta: 'women' },
         ],
-        foto: FOTO.serata,
+        media: MEDIA.serata,
         verso: 'largo',
       },
       {
@@ -195,8 +198,8 @@ const SAVOYE: Record<CaseLocale, CaseStudy> = {
           { valore: '24', etichetta: 'bottles opened' },
           { valore: '168', etichetta: 'glasses poured' },
         ],
-        foto: FOTO.brindisi,
-        verso: 'alto',
+        media: MEDIA.brindisi,
+        verso: 'largo',
       },
       {
         occhiello: 'Carousel, 20 October',
@@ -208,7 +211,7 @@ const SAVOYE: Record<CaseLocale, CaseStudy> = {
           { valore: '9.1%', etichetta: 'interaction rate' },
           { valore: '74%', etichetta: 'aged 18 to 34' },
         ],
-        foto: FOTO.sala,
+        media: MEDIA.sala,
         verso: 'largo',
       },
       {
@@ -221,7 +224,7 @@ const SAVOYE: Record<CaseLocale, CaseStudy> = {
           { valore: '2,789', etichetta: 'accounts reached' },
           { valore: '92%', etichetta: 'aged 18 to 34' },
         ],
-        foto: FOTO.gente,
+        media: MEDIA.gente,
         verso: 'alto',
       },
       {
@@ -233,7 +236,7 @@ const SAVOYE: Record<CaseLocale, CaseStudy> = {
           { valore: '2,950', etichetta: 'accounts in Italy' },
           { valore: '1,080', etichetta: 'accounts in France' },
         ],
-        foto: FOTO.tavolo,
+        media: MEDIA.tavolo,
         verso: 'largo',
       },
     ],
@@ -286,7 +289,7 @@ const SAVOYE: Record<CaseLocale, CaseStudy> = {
           { valore: '75 %', etichetta: 'd’Italiens' },
           { valore: '58 %', etichetta: 'de femmes' },
         ],
-        foto: FOTO.serata,
+        media: MEDIA.serata,
         verso: 'largo',
       },
       {
@@ -298,8 +301,8 @@ const SAVOYE: Record<CaseLocale, CaseStudy> = {
           { valore: '24', etichetta: 'bouteilles ouvertes' },
           { valore: '168', etichetta: 'coupes servies' },
         ],
-        foto: FOTO.brindisi,
-        verso: 'alto',
+        media: MEDIA.brindisi,
+        verso: 'largo',
       },
       {
         occhiello: 'Carrousel, 20 octobre',
@@ -311,7 +314,7 @@ const SAVOYE: Record<CaseLocale, CaseStudy> = {
           { valore: '9,1 %', etichetta: 'taux d’interaction' },
           { valore: '74 %', etichetta: 'ont 18 à 34 ans' },
         ],
-        foto: FOTO.sala,
+        media: MEDIA.sala,
         verso: 'largo',
       },
       {
@@ -324,7 +327,7 @@ const SAVOYE: Record<CaseLocale, CaseStudy> = {
           { valore: '2 789', etichetta: 'comptes touchés' },
           { valore: '92 %', etichetta: 'ont 18 à 34 ans' },
         ],
-        foto: FOTO.gente,
+        media: MEDIA.gente,
         verso: 'alto',
       },
       {
@@ -336,7 +339,7 @@ const SAVOYE: Record<CaseLocale, CaseStudy> = {
           { valore: '2 950', etichetta: 'comptes en Italie' },
           { valore: '1 080', etichetta: 'comptes en France' },
         ],
-        foto: FOTO.tavolo,
+        media: MEDIA.tavolo,
         verso: 'largo',
       },
     ],

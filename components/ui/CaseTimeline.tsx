@@ -1,29 +1,33 @@
 'use client';
 
-import Image from 'next/image';
 import { motion, useReducedMotion } from 'framer-motion';
 
+import { VideoCard } from '@/components/ui/VideoCard';
 import type { CaseTappa } from '@/lib/case-studies';
 
 /**
  * La linea del tempo di un caso studio.
  *
  * Scende dritta sulla sinistra, con un pallino per ogni tappa: si
- * legge come un racconto, non come una tabella. Le foto invece non
- * stanno in riga: cambiano larghezza, lato e inclinazione a ogni
+ * legge come un racconto, non come una tabella. Le immagini invece
+ * non stanno in riga: cambiano larghezza, lato e inclinazione a ogni
  * passo, perche' una griglia perfetta fa sembrare tutto un catalogo
  * e questa e' una serata.
+ *
+ * Dove la tappa ha anche un filmato parte da solo quando entra nello
+ * schermo e si ferma quando esce: ci pensa `VideoCard`, lo stesso
+ * pezzo che regge le clip della home.
  *
  * Le inclinazioni sono scritte, non sorteggiate: un numero a caso
  * darebbe al server una pagina e al browser un'altra.
  */
 
 const POSE = [
-  { rot: -2.0, largh: 'sm:w-[76%]',           lato: '' },
-  { rot: 2.4,  largh: 'w-[82%] sm:w-[48%]',   lato: 'ml-auto' },
-  { rot: -1.4, largh: 'sm:w-[66%]',           lato: '' },
-  { rot: 2.0,  largh: 'w-[78%] sm:w-[44%]',   lato: 'ml-auto' },
-  { rot: -2.4, largh: 'sm:w-[70%]',           lato: '' },
+  { rot: -2.0, largh: 'w-[88%] sm:w-[58%]',   lato: '' },
+  { rot: 2.4,  largh: 'w-[72%] sm:w-[38%]',   lato: 'ml-auto' },
+  { rot: -1.4, largh: 'w-[84%] sm:w-[50%]',   lato: '' },
+  { rot: 2.0,  largh: 'w-[68%] sm:w-[34%]',   lato: 'ml-auto' },
+  { rot: -2.4, largh: 'w-[86%] sm:w-[54%]',   lato: '' },
 ];
 
 export function CaseTimeline({ tappe }: { tappe: CaseTappa[] }) {
@@ -72,8 +76,8 @@ export function CaseTimeline({ tappe }: { tappe: CaseTappa[] }) {
               </dl>
             )}
 
-            {t.foto && (
-              <motion.figure
+            {t.media && (
+              <motion.div
                 className={`mt-9 ${pose.largh} ${pose.lato}`}
                 initial={reduce ? false : { opacity: 0, scale: 0.96, rotate: pose.rot * 2 }}
                 whileInView={reduce ? { rotate: 0 } : { opacity: 1, scale: 1, rotate: pose.rot }}
@@ -84,21 +88,15 @@ export function CaseTimeline({ tappe }: { tappe: CaseTappa[] }) {
                     : { type: 'spring', stiffness: 190, damping: 18, delay: 0.1 }
                 }
               >
-                <div
-                  className={`relative overflow-hidden rounded-2xl bg-ink-soft shadow-[0_22px_50px_-30px_rgba(26,5,5,0.6)] ${
-                    t.verso === 'alto' ? 'aspect-[4/5]' : 'aspect-[16/10]'
-                  }`}
-                >
-                  <Image
-                    src={t.foto}
-                    alt=""
-                    fill
-                    sizes="(max-width: 640px) 90vw, 50vw"
-                    className="object-cover"
-                  />
-                </div>
-              </motion.figure>
+                <VideoCard
+                  source={{ src: t.media.src, poster: t.media.poster }}
+                  aspect={t.verso === 'alto' ? 'reel' : 'wide'}
+                  sizes="(max-width: 640px) 86vw, 50vw"
+                  className="shadow-[0_22px_50px_-30px_rgba(26,5,5,0.6)]"
+                />
+              </motion.div>
             )}
+
           </motion.li>
         );
       })}
