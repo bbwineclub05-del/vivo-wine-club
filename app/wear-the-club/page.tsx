@@ -32,7 +32,12 @@ export default async function WearTheClubPage() {
           </Statement>
         </Section>
 
-        <Section ground="paper-soft" className="pt-0">
+        {/* Il fondo cambia colore prima che comincino i prodotti: con
+            `pt-0` la linea fra i due toni passava esattamente sul
+            bordo superiore delle schede e sembrava che le tagliasse.
+            Un respiro sopra, e il cambio di fondo si legge come
+            l'inizio di una sezione invece che come una riga. */}
+        <Section ground="paper-soft" className="pt-band-tight">
           <ShopGrid />
         </Section>
       </main>
