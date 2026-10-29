@@ -104,8 +104,11 @@ export default async function ManifestoPage() {
           <h2 className="ds-display text-title">{t('foundersTitle')}</h2>
           <ul className="mt-12 grid gap-x-8 gap-y-12 md:grid-cols-3">
             {FOUNDERS.map((f) => (
-              <li key={f.name}>
-                <div className="relative aspect-square w-full max-w-[220px] overflow-hidden rounded-2xl border border-rule-paper bg-white">
+              /* Colonna alta quanto la cella: le biografie non hanno la
+                 stessa lunghezza, e senza questo il collegamento a
+                 LinkedIn finiva a tre altezze diverse. */
+              <li key={f.name} className="flex h-full flex-col">
+                <div className="relative mx-auto aspect-square w-full max-w-[220px] overflow-hidden rounded-2xl border border-rule-paper bg-white md:mx-0">
                   <Image
                     src={f.image}
                     alt={f.name}
@@ -121,7 +124,7 @@ export default async function ManifestoPage() {
                   href={f.linkedin}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="ds-link mt-3 inline-flex min-h-[44px] items-center text-fine no-underline hover:text-accent"
+                  className="ds-link mt-auto inline-flex min-h-[44px] items-center self-start pt-3 text-fine no-underline hover:text-accent"
                 >
                   LinkedIn
                 </a>
