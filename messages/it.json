@@ -568,14 +568,14 @@
     },
     "doors": {
       "eventsTitle": "Eventi",
-      "eventsBody": "Party, lounge e visite in cantina. Prendi il biglietto e vieni.",
-      "eventsCta": "Guarda il calendario",
+      "eventsBody": "Party, lounge e visite in cantina: è il VIVO Club. Prendi il biglietto e vieni.",
+      "eventsCta": "Entra nel Club",
       "creatorsTitle": "Creator",
       "creatorsBody": "Racconti il vino sui social? Entra nel network e lavora con le cantine.",
       "creatorsCta": "Candidati",
       "brandsTitle": "Cantine",
-      "brandsBody": "Parlate a una generazione che non vi ascolta ancora. Noi sappiamo come.",
-      "brandsCta": "Parliamone"
+      "brandsBody": "Parlate a una generazione che non vi ascolta ancora. Lo facciamo con VIVO Studio.",
+      "brandsCta": "Scopri Vivo Studio"
     },
     "studio": {
       "statement": "Mettiamo le cantine nelle mani dei creator che i ragazzi guardano ogni giorno.",

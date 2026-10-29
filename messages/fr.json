@@ -568,14 +568,14 @@
     },
     "doors": {
       "eventsTitle": "Événements",
-      "eventsBody": "Soirées, lounges et visites de domaines. Prends ta place et viens.",
-      "eventsCta": "Voir le calendrier",
+      "eventsBody": "Soirées, lounges et visites de domaines : c’est le VIVO Club. Prends ta place et viens.",
+      "eventsCta": "Entrer dans le Club",
       "creatorsTitle": "Créateurs",
       "creatorsBody": "Tu parles de vin sur les réseaux ? Rejoins le réseau et travaille avec les domaines.",
       "creatorsCta": "Postuler",
       "brandsTitle": "Domaines",
-      "brandsBody": "Parlez à une génération qui ne vous écoute pas encore. Nous savons comment.",
-      "brandsCta": "Discutons-en"
+      "brandsBody": "Parlez à une génération qui ne vous écoute pas encore. C’est le travail de VIVO Studio.",
+      "brandsCta": "Découvrir Vivo Studio"
     },
     "studio": {
       "statement": "Nous confions les domaines aux créateurs que les jeunes regardent chaque jour.",

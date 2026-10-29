@@ -568,14 +568,14 @@
     },
     "doors": {
       "eventsTitle": "Events",
-      "eventsBody": "Parties, lounges and winery visits. Grab a ticket and come along.",
-      "eventsCta": "See the calendar",
+      "eventsBody": "Parties, lounges and winery visits: that is the VIVO Club. Grab a ticket and come along.",
+      "eventsCta": "Enter the Club",
       "creatorsTitle": "Creators",
       "creatorsBody": "You make wine content? Join the network and work with the estates.",
       "creatorsCta": "Apply",
       "brandsTitle": "Wineries",
-      "brandsBody": "Speak to a generation that is not listening to you yet. We know how.",
-      "brandsCta": "Let's talk"
+      "brandsBody": "Speak to a generation that is not listening to you yet. That is what VIVO Studio does.",
+      "brandsCta": "Discover Vivo Studio"
     },
     "studio": {
       "statement": "We put wineries in the hands of the creators young people watch every day.",
