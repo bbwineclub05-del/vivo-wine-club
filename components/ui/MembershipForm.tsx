@@ -5,6 +5,8 @@ import { useLocale, useTranslations } from 'next-intl';
 import { motion, useReducedMotion } from 'framer-motion';
 import Link from 'next/link';
 
+import { ETA_MASSIMA, etaAmmessa, maxDob, minDob } from '@/lib/membership';
+
 /**
  * Iscriversi al club.
  *
@@ -21,18 +23,6 @@ import Link from 'next/link';
 const FIELD =
   'w-full rounded-2xl border border-rule-paper bg-paper px-4 py-3.5 text-body text-on-paper ' +
   'placeholder:text-on-paper-muted/60 transition-colors focus:border-accent/50 focus:outline-none [font-size:16px]';
-
-/** Si entra da maggiorenni; cent'anni è il fondo sensato di un calendario. */
-function maxDob() {
-  const d = new Date();
-  d.setFullYear(d.getFullYear() - 18);
-  return d.toISOString().split('T')[0];
-}
-function minDob() {
-  const d = new Date();
-  d.setFullYear(d.getFullYear() - 100);
-  return d.toISOString().split('T')[0];
-}
 
 /**
  * La data nella lingua della pagina.
@@ -85,7 +75,14 @@ export function MembershipForm() {
   const [error, setError] = useState('');
 
   const emailsMatch = form.email.length > 0 && form.email === confirmEmail;
-  const canSubmit = emailsMatch && privacy && age && !loading;
+
+  /* Da maggiorenni e sotto i trent'anni: la regola sta in
+     `lib/membership.ts`, la stessa che applica la rotta che salva.
+     Qui serve solo a dirlo prima, non a decidere. */
+  const dobOk = form.dateOfBirth.length > 0 && etaAmmessa(form.dateOfBirth);
+  const dobFuori = form.dateOfBirth.length > 0 && !dobOk;
+
+  const canSubmit = emailsMatch && dobOk && privacy && age && !loading;
 
   function set(field: keyof typeof form) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
@@ -121,6 +118,10 @@ export function MembershipForm() {
 
       if (res.status === 409) {
         setError(t('alreadyMember'));
+        return;
+      }
+      if (data.code === 'age_not_eligible') {
+        setError(t('ageLimitError', { max: ETA_MASSIMA }));
         return;
       }
       if (!res.ok) throw new Error(data.error ?? t('errGeneric'));
@@ -181,6 +182,9 @@ export function MembershipForm() {
       <div className="rounded-2xl border border-rule-paper p-5">
         <p className="ds-display text-[22px] leading-none tracking-[-0.02em]">{t('priceFree')}</p>
         <p className="mt-2.5 text-body text-on-paper-muted">{t('priceFreeNote')}</p>
+        <p className="mt-3 border-t border-rule-paper pt-3 text-fine text-on-paper-muted">
+          {t('ageLimitRule', { max: ETA_MASSIMA })}
+        </p>
       </div>
 
       <div>
@@ -267,8 +271,13 @@ export function MembershipForm() {
             max={maxDob()}
             value={form.dateOfBirth}
             onChange={set('dateOfBirth')}
+            aria-invalid={dobFuori || undefined}
+            aria-describedby="m-dob-nota"
             className={FIELD}
           />
+          <p id="m-dob-nota" className={`mt-2 text-fine ${dobFuori ? 'text-accent' : 'text-on-paper-muted'}`}>
+            {dobFuori ? t('ageLimitError', { max: ETA_MASSIMA }) : t('ageLimitHint', { max: ETA_MASSIMA })}
+          </p>
         </div>
         <div>
           <Label htmlFor="m-source">{t('labelSource')}</Label>

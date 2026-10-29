@@ -54,6 +54,61 @@ export function daysBetween(from: string, to: string): number {
   return Math.round((b - a) / 86_400_000);
 }
 
+/* ── Eta' ─────────────────────────────────────────────────────────── */
+
+/**
+ * Il club e' per chi ha meno di trent'anni.
+ *
+ * Non e' un dettaglio di stile: e' l'unica cosa che tiene insieme le
+ * serate, ed e' anche quello che le cantine comprano quando lavorano
+ * con noi. Sta scritto sulla pagina di iscrizione, e il modulo non
+ * lascia passare chi non rientra.
+ *
+ * La regola vive qui perche' la controllano in due: il modulo, che
+ * avvisa prima di far perdere tempo, e la rotta che salva, che e' la
+ * sola a decidere davvero. Un controllo che gira solo nel browser non
+ * e' un controllo.
+ */
+export const ETA_MINIMA = 18;
+export const ETA_MASSIMA = 30;
+
+/** Gli anni compiuti a una certa data. */
+export function ageOn(dob: string, on = today()): number {
+  const n = new Date(`${dob.slice(0, 10)}T00:00:00`);
+  const d = new Date(`${on.slice(0, 10)}T00:00:00`);
+  if (Number.isNaN(n.getTime()) || Number.isNaN(d.getTime())) return NaN;
+  let anni = d.getFullYear() - n.getFullYear();
+  const compleannoPassato =
+    d.getMonth() > n.getMonth() || (d.getMonth() === n.getMonth() && d.getDate() >= n.getDate());
+  if (!compleannoPassato) anni -= 1;
+  return anni;
+}
+
+/** La nascita piu' recente ammessa: chi e' nato dopo non ha 18 anni. */
+export function maxDob(on = today()): string {
+  const d = new Date(`${on.slice(0, 10)}T00:00:00`);
+  d.setFullYear(d.getFullYear() - ETA_MINIMA);
+  return isoDate(d);
+}
+
+/** La nascita piu' lontana ammessa: chi e' nato prima ha gia' trent'anni. */
+export function minDob(on = today()): string {
+  const d = new Date(`${on.slice(0, 10)}T00:00:00`);
+  d.setFullYear(d.getFullYear() - ETA_MASSIMA);
+  d.setDate(d.getDate() + 1); // il giorno del trentesimo compleanno e' gia' fuori
+  return isoDate(d);
+}
+
+/** Vero se con quella data di nascita si puo' diventare soci. */
+export function etaAmmessa(dob: string, on = today()): boolean {
+  const anni = ageOn(dob, on);
+  return Number.isFinite(anni) && anni >= ETA_MINIMA && anni < ETA_MASSIMA;
+}
+
+function isoDate(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 /* ── Stato ────────────────────────────────────────────────────────── */
 
 export type MembershipStatus = 'active' | 'expiring' | 'expired' | 'cancelled';

@@ -4,7 +4,9 @@ import { membershipEmail, emailLocale } from '@/lib/emails/membership-emails';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { requireAdminOrStaff } from '@/lib/auth-guard';
 import { fetchAllRows } from '@/lib/crm';
-import { generateMemberId, newMembershipFor, type Membership } from '@/lib/membership';
+import {
+  ETA_MASSIMA, etaAmmessa, generateMemberId, newMembershipFor, type Membership,
+} from '@/lib/membership';
 import { PRIVACY_POLICY_VERSION } from '@/lib/consent';
 
 /**
@@ -66,6 +68,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Serve il consenso alla privacy.' }, { status: 400 });
     }
 
+    // Il club e' per chi ha meno di trent'anni. Il modulo lo dice
+    // prima, ma e' qui che la regola vale: una richiesta puo' arrivare
+    // da qualunque parte, non solo dal nostro modulo.
+    const dob = String(body.date_of_birth ?? '').trim();
+    if (!dob) {
+      return NextResponse.json({ error: 'Serve la data di nascita.', code: 'dob_missing' }, { status: 400 });
+    }
+    if (!etaAmmessa(dob)) {
+      return NextResponse.json(
+        {
+          error: `Il club e' riservato a chi ha meno di ${ETA_MASSIMA} anni.`,
+          code: 'age_not_eligible',
+        },
+        { status: 422 },
+      );
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const db = getSupabaseAdmin() as any;
 
@@ -105,7 +124,7 @@ export async function POST(request: Request) {
           offer_expires_at: plan.offer_expires_at,
           phone: String(body.phone ?? '').trim() || null,
           city: String(body.city ?? '').trim() || null,
-          date_of_birth: String(body.date_of_birth ?? '').trim() || null,
+          date_of_birth: dob,
           source: String(body.source ?? '').trim() || null,
           // La lingua del sito al momento dell'iscrizione: decide in
           // che lingua riceverà le mail, oggi e fra un anno.

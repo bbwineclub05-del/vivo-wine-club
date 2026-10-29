@@ -9,7 +9,7 @@
  * lingue del sito: se cambiano là, vanno cambiate qui.
  */
 
-import { FOUNDING_OFFER_CENTS, STANDARD_PRICE_CENTS } from '@/lib/membership';
+import { ETA_MASSIMA, FOUNDING_OFFER_CENTS, STANDARD_PRICE_CENTS } from '@/lib/membership';
 
 export type FaqLocale = 'it' | 'en' | 'fr';
 
@@ -21,6 +21,7 @@ export interface FaqItem {
 
 const PIENO = STANDARD_PRICE_CENTS / 100;
 const SCONTO = FOUNDING_OFFER_CENTS / 100;
+const ETA = ETA_MASSIMA;
 
 const FAQ: Record<FaqLocale, FaqItem[]> = {
   it: [
@@ -33,8 +34,9 @@ const FAQ: Record<FaqLocale, FaqItem[]> = {
     {
       q: 'Come si diventa soci?',
       a:
-        'Si compra la tessera dalla pagina [Diventa member](/membership): non c’è nessuna candidatura da ' +
-        'far approvare. Diventi socio nel momento in cui l’iscrizione è completata.',
+        `Si compra la tessera dalla pagina [Diventa member](/membership): non c’è nessuna candidatura da ` +
+        `far approvare. Diventi socio nel momento in cui l’iscrizione è completata. Il club è riservato a ` +
+        `chi ha meno di ${ETA} anni: al momento dell’iscrizione si indica la data di nascita.`,
     },
     {
       q: 'Quanto costa la tessera?',
@@ -94,8 +96,9 @@ const FAQ: Record<FaqLocale, FaqItem[]> = {
     {
       q: 'How do I become a member?',
       a:
-        'You buy the card on the [Join](/membership) page. There is no application to be approved. ' +
-        'You are a member the moment you have signed up.',
+        `You buy the card on the [Join](/membership) page. There is no application to be approved. ` +
+        `You are a member the moment you have signed up. The club is for people under ${ETA}: you give ` +
+        `your date of birth when you sign up.`,
     },
     {
       q: 'How much does the card cost?',
@@ -155,8 +158,9 @@ const FAQ: Record<FaqLocale, FaqItem[]> = {
     {
       q: 'Comment devenir membre ?',
       a:
-        'La carte s’achète sur la page [Devenir membre](/membership) : il n’y a aucune candidature à faire ' +
-        'approuver. Vous êtes membre dès l’inscription terminée.',
+        `La carte s’achète sur la page [Devenir membre](/membership) : il n’y a aucune candidature à faire ` +
+        `approuver. Vous êtes membre dès l’inscription terminée. Le club est réservé aux moins de ${ETA} ans : ` +
+        `la date de naissance est demandée à l’inscription.`,
     },
     {
       q: 'Combien coûte la carte ?',
