@@ -76,6 +76,7 @@ export default async function Home() {
               <VideoCard
                 key={`${r.src}-${i}`}
                 source={{ src: r.src, poster: r.poster, link: r.link }}
+                continuo
                 aspect={r.orientamento === 'orizzontale' ? 'wide' : 'reel'}
                 sizes={r.orientamento === 'orizzontale' ? '(max-width: 768px) 440px, 560px' : '(max-width: 768px) 140px, 176px'}
                 className="h-[248px] w-auto shrink-0 md:h-[312px]"

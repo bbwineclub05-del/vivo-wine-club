@@ -34,6 +34,7 @@ export function VideoCard({
   aspect = 'reel',
   rounded = 'rounded-2xl',
   sizes,
+  continuo = false,
   className = '',
 }: {
   source: VideoCardSource;
@@ -42,6 +43,8 @@ export function VideoCard({
   rounded?: string;
   /** Quanto sara' larga davvero: serve a non scaricare una foto da 2000px per una scheda da 140. */
   sizes?: string;
+  /** Dentro una fila che scorre: una volta partito non si ferma piu'. */
+  continuo?: boolean;
   className?: string;
 }) {
   const ref = useRef<HTMLVideoElement>(null);
@@ -53,6 +56,14 @@ export function VideoCard({
     const el = ref.current;
     if (!el) return;
 
+    /* Dentro una striscia che scorre il riferimento non e' la
+       finestra ma la striscia: una scheda parcheggiata oltre il bordo
+       destro non incrocia mai lo schermo, quindi non si caricherebbe
+       mai e resterebbe una fotografia ferma. Cosi' invece si carica
+       poco prima di entrare. */
+    const dentroLaFila = el.closest('[data-fila]');
+    const root = continuo && dentroLaFila instanceof HTMLElement ? dentroLaFila : null;
+
     const io = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -60,16 +71,27 @@ export function VideoCard({
           io.disconnect();
         }
       },
-      { rootMargin: '240px' },
+      { root, rootMargin: '320px' },
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [priority, reduce]);
+  }, [priority, reduce, continuo]);
 
-  // Pause whatever is off screen so a row of reels costs one decode, not six.
+  /* Fuori dallo schermo si mette in pausa: una fila di clip costa una
+     decodifica, non sei.
+
+     Dentro una striscia che scorre pero' no. La scheda esce e rientra
+     dal bordo in continuazione, e ogni passaggio sarebbe un
+     `pause()` e un `play()`: il video riparte, salta, e si vede. Con
+     `continuo` parte quando compare e da li' in poi va avanti. */
   useEffect(() => {
     const el = ref.current;
     if (!el || reduce) return;
+
+    if (continuo) {
+      if (visible) void el.play().catch(() => {});
+      return;
+    }
 
     const io = new IntersectionObserver(
       ([entry]) => {
@@ -80,7 +102,7 @@ export function VideoCard({
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [reduce]);
+  }, [reduce, continuo, visible]);
 
   const figura = (
     <figure
@@ -127,13 +149,17 @@ export function VideoCard({
      sola scala non si vedrebbe, perche' tutto si muove gia'.
 
      Duecento millisecondi: il tempo in cui una cosa sembra
-     rispondere invece che caricarsi. `group/fila` ce l'ha la
-     striscia (vedi `Marquee`); dove non c'e', queste regole non si
-     applicano e la scheda sta ferma come sempre. */
+     rispondere invece che caricarsi. Si muovono solo opacita' e
+     scala, che la scheda grafica sa fare da sola: un filtro di
+     saturazione su dodici schede le farebbe ridipingere tutte a ogni
+     fotogramma, e la fila scatterebbe.
+
+     `group/fila` ce l'ha la striscia (vedi `Marquee`); dove non c'e',
+     queste regole non si applicano e la scheda sta ferma come
+     sempre. */
   const selezione =
-    'transition-[opacity,filter,box-shadow] duration-200 ease-out ' +
-    'group-hover/fila:opacity-40 group-hover/fila:saturate-[0.8] ' +
-    'hover:!opacity-100 hover:!saturate-100';
+    'transition-[opacity,box-shadow] duration-200 ease-out ' +
+    'group-hover/fila:opacity-40 hover:!opacity-100';
 
   // Senza link resta una scheda da guardare, ma si illumina lo stesso:
   // altrimenti passandoci sopra si spegnerebbe tutta la fila e basta.

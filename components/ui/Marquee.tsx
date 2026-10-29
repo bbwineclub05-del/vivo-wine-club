@@ -17,9 +17,11 @@ import { useEffect, useRef, type ReactNode } from 'react';
  * indietro di meta' larghezza, e il salto cade su una copia
  * identica, quindi non si vede.
  *
- * Si ferma col mouse sopra, mentre un dito la tiene, e per un attimo
- * dopo che qualcuno l'ha spinta: riprendere subito sembrerebbe
- * strappare via la scheda che si stava guardando.
+ * Il mouse sopra non la ferma: una fila che inchioda mentre il
+ * puntatore la attraversa per arrivare altrove sembra inceppata, e
+ * le schede si possono aprire lo stesso, al volo. Si ferma solo
+ * finche' un dito o il mouse la stanno trascinando, e riparte
+ * appena vengono lasciati.
  *
  * Con `guidabile={false}` invece non si ferma e non si trascina: e'
  * il caso dei loghi degli sponsor, dove non c'e' niente da scegliere
@@ -56,29 +58,33 @@ export function Marquee({
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
     let fermo = 0;      // quante cose stanno trattenendo la fila
-    let riprendiA = 0;  // da quale istante si puo' ricominciare
     let ultimo = 0;
     let frame = 0;
 
-    const meta = () => el.scrollWidth / 2;
+    /* La meta' del nastro si misura una volta, non a ogni fotogramma:
+       leggere `scrollWidth` costringe il browser a ricalcolare il
+       layout, e farlo sessanta volte al secondo mentre dodici video
+       vanno e' esattamente il modo di far scattare la fila. Si
+       rimisura solo quando qualcosa cambia davvero di dimensione. */
+    let meta = el.scrollWidth / 2;
+    const ro = new ResizeObserver(() => { meta = el.scrollWidth / 2; });
+    ro.observe(el);
+    for (const figlio of Array.from(el.children)) ro.observe(figlio);
 
     // Nel verso contrario si parte da meta': andando all'indietro da
     // zero si finirebbe subito contro il bordo.
-    if (reverse) el.scrollLeft = meta();
+    if (reverse) el.scrollLeft = meta;
 
     function passo(ora: number) {
       frame = requestAnimationFrame(passo);
       const dt = ultimo ? Math.min(ora - ultimo, 64) : 0; // dopo un blocco non salta avanti
       ultimo = ora;
-      if (!el || fermo > 0 || ora < riprendiA || dt === 0) return;
+      if (!el || fermo > 0 || dt === 0 || meta <= 0) return;
 
-      const m = meta();
-      if (m <= 0) return;
-
-      const px = (m / speed) * (dt / 1000);
+      const px = (meta / speed) * (dt / 1000);
       let x = el.scrollLeft + (reverse ? -px : px);
-      if (x >= m) x -= m;
-      if (x <= 0) x += m;
+      if (x >= meta) x -= meta;
+      if (x <= 0) x += meta;
       el.scrollLeft = x;
     }
     frame = requestAnimationFrame(passo);
@@ -114,41 +120,33 @@ export function Marquee({
       if (trascinato) { e.preventDefault(); e.stopPropagation(); }
     }
 
+    /* Si trattiene solo mentre qualcuno la sta spingendo: il mouse
+       che passa sopra non la ferma piu'. */
     const trattieni = () => { fermo += 1; };
-    const lascia = () => { fermo = Math.max(0, fermo - 1); riprendiA = performance.now() + 420; };
-    const spinta = () => { riprendiA = performance.now() + 700; };
+    const lascia = () => { fermo = Math.max(0, fermo - 1); };
 
     if (!guidabile) {
-      return () => cancelAnimationFrame(frame);
+      return () => { cancelAnimationFrame(frame); ro.disconnect(); };
     }
 
-    el.addEventListener('mouseenter', trattieni);
-    el.addEventListener('mouseleave', lascia);
     el.addEventListener('pointerdown', trattieni);
     el.addEventListener('pointerdown', premuto);
     window.addEventListener('pointermove', mosso);
     window.addEventListener('pointerup', mollato);
     el.addEventListener('click', clicDopoTrascinata, true);
     el.addEventListener('touchstart', trattieni, { passive: true });
-    el.addEventListener('focusin', trattieni);
-    el.addEventListener('focusout', lascia);
-    el.addEventListener('wheel', spinta, { passive: true });
     window.addEventListener('pointerup', lascia);
     window.addEventListener('touchend', lascia);
 
     return () => {
       cancelAnimationFrame(frame);
-      el.removeEventListener('mouseenter', trattieni);
-      el.removeEventListener('mouseleave', lascia);
+      ro.disconnect();
       el.removeEventListener('pointerdown', trattieni);
       el.removeEventListener('pointerdown', premuto);
       window.removeEventListener('pointermove', mosso);
       window.removeEventListener('pointerup', mollato);
       el.removeEventListener('click', clicDopoTrascinata, true);
       el.removeEventListener('touchstart', trattieni);
-      el.removeEventListener('focusin', trattieni);
-      el.removeEventListener('focusout', lascia);
-      el.removeEventListener('wheel', spinta);
       window.removeEventListener('pointerup', lascia);
       window.removeEventListener('touchend', lascia);
     };
@@ -157,6 +155,10 @@ export function Marquee({
   return (
     <div
       ref={box}
+      // Le clip dentro si caricano guardando questa, non la finestra:
+      // una scheda ferma fuori dal bordo destro non incrocia mai lo
+      // schermo, e senza questo riferimento non partirebbe mai.
+      data-fila=""
       className={`group/fila relative flex select-none overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
         guidabile
           ? 'cursor-grab touch-pan-x overflow-x-auto overscroll-x-contain active:cursor-grabbing'
