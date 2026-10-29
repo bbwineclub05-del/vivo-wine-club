@@ -89,3 +89,43 @@ export function benefitsFor(locale: string | null | undefined): Benefit[] {
 
 /** Le voci in italiano: l'area riservata e quella del socio parlano italiano. */
 export const BENEFITS = benefitsFor('it');
+
+/* ── A gruppi ─────────────────────────────────────────────────────── */
+
+/**
+ * Le stesse voci, in tre mucchi.
+ *
+ * Nove riquadri uno uguale all'altro non si leggono: si guardano per
+ * due secondi e si scorre oltre. Tre mucchi da tre invece si tengono
+ * a mente, e ognuno risponde a una domanda diversa: dove si entra,
+ * dove si va, quanto si risparmia.
+ *
+ * Il pacco di benvenuto resta fuori: e' l'unica cosa che arriva a
+ * casa, e chiude la sezione da solo.
+ */
+const GRUPPI = [
+  { id: 'porte',  voci: ['riservati', 'eventi', 'maison'] },
+  { id: 'strada', voci: ['visite', 'trips', 'mappa'] },
+  { id: 'conto',  voci: ['rete', 'merch', 'selection'] },
+] as const;
+
+const TITOLI_GRUPPI: Record<BenefitLocale, Record<string, string>> = {
+  it: { porte: 'Dove si entra', strada: 'Dove si va', conto: 'Quanto si risparmia' },
+  en: { porte: 'Where you get in', strada: 'Where you go', conto: 'What you save' },
+  fr: { porte: 'Où l’on entre', strada: 'Où l’on va', conto: 'Ce qu’on économise' },
+};
+
+export interface BenefitGroup {
+  id: string;
+  titolo: string;
+  voci: Benefit[];
+}
+
+export function benefitGroupsFor(locale: string | null | undefined): BenefitGroup[] {
+  const l: BenefitLocale = locale === 'en' || locale === 'fr' ? locale : 'it';
+  return GRUPPI.map((g) => ({
+    id: g.id,
+    titolo: TITOLI_GRUPPI[l][g.id],
+    voci: g.voci.map((id) => ({ id, icon: ICONE[id], ...TESTI[l][id] })),
+  }));
+}

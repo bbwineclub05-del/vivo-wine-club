@@ -1,9 +1,6 @@
 import { getLocale, getTranslations } from 'next-intl/server';
-import {
-  Gift, Grape, Home, Lock, MapPin, Percent, Plane, Shirt, Star, Ticket,
-} from 'lucide-react';
 
-import { benefitsFor } from '@/lib/member-benefits';
+import { benefitGroupsFor } from '@/lib/member-benefits';
 import {
   FOUNDING_OFFER_CENTS, FREE_UNTIL, STANDARD_PRICE_CENTS,
 } from '@/lib/membership';
@@ -20,15 +17,19 @@ import {
  * lo stesso posto da cui le prendono l'area del socio e le mail di
  * benvenuto. Una promessa sola, in un posto solo.
  *
+ * Erano nove riquadri uguali, tre per riga, ognuno con la sua
+ * icona. Una griglia cosi' non si legge: si guarda due secondi e si
+ * scorre via, e su un telefono erano due schermi pieni. Adesso sono
+ * tre mucchi da tre, scritti come un indice: il nome a sinistra, la
+ * riga che spiega accanto. Niente icone, niente caselle. Le icone
+ * erano dieci simboli diversi che dicevano meno delle dieci parole
+ * che avevano sotto.
+ *
  * Anche i prezzi arrivano dalle regole vere (`lib/membership.ts`):
  * se cambia la data dello sconto, cambia la frase, e non possono
  * dire due cose diverse.
  */
 
-const ICONE = {
-  grapes: Grape, ticket: Ticket, lock: Lock, map: MapPin, shirt: Shirt,
-  percent: Percent, star: Star, home: Home, plane: Plane, gift: Gift,
-};
 
 /** «30 €», «20 €»: come li scrive una persona. */
 function euro(centesimi: number): string {
@@ -62,50 +63,45 @@ export async function MembershipValue({
   const smorzato = scuro ? 'text-on-ink-muted' : 'text-on-paper-muted';
   const bordo = scuro ? 'border-rule-ink' : 'border-rule-paper';
 
-  // Il pacco di benvenuto ha un riquadro suo: e' l'unica cosa che
-  // arriva a casa, e si tocca.
-  const voci = benefitsFor(locale).filter((b) => b.id !== 'pack');
-
-  // Tre colonne: nove voci riempiono esattamente tre righe. Se un
-  // giorno diventano dieci, l'ultima si allarga sul buco invece di
-  // lasciarlo li' come una casella dimenticata.
-  const avanzo = voci.length % 3;
-  const ultimaLarga =
-    avanzo === 1 ? 'md:col-span-3' : avanzo === 2 ? 'md:col-span-2' : '';
+  const gruppi = benefitGroupsFor(locale);
 
   return (
     <div className="flex flex-col gap-12">
       <div>
         {titolo && <h2 className="ds-display text-title">{t('whatTitle')}</h2>}
 
-        <ul className={`${titolo ? 'mt-8' : ''} grid gap-px overflow-hidden rounded-2xl border md:grid-cols-3 ${bordo} ${
-          scuro ? 'bg-rule-ink' : 'bg-rule-paper'
-        }`}>
-          {voci.map((b, i) => {
-            const Icon = ICONE[b.icon];
-            const larga = i === voci.length - 1 ? ultimaLarga : '';
-            return (
-              <li key={b.id} className={`flex gap-4 ${larga} ${scuro ? 'bg-ink' : 'bg-paper'} p-5`}>
-                <span className="mt-0.5 shrink-0 text-accent">
-                  <Icon size={20} strokeWidth={1.8} />
-                </span>
-                <div className="min-w-0">
-                  <p className="text-body font-medium">{b.title}</p>
-                  <p className={`mt-1.5 text-fine ${smorzato}`}>{b.body}</p>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+        {/* Tre mucchi affiancati da tablet in su, uno sotto l'altro sul
+            telefono. Dentro ogni mucchio le voci sono righe, non
+            schede: il filetto le separa, lo spazio separa i mucchi. */}
+        <div className={`${titolo ? 'mt-9' : ''} grid gap-x-10 gap-y-8 md:grid-cols-3`}>
+          {gruppi.map((g) => (
+            <section key={g.id}>
+              <h3 className="text-fine font-medium uppercase tracking-[0.14em] text-accent">
+                {g.titolo}
+              </h3>
+
+              {/* Nome e spiegazione sulla stessa riga: a capo ci vanno
+                  solo quando non ci stanno. Su un telefono sono due
+                  righe invece di quattro, e la sezione si dimezza. */}
+              <dl className={`mt-3.5 border-t ${bordo}`}>
+                {g.voci.map((b) => (
+                  <div key={b.id} className={`border-b ${bordo} py-2.5 text-fine`}>
+                    <dt className="inline font-medium text-body">{b.title}.</dt>{' '}
+                    <dd className={`inline ${smorzato}`}>{b.body}</dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+          ))}
+        </div>
       </div>
 
-      <div className={`rounded-2xl border ${bordo} p-6`}>
-        <p className="inline-flex items-center gap-2 text-fine font-medium text-accent">
-          <Gift size={17} strokeWidth={1.8} />
-          {t('packTitle')}
-        </p>
-        <p className={`mt-2 max-w-[52ch] text-body ${smorzato}`}>{t('packBody')}</p>
-      </div>
+      {/* Il pacco di benvenuto non e' un vantaggio in piu' da
+          incolonnare: e' l'unica cosa che arriva a casa, e chiude. */}
+      <p className={`max-w-[58ch] text-body ${smorzato}`}>
+        <span className="font-medium text-accent">{t('packTitle')}</span>{' '}
+        {t('packBody')}
+      </p>
 
       {prezzo && (
       <div>
