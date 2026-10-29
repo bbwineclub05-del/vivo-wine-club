@@ -4,6 +4,7 @@ import Link from 'next/link';
 
 import { ButtonLink } from '@/components/ui/Button';
 import { Accordion } from '@/components/ui/Accordion';
+import { withLinks } from '@/components/ui/withLinks';
 import { Chapter, Statement } from '@/components/ui/Chapter';
 import { Section } from '@/components/ui/Section';
 import { SiteFooter } from '@/components/ui/SiteFooter';
@@ -17,7 +18,9 @@ export async function generateMetadata() {
   return { title: 'Vivo Studio | Vivo Wine Club', description: t('statement') };
 }
 
-const SERVIZI = ['do1', 'do2', 'do3', 'do4', 'do5', 'do6'] as const;
+/* Gli eventi stanno in fondo di proposito: sono il punto in cui lo
+   Studio incontra il club, e da li' si va a vedere chi sono i soci. */
+const SERVIZI = ['do3', 'do4', 'do5', 'do6', 'do1', 'do2'] as const;
 const PACKS = ['pack1', 'pack2', 'pack3'] as const;
 
 export default async function BrandsPage() {
@@ -59,7 +62,7 @@ export default async function BrandsPage() {
               items={SERVIZI.map((v) => ({
                 id: v,
                 titolo: t(`${v}Title`),
-                corpo: t(`${v}Body`),
+                corpo: withLinks(t(`${v}Body`)),
               }))}
             />
           </div>
