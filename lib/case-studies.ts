@@ -66,7 +66,7 @@ const SAVOYE: Record<CaseLocale, CaseStudy> = {
     titolo: 'Champagne Mathilde Savoye',
     sottotitolo: 'VIVO Wine Party · Utopia, Parigi · 16 ottobre 2026',
     sintesi:
-      'Una maison di champagne voleva farsi conoscere da chi ha vent’anni e non beve ancora champagne. Abbiamo riempito un locale a Parigi di centocinquanta ragazzi, e gliel’abbiamo messo in mano.',
+      'Una maison di champagne voleva farsi conoscere da un pubblico giovane che lo champagne ancora non lo beve. Abbiamo riempito un locale a Parigi di centocinquanta persone, e gliel’abbiamo messo in mano.',
     numeri: [
       { valore: '150', etichetta: 'invitati', nota: 'circa, fra i 20 e i 25 anni' },
       { valore: '24', etichetta: 'bottiglie', nota: 'circa 168 calici serviti' },
@@ -169,7 +169,7 @@ const SAVOYE: Record<CaseLocale, CaseStudy> = {
     titolo: 'Champagne Mathilde Savoye',
     sottotitolo: 'VIVO Wine Party · Utopia, Paris · 16 October 2026',
     sintesi:
-      'A champagne house wanted to be known by people in their twenties who do not drink champagne yet. We filled a room in Paris with a hundred and fifty of them, and put it in their hands.',
+      'A champagne house wanted to be known by a young crowd that does not drink champagne yet. We filled a room in Paris with a hundred and fifty of them, and put it in their hands.',
     numeri: [
       { valore: '150', etichetta: 'guests', nota: 'roughly, aged 20 to 25' },
       { valore: '24', etichetta: 'bottles', nota: 'about 168 glasses poured' },
@@ -272,7 +272,7 @@ const SAVOYE: Record<CaseLocale, CaseStudy> = {
     titolo: 'Champagne Mathilde Savoye',
     sottotitolo: 'VIVO Wine Party · Utopia, Paris · 16 octobre 2026',
     sintesi:
-      'Une maison de champagne voulait se faire connaître de ceux qui ont vingt ans et ne boivent pas encore de champagne. Nous avons rempli un lieu à Paris de cent cinquante d’entre eux, et nous le leur avons mis en main.',
+      'Une maison de champagne voulait se faire connaître d’un public jeune qui ne boit pas encore de champagne. Nous avons rempli un lieu à Paris de cent cinquante d’entre eux, et nous le leur avons mis en main.',
     numeri: [
       { valore: '150', etichetta: 'invités', nota: 'environ, de 20 à 25 ans' },
       { valore: '24', etichetta: 'bouteilles', nota: 'environ 168 coupes servies' },

@@ -148,7 +148,7 @@ const COPY = {
     chiSiamo:
       'We’re a community of young people with one fixed idea: <strong>changing the way wine is ' +
       'talked about</strong>. Too exclusive, too complicated, too reserved for those who already ' +
-      'knew everything. And it’s one of the best things to share in your twenties.',
+      'knew everything. And it’s one of the best things to share when you’re young.',
     comeLoFacciamo:
       'We do it the only way we know: taking you inside the estates to meet the people who ' +
       'actually make the wine, and throwing nights you still remember the morning after. ' +
