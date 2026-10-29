@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 
 import { SLOGAN_LINES } from '@/lib/brand';
-import { homeReels } from '@/lib/home-reels';
+import { homeReels, videoCopertina } from '@/lib/home-reels';
 import { CREATOR_VISIBILE } from '@/lib/flags';
 import { ButtonLink } from '@/components/ui/Button';
 import { Chapter, Statement } from '@/components/ui/Chapter';
@@ -18,6 +18,7 @@ export default async function Home() {
   const t = await getTranslations('site');
   // Vedi `public/home/LEGGIMI.md`: i file li carica chi fa i video.
   const reels = homeReels();
+  const copertina = videoCopertina();
 
   return (
     <>
@@ -54,7 +55,7 @@ export default async function Home() {
             priority
             aspect="cinema"
             rounded="rounded-3xl"
-            source={{ src: '/videosito-corto.mp4', poster: '/vigna.jpg' }}
+            source={copertina}
           />
         </Section>
 

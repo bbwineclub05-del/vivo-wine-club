@@ -62,3 +62,15 @@ e' una scheda da guardare e basta.
 Vale per le clip in home e per quelle sulla pagina del Club. Se il
 file ha un errore di battitura non si rompe niente: le schede restano
 senza link.
+
+## Il filmato grande in cima
+
+Si chiama `copertina.mp4` e sta qui dentro, accanto alle due
+cartelle. Accanto puoi metterci `copertina.jpg`: e' il fotogramma
+che si vede mentre il video carica.
+
+Il riquadro e' largo e basso (21:9), e il video viene ritagliato al
+centro: se la clip ha gia' le bande nere sopra e sotto, di quelle
+resta solo una striscia. Meglio un file senza bande.
+
+Finche' non c'e' niente qui, resta il video di prima.

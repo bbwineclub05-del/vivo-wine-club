@@ -114,6 +114,31 @@ function alterna(a: HomeReel[], b: HomeReel[]): HomeReel[] {
   return fuori;
 }
 
+/**
+ * Il filmato grande in cima alla home.
+ *
+ * Si chiama `copertina.mp4` e sta in `public/home`, accanto alle due
+ * cartelle delle clip. Se c'e' una `copertina.jpg` con lo stesso
+ * nome, e' il primo fotogramma: si vede mentre il video carica e
+ * resta a chi ha chiesto di non far muovere niente.
+ *
+ * Finche' nessuno lo mette, resta quello di prima: la home non puo'
+ * aprirsi con un buco nero perche' manca un file.
+ */
+export interface Copertina {
+  src: string;
+  poster?: string;
+}
+
+export function videoCopertina(): Copertina {
+  const video = join(CARTELLA, 'copertina.mp4');
+  if (!existsSync(video)) {
+    return { src: '/videosito-corto.mp4', poster: '/vigna.jpg' };
+  }
+  const poster = POSTER.map((e) => `copertina${e}`).find((n) => existsSync(join(CARTELLA, n)));
+  return { src: '/home/copertina.mp4', poster: poster ? `/home/${poster}` : undefined };
+}
+
 /** Il video di prima, finche' le cartelle sono vuote. */
 const RIPIEGO: HomeReel[] = Array.from({ length: 6 }, () => ({
   src: '/videosito-corto.mp4',
