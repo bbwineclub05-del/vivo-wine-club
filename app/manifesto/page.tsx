@@ -14,7 +14,7 @@ export async function generateMetadata() {
 
 const FOUNDERS = [
   { name: 'Giacomo Gallo', city: 'Turin', image: '/giacomo2.png', bioKey: 'bioGiacomo', linkedin: 'https://www.linkedin.com/in/giacomo-gallo-520a85286/' },
-  { name: 'Filippo Lombardi', city: 'Brescia', image: '/filippo.png', bioKey: 'bioFilippo', linkedin: 'https://www.linkedin.com/in/filippolombardiofficial/' },
+  { name: 'Filippo Lombardi', city: 'Brescia', image: '/filippo-lombardi.png', bioKey: 'bioFilippo', linkedin: 'https://www.linkedin.com/in/filippolombardiofficial/' },
   { name: 'Cristiano Michelotti', city: 'Florence', image: '/cristiano.png', bioKey: 'bioCristiano', linkedin: 'https://www.linkedin.com/in/cristiano-michelotti-799a49299/' },
 ] as const;
 

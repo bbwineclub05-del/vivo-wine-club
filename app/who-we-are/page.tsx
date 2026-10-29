@@ -39,7 +39,7 @@ const TEAM_MEMBERS = [
 
 const FOUNDERS_DATA = [
   { name: 'Giacomo Gallo',       city: 'Turin',    role: 'Co-Founder', image: '/giacomo2.png',  bioKey: 'bioGiacomo'    as const, taglineKey: 'taglineGiacomo'   as const, linkedin: 'https://www.linkedin.com/in/giacomo-gallo-520a85286/' },
-  { name: 'Filippo Lombardi',    city: 'Brescia',  role: 'Co-Founder', image: '/filippo.png',   bioKey: 'bioFilippo'    as const, taglineKey: 'taglineFilippo'   as const, linkedin: 'https://www.linkedin.com/in/filippolombardiofficial/' },
+  { name: 'Filippo Lombardi',    city: 'Brescia',  role: 'Co-Founder', image: '/filippo-lombardi.png',   bioKey: 'bioFilippo'    as const, taglineKey: 'taglineFilippo'   as const, linkedin: 'https://www.linkedin.com/in/filippolombardiofficial/' },
   { name: 'Cristiano Michelotti',city: 'Florence', role: 'Co-Founder', image: '/cristiano.png', bioKey: 'bioCristiano'  as const, linkedin: 'https://www.linkedin.com/in/cristiano-michelotti-799a49299/' },
 ];
 
