@@ -153,10 +153,12 @@ export default async function Home() {
         <Section ground="ink" className="pt-0">
           <div className="mx-auto max-w-[62ch] text-center">
             <Statement>{t('club.statement')}</Statement>
-            <div className="mt-10 space-y-5 text-lead text-on-ink-muted">
-              <p>{t('club.body1')}</p>
-              <p>{t('club.body2')}</p>
-            </div>
+            {/* Un paragrafo solo. Il secondo diceva che quasi niente
+                e' aperto a tutti, cioe' la stessa cosa della riga
+                sotto e dei vantaggi: ripetuta tre volte in uno
+                schermo non convince di piu', pesa e basta. Resta
+                dov'e' solo suo, sotto al pulsante su /events. */}
+            <p className="mt-10 text-lead text-on-ink-muted">{t('club.body1')}</p>
           </div>
         </Section>
 
