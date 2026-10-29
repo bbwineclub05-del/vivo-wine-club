@@ -107,8 +107,8 @@ export function Marquee({
     }
 
     const trattieni = () => { fermo += 1; };
-    const lascia = () => { fermo = Math.max(0, fermo - 1); riprendiA = performance.now() + 900; };
-    const spinta = () => { riprendiA = performance.now() + 1400; };
+    const lascia = () => { fermo = Math.max(0, fermo - 1); riprendiA = performance.now() + 420; };
+    const spinta = () => { riprendiA = performance.now() + 700; };
 
     el.addEventListener('mouseenter', trattieni);
     el.addEventListener('mouseleave', lascia);
@@ -145,7 +145,7 @@ export function Marquee({
   return (
     <div
       ref={box}
-      className={`relative flex cursor-grab touch-pan-x select-none overflow-x-auto overflow-y-hidden overscroll-x-contain active:cursor-grabbing [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${className}`}
+      className={`group/fila relative flex cursor-grab touch-pan-x select-none overflow-x-auto overflow-y-hidden overscroll-x-contain active:cursor-grabbing [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${className}`}
       // La sfumatura dice all'occhio che la fila continua oltre il
       // bordo, senza disegnare una linea di taglio.
       style={{

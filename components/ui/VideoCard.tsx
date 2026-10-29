@@ -84,9 +84,9 @@ export function VideoCard({
 
   const figura = (
     <figure
-      className={`relative h-full w-full overflow-hidden ${rounded} bg-ink-soft ${
-        source.link ? 'transition-transform duration-500 group-hover/scheda:scale-[1.03]' : ''
-      }`}
+      className={`relative h-full w-full overflow-hidden ${rounded} bg-ink-soft
+        transition-transform duration-200 ease-out
+        group-hover/scheda:scale-[1.06] group-active/scheda:scale-[1.02]`}
     >
       {source.poster && (
         <Image
@@ -122,29 +122,49 @@ export function VideoCard({
     </figure>
   );
 
-  // Senza link resta quello che era: una scheda da guardare.
+  /* Dentro una fila che scorre, la scheda sotto il puntatore deve
+     staccarsi: le altre si smorzano, quella sale e resta piena. La
+     sola scala non si vedrebbe, perche' tutto si muove gia'.
+
+     Duecento millisecondi: il tempo in cui una cosa sembra
+     rispondere invece che caricarsi. `group/fila` ce l'ha la
+     striscia (vedi `Marquee`); dove non c'e', queste regole non si
+     applicano e la scheda sta ferma come sempre. */
+  const selezione =
+    'transition-[opacity,filter,box-shadow] duration-200 ease-out ' +
+    'group-hover/fila:opacity-40 group-hover/fila:saturate-[0.8] ' +
+    'hover:!opacity-100 hover:!saturate-100';
+
+  // Senza link resta una scheda da guardare, ma si illumina lo stesso:
+  // altrimenti passandoci sopra si spegnerebbe tutta la fila e basta.
   if (!source.link) {
-    return <div className={`relative ${ASPECT[aspect]} ${className}`}>{figura}</div>;
+    return (
+      <div className={`group/scheda relative ${ASPECT[aspect]} ${selezione} ${className}`}>
+        {figura}
+      </div>
+    );
   }
 
-  // Con il link diventa una cosa da toccare, e si vede: il bollino
-  // compare passandoci sopra, e c'e' sempre per chi naviga da
-  // tastiera o con uno screen reader.
+  // Col link c'e' anche da capire che si apre: il puntatore cambia,
+  // il bordo chiaro compare, e il bollino di Instagram si posa
+  // nell'angolo.
   return (
     <a
       href={source.link}
       target="_blank"
       rel="noopener noreferrer"
       aria-label={source.label ?? 'Guarda il post su Instagram'}
-      className={`group/scheda relative block ${ASPECT[aspect]} overflow-hidden ${rounded} ${className}
+      className={`group/scheda relative block cursor-pointer ${ASPECT[aspect]} ${rounded} ${selezione} ${className}
+        ring-0 ring-paper/80 hover:ring-2
         focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent`}
     >
       {figura}
       <span
         aria-hidden
-        className="pointer-events-none absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full
-          bg-paper/90 text-ink opacity-0 shadow-sm backdrop-blur transition-opacity duration-300
-          group-hover/scheda:opacity-100 group-focus-visible/scheda:opacity-100"
+        className="pointer-events-none absolute right-2.5 top-2.5 grid h-8 w-8 scale-75 place-items-center rounded-full
+          bg-paper text-ink opacity-0 shadow-[0_2px_10px_rgba(26,5,5,0.35)] transition-all duration-200 ease-out
+          group-hover/scheda:scale-100 group-hover/scheda:opacity-100
+          group-focus-visible/scheda:scale-100 group-focus-visible/scheda:opacity-100"
       >
         <SocialIcon label="Instagram" size={15} />
       </span>
