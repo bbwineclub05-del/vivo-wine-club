@@ -120,7 +120,6 @@ export async function MembershipValue({
             })}
           </p>
           <p>{t('priceAfter', { full: euro(STANDARD_PRICE_CENTS) })}</p>
-          <p>{t('priceWhy')}</p>
         </div>
       </div>
       )}
