@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
+
+import { SocialIcon } from '@/components/ui/SocialIcons';
 import { useReducedMotion } from 'framer-motion';
 
 export interface VideoCardSource {
@@ -10,6 +12,8 @@ export interface VideoCardSource {
   /** First frame, shown until the clip can play and whenever it cannot. */
   poster?: string;
   label?: string;
+  /** Dove porta la scheda: il post da cui viene la clip. */
+  link?: string;
 }
 
 /**
@@ -78,9 +82,11 @@ export function VideoCard({
     return () => io.disconnect();
   }, [reduce]);
 
-  return (
+  const figura = (
     <figure
-      className={`relative ${ASPECT[aspect]} overflow-hidden ${rounded} bg-ink-soft ${className}`}
+      className={`relative h-full w-full overflow-hidden ${rounded} bg-ink-soft ${
+        source.link ? 'transition-transform duration-500 group-hover/scheda:scale-[1.03]' : ''
+      }`}
     >
       {source.poster && (
         <Image
@@ -114,5 +120,34 @@ export function VideoCard({
         </figcaption>
       )}
     </figure>
+  );
+
+  // Senza link resta quello che era: una scheda da guardare.
+  if (!source.link) {
+    return <div className={`relative ${ASPECT[aspect]} ${className}`}>{figura}</div>;
+  }
+
+  // Con il link diventa una cosa da toccare, e si vede: il bollino
+  // compare passandoci sopra, e c'e' sempre per chi naviga da
+  // tastiera o con uno screen reader.
+  return (
+    <a
+      href={source.link}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={source.label ?? 'Guarda il post su Instagram'}
+      className={`group/scheda relative block ${ASPECT[aspect]} overflow-hidden ${rounded} ${className}
+        focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent`}
+    >
+      {figura}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full
+          bg-paper/90 text-ink opacity-0 shadow-sm backdrop-blur transition-opacity duration-300
+          group-hover/scheda:opacity-100 group-focus-visible/scheda:opacity-100"
+      >
+        <SocialIcon label="Instagram" size={15} />
+      </span>
+    </a>
   );
 }

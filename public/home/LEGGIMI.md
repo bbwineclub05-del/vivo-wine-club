@@ -44,3 +44,21 @@ online. Non basta copiarli sul proprio computer.
 
 In home resta il video di prima ripetuto sei volte, così la pagina non
 sembra rotta. Appena arriva il primo file vero, prende il suo posto.
+
+## I link ai post
+
+In `link.json`, accanto alle due cartelle, ogni file puo' avere
+l'indirizzo del post da cui viene:
+
+```json
+"festa-0620": "https://www.instagram.com/p/XXXXXXXXXXX/"
+```
+
+La chiave e' il nome del file **senza estensione**, lo stesso per il
+video e per la sua copertina. Chi ha un indirizzo diventa una scheda
+cliccabile, con il bollino di Instagram nell'angolo; chi resta vuoto
+e' una scheda da guardare e basta.
+
+Vale per le clip in home e per quelle sulla pagina del Club. Se il
+file ha un errore di battitura non si rompe niente: le schede restano
+senza link.

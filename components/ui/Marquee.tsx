@@ -1,20 +1,31 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 
 /**
- * One marquee per page, at most. It earns its place where the content is
- * a breadth signal rather than a list to read item by item: the cities,
- * the partner estates.
+ * La fila che scorre da sola, e che si puo' anche spingere a mano.
  *
- * The track is duplicated once and translated by exactly -50%, so the
- * loop is seamless regardless of content width. Reduced motion stops it
- * and lets the row scroll by hand instead.
+ * Prima era un'animazione CSS su una `transform`: scorreva bene, ma
+ * era un disegno che si muove, non una fila. Non si poteva fermare,
+ * non si poteva tornare indietro a guardare una scheda gia' passata,
+ * e su un telefono il dito sopra non faceva niente.
  *
- * Non si ferma passandoci sopra col mouse. Si fermava, ed e' una di
- * quelle cortesie che sembrano giuste finche' non le vedi: la fila
- * inchioda mentre il mouse attraversa la pagina per arrivare
- * altrove, e una cosa che doveva scorrere da sola sembra inceppata.
+ * Adesso scorre il contenitore, non il contenuto: la barra e' una
+ * zona scorrevole vera, quindi il dito la trascina e la rotella la
+ * sposta, e un `requestAnimationFrame` la fa avanzare da sola quando
+ * nessuno la tocca. Il nastro e' doppio: arrivati a meta' si torna
+ * indietro di meta' larghezza, e il salto cade su una copia
+ * identica, quindi non si vede.
+ *
+ * Si ferma col mouse sopra, mentre un dito la tiene, e per un attimo
+ * dopo che qualcuno l'ha spinta: riprendere subito sembrerebbe
+ * strappare via la scheda che si stava guardando.
+ *
+ * Col dito la si trascina da sola, e' il browser a farlo. Col mouse
+ * no: su una zona scorrevole il mouse non trascina niente, quindi
+ * quel pezzo lo facciamo noi. Con un'accortezza: se il dito o il
+ * mouse si sono mossi davvero, il clic che segue non deve aprire la
+ * scheda che si e' trascinata via.
  */
 export function Marquee({
   children,
@@ -23,34 +34,133 @@ export function Marquee({
   className = '',
 }: {
   children: ReactNode;
-  /** Seconds for one full pass. Longer is calmer. */
+  /** Secondi per un giro intero. Piu' alto, piu' calmo. */
   speed?: number;
   /** Verso opposto: due file che si incrociano si leggono come una cosa sola. */
   reverse?: boolean;
   className?: string;
 }) {
+  const box = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    let fermo = 0;      // quante cose stanno trattenendo la fila
+    let riprendiA = 0;  // da quale istante si puo' ricominciare
+    let ultimo = 0;
+    let frame = 0;
+
+    const meta = () => el.scrollWidth / 2;
+
+    // Nel verso contrario si parte da meta': andando all'indietro da
+    // zero si finirebbe subito contro il bordo.
+    if (reverse) el.scrollLeft = meta();
+
+    function passo(ora: number) {
+      frame = requestAnimationFrame(passo);
+      const dt = ultimo ? Math.min(ora - ultimo, 64) : 0; // dopo un blocco non salta avanti
+      ultimo = ora;
+      if (!el || fermo > 0 || ora < riprendiA || dt === 0) return;
+
+      const m = meta();
+      if (m <= 0) return;
+
+      const px = (m / speed) * (dt / 1000);
+      let x = el.scrollLeft + (reverse ? -px : px);
+      if (x >= m) x -= m;
+      if (x <= 0) x += m;
+      el.scrollLeft = x;
+    }
+    frame = requestAnimationFrame(passo);
+
+    /* Trascinamento col mouse. Soglia di quattro pixel: sotto, e'
+       un clic con la mano poco ferma, non una trascinata. */
+    let partenzaX = 0;
+    let partenzaScroll = 0;
+    let giu = false;
+    let trascinato = false;
+
+    function premuto(e: PointerEvent) {
+      if (e.pointerType !== 'mouse' || e.button !== 0) return;
+      giu = true;
+      trascinato = false;
+      partenzaX = e.clientX;
+      partenzaScroll = el!.scrollLeft;
+    }
+    function mosso(e: PointerEvent) {
+      if (!giu) return;
+      const dx = e.clientX - partenzaX;
+      if (!trascinato && Math.abs(dx) < 4) return;
+      trascinato = true;
+      el!.scrollLeft = partenzaScroll - dx;
+    }
+    function mollato() {
+      if (!giu) return;
+      giu = false;
+      // `trascinato` resta vero finche' il clic non e' passato.
+      setTimeout(() => { trascinato = false; }, 0);
+    }
+    function clicDopoTrascinata(e: MouseEvent) {
+      if (trascinato) { e.preventDefault(); e.stopPropagation(); }
+    }
+
+    const trattieni = () => { fermo += 1; };
+    const lascia = () => { fermo = Math.max(0, fermo - 1); riprendiA = performance.now() + 900; };
+    const spinta = () => { riprendiA = performance.now() + 1400; };
+
+    el.addEventListener('mouseenter', trattieni);
+    el.addEventListener('mouseleave', lascia);
+    el.addEventListener('pointerdown', trattieni);
+    el.addEventListener('pointerdown', premuto);
+    window.addEventListener('pointermove', mosso);
+    window.addEventListener('pointerup', mollato);
+    el.addEventListener('click', clicDopoTrascinata, true);
+    el.addEventListener('touchstart', trattieni, { passive: true });
+    el.addEventListener('focusin', trattieni);
+    el.addEventListener('focusout', lascia);
+    el.addEventListener('wheel', spinta, { passive: true });
+    window.addEventListener('pointerup', lascia);
+    window.addEventListener('touchend', lascia);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      el.removeEventListener('mouseenter', trattieni);
+      el.removeEventListener('mouseleave', lascia);
+      el.removeEventListener('pointerdown', trattieni);
+      el.removeEventListener('pointerdown', premuto);
+      window.removeEventListener('pointermove', mosso);
+      window.removeEventListener('pointerup', mollato);
+      el.removeEventListener('click', clicDopoTrascinata, true);
+      el.removeEventListener('touchstart', trattieni);
+      el.removeEventListener('focusin', trattieni);
+      el.removeEventListener('focusout', lascia);
+      el.removeEventListener('wheel', spinta);
+      window.removeEventListener('pointerup', lascia);
+      window.removeEventListener('touchend', lascia);
+    };
+  }, [speed, reverse]);
+
   return (
     <div
-      className={`relative flex overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden motion-safe:overflow-hidden ${className}`}
-      // The fade tells the eye the row continues past the edge, without
-      // drawing a hard crop line.
+      ref={box}
+      className={`relative flex cursor-grab touch-pan-x select-none overflow-x-auto overflow-y-hidden overscroll-x-contain active:cursor-grabbing [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${className}`}
+      // La sfumatura dice all'occhio che la fila continua oltre il
+      // bordo, senza disegnare una linea di taglio.
       style={{
-        maskImage:
-          'linear-gradient(to right, transparent, black 7%, black 93%, transparent)',
-        WebkitMaskImage:
-          'linear-gradient(to right, transparent, black 7%, black 93%, transparent)',
+        maskImage: 'linear-gradient(to right, transparent, black 7%, black 93%, transparent)',
+        WebkitMaskImage: 'linear-gradient(to right, transparent, black 7%, black 93%, transparent)',
       }}
     >
-      <div
-        className={`ds-marquee__track flex w-max shrink-0 motion-safe:animate-[ds-marquee_var(--ds-marquee-speed)_linear_infinite] ${
-          reverse ? 'motion-safe:[animation-direction:reverse]' : ''
-        }`}
-        style={{ '--ds-marquee-speed': `${speed}s` } as React.CSSProperties}
-      >
-        {/* Two identical halves, so translating the track by exactly
-            -50% lands the copy where the original started. */}
+      <div className="flex w-max shrink-0">
+        {/* Due meta' identiche: tornando indietro di meta' larghezza
+            si finisce esattamente dove si era partiti. */}
         <span className="flex shrink-0 items-center gap-12 pr-12">{children}</span>
-        <span aria-hidden="true" className="flex shrink-0 items-center gap-12 pr-12">
+        {/* La copia e' nascosta agli screen reader, e `inert` la toglie
+            anche al tab: un link dentro una cosa nascosta sarebbe una
+            tappa invisibile nel giro della tastiera. */}
+        <span aria-hidden="true" inert className="flex shrink-0 items-center gap-12 pr-12">
           {children}
         </span>
       </div>

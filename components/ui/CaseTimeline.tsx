@@ -89,7 +89,7 @@ export function CaseTimeline({ tappe }: { tappe: CaseTappa[] }) {
                 }
               >
                 <VideoCard
-                  source={{ src: t.media.src, poster: t.media.poster }}
+                  source={{ src: t.media.src, poster: t.media.poster, link: t.media.link }}
                   aspect={t.verso === 'alto' ? 'reel' : 'wide'}
                   sizes="(max-width: 640px) 86vw, 50vw"
                   className="shadow-[0_22px_50px_-30px_rgba(26,5,5,0.6)]"

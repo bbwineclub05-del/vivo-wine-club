@@ -1,4 +1,4 @@
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 /**
@@ -21,6 +21,12 @@ import { join } from 'node:path';
  *
  * I due gruppi vengono alternati, cosi' la riga non e' prima tutta
  * verticale e poi tutta orizzontale.
+ *
+ * In `public/home/link.json` ogni file puo' avere l'indirizzo del
+ * post da cui viene: la scheda diventa cliccabile e porta li'. E' un
+ * file di testo con dentro nome e indirizzo, da riempire senza
+ * toccare il codice; quello che resta vuoto e' una scheda da
+ * guardare e basta.
  */
 
 export interface HomeReel {
@@ -28,10 +34,35 @@ export interface HomeReel {
   src?: string;
   poster?: string;
   orientamento: 'verticale' | 'orizzontale';
+  /** Il post da cui viene la clip, se c'e'. */
+  link?: string;
 }
 
 const CARTELLA = join(process.cwd(), 'public', 'home');
 const POSTER = ['.jpg', '.jpeg', '.png', '.webp'];
+
+/**
+ * Gli indirizzi dei post, per nome di file senza estensione.
+ *
+ * Se il file non c'e' o e' scritto male non si ferma niente: le
+ * schede restano quelle di prima, senza link. Un errore di battitura
+ * in un elenco di indirizzi non deve far sparire la home.
+ */
+function collegamenti(): Record<string, string> {
+  try {
+    const grezzo = readFileSync(join(CARTELLA, 'link.json'), 'utf8');
+    const dati = JSON.parse(grezzo) as Record<string, unknown>;
+    const fuori: Record<string, string> = {};
+    for (const [nome, url] of Object.entries(dati)) {
+      if (typeof url === 'string' && /^https?:\/\//.test(url.trim())) {
+        fuori[nome.toLowerCase()] = url.trim();
+      }
+    }
+    return fuori;
+  } catch {
+    return {};
+  }
+}
 
 function leggi(sotto: 'verticali' | 'orizzontali'): HomeReel[] {
   const dir = join(CARTELLA, sotto);
@@ -44,10 +75,17 @@ function leggi(sotto: 'verticali' | 'orizzontali'): HomeReel[] {
   const video = tutti.filter((f) => f.toLowerCase().endsWith('.mp4'));
   const nomiVideo = new Set(video.map((f) => f.replace(/\.mp4$/i, '').toLowerCase()));
 
+  const link = collegamenti();
+
   const schedeVideo: HomeReel[] = video.sort((a, b) => a.localeCompare(b, 'it')).map((file) => {
     const nudo = file.replace(/\.mp4$/i, '');
     const poster = POSTER.map((e) => `${nudo}${e}`).find((n) => existsSync(join(dir, n)));
-    return { src: indirizzo(file), poster: poster ? indirizzo(poster) : undefined, orientamento: verso };
+    return {
+      src: indirizzo(file),
+      poster: poster ? indirizzo(poster) : undefined,
+      orientamento: verso,
+      link: link[nudo.toLowerCase()],
+    };
   });
 
   // Le foto rimaste sole: quelle che non fanno da copertina a un video.
@@ -55,7 +93,11 @@ function leggi(sotto: 'verticali' | 'orizzontali'): HomeReel[] {
     .filter((f) => POSTER.some((e) => f.toLowerCase().endsWith(e)))
     .filter((f) => !nomiVideo.has(f.replace(/\.[^.]+$/, '').toLowerCase()))
     .sort((a, b) => a.localeCompare(b, 'it'))
-    .map((file) => ({ poster: indirizzo(file), orientamento: verso }));
+    .map((file) => ({
+      poster: indirizzo(file),
+      orientamento: verso,
+      link: link[file.replace(/\.[^.]+$/, '').toLowerCase()],
+    }));
 
   // Mescolate, non prima tutti i video e poi tutte le foto: in fila
   // due gruppi separati si leggono come due file diverse attaccate.

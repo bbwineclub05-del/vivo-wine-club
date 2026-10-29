@@ -23,8 +23,8 @@ export interface CaseTappa {
   titolo: string;
   corpo: string;
   numeri?: CaseNumero[];
-  /** Un'immagine accanto alla tappa, e il filmato se esiste. Senza, la tappa e' solo testo. */
-  media?: { poster: string; src?: string };
+  /** Un'immagine accanto alla tappa, il filmato se esiste, e il post da cui viene. */
+  media?: { poster: string; src?: string; link?: string };
   /** Verticale o orizzontale: decide la forma della scheda. */
   verso?: 'alto' | 'largo';
 }

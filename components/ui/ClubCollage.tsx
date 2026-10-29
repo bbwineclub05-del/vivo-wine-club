@@ -86,7 +86,7 @@ export function ClubCollage({ reels }: { reels: HomeReel[] }) {
             whileHover={reduce ? undefined : { rotate: 0, scale: 1.04, zIndex: 2 }}
           >
             <VideoCard
-              source={{ src: r.src, poster: r.poster }}
+              source={{ src: r.src, poster: r.poster, link: r.link }}
               aspect={r.orientamento === 'verticale' ? 'reel' : 'wide'}
               priority={i < 2}
               sizes="(max-width: 640px) 46vw, 31vw"
