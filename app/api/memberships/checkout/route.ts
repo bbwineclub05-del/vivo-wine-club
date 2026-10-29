@@ -82,7 +82,7 @@ export async function POST(request: Request) {
         'https://vivowineclub.com/membership/success?session_id={CHECKOUT_SESSION_ID}',
       cancel_url: 'https://vivowineclub.com/membership',
       billing_address_collection: 'required',
-      // L'indirizzo serve per il welcome pack: il cappellino va
+      // L'indirizzo serve per il welcome pack: il cavatappi va
       // spedito, e chiederlo dopo vuol dire rincorrere le persone via
       // mail. Qui lo si chiede una volta, mentre pagano.
       shipping_address_collection: {
@@ -91,7 +91,7 @@ export async function POST(request: Request) {
       phone_number_collection: { enabled: true },
       custom_text: {
         shipping_address: {
-          message: 'Dove ti spediamo il welcome pack con il cappellino VIVO.',
+          message: 'Dove ti spediamo il welcome pack con il cavatappi VIVO.',
         },
       },
       metadata: {

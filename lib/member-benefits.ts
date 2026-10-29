@@ -33,7 +33,7 @@ const TESTI: Record<BenefitLocale, Record<string, { title: string; body: string 
   it: {
     trips:     { title: 'VIVO Wine Trips',            body: 'Qualche giorno in un territorio del vino, in gruppo.' },
     maison:    { title: 'VIVO Maison',                body: 'La casa del club: cene e degustazioni a porte chiuse.' },
-    pack:      { title: 'Il pacco di benvenuto',      body: 'Il cappellino del club, spedito a casa.' },
+    pack:      { title: 'Il pacco di benvenuto',      body: 'Il cavatappi VIVO, spedito a casa.' },
     visite:    { title: 'Visite in cantina',          body: 'Barolo, Bolgheri, Franciacorta, Bordeaux.' },
     eventi:    { title: 'Eventi VIVO',                body: 'Ingresso gratuito o prezzo riservato.' },
     riservati: { title: 'Serate solo per soci',       body: 'Quasi tutte le nostre serate.' },
@@ -45,7 +45,7 @@ const TESTI: Record<BenefitLocale, Record<string, { title: string; body: string 
   en: {
     trips:     { title: 'VIVO Wine Trips',            body: 'A few days in a wine country, as a group.' },
     maison:    { title: 'VIVO Maison',                body: 'The club house: dinners and tastings behind closed doors.' },
-    pack:      { title: 'The welcome pack',           body: 'The club cap, posted to you.' },
+    pack:      { title: 'The welcome pack',           body: 'The VIVO corkscrew, posted to you.' },
     visite:    { title: 'Winery visits',              body: 'Barolo, Bolgheri, Franciacorta, Bordeaux.' },
     eventi:    { title: 'VIVO events',                body: 'Free entry or a members’ price.' },
     riservati: { title: 'Members-only nights',        body: 'Nearly every night we throw.' },
@@ -57,7 +57,7 @@ const TESTI: Record<BenefitLocale, Record<string, { title: string; body: string 
   fr: {
     trips:     { title: 'VIVO Wine Trips',            body: 'Quelques jours dans une région du vin, en groupe.' },
     maison:    { title: 'VIVO Maison',                body: 'La maison du club : dîners et dégustations à huis clos.' },
-    pack:      { title: 'Le pack de bienvenue',       body: 'La casquette du club, envoyée chez vous.' },
+    pack:      { title: 'Le pack de bienvenue',       body: 'Le tire-bouchon VIVO, envoyé chez vous.' },
     visite:    { title: 'Visites de domaines',        body: 'Barolo, Bolgheri, Franciacorta, Bordeaux.' },
     eventi:    { title: 'Événements VIVO',            body: 'Entrée gratuite ou tarif membre.' },
     riservati: { title: 'Soirées réservées aux membres', body: 'Presque toutes nos soirées.' },

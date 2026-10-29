@@ -70,23 +70,25 @@ export async function MembershipValue({
       <div>
         {titolo && <h2 className="ds-display text-title">{t('whatTitle')}</h2>}
 
-        {/* Tre mucchi affiancati da tablet in su, uno sotto l'altro sul
-            telefono. Dentro ogni mucchio le voci sono righe, non
-            schede: il filetto le separa, lo spazio separa i mucchi. */}
-        <div className={`${titolo ? 'mt-9' : ''} grid gap-x-10 gap-y-8 md:grid-cols-3`}>
+        {/* Tre righe, non tre colonne. In colonna i tre mucchi finivano
+            ad altezze diverse e i filetti non si incontravano mai: la
+            prima colonna sembrava storta. In riga il filetto corre da
+            un bordo all'altro, e di filetti ce ne sono tre invece di
+            nove. L'etichetta sta a sinistra, come in un indice. */}
+        <div className={`${titolo ? 'mt-9' : ''} border-t ${bordo}`}>
           {gruppi.map((g) => (
-            <section key={g.id}>
-              <h3 className="text-fine font-medium uppercase tracking-[0.14em] text-accent">
+            <section
+              key={g.id}
+              className={`grid gap-x-10 gap-y-3 border-b ${bordo} py-5 md:grid-cols-[clamp(140px,15vw,210px)_1fr]`}
+            >
+              <h3 className="text-fine font-medium uppercase tracking-[0.14em] text-accent md:pt-1">
                 {g.titolo}
               </h3>
 
-              {/* Nome e spiegazione sulla stessa riga: a capo ci vanno
-                  solo quando non ci stanno. Su un telefono sono due
-                  righe invece di quattro, e la sezione si dimezza. */}
-              <dl className={`mt-3.5 border-t ${bordo}`}>
+              <dl className="grid gap-x-10 gap-y-2.5 md:grid-cols-3">
                 {g.voci.map((b) => (
-                  <div key={b.id} className={`border-b ${bordo} py-2.5 text-fine`}>
-                    <dt className="inline font-medium text-body">{b.title}.</dt>{' '}
+                  <div key={b.id} className="text-fine">
+                    <dt className="inline text-body font-medium">{b.title}.</dt>{' '}
                     <dd className={`inline ${smorzato}`}>{b.body}</dd>
                   </div>
                 ))}
@@ -98,8 +100,8 @@ export async function MembershipValue({
 
       {/* Il pacco di benvenuto non e' un vantaggio in piu' da
           incolonnare: e' l'unica cosa che arriva a casa, e chiude. */}
-      <p className={`max-w-[58ch] text-body ${smorzato}`}>
-        <span className="font-medium text-accent">{t('packTitle')}</span>{' '}
+      <p className={`text-body ${smorzato}`}>
+        <span className="font-medium text-accent">{t('packTitle')}:</span>{' '}
         {t('packBody')}
       </p>
 
@@ -109,7 +111,7 @@ export async function MembershipValue({
         <p className="ds-display mt-6 text-[clamp(2rem,5vw,3.2rem)] leading-none tracking-[-0.03em] text-accent">
           {t('priceFreeNow')}
         </p>
-        <div className={`mt-5 flex max-w-[58ch] flex-col gap-3 text-body ${smorzato}`}>
+        <div className={`mt-5 flex max-w-[66ch] flex-col gap-3 text-body ${smorzato}`}>
           <p>{t('priceFreeUntil', { free: giorno(FREE_UNTIL, locale) })}</p>
           <p>
             {t('priceRenew', {

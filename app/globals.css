@@ -293,6 +293,26 @@ body::after {
   text-rendering: optimizeLegibility;
 }
 
+/* Dove vanno a capo le righe.
+   Il browser, lasciato a se', manda a capo appena la riga e' piena:
+   una frase di dieci parole finisce con una parola sola sulla
+   seconda riga, e sembra un errore di impaginazione. `pretty` gli
+   dice di guardare le ultime righe e non lasciare orfani; `balance`
+   divide un titolo in righe di lunghezza simile invece che tagliarlo
+   dove capita. Dove non e' supportato non cambia niente. */
+.ds p,
+.ds dd,
+.ds li {
+  text-wrap: pretty;
+}
+
+.ds h1,
+.ds h2,
+.ds h3,
+.ds .ds-display {
+  text-wrap: balance;
+}
+
 /* Display voice. Chapter and statement type is set in the brand face,
    uppercase, with the tracking pulled in hard at large sizes. */
 .ds-display {
