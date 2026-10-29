@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 
 /**
  * La fila che scorre da sola, e che si puo' anche spingere a mano.
@@ -16,6 +16,13 @@ import { useEffect, useRef, type ReactNode } from 'react';
  * nessuno la tocca. Il nastro e' doppio: arrivati a meta' si torna
  * indietro di meta' larghezza, e il salto cade su una copia
  * identica, quindi non si vede.
+ *
+ * Perche' il giro funzioni, meta' nastro deve essere piu' largo
+ * della finestra. Con sette loghi su uno schermo grande non lo era:
+ * la fila arrivava in fondo, il browser la teneva li' e sembrava
+ * inceppata, mentre quella al contrario girava lo stesso perche'
+ * partiva dal fondo. Per questo il contenuto si ripete finche' non
+ * basta: lo misuriamo appena la pagina e' in piedi.
  *
  * Il mouse sopra non la ferma: una fila che inchioda mentre il
  * puntatore la attraversa per arrivare altrove sembra inceppata, e
@@ -51,6 +58,21 @@ export function Marquee({
   className?: string;
 }) {
   const box = useRef<HTMLDivElement>(null);
+  const meta1 = useRef<HTMLSpanElement>(null);
+  const [copie, setCopie] = useState(1);
+
+  /* Quante volte ripetere il contenuto perche' meta' nastro copra
+     almeno una volta e mezza la finestra. Si misura prima che il
+     browser disegni, cosi' non si vede la fila allargarsi. */
+  useLayoutEffect(() => {
+    const el = box.current;
+    const mezzo = meta1.current;
+    if (!el || !mezzo) return;
+    const larghezzaUna = mezzo.scrollWidth / copie;
+    if (larghezzaUna <= 0) return;
+    const servono = Math.min(8, Math.max(1, Math.ceil((el.clientWidth * 1.5) / larghezzaUna)));
+    if (servono !== copie) setCopie(servono);
+  }, [copie, children]);
 
   useEffect(() => {
     const el = box.current;
@@ -150,7 +172,7 @@ export function Marquee({
       window.removeEventListener('pointerup', lascia);
       window.removeEventListener('touchend', lascia);
     };
-  }, [speed, reverse, guidabile]);
+  }, [speed, reverse, guidabile, copie]);
 
   return (
     <div
@@ -173,13 +195,25 @@ export function Marquee({
     >
       <div className="flex w-max shrink-0">
         {/* Due meta' identiche: tornando indietro di meta' larghezza
-            si finisce esattamente dove si era partiti. */}
-        <span className="flex shrink-0 items-center gap-12 pr-12">{children}</span>
+            si finisce esattamente dove si era partiti. Dentro ogni
+            meta' il contenuto si ripete quanto serve a coprire la
+            finestra. */}
+        <span ref={meta1} className="flex shrink-0 items-center gap-12 pr-12">
+          {Array.from({ length: copie }, (_, i) => (
+            <span key={i} className="flex shrink-0 items-center gap-12 pr-12">
+              {children}
+            </span>
+          ))}
+        </span>
         {/* La copia e' nascosta agli screen reader, e `inert` la toglie
             anche al tab: un link dentro una cosa nascosta sarebbe una
             tappa invisibile nel giro della tastiera. */}
         <span aria-hidden="true" inert className="flex shrink-0 items-center gap-12 pr-12">
-          {children}
+          {Array.from({ length: copie }, (_, i) => (
+            <span key={i} className="flex shrink-0 items-center gap-12 pr-12">
+              {children}
+            </span>
+          ))}
         </span>
       </div>
     </div>

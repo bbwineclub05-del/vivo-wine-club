@@ -56,13 +56,13 @@ export function SponsorRows() {
 
   return (
     <div className="flex flex-col gap-8">
-      <Marquee speed={52} guidabile={false}>
+      <Marquee speed={52} reverse guidabile={false}>
         {prima.map((l) => (
           <Logo key={l.src} logo={l} />
         ))}
       </Marquee>
 
-      <Marquee speed={58} reverse guidabile={false}>
+      <Marquee speed={58} guidabile={false}>
         {seconda.map((l) => (
           <Logo key={l.src} logo={l} />
         ))}
