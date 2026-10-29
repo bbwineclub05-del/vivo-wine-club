@@ -105,18 +105,14 @@ export function VideoCard({
   }, [reduce, continuo, visible]);
 
   const figura = (
-    <figure
-      className={`relative h-full w-full overflow-hidden ${rounded} bg-ink-soft
-        transition-transform duration-200 ease-out
-        group-hover/scheda:scale-[1.06] group-active/scheda:scale-[1.02]`}
-    >
+    <figure className={`relative h-full w-full overflow-hidden ${rounded} bg-ink-soft`}>
       {source.poster && (
         <Image
           src={source.poster}
           alt=""
           fill
           sizes={sizes ?? (aspect === 'reel' ? '(max-width: 768px) 60vw, 22vw' : '100vw')}
-          className="object-cover"
+          className={`object-cover ${rounded}`}
           priority={priority}
         />
       )}
@@ -130,7 +126,7 @@ export function VideoCard({
           preload="none"
           poster={source.poster}
           aria-hidden="true"
-          className="absolute inset-0 h-full w-full object-cover"
+          className={`absolute inset-0 h-full w-full object-cover ${rounded}`}
         >
           {visible && <source src={source.src} type="video/mp4" />}
         </video>
@@ -145,27 +141,34 @@ export function VideoCard({
   );
 
   /* Dentro una fila che scorre, la scheda sotto il puntatore deve
-     staccarsi: le altre si smorzano, quella sale e resta piena. La
-     sola scala non si vedrebbe, perche' tutto si muove gia'.
+     staccarsi: le altre si smorzano, quella resta piena, si solleva
+     di tre pixel e prende un'ombra.
+
+     Si solleva, non si ingrandisce. Ingrandire il contenuto dentro
+     un ritaglio arrotondato fa perdere gli angoli al video: il
+     browser lo ricompone su un piano suo e il raggio del genitore
+     non lo segue, cosi' a meta' animazione la scheda si squadra. Un
+     sollevamento muove la scheda intera, angoli compresi, e dice la
+     stessa cosa con piu' garbo.
 
      Duecento millisecondi: il tempo in cui una cosa sembra
-     rispondere invece che caricarsi. Si muovono solo opacita' e
-     scala, che la scheda grafica sa fare da sola: un filtro di
-     saturazione su dodici schede le farebbe ridipingere tutte a ogni
-     fotogramma, e la fila scatterebbe.
+     rispondere invece che caricarsi. Si muovono spostamento,
+     opacita' e ombra, roba che la scheda grafica fa da sola.
 
      `group/fila` ce l'ha la striscia (vedi `Marquee`); dove non c'e',
      queste regole non si applicano e la scheda sta ferma come
      sempre. */
   const selezione =
-    'transition-[opacity,box-shadow] duration-200 ease-out ' +
-    'group-hover/fila:opacity-40 hover:!opacity-100';
+    'transition-[opacity,box-shadow,transform] duration-200 ease-out ' +
+    'group-hover/fila:opacity-40 hover:!opacity-100 ' +
+    'hover:-translate-y-[3px] hover:shadow-[0_16px_34px_-18px_rgba(26,5,5,0.55)] ' +
+    'active:translate-y-0 active:shadow-none';
 
   // Senza link resta una scheda da guardare, ma si illumina lo stesso:
   // altrimenti passandoci sopra si spegnerebbe tutta la fila e basta.
   if (!source.link) {
     return (
-      <div className={`group/scheda relative ${ASPECT[aspect]} ${selezione} ${className}`}>
+      <div className={`group/scheda relative ${ASPECT[aspect]} ${rounded} ${selezione} ${className}`}>
         {figura}
       </div>
     );
@@ -181,7 +184,6 @@ export function VideoCard({
       rel="noopener noreferrer"
       aria-label={source.label ?? 'Guarda il post su Instagram'}
       className={`group/scheda relative block cursor-pointer ${ASPECT[aspect]} ${rounded} ${selezione} ${className}
-        ring-0 ring-paper/80 hover:ring-2
         focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent`}
     >
       {figura}
