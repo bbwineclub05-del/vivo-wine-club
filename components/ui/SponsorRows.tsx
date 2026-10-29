@@ -10,9 +10,13 @@ import { righeLoghi, type SponsorLogo } from '@/lib/sponsor-logos';
  * loghi, diventa un nastro lunghissimo che non finisce mai; due che
  * si incrociano si leggono come un insieme, ed e' quello che sono.
  *
- * I loghi arrivano da fonti diverse — png su fondo bianco, jpg,
- * webp — quindi vanno appoggiati su carta e portati tutti alla
+ * I loghi arrivano da fonti diverse, png su fondo bianco, jpg e
+ * webp, quindi vanno appoggiati su carta e portati tutti alla
  * stessa altezza ottica, altrimenti la fila sembra montata male.
+ *
+ * Qui le file non si fermano e non si trascinano: in una fila di
+ * loghi non c'e' niente da scegliere, e inchiodare perche' il mouse
+ * sta solo andando verso il footer sembra un inceppamento.
  */
 
 function Logo({ logo }: { logo: SponsorLogo }) {
@@ -52,13 +56,13 @@ export function SponsorRows() {
 
   return (
     <div className="flex flex-col gap-8">
-      <Marquee speed={52}>
+      <Marquee speed={52} guidabile={false}>
         {prima.map((l) => (
           <Logo key={l.src} logo={l} />
         ))}
       </Marquee>
 
-      <Marquee speed={58} reverse>
+      <Marquee speed={58} reverse guidabile={false}>
         {seconda.map((l) => (
           <Logo key={l.src} logo={l} />
         ))}

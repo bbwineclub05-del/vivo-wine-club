@@ -21,6 +21,11 @@ import { useEffect, useRef, type ReactNode } from 'react';
  * dopo che qualcuno l'ha spinta: riprendere subito sembrerebbe
  * strappare via la scheda che si stava guardando.
  *
+ * Con `guidabile={false}` invece non si ferma e non si trascina: e'
+ * il caso dei loghi degli sponsor, dove non c'e' niente da scegliere
+ * e una fila che inchioda perche' il mouse le passa sopra per
+ * arrivare al footer sembra inceppata.
+ *
  * Col dito la si trascina da sola, e' il browser a farlo. Col mouse
  * no: su una zona scorrevole il mouse non trascina niente, quindi
  * quel pezzo lo facciamo noi. Con un'accortezza: se il dito o il
@@ -31,6 +36,7 @@ export function Marquee({
   children,
   speed = 42,
   reverse = false,
+  guidabile = true,
   className = '',
 }: {
   children: ReactNode;
@@ -38,6 +44,8 @@ export function Marquee({
   speed?: number;
   /** Verso opposto: due file che si incrociano si leggono come una cosa sola. */
   reverse?: boolean;
+  /** Spento: scorre e basta, non si ferma e non si trascina. */
+  guidabile?: boolean;
   className?: string;
 }) {
   const box = useRef<HTMLDivElement>(null);
@@ -110,6 +118,10 @@ export function Marquee({
     const lascia = () => { fermo = Math.max(0, fermo - 1); riprendiA = performance.now() + 420; };
     const spinta = () => { riprendiA = performance.now() + 700; };
 
+    if (!guidabile) {
+      return () => cancelAnimationFrame(frame);
+    }
+
     el.addEventListener('mouseenter', trattieni);
     el.addEventListener('mouseleave', lascia);
     el.addEventListener('pointerdown', trattieni);
@@ -140,12 +152,16 @@ export function Marquee({
       window.removeEventListener('pointerup', lascia);
       window.removeEventListener('touchend', lascia);
     };
-  }, [speed, reverse]);
+  }, [speed, reverse, guidabile]);
 
   return (
     <div
       ref={box}
-      className={`group/fila relative flex cursor-grab touch-pan-x select-none overflow-x-auto overflow-y-hidden overscroll-x-contain active:cursor-grabbing [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${className}`}
+      className={`group/fila relative flex select-none overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
+        guidabile
+          ? 'cursor-grab touch-pan-x overflow-x-auto overscroll-x-contain active:cursor-grabbing'
+          : 'overflow-x-hidden'
+      } ${className}`}
       // La sfumatura dice all'occhio che la fila continua oltre il
       // bordo, senza disegnare una linea di taglio.
       style={{
