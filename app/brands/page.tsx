@@ -61,26 +61,31 @@ export default async function BrandsPage() {
           </ol>
         </Section>
 
-        {/* ── Ways to work together ───────────────────────────
-            One container split by hairlines rather than three
-            floating tiles: these are columns of one comparison. */}
+        {/* ── Le tre forme ────────────────────────────────────
+            Erano tre colonne dentro un riquadro diviso da linee: la
+            forma dei piani di un abbonamento, che qui non c'entra, e
+            tre caselle strette che spezzavano il testo ogni cinque
+            parole. Sono tre modi diversi di lavorare, non tre prezzi
+            da confrontare: si leggono uno dopo l'altro, e ognuno ha
+            la riga larga che gli serve. */}
         <Section>
           <h2 className="ds-display text-title">{t('packagesTitle')}</h2>
           <p className="mt-4 max-w-[58ch] text-lead text-on-paper-muted">{t('packagesNote')}</p>
 
-          <div className="mt-12 overflow-hidden rounded-2xl border border-rule-paper">
-            <div className="grid divide-y divide-rule-paper md:grid-cols-3 md:divide-x md:divide-y-0">
-              {PACKS.map((p) => (
-                <div key={p} className="flex flex-col justify-between gap-8 p-8">
-                  <div>
-                    <h3 className="ds-display text-subtitle">{t(`${p}Title`)}</h3>
-                    <p className="mt-4 text-body text-on-paper-muted">{t(`${p}Body`)}</p>
-                  </div>
-                  <p className="text-fine text-on-paper-muted/80">{t(`${p}Meta`)}</p>
+          <ul className="mt-12 border-t border-rule-paper">
+            {PACKS.map((p) => (
+              <li
+                key={p}
+                className="grid gap-x-12 gap-y-4 border-b border-rule-paper py-9 md:grid-cols-[clamp(180px,22vw,260px)_1fr]"
+              >
+                <h3 className="ds-display text-subtitle">{t(`${p}Title`)}</h3>
+                <div>
+                  <p className="max-w-[58ch] text-lead text-on-paper-muted">{t(`${p}Body`)}</p>
+                  <p className="mt-3 text-fine text-on-paper-muted/80">{t(`${p}Meta`)}</p>
                 </div>
-              ))}
-            </div>
-          </div>
+              </li>
+            ))}
+          </ul>
         </Section>
 
         {/* ── The creators ────────────────────────────────────── */}
