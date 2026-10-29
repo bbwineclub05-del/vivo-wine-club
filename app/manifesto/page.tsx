@@ -31,19 +31,24 @@ const TEAM = [
   { name: 'Edoardo Piceni', role: 'Tech', linkedin: 'https://www.linkedin.com/in/edoardo-antonio-piceni-89a132212/' },
 ] as const;
 
-// Carried over from the previous page; the copy already exists in all
-// three languages under the `whoWeAre` namespace.
-const TIMELINE = [
-  { place: 'timeline1Place', text: 'timeline1Text', detail: 'timeline1Detail', next: false },
-  { place: 'timeline2Place', text: 'timeline2Text', detail: 'timeline2Detail', next: false },
-  { place: 'timeline3Place', text: 'timeline3Text', detail: 'timeline3Detail', next: false },
-  { place: 'timeline4Place', text: null, detail: 'timeline4Detail', next: true },
+/**
+ * Tre tappe, non quattro con le date.
+ *
+ * Prima c'era un percorso aziendale: gennaio, primavera, da allora,
+ * il prossimo capitolo. Raccontava la crescita di una societa', e
+ * nessuno arriva su un manifesto per leggere quella. Qui ci sono i
+ * tre posti che spiegano perche' il club esiste: dove ci siamo
+ * conosciuti, dove abbiamo visto il problema, cosa abbiamo fatto.
+ */
+const STORIA = [
+  { posto: 'story1Place', corpo: 'story1Body' },
+  { posto: 'story2Place', corpo: 'story2Body' },
+  { posto: 'story3Place', corpo: 'story3Body' },
 ] as const;
 
 export default async function ManifestoPage() {
   const t = await getTranslations('site.manifesto');
   const tw = await getTranslations('whoWeAre');
-  const { SLOGAN } = await import('@/lib/brand');
 
   return (
     <>
@@ -64,36 +69,21 @@ export default async function ManifestoPage() {
           </div>
         </Section>
 
-        {/* ── The road so far ─────────────────────────────────
-            A vertical column rather than the old horizontal rail:
-            on a page that is already a long read, the eye should
-            not have to change direction to follow it. */}
+        {/* ── Come e' nato ────────────────────────────────────
+            Tre colonne sul computer, tre blocchi uno sotto l'altro
+            sul telefono. Il nome del posto e' nel carattere dei
+            titoli, piu' piccolo: e' lui a reggere la sequenza, e il
+            filetto sopra ogni blocco li tiene in riga. */}
         <Section ground="paper-soft">
           <h2 className="ds-display text-title">{t('timelineTitle')}</h2>
 
-          <ol className="mt-12 max-w-[64ch]">
-            {TIMELINE.map((item, i) => (
-              <li
-                key={item.place}
-                className={`relative grid gap-x-8 gap-y-2 pb-12 pl-8 last:pb-0 md:grid-cols-[11rem_1fr] md:pl-0 ${
-                  i < TIMELINE.length - 1 ? 'border-l border-rule-paper md:border-l-0' : ''
-                }`}
-              >
-                <span
-                  aria-hidden="true"
-                  className={`absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full md:hidden ${
-                    item.next ? 'bg-rose ring-4 ring-rose/20' : 'bg-accent'
-                  }`}
-                />
-                <p className={`text-fine font-medium ${item.next ? 'text-accent-soft' : 'text-on-paper-muted'}`}>
-                  {tw(item.place)}
+          <ol className="mt-10 grid gap-x-10 gap-y-8 md:grid-cols-3">
+            {STORIA.map((tappa) => (
+              <li key={tappa.posto} className="border-t border-rule-paper pt-5">
+                <h3 className="ds-display text-subtitle">{t(tappa.posto)}</h3>
+                <p className="mt-3 max-w-[40ch] text-body text-on-paper-muted">
+                  {t(tappa.corpo)}
                 </p>
-                <div>
-                  <h3 className={`text-subtitle ${item.next ? 'font-medium text-accent-soft' : 'font-medium'}`}>
-                    {item.text ? tw(item.text) : SLOGAN}
-                  </h3>
-                  <p className="mt-2 text-body text-on-paper-muted">{tw(item.detail)}</p>
-                </div>
               </li>
             ))}
           </ol>
