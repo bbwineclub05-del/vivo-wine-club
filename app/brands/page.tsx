@@ -3,6 +3,7 @@ import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
 import { ButtonLink } from '@/components/ui/Button';
+import { Accordion } from '@/components/ui/Accordion';
 import { Chapter, Statement } from '@/components/ui/Chapter';
 import { Section } from '@/components/ui/Section';
 import { SiteFooter } from '@/components/ui/SiteFooter';
@@ -16,7 +17,7 @@ export async function generateMetadata() {
   return { title: 'Vivo Studio | Vivo Wine Club', description: t('statement') };
 }
 
-const STEPS = ['step1', 'step2', 'step3', 'step4'] as const;
+const SERVIZI = ['do1', 'do2', 'do3', 'do4', 'do5', 'do6'] as const;
 const PACKS = ['pack1', 'pack2', 'pack3'] as const;
 
 export default async function BrandsPage() {
@@ -43,23 +44,27 @@ export default async function BrandsPage() {
           </div>
         </Section>
 
-        {/* ── How we work ─────────────────────────────────────
-            Numbered because the order is the information: a brand
-            needs to know what happens before it commits. */}
+        {/* ── Cosa facciamo ───────────────────────────────────
+            Erano quattro tappe di un processo: brief, creator,
+            produzione, distribuzione. Raccontavano come lavoriamo
+            dentro, mentre chi legge qui cerca sé stesso: «fate anche
+            gli eventi in cantina?». Adesso e' un elenco di servizi,
+            e il dettaglio si apre solo a chi lo vuole. */}
         <Section ground="paper-soft">
-          <h2 className="ds-display text-title">{t('howTitle')}</h2>
-          <ol className="mt-12 grid gap-y-10 md:grid-cols-2 md:gap-x-12 lg:grid-cols-4 lg:gap-x-8">
-            {STEPS.map((s, i) => (
-              <li key={s} className="border-t border-rule-paper pt-5">
-                <span className="ds-numeric ds-display block text-subtitle text-accent-soft">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <h3 className="mt-3 text-subtitle font-medium">{t(`${s}Title`)}</h3>
-                <p className="mt-2 text-body text-on-paper-muted">{t(`${s}Body`)}</p>
-              </li>
-            ))}
-          </ol>
+          <h2 className="ds-display text-title">{t('doTitle')}</h2>
+          <p className="mt-4 max-w-[58ch] text-lead text-on-paper-muted">{t('doNote')}</p>
+
+          <div className="mt-10">
+            <Accordion
+              items={SERVIZI.map((v) => ({
+                id: v,
+                titolo: t(`${v}Title`),
+                corpo: t(`${v}Body`),
+              }))}
+            />
+          </div>
         </Section>
+
 
         {/* ── Le tre forme ────────────────────────────────────
             Erano tre colonne dentro un riquadro diviso da linee: la
