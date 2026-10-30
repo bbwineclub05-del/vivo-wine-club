@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { PARTNERS } from '@/lib/partners';
+import { linkPartner, PARTNERS } from '@/lib/partners';
 
 /**
  * The estates that have already hosted us, shown on the Studio page as
@@ -18,10 +18,14 @@ export function PartnerLogos({ category = 'cantina' }: { category?: 'cantina' | 
 
   return (
     <ul className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl bg-rule-paper sm:grid-cols-4">
-      {partners.map((p) => (
+      {partners.map((p) => {
+        const { href, esterno } = linkPartner(p);
+        return (
         <li key={p.slug} className="bg-paper">
           <Link
-            href={`/partners/${p.slug}`}
+            href={href}
+            target={esterno ? '_blank' : undefined}
+            rel={esterno ? 'noopener noreferrer' : undefined}
             className="grid h-32 place-items-center px-6 transition-colors duration-200 hover:bg-paper-soft"
             aria-label={p.name}
           >
@@ -36,7 +40,8 @@ export function PartnerLogos({ category = 'cantina' }: { category?: 'cantina' | 
             </span>
           </Link>
         </li>
-      ))}
+        );
+      })}
     </ul>
   );
 }

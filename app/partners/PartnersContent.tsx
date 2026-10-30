@@ -9,7 +9,7 @@ import { Chapter } from '@/components/ui/Chapter';
 import { Section } from '@/components/ui/Section';
 import PartnerLogo from '@/components/PartnerLogo';
 import EstatesGrid from '@/components/EstatesGrid';
-import { PARTNERS, type Partner } from '@/lib/partners';
+import { linkPartner, PARTNERS, type Partner } from '@/lib/partners';
 
 /**
  * I partner, nel sistema del sito.
@@ -30,6 +30,7 @@ type Linguetta = 'all' | 'estate';
 function Scheda({ partner, index }: { partner: Partner; index: number }) {
   const t = useTranslations('partners');
   const reduce = useReducedMotion();
+  const { href, esterno } = linkPartner(partner);
 
   return (
     <motion.li
@@ -39,7 +40,9 @@ function Scheda({ partner, index }: { partner: Partner; index: number }) {
       transition={{ duration: 0.5, delay: Math.min(index, 8) * 0.05, ease: [0.16, 1, 0.3, 1] }}
     >
       <Link
-        href={`/partners/${partner.slug}`}
+        href={href}
+        target={esterno ? '_blank' : undefined}
+        rel={esterno ? 'noopener noreferrer' : undefined}
         className="group block no-underline transition-transform duration-200 ease-out hover:-translate-y-[3px]"
       >
         <div
