@@ -94,10 +94,13 @@ export default async function PartnerPage({ params }: { params: Promise<{ slug: 
                   </a>
                 )}
 
-                <span className="inline-flex items-center gap-2 text-[9px] tracking-[0.3em] px-4 py-2 border border-[#731515]/30 text-[#731515] rounded-lg">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#731515] inline-block" />
-                  {t('badge')}
-                </span>
+                {/* Prima qui c'era la targhetta «partner of Vivo Wine
+                    Club», su una pagina che si apre dall'elenco dei
+                    partner. Adesso dice la cosa che non si sa gia':
+                    se e' una cantina o un locale. */}
+                <p className="text-fine text-on-paper-muted">
+                  {partner.category === 'cantina' ? t('categoryCantina') : t('categoryLocation')}
+                </p>
 
                 {partner.externalUrl && (
                   <div className="mt-6">
