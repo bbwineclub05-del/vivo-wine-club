@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { notFound } from 'next/navigation';
 
 import { Section } from '@/components/ui/Section';
-import { homeReels, nomeCopertina, videoCopertina } from '@/lib/home-reels';
+import { homeReels } from '@/lib/home-reels';
 import { LinkForm } from './LinkForm';
 
 /**
@@ -24,7 +24,6 @@ export const dynamic = 'force-dynamic';
 export default function PaginaLink() {
   if (process.env.NODE_ENV === 'production') notFound();
 
-  const copertina = videoCopertina();
   const clip = homeReels().filter((r, i, tutte) =>
     tutte.findIndex((x) => (x.src ?? x.poster) === (r.src ?? r.poster)) === i,
   );
@@ -49,15 +48,6 @@ export default function PaginaLink() {
         </p>
 
         <ul className="mt-10 max-w-[640px] border-t border-rule-paper">
-          {/* Prima il filmato grande in cima alla home: e' quello che
-              si vede per primo, ed e' giusto che si possa aprire. */}
-          <LinkForm
-            nome={nomeCopertina()}
-            poster={copertina.poster}
-            src={copertina.src}
-            iniziale={salvati[nomeCopertina()] ?? ''}
-          />
-
           {clip.map((r) => {
             const nome = nomeDi(r);
             return (
