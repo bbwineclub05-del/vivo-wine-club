@@ -107,6 +107,7 @@ export const PARTNERS: Partner[] = [
     name:     'Utopia',
     category: 'location',
     logo:     '/sponsors/utopia.png',
+    externalUrl: 'https://www.instagram.com/utopia.paris_/',
     subtitle: {
       it: 'Cocktail Bar',
       en: 'Cocktail Bar',
