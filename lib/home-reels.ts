@@ -128,15 +128,33 @@ function alterna(a: HomeReel[], b: HomeReel[]): HomeReel[] {
 export interface Copertina {
   src: string;
   poster?: string;
+  /** Il post da cui viene, come per le clip della striscia. */
+  link?: string;
 }
 
 export function videoCopertina(): Copertina {
+  const link = collegamenti();
   const video = join(CARTELLA, 'copertina.mp4');
+
   if (!existsSync(video)) {
-    return { src: '/videosito-corto.mp4', poster: '/vigna.jpg' };
+    return {
+      src: '/videosito-corto.mp4',
+      poster: '/vigna.jpg',
+      link: link['videosito-corto'],
+    };
   }
+
   const poster = POSTER.map((e) => `copertina${e}`).find((n) => existsSync(join(CARTELLA, n)));
-  return { src: '/home/copertina.mp4', poster: poster ? `/home/${poster}` : undefined };
+  return {
+    src: '/home/copertina.mp4',
+    poster: poster ? `/home/${poster}` : undefined,
+    link: link.copertina,
+  };
+}
+
+/** Il nome con cui la copertina compare in `link.json`. */
+export function nomeCopertina(): string {
+  return existsSync(join(CARTELLA, 'copertina.mp4')) ? 'copertina' : 'videosito-corto';
 }
 
 /** Il video di prima, finche' le cartelle sono vuote. */
