@@ -66,31 +66,31 @@ const SAVOYE: Record<CaseLocale, CaseStudy> = {
     titolo: 'Champagne Mathilde Savoye',
     sottotitolo: 'VIVO Wine Party · Utopia, Parigi · 16 ottobre 2026',
     sintesi:
-      'Una maison di champagne voleva farsi conoscere da un pubblico giovane che lo champagne ancora non lo beve. Abbiamo riempito un locale a Parigi di centocinquanta persone, e gliel’abbiamo messo in mano.',
+      'Una maison di champagne voleva farsi conoscere da chi domani comprerà il vino e oggi non lo beve ancora. Centocinquanta ragazzi in un locale nel centro di Parigi, la bottiglia in mano a tutti, e il racconto che parte da lì.',
     numeri: [
-      { valore: '150', etichetta: 'invitati', nota: 'circa, fra i 20 e i 25 anni' },
-      { valore: '24', etichetta: 'bottiglie', nota: 'circa 168 calici serviti' },
-      { valore: '10 493', etichetta: 'visualizzazioni', nota: 'carosello e reel, senza pubblicità' },
-      { valore: '57 %', etichetta: 'non seguiva VIVO', nota: 'pubblico nuovo, non il nostro' },
+      { valore: '150', etichetta: 'in sala', nota: 'un locale nel centro di Parigi, tutto esaurito' },
+      { valore: '12 000', etichetta: 'visualizzazioni', nota: 'senza un euro di pubblicità' },
+      { valore: '5 000', etichetta: 'account raggiunti', nota: 'persone, non impressioni comprate' },
+      { valore: '95 %', etichetta: 'fra i 18 e i 32 anni', nota: 'chi comprerà vino per i prossimi trent’anni' },
     ],
     tappe: [
       {
-        occhiello: '16 ottobre, sera',
-        titolo: 'Una sala piena, a Parigi',
+        occhiello: 'La serata',
+        titolo: 'Una sala piena nel centro di Parigi',
         corpo:
-          'Utopia, Parigi. Il 75 % italiani, il 20 % francesi, il 58 % donne. Tutti fra i venti e i venticinque anni: l’età in cui si decide cosa si berrà per i trent’anni successivi.',
+          'Centocinquanta persone, tutte fra i diciotto e i trentadue anni. Niente palco, niente presentazione: si entra, si beve, si chiede cos’è.',
         numeri: [
-          { valore: '75 %', etichetta: 'italiani' },
-          { valore: '58 %', etichetta: 'donne' },
+          { valore: '150', etichetta: 'invitati' },
+          { valore: '18-32', etichetta: 'anni' },
         ],
         media: MEDIA.serata,
         verso: 'largo',
       },
       {
-        occhiello: 'Nel bicchiere',
-        titolo: 'In mano, non in vetrina',
+        occhiello: 'Il prodotto',
+        titolo: 'In mano a tutti, non dietro un banco',
         corpo:
-          'Nessuno ha guardato lo champagne da lontano. Ogni invitato ha avuto Mathilde Savoye nel proprio bicchiere, l’ha assaggiato e ne ha parlato con chi aveva accanto.',
+          'Ventiquattro bottiglie aperte, centosessantotto calici versati. Nessuno ha guardato lo champagne da lontano: ognuno ha avuto Mathilde Savoye nel proprio bicchiere e ne ha parlato con chi aveva accanto. È lì che un nome diventa un gusto che uno riconosce.',
         numeri: [
           { valore: '24', etichetta: 'bottiglie aperte' },
           { valore: '168', etichetta: 'calici serviti' },
@@ -99,64 +99,47 @@ const SAVOYE: Record<CaseLocale, CaseStudy> = {
         verso: 'largo',
       },
       {
-        occhiello: 'Carosello, 20 ottobre',
-        titolo: 'Il racconto della serata',
+        occhiello: 'Dopo la serata',
+        titolo: 'Il racconto che continua per giorni',
         corpo:
-          'Pubblicato insieme a @champagnesavoye. Nove interazioni ogni cento account raggiunti: per un contenuto di marca è un numero che non si vede spesso.',
+          'Un carosello e un reel, pubblicati insieme alla maison. Dodicimila visualizzazioni e cinquemila account raggiunti senza pubblicità, e il novantacinque per cento di chi li ha visti ha fra i diciotto e i trentadue anni.',
         numeri: [
-          { valore: '5 812', etichetta: 'visualizzazioni' },
-          { valore: '9,1 %', etichetta: 'tasso di interazione' },
-          { valore: '74 %', etichetta: 'ha fra 18 e 34 anni' },
+          { valore: '12 000', etichetta: 'visualizzazioni' },
+          { valore: '5 000', etichetta: 'account raggiunti' },
+          { valore: '95 %', etichetta: 'fra 18 e 32 anni' },
         ],
         media: MEDIA.sala,
         verso: 'largo',
       },
       {
-        occhiello: 'Reel, 23 ottobre',
-        titolo: 'Il reel è andato più lontano',
+        occhiello: 'Due mercati',
+        titolo: 'Francia e Italia, nella stessa sera',
         corpo:
-          'Il 45 % di account in più del carosello, e diciassette persone lo hanno rimesso sul proprio profilo.',
-        numeri: [
-          { valore: '4 681', etichetta: 'visualizzazioni' },
-          { valore: '2 789', etichetta: 'account raggiunti' },
-          { valore: '92 %', etichetta: 'ha fra 18 e 34 anni' },
-        ],
+          'Per una maison francese il pubblico italiano under 30 era un mercato mai toccato. Una serata a Parigi lo ha raggiunto senza uscire dalla città.',
         media: MEDIA.gente,
         verso: 'alto',
       },
-      {
-        occhiello: 'Due mercati',
-        titolo: 'Italia e Francia, nella stessa serata',
-        corpo:
-          'Circa 2 950 account raggiunti in Italia e 1 080 in Francia. Per una maison francese, il pubblico italiano under 30 era un mercato che non aveva ancora toccato.',
-        numeri: [
-          { valore: '2 950', etichetta: 'account in Italia' },
-          { valore: '1 080', etichetta: 'account in Francia' },
-        ],
-        media: MEDIA.tavolo,
-        verso: 'largo',
-      },
     ],
-    lezioniTitolo: 'Cosa ci ha insegnato',
+    lezioniTitolo: 'Cosa resta a una cantina',
     lezioni: [
       {
-        titolo: 'Le persone fanno fermare il pollice, la bottiglia no',
+        titolo: 'Il nome diventa un gusto',
         corpo:
-          'Nel carosello la foto di un’invitata con la bottiglia in mano ha preso 68 interazioni. La foto della bottiglia da sola, 6.',
+          'Chi ha bevuto quella sera non ha visto una pubblicità: ha assaggiato. È la differenza fra essere visti e essere ricordati.',
       },
       {
-        titolo: 'Firmare insieme moltiplica',
+        titolo: 'Il vino senza barriere all’ingresso',
         corpo:
-          'Il contenuto pubblicato in collaborazione con il profilo della maison ha raggiunto la Francia quattro volte di più.',
+          'Niente lezioni, niente gerarchie, niente parole che escludono. Il prodotto resta al centro, e il pubblico si avvicina perché può.',
       },
       {
-        titolo: 'Un calice vale più di uno scroll',
+        titolo: 'I consumatori di domani, oggi',
         corpo:
-          'Una serata così, organizzata da zero, costa fra i 2 500 e i 5 000 euro. Il mercato valuta un contatto dal vivo circa duecento volte un’impressione online. Qui ne sono arrivate 10 493 in più, senza un euro di pubblicità.',
+          'A questa età si decide cosa si berrà per i trent’anni successivi. Arrivarci adesso costa una serata; arrivarci dopo costa una campagna.',
       },
     ],
     fonte:
-      'Invitati: lista VIVO Wine Club. Dati social: Instagram Insights al 26 ottobre 2026. Valore di mercato: Street Teams Co, EventTrack.',
+      'Invitati: lista VIVO Wine Club. Dati social: Instagram Insights, carosello e reel pubblicati con la maison, aggiornati al 30 ottobre 2026.',
     ctaTitolo: 'La prossima serata la facciamo con voi?',
     ctaCorpo: 'Raccontateci il marchio e a chi volete farlo assaggiare. Rispondiamo noi, non un modulo.',
     cta: 'Parliamone',
@@ -169,31 +152,31 @@ const SAVOYE: Record<CaseLocale, CaseStudy> = {
     titolo: 'Champagne Mathilde Savoye',
     sottotitolo: 'VIVO Wine Party · Utopia, Paris · 16 October 2026',
     sintesi:
-      'A champagne house wanted to be known by a young crowd that does not drink champagne yet. We filled a room in Paris with a hundred and fifty of them, and put it in their hands.',
+      'A champagne house wanted to be known by the people who will buy wine tomorrow and do not drink it yet. A hundred and fifty of them in a venue in central Paris, the bottle in everyone’s hand, and the story starting there.',
     numeri: [
-      { valore: '150', etichetta: 'guests', nota: 'roughly, aged 20 to 25' },
-      { valore: '24', etichetta: 'bottles', nota: 'about 168 glasses poured' },
-      { valore: '10,493', etichetta: 'views', nota: 'carousel and reel, no ad spend' },
-      { valore: '57%', etichetta: 'did not follow VIVO', nota: 'a new crowd, not ours' },
+      { valore: '150', etichetta: 'in the room', nota: 'a venue in central Paris, full' },
+      { valore: '12,000', etichetta: 'views', nota: 'with no ad spend at all' },
+      { valore: '5,000', etichetta: 'accounts reached', nota: 'people, not bought impressions' },
+      { valore: '95%', etichetta: 'aged 18 to 32', nota: 'the people who will buy wine for the next thirty years' },
     ],
     tappe: [
       {
-        occhiello: '16 October, evening',
-        titolo: 'A full room, in Paris',
+        occhiello: 'The night',
+        titolo: 'A full room in central Paris',
         corpo:
-          'Utopia, Paris. 75% Italian, 20% French, 58% women. All between twenty and twenty-five: the age when you decide what you will drink for the next thirty years.',
+          'A hundred and fifty people, all between eighteen and thirty-two. No stage, no presentation: you walk in, you drink, you ask what it is.',
         numeri: [
-          { valore: '75%', etichetta: 'Italian' },
-          { valore: '58%', etichetta: 'women' },
+          { valore: '150', etichetta: 'guests' },
+          { valore: '18-32', etichetta: 'years old' },
         ],
         media: MEDIA.serata,
         verso: 'largo',
       },
       {
-        occhiello: 'In the glass',
-        titolo: 'In hand, not on display',
+        occhiello: 'The product',
+        titolo: 'In everyone’s hand, not behind a counter',
         corpo:
-          'Nobody looked at the champagne from a distance. Every guest had Mathilde Savoye in their own glass, tasted it and talked about it with whoever was next to them.',
+          'Twenty-four bottles opened, a hundred and sixty-eight glasses poured. Nobody looked at the champagne from a distance: everyone had Mathilde Savoye in their own glass and talked about it with the person next to them. That is where a name turns into a taste you recognise.',
         numeri: [
           { valore: '24', etichetta: 'bottles opened' },
           { valore: '168', etichetta: 'glasses poured' },
@@ -202,64 +185,47 @@ const SAVOYE: Record<CaseLocale, CaseStudy> = {
         verso: 'largo',
       },
       {
-        occhiello: 'Carousel, 20 October',
-        titolo: 'The night, told',
+        occhiello: 'After the night',
+        titolo: 'The story that keeps going for days',
         corpo:
-          'Posted together with @champagnesavoye. Nine interactions for every hundred accounts reached: for branded content, that is not a number you see often.',
+          'A carousel and a reel, published together with the house. Twelve thousand views and five thousand accounts reached with no ad spend, and ninety-five per cent of the people who saw them are between eighteen and thirty-two.',
         numeri: [
-          { valore: '5,812', etichetta: 'views' },
-          { valore: '9.1%', etichetta: 'interaction rate' },
-          { valore: '74%', etichetta: 'aged 18 to 34' },
+          { valore: '12,000', etichetta: 'views' },
+          { valore: '5,000', etichetta: 'accounts reached' },
+          { valore: '95%', etichetta: 'aged 18 to 32' },
         ],
         media: MEDIA.sala,
         verso: 'largo',
       },
       {
-        occhiello: 'Reel, 23 October',
-        titolo: 'The reel went furthest',
+        occhiello: 'Two markets',
+        titolo: 'France and Italy, in one evening',
         corpo:
-          '45% more accounts than the carousel, and seventeen people put it back on their own profile.',
-        numeri: [
-          { valore: '4,681', etichetta: 'views' },
-          { valore: '2,789', etichetta: 'accounts reached' },
-          { valore: '92%', etichetta: 'aged 18 to 34' },
-        ],
+          'For a French house, the Italian under-30 crowd was a market it had never touched. One night in Paris reached it without leaving the city.',
         media: MEDIA.gente,
         verso: 'alto',
       },
-      {
-        occhiello: 'Two markets',
-        titolo: 'Italy and France, in one night',
-        corpo:
-          'Around 2,950 accounts reached in Italy and 1,080 in France. For a French house, the Italian under-30 crowd was a market it had not touched yet.',
-        numeri: [
-          { valore: '2,950', etichetta: 'accounts in Italy' },
-          { valore: '1,080', etichetta: 'accounts in France' },
-        ],
-        media: MEDIA.tavolo,
-        verso: 'largo',
-      },
     ],
-    lezioniTitolo: 'What it taught us',
+    lezioniTitolo: 'What an estate takes home',
     lezioni: [
       {
-        titolo: 'People stop the thumb, bottles do not',
+        titolo: 'The name turns into a taste',
         corpo:
-          'In the carousel, the photo of a guest holding the bottle took 68 interactions. The photo of the bottle alone took 6.',
+          'The people who drank that night did not see an ad: they tasted. That is the difference between being seen and being remembered.',
       },
       {
-        titolo: 'Co-signing multiplies',
+        titolo: 'Wine with nothing in the way',
         corpo:
-          'The post published together with the house’s own profile reached France four times as much.',
+          'No lecture, no hierarchy, no words that shut people out. The product stays at the centre, and people come closer because they can.',
       },
       {
-        titolo: 'A glass beats a scroll',
+        titolo: 'Tomorrow’s buyers, today',
         corpo:
-          'A night like this, built from scratch, costs between €2,500 and €5,000. The market values one contact in person at roughly two hundred times one impression online. Here 10,493 of those came on top, with no ad spend at all.',
+          'This is the age when people decide what they will drink for the next thirty years. Reaching them now costs one night; reaching them later costs a campaign.',
       },
     ],
     fonte:
-      'Guests: VIVO Wine Club list. Social data: Instagram Insights, 26 October 2026. Market value: Street Teams Co, EventTrack.',
+      'Guests: VIVO Wine Club list. Social data: Instagram Insights, carousel and reel published with the house, as of 30 October 2026.',
     ctaTitolo: 'Shall we do the next one with you?',
     ctaCorpo: 'Tell us about the brand and who you want to pour it for. A person answers, not a form.',
     cta: 'Let’s talk',
@@ -272,31 +238,31 @@ const SAVOYE: Record<CaseLocale, CaseStudy> = {
     titolo: 'Champagne Mathilde Savoye',
     sottotitolo: 'VIVO Wine Party · Utopia, Paris · 16 octobre 2026',
     sintesi:
-      'Une maison de champagne voulait se faire connaître d’un public jeune qui ne boit pas encore de champagne. Nous avons rempli un lieu à Paris de cent cinquante d’entre eux, et nous le leur avons mis en main.',
+      'Une maison de champagne voulait se faire connaître de ceux qui achèteront le vin demain et n’en boivent pas encore. Cent cinquante d’entre eux dans un lieu du centre de Paris, la bouteille dans la main de chacun, et le récit qui part de là.',
     numeri: [
-      { valore: '150', etichetta: 'invités', nota: 'environ, de 20 à 25 ans' },
-      { valore: '24', etichetta: 'bouteilles', nota: 'environ 168 coupes servies' },
-      { valore: '10 493', etichetta: 'vues', nota: 'carrousel et reel, sans publicité' },
-      { valore: '57 %', etichetta: 'ne suivaient pas VIVO', nota: 'un public nouveau, pas le nôtre' },
+      { valore: '150', etichetta: 'dans la salle', nota: 'un lieu du centre de Paris, complet' },
+      { valore: '12 000', etichetta: 'vues', nota: 'sans un euro de publicité' },
+      { valore: '5 000', etichetta: 'comptes touchés', nota: 'des personnes, pas des impressions achetées' },
+      { valore: '95 %', etichetta: 'de 18 à 32 ans', nota: 'ceux qui achèteront du vin les trente prochaines années' },
     ],
     tappe: [
       {
-        occhiello: '16 octobre, le soir',
-        titolo: 'Une salle pleine, à Paris',
+        occhiello: 'La soirée',
+        titolo: 'Une salle pleine au centre de Paris',
         corpo:
-          'Utopia, Paris. 75 % d’Italiens, 20 % de Français, 58 % de femmes. Tous entre vingt et vingt-cinq ans : l’âge où l’on décide ce que l’on boira les trente années suivantes.',
+          'Cent cinquante personnes, toutes entre dix-huit et trente-deux ans. Pas de scène, pas de présentation : on entre, on boit, on demande ce que c’est.',
         numeri: [
-          { valore: '75 %', etichetta: 'd’Italiens' },
-          { valore: '58 %', etichetta: 'de femmes' },
+          { valore: '150', etichetta: 'invités' },
+          { valore: '18-32', etichetta: 'ans' },
         ],
         media: MEDIA.serata,
         verso: 'largo',
       },
       {
-        occhiello: 'Dans le verre',
-        titolo: 'En main, pas en vitrine',
+        occhiello: 'Le produit',
+        titolo: 'Dans la main de tous, pas derrière un comptoir',
         corpo:
-          'Personne n’a regardé le champagne de loin. Chaque invité a eu Mathilde Savoye dans son verre, l’a goûté et en a parlé avec son voisin.',
+          'Vingt-quatre bouteilles ouvertes, cent soixante-huit coupes servies. Personne n’a regardé le champagne de loin : chacun a eu Mathilde Savoye dans son verre et en a parlé avec son voisin. C’est là qu’un nom devient un goût que l’on reconnaît.',
         numeri: [
           { valore: '24', etichetta: 'bouteilles ouvertes' },
           { valore: '168', etichetta: 'coupes servies' },
@@ -305,64 +271,47 @@ const SAVOYE: Record<CaseLocale, CaseStudy> = {
         verso: 'largo',
       },
       {
-        occhiello: 'Carrousel, 20 octobre',
-        titolo: 'La soirée, racontée',
+        occhiello: 'Après la soirée',
+        titolo: 'Le récit qui continue pendant des jours',
         corpo:
-          'Publié avec @champagnesavoye. Neuf interactions pour cent comptes touchés : pour un contenu de marque, ce n’est pas un chiffre que l’on voit souvent.',
+          'Un carrousel et un reel, publiés avec la maison. Douze mille vues et cinq mille comptes touchés sans publicité, et quatre-vingt-quinze pour cent de ceux qui les ont vus ont entre dix-huit et trente-deux ans.',
         numeri: [
-          { valore: '5 812', etichetta: 'vues' },
-          { valore: '9,1 %', etichetta: 'taux d’interaction' },
-          { valore: '74 %', etichetta: 'ont 18 à 34 ans' },
+          { valore: '12 000', etichetta: 'vues' },
+          { valore: '5 000', etichetta: 'comptes touchés' },
+          { valore: '95 %', etichetta: 'de 18 à 32 ans' },
         ],
         media: MEDIA.sala,
         verso: 'largo',
       },
       {
-        occhiello: 'Reel, 23 octobre',
-        titolo: 'Le reel est allé plus loin',
+        occhiello: 'Deux marchés',
+        titolo: 'La France et l’Italie, le même soir',
         corpo:
-          '45 % de comptes de plus que le carrousel, et dix-sept personnes l’ont repartagé sur leur propre profil.',
-        numeri: [
-          { valore: '4 681', etichetta: 'vues' },
-          { valore: '2 789', etichetta: 'comptes touchés' },
-          { valore: '92 %', etichetta: 'ont 18 à 34 ans' },
-        ],
+          'Pour une maison française, le public italien de moins de 30 ans était un marché jamais touché. Une soirée à Paris l’a atteint sans quitter la ville.',
         media: MEDIA.gente,
         verso: 'alto',
       },
-      {
-        occhiello: 'Deux marchés',
-        titolo: 'L’Italie et la France, le même soir',
-        corpo:
-          'Environ 2 950 comptes touchés en Italie et 1 080 en France. Pour une maison française, le public italien de moins de 30 ans était un marché encore intact.',
-        numeri: [
-          { valore: '2 950', etichetta: 'comptes en Italie' },
-          { valore: '1 080', etichetta: 'comptes en France' },
-        ],
-        media: MEDIA.tavolo,
-        verso: 'largo',
-      },
     ],
-    lezioniTitolo: 'Ce que cela nous a appris',
+    lezioniTitolo: 'Ce qu’un domaine en retire',
     lezioni: [
       {
-        titolo: 'Les gens arrêtent le pouce, la bouteille non',
+        titolo: 'Le nom devient un goût',
         corpo:
-          'Dans le carrousel, la photo d’une invitée bouteille en main a reçu 68 interactions. Celle de la bouteille seule, 6.',
+          'Ceux qui ont bu ce soir-là n’ont pas vu une publicité : ils ont goûté. C’est la différence entre être vu et être retenu.',
       },
       {
-        titolo: 'Co-signer multiplie',
+        titolo: 'Le vin sans barrière à l’entrée',
         corpo:
-          'Le contenu publié avec le profil de la maison a touché la France quatre fois plus.',
+          'Pas de leçon, pas de hiérarchie, pas de mots qui excluent. Le produit reste au centre, et le public s’approche parce qu’il le peut.',
       },
       {
-        titolo: 'Une coupe vaut mieux qu’un scroll',
+        titolo: 'Les acheteurs de demain, aujourd’hui',
         corpo:
-          'Une soirée comme celle-ci, montée de zéro, coûte entre 2 500 et 5 000 euros. Le marché valorise un contact en personne environ deux cents fois une impression en ligne. Ici, 10 493 sont venues en plus, sans un euro de publicité.',
+          'C’est l’âge où l’on décide ce que l’on boira les trente années suivantes. Les atteindre maintenant coûte une soirée ; les atteindre plus tard coûte une campagne.',
       },
     ],
     fonte:
-      'Invités : liste VIVO Wine Club. Données sociales : Instagram Insights au 26 octobre 2026. Valeur de marché : Street Teams Co, EventTrack.',
+      'Invités : liste VIVO Wine Club. Données sociales : Instagram Insights, carrousel et reel publiés avec la maison, au 30 octobre 2026.',
     ctaTitolo: 'On fait la prochaine avec vous ?',
     ctaCorpo: 'Racontez-nous la marque et à qui vous voulez la faire goûter. C’est une personne qui répond, pas un formulaire.',
     cta: 'Parlons-en',
