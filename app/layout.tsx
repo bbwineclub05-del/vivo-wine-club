@@ -8,7 +8,7 @@ import EntryGate from "@/components/ui/EntryGate";
 import ConsentGatedScripts from "@/components/ConsentGatedScripts";
 import WineAssistantWidget from "@/components/WineAssistantWidget";
 import { NextIntlClientProvider } from 'next-intl';
-import { cookies } from 'next/headers';
+import { localeDellaRichiesta } from '@/i18n/request';
 import messagesEn from '../messages/en.json';
 import messagesIt from '../messages/it.json';
 import messagesFr from '../messages/fr.json';
@@ -80,10 +80,9 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const LOCALES = ['en', 'it', 'fr'] as const;
-  const cookieStore = await cookies();
-  const raw = cookieStore.get('locale')?.value ?? '';
-  const locale = (LOCALES as readonly string[]).includes(raw) ? (raw as keyof typeof MESSAGES_MAP) : 'en';
+  // La stessa scelta che fa next-intl, non una copia: cookie se c'e',
+  // altrimenti la lingua del browser.
+  const locale = await localeDellaRichiesta();
   const messages = MESSAGES_MAP[locale];
 
   return (

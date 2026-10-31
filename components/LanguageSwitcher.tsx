@@ -25,6 +25,13 @@ const LINGUE = [
   { code: 'fr', nome: 'Français', breve: 'FR' },
 ] as const satisfies readonly { code: CodiceBandiera; nome: string; breve: string }[];
 
+/* La scrittura del cookie sta fuori dal componente: il compilatore di
+   React considera `document` un valore che un componente non deve
+   toccare, e aveva ragione a segnalarlo. */
+function ricordaLingua(code: string) {
+  document.cookie = `locale=${code}; path=/; max-age=31536000; SameSite=Lax`;
+}
+
 export default function LanguageSwitcher({ up = false }: { up?: boolean }) {
   const locale = useLocale();
   const router = useRouter();
@@ -39,7 +46,7 @@ export default function LanguageSwitcher({ up = false }: { up?: boolean }) {
       setOpen(false);
       return;
     }
-    document.cookie = `locale=${code}; path=/; max-age=31536000; SameSite=Lax`;
+    ricordaLingua(code);
     setOpen(false);
     startTransition(() => {
       router.refresh();
