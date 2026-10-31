@@ -191,7 +191,7 @@ export async function POST(request: Request) {
       from:    'Vivo Wine Club <noreply@vivowineclub.com>',
       replyTo: data.email,
       to:      'info@vivowineclub.com',
-      subject: `New ambassador application — ${subjectArea}`,
+      subject: `New ambassador application: ${subjectArea}`,
       html: ambassadorStaffEmailHtml([
         ['Name',           `${data.first_name} ${data.last_name}`],
         ['Email',          data.email],

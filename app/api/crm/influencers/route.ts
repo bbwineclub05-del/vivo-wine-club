@@ -51,6 +51,9 @@ export async function POST(request: Request) {
         notes:             notes             ?? '',
         status:            status            ?? 'Contattato',
         last_contact_date: last_contact_date || null,
+        stage: body.stage || 'new',
+        owner_email: body.owner_email || null,
+        next_action_at: body.next_action_at || null,
       })
       .select()
       .single();

@@ -2,6 +2,20 @@ import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
+/**
+ * Una voce del preventivo.
+ *
+ * `description` è testo libero: i servizi del club cambiano a ogni
+ * evento, e un elenco fisso di sei caselle da spuntare costringeva a
+ * far rientrare "allestimento luci e scenografia per la terrazza" in
+ * "Altro". L'importo è facoltativo: una voce senza prezzo è inclusa.
+ */
+export interface QuoteItem {
+  description: string;
+  /** In centesimi. `null` = voce inclusa, senza prezzo a sé. */
+  amountCents: number | null;
+}
+
 export interface QuoteData {
   quoteNumber: string;
   issueDate: string;
@@ -11,11 +25,25 @@ export interface QuoteData {
   eventDate: string;
   venue: string;
   attendees: number | string;
-  services: string[];
-  totalPrice: string;
+  items: QuoteItem[];
   paymentConditions: string;
   description: string;
   notes: string;
+}
+
+/** "2026-11-14" -> "14/11/2026". Qualunque altra cosa resta com'e'. */
+function fmtDateIT(iso: string): string {
+  if (!iso) return '\u2014';
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso.trim());
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : iso;
+}
+
+/** Formattazione italiana scritta a mano: vedi la nota in lib/ledger.ts. */
+function eur(cents: number): string {
+  const units = Math.floor(Math.abs(cents) / 100);
+  const dec = String(Math.abs(cents) % 100).padStart(2, '0');
+  const grouped = String(units).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return `${cents < 0 ? '-' : ''}\u20ac ${grouped},${dec}`;
 }
 
 // ── Colours ──────────────────────────────────────────────────────────
@@ -60,14 +88,6 @@ function wrapText(text: string, font: { widthOfTextAtSize: (t: string, s: number
   return result;
 }
 
-function sectionLabel(
-  page: ReturnType<PDFDocument['addPage']>,
-  font: { widthOfTextAtSize: (t: string, s: number) => number },
-  text: string, x: number, y: number
-) {
-  (page as any).drawText(text, { x, y, size: 7.5, font, color: BORDEAUX });
-}
-
 export async function generateQuotePdf(data: QuoteData): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create();
   const page   = pdfDoc.addPage([595, 842]); // A4
@@ -86,14 +106,18 @@ export async function generateQuotePdf(data: QuoteData): Promise<Uint8Array> {
   // ── HEADER ───────────────────────────────────────────────────────────
   const HEADER_TOP = H - 30;
 
-  // Logo — single static path so the file tracer picks up exactly this file.
-  // (A dynamic loop would cause the tracer to include the entire public/ dir.)
+  // Un percorso statico solo, cosi' il tracciatore dei file include
+  // esattamente questo e non tutta la cartella public.
+  //
+  // Era `logobianco.png`: il logo bianco, disegnato su una pagina
+  // bianca. Il commento diceva che "si legge bene a dimensioni
+  // piccole"; in realta' nei preventivi mandati ai clienti il logo
+  // non c'era. Ora e' quello colorato, nella versione piccola:
+  // l'originale pesa due mega per occupare tre centimetri.
   try {
-    const logoBytes = readFileSync(join(process.cwd(), 'public', 'logobianco.png'));
+    const logoBytes = readFileSync(join(process.cwd(), 'public', 'pdf-logo.png'));
     const logoImg   = await pdfDoc.embedPng(logoBytes);
     const logoDims  = logoImg.scaleToFit(120, 38);
-    // Draw on white: tint with a bordeaux-ish overlay using opacity isn't available
-    // in pdf-lib, so we draw it as-is — logobianco on white reads well at small size.
     page.drawImage(logoImg, {
       x: ML,
       y: HEADER_TOP - logoDims.height,
@@ -174,18 +198,27 @@ export async function generateQuotePdf(data: QuoteData): Promise<Uint8Array> {
   y -= 14;
 
   const eventCols = [
-    { label: 'TIPO EVENTO',   value: data.eventType               },
-    { label: 'DATA',          value: data.eventDate               },
-    { label: 'LUOGO',         value: data.venue                   },
+    { label: 'TIPO EVENTO',   value: data.eventType                },
+    { label: 'DATA',          value: fmtDateIT(data.eventDate)     },
+    { label: 'LUOGO',         value: data.venue                    },
     { label: 'PARTECIPANTI',  value: String(data.attendees || '—') },
   ];
   const colW = CW / 4;
+  // Ogni colonna va a capo dentro la propria larghezza. Il tipo evento
+  // ora è testo libero — "Serata di degustazione in terrazza" è una
+  // risposta legittima — e prima una frase così si stampava sopra la
+  // colonna accanto.
+  let maxRows = 1;
   eventCols.forEach(({ label, value }, i) => {
     const cx = ML + i * colW;
-    page.drawText(label, { x: cx, y,      size: 7,  font: bold,    color: BORDEAUX });
-    page.drawText(value || '—', { x: cx, y: y - 13, size: 9.5, font: regular, color: DARK });
+    page.drawText(label, { x: cx, y, size: 7, font: bold, color: BORDEAUX });
+    const lines = wrapText(value || '—', regular, 9.5, colW - 10).slice(0, 3);
+    maxRows = Math.max(maxRows, lines.length);
+    lines.forEach((line, r) => {
+      page.drawText(line, { x: cx, y: y - 13 - r * 11, size: 9.5, font: regular, color: DARK });
+    });
   });
-  y -= 30;
+  y -= 19 + maxRows * 11;
 
   // ── DESCRIZIONE EVENTO ───────────────────────────────────────────────
   y -= 8;
@@ -203,42 +236,63 @@ export async function generateQuotePdf(data: QuoteData): Promise<Uint8Array> {
     y -= LINE_H;
   }
 
-  // ── SERVIZI INCLUSI ──────────────────────────────────────────────────
-  if (data.services.length > 0) {
+  // ── LA PROPOSTA ──────────────────────────────────────────────────────
+  // Una riga per voce, con il suo importo a destra. Il totale è la somma
+  // di quello che si legge sopra: non è un campo a parte che qualcuno
+  // può dimenticare di aggiornare.
+  const items = (data.items ?? []).filter((it) => it.description.trim());
+
+  if (items.length > 0) {
     y -= 10;
     divider(y);
     y -= 16;
-    page.drawText('SERVIZI INCLUSI', { x: ML, y, size: 7.5, font: bold, color: BORDEAUX });
-    y -= 14;
+    page.drawText('LA PROPOSTA', { x: ML, y, size: 7.5, font: bold, color: BORDEAUX });
+    y -= 16;
 
-    const svcColW = CW / 2;
-    const rows    = Math.ceil(data.services.length / 2);
-    data.services.forEach((svc, i) => {
-      const col = i % 2;
-      const row = Math.floor(i / 2);
-      const sx  = ML + col * svcColW;
-      const sy  = y - row * 14;
-      if (sy > 160) {
-        page.drawText(`•  ${svc}`, { x: sx, y: sy, size: 9.5, font: regular, color: DARK });
+    for (const item of items) {
+      if (y < 120) break;
+      const priced = item.amountCents !== null && item.amountCents !== undefined;
+      const right = priced ? eur(item.amountCents as number) : 'Incluso';
+      const rightW = (priced ? bold : regular).widthOfTextAtSize(right, 9.5);
+      // Il testo va a capo lasciando libera la colonna dell'importo.
+      const lines = wrapText(item.description, regular, 9.5, CW - rightW - 18);
+
+      page.drawText(right, {
+        x: ML + CW - rightW,
+        y,
+        size: 9.5,
+        font: priced ? bold : regular,
+        color: priced ? DARK : GRAY,
+      });
+
+      for (const line of lines) {
+        if (y < 120) break;
+        page.drawText(line, { x: ML, y, size: 9.5, font: regular, color: DARK });
+        y -= LINE_H;
       }
-    });
-    y -= rows * 14 + 4;
+      y -= 4;
+    }
   }
 
-  // ── PRICING ──────────────────────────────────────────────────────────
-  y -= 10;
-  divider(y);
-  y -= 16;
-  page.drawText('PRICING', { x: ML, y, size: 7.5, font: bold, color: BORDEAUX });
-  y -= 14;
+  // ── TOTALE ───────────────────────────────────────────────────────────
+  const totalCents = items.reduce((sum, it) => sum + (it.amountCents ?? 0), 0);
 
-  // Price display — text only, clean
-  const priceLabel = 'TOTALE';
-  const priceValue = `€ ${data.totalPrice || '—'}`;
-  page.drawText(priceLabel, { x: ML, y, size: 8, font: bold, color: GRAY });
-  y -= 16;
-  page.drawText(priceValue, { x: ML, y, size: 22, font: bold, color: BORDEAUX });
-  y -= 28;
+  y -= 6;
+  divider(y);
+  y -= 18;
+  page.drawText('TOTALE', { x: ML, y, size: 8, font: bold, color: GRAY });
+  const totalText = eur(totalCents);
+  const totalW = bold.widthOfTextAtSize(totalText, 22);
+  page.drawText(totalText, {
+    x: ML + CW - totalW,
+    y: y - 6,
+    size: 22,
+    font: bold,
+    color: BORDEAUX,
+  });
+  // Il totale è composto a 22pt disegnato sotto la linea di base: senza
+  // questo respiro, la sezione successiva gli finisce addosso.
+  y -= 48;
 
   if (data.paymentConditions) {
     page.drawText('CONDIZIONI DI PAGAMENTO', { x: ML, y, size: 7.5, font: bold, color: BORDEAUX });
@@ -268,42 +322,13 @@ export async function generateQuotePdf(data: QuoteData): Promise<Uint8Array> {
     }
   }
 
-  // ── FIRME (anchored near bottom) ─────────────────────────────────────
-  const FOOTER_H  = 34;
-  const SIG_BLOCK = 80; // height reserved for signature section
-  const SIG_TOP   = FOOTER_H + SIG_BLOCK;
-
-  divider(SIG_TOP + 6);
-  page.drawText('FIRME', {
-    x: ML, y: SIG_TOP - 4,
-    size: 7.5, font: bold, color: BORDEAUX,
-  });
-
-  const FOUNDERS = [
-    'Giacomo Gallo',
-    'Filippo Lombardi',
-    'Cristiano Michelotti',
-    'Marcello Abbadati',
-  ];
-  const sigColW   = CW / 4;
-  const sigLineY  = SIG_TOP - 36;
-  const sigNameY  = sigLineY - 10;
-
-  FOUNDERS.forEach((name, i) => {
-    const fx      = ML + i * sigColW;
-    const lineEnd = fx + sigColW - 16;
-    // Signature line
-    page.drawLine({
-      start: { x: fx, y: sigLineY },
-      end:   { x: lineEnd, y: sigLineY },
-      thickness: 0.75,
-      color: GRAY_LIGHT,
-    });
-    // Name
-    page.drawText(name, { x: fx, y: sigNameY, size: 7.5, font: regular, color: GRAY });
-  });
+  // Niente blocco firme: quattro righe da firmare in calce a un
+  // preventivo via email non le firma nessuno, e l'elenco di nomi
+  // cablato qui dentro era già sbagliato — conteneva persone che non
+  // fanno più parte del team.
 
   // ── FOOTER ───────────────────────────────────────────────────────────
+  const FOOTER_H = 34;
   page.drawRectangle({ x: 0, y: 0, width: W, height: FOOTER_H, color: BORDEAUX });
   const footerText = 'vivowineclub.com   ·   info@vivowineclub.com   ·   Vivo Wine Club';
   const footerW    = regular.widthOfTextAtSize(footerText, 8);

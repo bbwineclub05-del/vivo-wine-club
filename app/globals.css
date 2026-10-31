@@ -3,9 +3,77 @@
 @theme inline {
   --font-serif: var(--font-syne);
   --font-body: var(--font-nunito);
+
+  /* ── Redesign 2026 ──────────────────────────────────────────────── */
+  /* Two families only. Syne carries every display voice (it is the   */
+  /* brand's existing face); Geist carries text and UI, replacing     */
+  /* Nunito, whose rounded terminals read as template.                */
+  --font-display: var(--font-syne);
+  --font-text:    var(--font-geist);
 }
 
 @theme {
+  /* ── Redesign 2026 palette ──────────────────────────────────────── */
+  /* Two grounds, two accents. Nothing else gets to be a colour.      */
+  --color-ink:        #1A0505;  /* dark ground: near-black bordeaux   */
+  --color-ink-soft:   #2E1212;  /* raised surface on the dark ground  */
+  --color-paper:      #FDFBFA;  /* light ground: warm white           */
+  --color-paper-soft: #F4EDEB;  /* raised surface on the light ground */
+  --color-accent:     #731515;  /* the one accent: pills, links       */
+  --color-accent-lift:#8F1C1C;  /* accent hover                       */
+  --color-rose:       #E8B4B4;  /* second accent, on the dark ground  */
+  --color-accent-soft:#AA4848;  /* tinted letter on the light ground  */
+
+  /* Text tints are drawn from the ground's own hue, never from grey. */
+  --color-on-paper:       #1A0505;
+  --color-on-paper-muted: #7A5252;
+  --color-on-ink:         #FDFBFA;
+  --color-on-ink-muted:   #C9A8A8;
+
+  --color-rule-paper: #E4D6D3;  /* hairlines                          */
+  --color-rule-ink:   #412020;
+
+  /* ── Type scale ─────────────────────────────────────────────────── */
+  /* Fluid, and deliberately far apart: the jump from chapter to body */
+  /* is the composition. Chapter type runs past the usual 6rem cap    */
+  /* because the pinned reference builds its rhythm out of it.        */
+  --text-chapter:    clamp(3.5rem, 15.5vw, 13rem);
+  --text-chapter--line-height: 0.86;
+  --text-chapter--letter-spacing: -0.05em;
+
+  --text-statement:  clamp(2.25rem, 6.5vw, 5.5rem);
+  /* 0.95 andava finche' nessuna riga cominciava con una lettera
+     accentata. Con «PERCHÉ» l'accento finisce addosso alla riga
+     sopra: 1.02 lascia il filo d'aria che serve e non si vede che
+     e' cambiato qualcosa. */
+  --text-statement--line-height: 1.02;
+  --text-statement--letter-spacing: -0.04em;
+
+  --text-title:      clamp(1.75rem, 3.6vw, 3rem);
+  --text-title--line-height: 1.02;
+  --text-title--letter-spacing: -0.035em;
+
+  --text-subtitle:   clamp(1.125rem, 1.7vw, 1.5rem);
+  --text-subtitle--line-height: 1.25;
+  --text-subtitle--letter-spacing: -0.02em;
+
+  --text-lead:       clamp(1.0625rem, 1.3vw, 1.25rem);
+  --text-lead--line-height: 1.5;
+  --text-lead--letter-spacing: -0.012em;
+
+  --text-body:       1rem;
+  --text-body--line-height: 1.6;
+  --text-body--letter-spacing: -0.011em;
+
+  --text-fine:       0.8125rem;
+  --text-fine--line-height: 1.45;
+  --text-fine--letter-spacing: 0;
+
+  /* ── Vertical rhythm ────────────────────────────────────────────── */
+  --spacing-gutter: 1.5rem;   /* page side gutter on phones           */
+  --spacing-band:   clamp(4.5rem, 9vw, 9rem);   /* between sections   */
+  --spacing-band-tight: clamp(3rem, 5vw, 5rem);
+
   --color-wine:        #731515;
   --color-wine-dark:   #5b1a14;
   --color-wine-medium: #aa4848;
@@ -54,7 +122,11 @@ html {
 body {
   background: #F5E6E6;
   color: #1a0505;
-  overflow-x: hidden;
+  /* `clip`, non `hidden`: `hidden` fa del body un contenitore di
+     scorrimento, e `position: sticky` dentro al body si attacca a
+     quello — cioè non si attacca a niente, perché a scorrere è html.
+     `clip` taglia lo stesso l'orizzontale senza creare lo scroller. */
+  overflow-x: clip;
   /* Prevent iOS Safari from inflating font sizes on rotation */
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
@@ -209,4 +281,155 @@ body::after {
   opacity: 0.022;
   pointer-events: none;
   z-index: 0;
+}
+
+
+/* ════════════════════════════════════════════════════════════════════
+   REDESIGN 2026 — base layer
+   The parts of the page the browser draws for us still belong to the
+   design: caret, selection, focus ring, scrollbar, underline offset.
+   ════════════════════════════════════════════════════════════════════ */
+
+.ds {
+  font-family: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  caret-color: var(--color-accent);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Dove vanno a capo le righe.
+   Il browser, lasciato a se', manda a capo appena la riga e' piena:
+   una frase di dieci parole finisce con una parola sola sulla
+   seconda riga, e sembra un errore di impaginazione. `pretty` gli
+   dice di guardare le ultime righe e non lasciare orfani; `balance`
+   divide un titolo in righe di lunghezza simile invece che tagliarlo
+   dove capita. Dove non e' supportato non cambia niente. */
+.ds p,
+.ds dd,
+.ds li {
+  text-wrap: pretty;
+}
+
+.ds h1,
+.ds h2,
+.ds h3,
+.ds .ds-display {
+  text-wrap: balance;
+}
+
+/* Display voice. Chapter and statement type is set in the brand face,
+   uppercase, with the tracking pulled in hard at large sizes. */
+.ds-display {
+  font-family: var(--font-syne), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  /* Syne ships old-style figures by default, which makes a zero in
+     a headline read as a letter. Display type wants lining caps. */
+  font-variant-numeric: lining-nums tabular-nums;
+  font-feature-settings: "ss01", "lnum" 1;
+}
+
+/* Focus is never removed, only drawn properly: the ring takes the
+   ground's contrasting colour so it reads on paper and on ink alike. */
+.ds :focus-visible,
+.ds:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+.ds-on-ink :focus-visible,
+.ds-on-ink:focus-visible {
+  outline-color: var(--color-rose);
+}
+
+/* Links carry an underline that sits off the baseline and thickens on
+   hover, instead of the browser's default flush rule. */
+.ds-link {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
+  text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+  transition: text-decoration-color 200ms ease-out, color 200ms ease-out;
+}
+.ds-link:hover {
+  text-decoration-color: currentColor;
+}
+
+/* Numerals line up in anything that compares values. */
+.ds-numeric {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Hairline rules, drawn from the ground rather than from grey. */
+.ds-rule       { border-color: var(--color-rule-paper); }
+.ds-on-ink .ds-rule { border-color: var(--color-rule-ink); }
+
+/* Dark ground inverts selection so highlighted text stays readable. */
+.ds-on-ink ::selection {
+  background: var(--color-rose);
+  color: var(--color-ink);
+}
+
+/* One authored entrance, reused. Starts from an already-visible state
+   so nothing is invisible if the observer never fires. */
+@media (prefers-reduced-motion: no-preference) {
+  .ds-rise {
+    animation: ds-rise 760ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+}
+@keyframes ds-rise {
+  from { opacity: 0; transform: translate3d(0, 1.25rem, 0); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Chapter headings clip their own overflow so the giant type can be
+   revealed by sliding it up from behind its own edge. */
+.ds-clip { overflow: hidden; display: block; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-marquee__track { animation: none !important; transform: none !important; }
+}
+
+@keyframes ds-marquee {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-50%, 0, 0); }
+}
+
+/* The tinted letter in a chapter heading is the brand bordeaux, the one
+   on the logo and the Join button. On the dark ground that exact value
+   sits at 1.73:1 against the background and would disappear, so there it
+   is lightened to #AA4848 (3.49:1) and stays in the same family. */
+.ds-accent-letter            { color: var(--color-accent); }
+.ds-on-ink .ds-accent-letter { color: var(--color-accent-soft); }
+
+/* Il logo che si riempie, al posto della rotella.
+   Si anima l'altezza di un rettangolo dentro una maschera: non e' una
+   proprieta' da compositore, ma il rettangolo e' piccolo, non ha
+   testo dentro e non sposta niente intorno, quindi il browser lo
+   ridisegna e basta. Un `transform: scaleY` costerebbe meno ma
+   stirerebbe il colore invece di farlo salire, e su una sfumatura si
+   vedrebbe.
+
+   Non arriva mai al bordo: si ferma al 92% e ridiscende. Un'attesa
+   che si riempie fino in cima e poi riparte da zero sembra un errore
+   ogni volta; un livello che oscilla sembra qualcosa che lavora. */
+.vivo-riempie {
+  height: 12%;
+  animation: vivo-riempie 2.1s cubic-bezier(0.45, 0, 0.3, 1) infinite;
+  /* Il pelo del liquido non e' una riga tirata col righello: gli
+     ultimi pixel in alto sfumano, cosi' il livello sembra salire
+     invece che essere tagliato. */
+  -webkit-mask-image: linear-gradient(to top, #000 calc(100% - 7px), transparent);
+  mask-image: linear-gradient(to top, #000 calc(100% - 7px), transparent);
+}
+
+@keyframes vivo-riempie {
+  0%   { height: 10%; }
+  55%  { height: 92%; }
+  100% { height: 10%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vivo-riempie { animation: none; height: 55%; }
 }

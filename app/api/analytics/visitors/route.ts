@@ -6,12 +6,17 @@ export const dynamic = 'force-dynamic';
 
 const PROPERTY_ID = '538468146';
 
+/** Le credenziali non ci sono: il collegamento non e' mai stato fatto. */
+class NonCollegato extends Error {}
+
 function getClient() {
   const clientEmail = process.env.GOOGLE_SA_CLIENT_EMAIL;
   const privateKey   = process.env.GOOGLE_SA_PRIVATE_KEY?.replace(/\\n/g, '\n');
 
   if (!clientEmail || !privateKey) {
-    throw new Error('Google Analytics service account credentials not configured');
+    // Non un errore qualsiasi: distingue "non collegato" da "non
+    // risponde", che per chi guarda il pannello sono due cose diverse.
+    throw new NonCollegato();
   }
 
   return new BetaAnalyticsDataClient({
@@ -99,6 +104,12 @@ export async function GET(request: Request) {
       weeklyChart,
     });
   } catch (err) {
+    if (err instanceof NonCollegato) {
+      return NextResponse.json(
+        { error: 'Google Analytics non e\u2019 collegato: manca la chiave del servizio.', configurato: false },
+        { status: 503 },
+      );
+    }
     const msg = err instanceof Error ? err.message : 'Unknown error';
     return NextResponse.json({ error: msg }, { status: 500 });
   }

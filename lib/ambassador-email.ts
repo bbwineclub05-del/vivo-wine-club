@@ -6,19 +6,19 @@ import type { AmbassadorLocale } from '@/lib/ambassador';
 
 const CONFIRMATION_COPY: Record<AmbassadorLocale, { subject: string; title: string; body: string; cta: string }> = {
   it: {
-    subject: 'Abbiamo ricevuto la tua candidatura — Vivo Wine Club',
+    subject: 'Abbiamo ricevuto la tua candidatura | Vivo Wine Club',
     title:   'Candidatura ricevuta.',
     body:    'Grazie per la tua candidatura come Ambassador di Vivo Wine Club. Il nostro team la esaminerà con attenzione e ti ricontatteremo.',
     cta:     'VISITA IL SITO →',
   },
   en: {
-    subject: 'We received your application — Vivo Wine Club',
+    subject: 'We received your application | Vivo Wine Club',
     title:   'Application received.',
     body:    'Thank you for applying to become a Vivo Wine Club Ambassador. Our team will review your application carefully and get back to you.',
     cta:     'VISIT OUR WEBSITE →',
   },
   fr: {
-    subject: 'Nous avons bien reçu votre candidature — Vivo Wine Club',
+    subject: 'Nous avons bien reçu votre candidature | Vivo Wine Club',
     title:   'Candidature reçue.',
     body:    'Merci pour votre candidature en tant qu’Ambassador de Vivo Wine Club. Notre équipe va l’examiner avec attention et reviendra vers vous.',
     cta:     'VISITER LE SITE →',

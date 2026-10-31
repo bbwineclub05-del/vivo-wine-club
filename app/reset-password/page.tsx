@@ -1,279 +1,218 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, EyeOff, ArrowLeft, CheckCircle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { ArrowLeft, Check, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { SLOGAN_LINES } from '@/lib/brand';
 
+/**
+ * La nuova password.
+ *
+ * Ci si arriva dal link ricevuto per email, che porta con se' la
+ * sessione: senza quella non si puo' cambiare niente, e la pagina lo
+ * dice invece di mostrare un modulo che fallirebbe al salvataggio.
+ *
+ * Il link puo' arrivare in due forme, a seconda di come e'
+ * configurato Supabase: un `code` nell'indirizzo, oppure la sessione
+ * gia' fatta dopo il cancelletto. Le gestiamo tutte e due, perche'
+ * cambiare quella configurazione un giorno non deve rompere il
+ * recupero password senza che nessuno se ne accorga.
+ */
 export default function ResetPasswordPage() {
+  const t = useTranslations('reset');
   const router = useRouter();
 
-  const [password, setPassword]               = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPw, setShowPw]                   = useState(false);
-  const [showConfirmPw, setShowConfirmPw]     = useState(false);
-  const [error, setError]                     = useState('');
-  const [success, setSuccess]                 = useState(false);
-  const [loading, setLoading]                 = useState(false);
-  const [tokenReady, setTokenReady]           = useState(false);
+  const [password, setPassword] = useState('');
+  const [conferma, setConferma] = useState('');
+  const [mostra, setMostra] = useState(false);
+  const [errore, setErrore] = useState('');
+  const [fatto, setFatto] = useState(false);
+  const [attesa, setAttesa] = useState(false);
+  const [pronto, setPronto] = useState(false);
 
   useEffect(() => {
-    async function initSession() {
-      // ── Path 1: PKCE flow ──────────────────────────────────────────────
-      // Supabase (v2 default) redirects to /auth/callback?code=xxx, which
-      // forwards here as /reset-password?code=xxx.
-      // exchangeCodeForSession uses the PKCE verifier from localStorage.
-      const searchParams = new URLSearchParams(window.location.search);
-      const code = searchParams.get('code');
+    async function apriSessione() {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code');
 
       if (code) {
-        const { error: pkceError } = await supabase.auth.exchangeCodeForSession(code);
-        if (pkceError) {
-          setError('This reset link has expired or is invalid. Please request a new one.');
-        } else {
-          setTokenReady(true);
-        }
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (error) setErrore(t('expired'));
+        else setPronto(true);
         return;
       }
 
-      // ── Path 2: implicit flow fallback ─────────────────────────────────
-      // Older Supabase config or manually constructed links may still send
-      // #access_token=…&refresh_token=…&type=recovery in the hash.
-      const hash       = window.location.hash.substring(1);
-      const hashParams = new URLSearchParams(hash);
-      const accessToken  = hashParams.get('access_token');
-      const refreshToken = hashParams.get('refresh_token');
-      const type         = hashParams.get('type');
+      const hash = new URLSearchParams(window.location.hash.slice(1));
+      const access = hash.get('access_token');
+      const refresh = hash.get('refresh_token');
 
-      if (accessToken && refreshToken && type === 'recovery') {
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token:  accessToken,
-          refresh_token: refreshToken,
+      if (access && refresh) {
+        const { error } = await supabase.auth.setSession({
+          access_token: access,
+          refresh_token: refresh,
         });
-        if (sessionError) {
-          setError('This reset link has expired or is invalid. Please request a new one.');
-        } else {
-          setTokenReady(true);
-        }
+        if (error) setErrore(t('expired'));
+        else setPronto(true);
         return;
       }
 
-      // Nothing found.
-      setError('No valid reset token found. Please request a new password reset link.');
+      // Nessuna delle due: magari la sessione c'e' gia', perche' il
+      // client l'ha presa dall'indirizzo prima che arrivassimo qui.
+      const { data } = await supabase.auth.getSession();
+      if (data.session) setPronto(true);
+      else setErrore(t('noToken'));
     }
 
-    initSession();
+    apriSessione();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function salva(e: React.FormEvent) {
     e.preventDefault();
-    setError('');
+    setErrore('');
 
-    if (password !== confirmPassword) {
-      setError('Passwords do not match. Please try again.');
+    if (password !== conferma) {
+      setErrore(t('mismatch'));
+      return;
+    }
+    if (password.length < 8) {
+      setErrore(t('tooShort'));
       return;
     }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters.');
+    setAttesa(true);
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) {
+      setErrore(error.message || t('failed'));
+      setAttesa(false);
       return;
     }
-
-    setLoading(true);
-    const { error: updateError } = await supabase.auth.updateUser({ password });
-
-    if (updateError) {
-      setError(updateError.message || 'Failed to update password. Please try again.');
-      setLoading(false);
-    } else {
-      setSuccess(true);
-      setTimeout(() => router.push('/members'), 2000);
-    }
+    setFatto(true);
+    setTimeout(() => router.push('/members'), 1800);
   }
 
+  const campo =
+    'w-full rounded-2xl border border-rule-paper bg-paper px-4 py-3.5 text-body text-on-paper ' +
+    'placeholder:text-on-paper-muted/50 transition-colors focus:border-accent/50 focus:outline-none [font-size:16px]';
+
   return (
-    <div className="min-h-screen flex">
-
-      {/* ── Left column: image ── */}
-      <div className="hidden lg:block lg:w-1/2 relative">
+    <div className="ds min-h-[100dvh] bg-paper text-on-paper lg:grid lg:grid-cols-2">
+      <section className="ds-on-ink flex flex-col justify-center bg-ink px-gutter py-14 text-on-ink md:px-10 lg:min-h-[100dvh] lg:py-20">
+        <h1 className="ds-display text-[clamp(2.75rem,8.5vw,5.5rem)] leading-[0.95] tracking-[-0.04em]">
+          {SLOGAN_LINES.map((riga) => (
+            <span key={riga} className="block">
+              {riga}
+            </span>
+          ))}
+        </h1>
         <Image
-          src="/tavolo.jpg"
+          src="/logobianco.png"
           alt="Vivo Wine Club"
-          fill
-          className="object-cover"
+          width={420}
+          height={280}
           priority
-          sizes="50vw"
+          className="mt-10 h-auto w-[clamp(11rem,34vw,20rem)]"
         />
-        <div className="absolute inset-0 bg-[#731515]/60" />
-        {/* Logo watermark bottom-left */}
-        <div className="absolute bottom-10 left-10 z-10">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.svg" alt="Vivo Wine Club" className="h-14 w-auto object-contain opacity-80" style={{ imageRendering: '-webkit-optimize-contrast' }} />
-        </div>
-      </div>
+      </section>
 
-      {/* ── Right column: form ── */}
-      <div className="w-full lg:w-1/2 flex flex-col bg-[#fdf6f6]">
+      <section className="flex flex-col px-gutter py-10 md:px-10 lg:min-h-[100dvh] lg:justify-center lg:py-20">
+        <Link
+          href="/login"
+          className="inline-flex items-center gap-2 self-start text-fine text-on-paper-muted transition-colors hover:text-accent"
+        >
+          <ArrowLeft size={15} strokeWidth={1.9} />
+          {t('back')}
+        </Link>
 
-        {/* Back link */}
-        <div className="px-8 pt-8 shrink-0">
-          <Link
-            href="/login"
-            className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] text-[#7a4a4a] hover:text-[#731515] transition-colors duration-300 group"
-          >
-            <ArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform duration-300" />
-            BACK TO LOGIN
-          </Link>
-        </div>
+        <div className="mt-10 w-full max-w-[26rem] lg:mt-12">
+          {fatto ? (
+            <>
+              <span className="grid h-14 w-14 place-items-center rounded-full bg-accent text-paper">
+                <Check size={26} strokeWidth={2.2} />
+              </span>
+              <h2 className="ds-display mt-6 text-title">{t('doneTitle')}</h2>
+              <p className="mt-3 text-body text-on-paper-muted">{t('doneBody')}</p>
+            </>
+          ) : (
+            <>
+              <h2 className="ds-display text-title">{t('title')}</h2>
+              <p className="mt-3 text-body text-on-paper-muted">{t('subtitle')}</p>
 
-        {/* Centered form */}
-        <div className="flex-1 flex items-center justify-center px-8 py-12">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="w-full max-w-sm"
-          >
-            {/* Logo — mobile only */}
-            <div className="flex justify-center mb-10 lg:hidden">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo.svg" alt="Vivo Wine Club" className="h-16 w-auto object-contain" style={{ imageRendering: '-webkit-optimize-contrast' }} />
-            </div>
-
-            {/* Header */}
-            <div className="mb-10">
-              <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-3">MEMBERS AREA</div>
-              <h1
-                className="text-3xl font-light text-[#1a0505] mb-2 leading-tight"
-                style={{ fontFamily: 'var(--font-syne)' }}
-              >
-                Reset your password.
-              </h1>
-              <p
-                className="text-sm text-[#7a4a4a] font-light italic"
-                style={{ fontFamily: 'var(--font-nunito)' }}
-              >
-                Choose a new password for your account.
-              </p>
-            </div>
-
-            <AnimatePresence mode="wait">
-              {success ? (
-                /* ── Success state ── */
-                <motion.div
-                  key="success"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                  className="flex flex-col items-center gap-4 py-6 text-center"
-                >
-                  <CheckCircle size={40} className="text-[#731515]" strokeWidth={1.25} />
-                  <p
-                    className="text-sm text-[#1a0505]"
-                    style={{ fontFamily: 'var(--font-nunito)' }}
-                  >
-                    Password updated successfully.
+              {!pronto && errore ? (
+                <div className="mt-8">
+                  <p className="rounded-2xl border border-accent/35 bg-accent/5 px-4 py-3 text-fine text-accent">
+                    {errore}
                   </p>
-                  <p
-                    className="text-xs text-[#7a4a4a]/70"
-                    style={{ fontFamily: 'var(--font-nunito)' }}
+                  <Link
+                    href="/login"
+                    className="mt-5 inline-flex min-h-[52px] items-center justify-center rounded-full bg-accent px-6 text-fine font-medium text-paper"
                   >
-                    Redirecting you to the members area…
-                  </p>
-                </motion.div>
+                    {t('askAgain')}
+                  </Link>
+                </div>
               ) : (
-                /* ── Form ── */
-                <motion.form
-                  key="form"
-                  onSubmit={handleSubmit}
-                  className="flex flex-col gap-5"
-                  initial={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                >
-                  <div className="flex flex-col gap-1.5">
-                    <label htmlFor="password" className="text-[10px] tracking-[0.3em] text-[#731515]">
-                      NEW PASSWORD
-                    </label>
-                    <div className="relative">
+                <form onSubmit={salva} className="mt-8 flex flex-col gap-4">
+                  <label className="block">
+                    <span className="mb-2 block text-fine font-medium">{t('newPassword')}</span>
+                    <span className="relative block">
                       <input
-                        id="password"
-                        type={showPw ? 'text' : 'password'}
+                        type={mostra ? 'text' : 'password'}
                         required
                         autoComplete="new-password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
-                        disabled={!tokenReady && !error}
-                        className="w-full bg-white border border-[#e8d5d5] text-[#1a0505] px-4 py-3 pr-11 text-sm placeholder:text-[#7a4a4a]/40 focus:outline-none focus:border-[#731515]/50 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
-                        style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
+                        className={`${campo} pr-12`}
                       />
                       <button
                         type="button"
-                        onClick={() => setShowPw((v) => !v)}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#7a4a4a]/50 hover:text-[#731515] transition-colors"
-                        aria-label={showPw ? 'Hide password' : 'Show password'}
+                        onClick={() => setMostra((v) => !v)}
+                        aria-label={mostra ? t('hide') : t('show')}
+                        className="absolute right-2 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full text-on-paper-muted transition-colors hover:text-accent"
                       >
-                        {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
+                        {mostra ? <EyeOff size={17} strokeWidth={1.8} /> : <Eye size={17} strokeWidth={1.8} />}
                       </button>
-                    </div>
-                  </div>
+                    </span>
+                    <span className="mt-2 block text-fine text-on-paper-muted">{t('rule')}</span>
+                  </label>
 
-                  <div className="flex flex-col gap-1.5">
-                    <label htmlFor="confirmPassword" className="text-[10px] tracking-[0.3em] text-[#731515]">
-                      CONFIRM PASSWORD
-                    </label>
-                    <div className="relative">
-                      <input
-                        id="confirmPassword"
-                        type={showConfirmPw ? 'text' : 'password'}
-                        required
-                        autoComplete="new-password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="••••••••"
-                        disabled={!tokenReady && !error}
-                        className="w-full bg-white border border-[#e8d5d5] text-[#1a0505] px-4 py-3 pr-11 text-sm placeholder:text-[#7a4a4a]/40 focus:outline-none focus:border-[#731515]/50 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
-                        style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmPw((v) => !v)}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#7a4a4a]/50 hover:text-[#731515] transition-colors"
-                        aria-label={showConfirmPw ? 'Hide password' : 'Show password'}
-                      >
-                        {showConfirmPw ? <EyeOff size={15} /> : <Eye size={15} />}
-                      </button>
-                    </div>
-                  </div>
+                  <label className="block">
+                    <span className="mb-2 block text-fine font-medium">{t('repeat')}</span>
+                    <input
+                      type={mostra ? 'text' : 'password'}
+                      required
+                      autoComplete="new-password"
+                      value={conferma}
+                      onChange={(e) => setConferma(e.target.value)}
+                      placeholder="••••••••"
+                      className={campo}
+                    />
+                  </label>
 
-                  {error && (
-                    <motion.p
-                      initial={{ opacity: 0, y: -6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="text-xs text-[#731515] bg-[#731515]/8 border border-[#731515]/20 px-4 py-3 rounded-lg"
-                      style={{ fontFamily: 'var(--font-nunito)' }}
-                    >
-                      {error}
-                    </motion.p>
+                  {errore && (
+                    <p role="alert" className="rounded-2xl border border-accent/35 bg-accent/5 px-4 py-3 text-fine text-accent">
+                      {errore}
+                    </p>
                   )}
 
                   <button
                     type="submit"
-                    disabled={loading || (!tokenReady && !error)}
-                    className="w-full py-4 bg-[#731515] text-white text-[11px] tracking-[0.35em] hover:bg-[#aa4848] disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-300 mt-1 rounded-lg"
+                    disabled={attesa || !pronto}
+                    className="mt-1 inline-flex min-h-[52px] items-center justify-center gap-2 rounded-full bg-accent px-6 text-fine font-medium text-paper transition-colors hover:bg-accent-lift disabled:opacity-55"
                   >
-                    {loading ? 'UPDATING…' : 'UPDATE PASSWORD'}
+                    {attesa && <Loader2 size={16} className="animate-spin" />}
+                    {attesa ? t('saving') : t('save')}
                   </button>
-                </motion.form>
+                </form>
               )}
-            </AnimatePresence>
-          </motion.div>
+            </>
+          )}
         </div>
-      </div>
-
+      </section>
     </div>
   );
 }

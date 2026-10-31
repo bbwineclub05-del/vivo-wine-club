@@ -1,434 +1,458 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
-import {
-  ChevronLeft, ChevronRight, Download,
-  TrendingUp, TrendingDown, Wallet, BarChart3, Loader2,
-} from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { scaricaConModulo } from '@/lib/scarica';
+import { ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { ActionButton, EmptyState, PageHead } from '@/components/admin/ui';
+import { formatEur, toCents, type EntryType } from '@/lib/ledger';
 
-/* ─────────────────────────────────────────────
-   Types
-───────────────────────────────────────────── */
-type TxType  = 'revenue' | 'cost' | 'rimborso';
-type Category = 'Evento' | 'Membership' | 'Sponsorship' | 'Merchandise' | 'Affitto' | 'Marketing' | 'Altro';
+/**
+ * Bilancio.
+ *
+ * Risponde a due domande, e a nessun'altra: quanto è entrato e quanto
+ * è uscito in un periodo, e da dove. La tabella di prima ne prometteva
+ * quattro — entrate, uscite e saldo per ogni categoria, tutto insieme —
+ * in una griglia larga cinquecentoventi pixel che su un telefono si
+ * leggeva scorrendo di lato.
+ *
+ * Qui le due domande stanno in due elenchi separati, ordinati dalla
+ * voce più grossa alla più piccola, con una barra che fa vedere il peso
+ * senza doverlo calcolare. Una categoria che ha sia entrate sia uscite
+ * compare in entrambi, con la sua cifra: è più onesto che mostrarne il
+ * saldo netto, che nasconde quanto è girato.
+ *
+ * I conti sono quelli di `lib/ledger`: rimborsi e versamenti non
+ * compaiono, perché spostano soldi fra la cassa e le tasche di
+ * qualcuno senza crearne né distruggerne.
+ */
+
 type PeriodType = 'monthly' | 'quarterly' | 'annual';
 
-interface BudgetCategory {
-  id:   string;
-  name: string;
-  type: 'revenue' | 'cost' | 'both';
-}
-
-interface Transaction {
-  id:              string;
-  date:            string;
-  category:        Category;
-  type:            TxType;
-  amount:          number;
+interface Row {
+  id: string;
+  date: string;
+  amount: number;
+  entry_type: EntryType | null;
   budget_category: string | null;
+  category: string | null;
 }
 
-interface CategoryRow { entrate: number; uscite: number; saldo: number }
-
-const MONTHS_IT = [
-  'Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno',
-  'Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre',
+const MONTHS = [
+  'Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
+  'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre',
 ];
 
-/* ─────────────────────────────────────────────
-   Helpers
-───────────────────────────────────────────── */
-function fmtEur(n: number) {
-  return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(n);
-}
-
-function isCostLike(type: TxType) { return type === 'cost' || type === 'rimborso'; }
-
-function getPeriodRange(
-  periodType: PeriodType,
-  year: number,
-  month: number,
-  quarter: number,
-): { from: string; to: string; label: string } {
-  if (periodType === 'monthly') {
-    const from    = `${year}-${String(month + 1).padStart(2, '0')}-01`;
-    const lastDay = new Date(year, month + 1, 0).getDate();
-    const to      = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-    return { from, to, label: `${MONTHS_IT[month]} ${year}` };
+function periodRange(kind: PeriodType, year: number, month: number, quarter: number) {
+  if (kind === 'monthly') {
+    const mm = String(month + 1).padStart(2, '0');
+    const last = new Date(year, month + 1, 0).getDate();
+    return {
+      from: `${year}-${mm}-01`,
+      to: `${year}-${mm}-${String(last).padStart(2, '0')}`,
+      label: `${MONTHS[month]} ${year}`,
+    };
   }
-  if (periodType === 'quarterly') {
-    const startMonth = quarter * 3;
-    const endMonth   = startMonth + 2;
-    const from       = `${year}-${String(startMonth + 1).padStart(2, '0')}-01`;
-    const lastDay    = new Date(year, endMonth + 1, 0).getDate();
-    const to         = `${year}-${String(endMonth + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-    return { from, to, label: `Q${quarter + 1} ${year}` };
+  if (kind === 'quarterly') {
+    const start = quarter * 3;
+    const end = start + 2;
+    const last = new Date(year, end + 1, 0).getDate();
+    return {
+      from: `${year}-${String(start + 1).padStart(2, '0')}-01`,
+      to: `${year}-${String(end + 1).padStart(2, '0')}-${String(last).padStart(2, '0')}`,
+      label: `${MONTHS[start].slice(0, 3)}-${MONTHS[end].slice(0, 3)} ${year}`,
+    };
   }
   return { from: `${year}-01-01`, to: `${year}-12-31`, label: `Anno ${year}` };
 }
 
 /* ─────────────────────────────────────────────
-   Summary card sub-component
+   Una voce dell'elenco
 ───────────────────────────────────────────── */
-function SummaryCard({
-  label, value, icon: Icon, variant, signed = false,
+function CategoryRow({
+  name,
+  cents,
+  share,
+  tone,
 }: {
-  label:   string;
-  value:   number;
-  icon:    React.ElementType;
-  variant: 'green' | 'red' | 'bordeaux' | 'dark';
-  signed?: boolean;
+  name: string;
+  cents: number;
+  /** 0–1, quanto pesa rispetto alla voce più grossa dell'elenco. */
+  share: number;
+  tone: 'income' | 'expense';
 }) {
-  const config = {
-    green:    { wrap: 'bg-emerald-50 border-emerald-200/60',          ico: 'text-emerald-500', val: 'text-emerald-700', lbl: 'text-emerald-600/70' },
-    red:      { wrap: 'bg-red-50 border-red-200/50',                  ico: 'text-red-500',     val: 'text-red-600',     lbl: 'text-red-500/70'     },
-    bordeaux: { wrap: 'bg-[#fdf0f0] border-[#eddada]',                ico: 'text-[#731515]',   val: value >= 0 ? 'text-[#731515]' : 'text-red-600', lbl: 'text-[#7a4a4a]/55' },
-    dark:     { wrap: 'bg-[#0d0202] border-white/[0.08]',             ico: 'text-white/45',    val: value >= 0 ? 'text-emerald-400' : 'text-red-400', lbl: 'text-white/30'      },
-  }[variant];
-
-  const display = (signed && value >= 0 ? '+' : '') + fmtEur(value);
-
   return (
-    <div className={`border rounded-xl p-5 ${config.wrap}`}>
-      <div className="flex items-start justify-between mb-3">
-        <span className={`text-[9px] tracking-[0.35em] uppercase font-medium ${config.lbl}`} style={{ fontFamily: 'var(--font-nunito)' }}>
-          {label}
-        </span>
-        <Icon size={14} className={config.ico} />
+    <div className="py-2.5">
+      <div className="flex items-baseline justify-between gap-4">
+        <span className="min-w-0 truncate text-body">{name}</span>
+        <span className="ds-numeric shrink-0 text-body tabular-nums">{formatEur(cents)}</span>
       </div>
-      <div className={`text-[clamp(0.95rem,1.8vw,1.2rem)] font-semibold leading-tight ${config.val}`} style={{ fontFamily: 'var(--font-nunito)' }}>
-        {display}
+      <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-paper-soft">
+        <div
+          className={`h-full rounded-full ${tone === 'expense' ? 'bg-accent' : 'bg-ink'}`}
+          style={{ width: `${Math.max(share * 100, 2)}%` }}
+        />
       </div>
     </div>
   );
 }
 
 /* ─────────────────────────────────────────────
-   Main component
+   Bilancio
 ───────────────────────────────────────────── */
 export default function BilancioManager() {
-  const now = new Date();
+  const now = useMemo(() => new Date(), []);
 
-  const [allTx,           setAllTx]           = useState<Transaction[]>([]);
-  const [budgetCategories, setBudgetCategories] = useState<BudgetCategory[]>([]);
-  const [loading,          setLoading]          = useState(true);
-  const [exporting,        setExporting]        = useState(false);
-  const [token,            setToken]            = useState('');
+  const [rows, setRows] = useState<Row[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [token, setToken] = useState('');
+  const [exporting, setExporting] = useState(false);
+  /** Cosa e' successo all'ultimo scarico: prima non lo sapeva nessuno. */
+  const [esitoPdf, setEsitoPdf] = useState('');
 
-  const [periodType, setPeriodType] = useState<PeriodType>('monthly');
-  const [year,       setYear]       = useState(now.getFullYear());
-  const [month,      setMonth]      = useState(now.getMonth());
-  const [quarter,    setQuarter]    = useState(Math.floor(now.getMonth() / 3));
+  const [kind, setKind] = useState<PeriodType>('monthly');
+  const [year, setYear] = useState(now.getFullYear());
+  const [month, setMonth] = useState(now.getMonth());
+  const [quarter, setQuarter] = useState(Math.floor(now.getMonth() / 3));
 
-  // Fetch session token
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) setToken(session.access_token);
-    });
-  }, []);
-
-  // Fetch all transactions and budget categories once
-  useEffect(() => {
-    async function fetchAll() {
-      setLoading(true);
-
-      // Fetch transactions — use select('*') so the query never fails due to a
-      // missing optional column (e.g. budget_category before the migration runs).
-      // Use a high range limit to prevent Supabase's default 1 000-row pagination
-      // from silently dropping data when switching to annual view.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const txRes = await (supabase as any)
-        .from('transactions')
-        .select('*')
-        .order('date', { ascending: true })
-        .range(0, 9999);
-
-      if (txRes.error) {
-        console.error('[BilancioManager] transactions fetch error:', txRes.error.message);
-      } else {
-        console.log('[BilancioManager] transactions fetched:', txRes.data?.length ?? 0, 'rows', txRes.data?.[0] ?? '(empty)');
-        setAllTx(txRes.data ?? []);
-      }
-
-      // Fetch budget categories — table may not exist yet; fail gracefully.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const catRes = await (supabase as any)
-        .from('budget_categories')
-        .select('id, name, type')
-        .order('name', { ascending: true });
-
-      if (catRes.error) {
-        console.warn('[BilancioManager] budget_categories not available yet:', catRes.error.message);
-      } else {
-        setBudgetCategories(catRes.data ?? []);
-      }
-
+  const load = useCallback(async () => {
+    setError('');
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const tk = session?.access_token ?? '';
+      setToken(tk);
+      const res = await fetch('/api/finance/entries', { headers: { Authorization: `Bearer ${tk}` } });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? 'Impossibile leggere il registro.');
+      setRows(json.entries ?? []);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Errore.');
+    } finally {
       setLoading(false);
     }
-    fetchAll();
   }, []);
 
-  // Period range
+  useEffect(() => {
+    load();
+  }, [load]);
+
   const { from, to, label } = useMemo(
-    () => getPeriodRange(periodType, year, month, quarter),
-    [periodType, year, month, quarter],
+    () => periodRange(kind, year, month, quarter),
+    [kind, year, month, quarter],
   );
 
-  // Transactions in the selected period.
-  // Slice to 10 chars (YYYY-MM-DD) so that Supabase timestamps like
-  // '2026-12-31T00:00:00+00:00' compare correctly against bare date strings.
-  const periodTx = useMemo(
-    () => allTx.filter(tx => {
-      const d = tx.date.slice(0, 10);
+  function step(dir: -1 | 1) {
+    if (kind === 'monthly') {
+      const next = month + dir;
+      if (next < 0) {
+        setMonth(11);
+        setYear((y) => y - 1);
+      } else if (next > 11) {
+        setMonth(0);
+        setYear((y) => y + 1);
+      } else setMonth(next);
+      return;
+    }
+    if (kind === 'quarterly') {
+      const next = quarter + dir;
+      if (next < 0) {
+        setQuarter(3);
+        setYear((y) => y - 1);
+      } else if (next > 3) {
+        setQuarter(0);
+        setYear((y) => y + 1);
+      } else setQuarter(next);
+      return;
+    }
+    setYear((y) => y + dir);
+  }
+
+  function goToday() {
+    setYear(now.getFullYear());
+    setMonth(now.getMonth());
+    setQuarter(Math.floor(now.getMonth() / 3));
+  }
+
+  /* ── I conti del periodo, in centesimi ── */
+  const stats = useMemo(() => {
+    const inPeriod = rows.filter((r) => {
+      const d = r.date.slice(0, 10);
       return d >= from && d <= to;
-    }),
-    [allTx, from, to],
-  );
+    });
 
-  // Debug: log whenever the filtered set changes
-  useMemo(() => {
-    console.log('[BilancioManager] period:', from, '→', to, '| periodTx:', periodTx.length,
-      '| entrate:', periodTx.filter(t => t.type === 'revenue').reduce((s, t) => s + t.amount, 0).toFixed(2),
-      '| uscite:',  periodTx.filter(t => isCostLike(t.type)).reduce((s, t) => s + t.amount, 0).toFixed(2),
-    );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [periodTx]);
+    let entrate = 0;
+    let uscite = 0;
+    const income: Record<string, number> = {};
+    const expense: Record<string, number> = {};
 
-  // Summary values
-  const entrate = useMemo(
-    () => periodTx.filter(tx => tx.type === 'revenue').reduce((s, tx) => s + tx.amount, 0),
-    [periodTx],
-  );
-  const uscite = useMemo(
-    () => periodTx.filter(tx => isCostLike(tx.type)).reduce((s, tx) => s + tx.amount, 0),
-    [periodTx],
-  );
-  const saldoPeriodo    = entrate - uscite;
-  const saldoCumulativo = useMemo(
-    () => allTx
-      .filter(tx => tx.date.slice(0, 10) <= to)
-      .reduce((s, tx) => s + (tx.type === 'revenue' ? tx.amount : -tx.amount), 0),
-    [allTx, to],
-  );
-
-  // Category breakdown
-  const categoryBreakdown = useMemo(() => {
-    const map: Record<string, CategoryRow> = {};
-    for (const tx of periodTx) {
-      const key = tx.budget_category ?? tx.category ?? 'Altro';
-      if (!map[key]) map[key] = { entrate: 0, uscite: 0, saldo: 0 };
-      if (tx.type === 'revenue') map[key].entrate += tx.amount;
-      else map[key].uscite += tx.amount;
+    for (const r of inPeriod) {
+      // I trasferimenti non sono né entrate né uscite.
+      if (r.entry_type !== 'income' && r.entry_type !== 'expense') continue;
+      const cents = toCents(r.amount) ?? 0;
+      const key = r.budget_category || r.category || 'Senza categoria';
+      if (r.entry_type === 'income') {
+        entrate += cents;
+        income[key] = (income[key] ?? 0) + cents;
+      } else {
+        uscite += cents;
+        expense[key] = (expense[key] ?? 0) + cents;
+      }
     }
-    for (const key of Object.keys(map)) {
-      map[key].saldo = map[key].entrate - map[key].uscite;
+
+    // Il cumulato va dall'inizio di sempre fino alla fine del periodo.
+    let cumulato = 0;
+    for (const r of rows) {
+      if (r.date.slice(0, 10) > to) continue;
+      if (r.entry_type === 'income') cumulato += toCents(r.amount) ?? 0;
+      else if (r.entry_type === 'expense') cumulato -= toCents(r.amount) ?? 0;
     }
-    return map;
-  }, [periodTx]);
 
-  const activeCategories = Object.keys(categoryBreakdown).filter(cat =>
-    categoryBreakdown[cat].entrate > 0 || categoryBreakdown[cat].uscite > 0
-  ).sort();
+    const sort = (m: Record<string, number>) =>
+      Object.entries(m).sort((a, b) => b[1] - a[1]);
 
-  /* ── Navigation ── */
-  function prevPeriod() {
-    if (periodType === 'monthly') {
-      if (month === 0) { setMonth(11); setYear(y => y - 1); } else setMonth(m => m - 1);
-    } else if (periodType === 'quarterly') {
-      if (quarter === 0) { setQuarter(3); setYear(y => y - 1); } else setQuarter(q => q - 1);
-    } else {
-      setYear(y => y - 1);
-    }
-  }
+    return {
+      count: inPeriod.filter((r) => r.entry_type === 'income' || r.entry_type === 'expense').length,
+      transfers: inPeriod.length - inPeriod.filter((r) => r.entry_type === 'income' || r.entry_type === 'expense').length,
+      entrate,
+      uscite,
+      risultato: entrate - uscite,
+      cumulato,
+      income: sort(income),
+      expense: sort(expense),
+    };
+  }, [rows, from, to]);
 
-  function nextPeriod() {
-    if (periodType === 'monthly') {
-      if (month === 11) { setMonth(0); setYear(y => y + 1); } else setMonth(m => m + 1);
-    } else if (periodType === 'quarterly') {
-      if (quarter === 3) { setQuarter(0); setYear(y => y + 1); } else setQuarter(q => q + 1);
-    } else {
-      setYear(y => y + 1);
-    }
-  }
-
-  function changePeriodType(pt: PeriodType) {
-    const n = new Date();
-    setPeriodType(pt);
-    setYear(n.getFullYear());
-    setMonth(n.getMonth());
-    setQuarter(Math.floor(n.getMonth() / 3));
-  }
-
-  /* ── PDF export ── */
-  async function handleExport() {
-    if (!token) return;
+  /* ── PDF: stessa struttura di prima, in euro ── */
+  function exportPdf(inline = false) {
     setExporting(true);
     try {
-      const revenueCategories = Object.entries(categoryBreakdown)
-        .filter(([, row]) => row.entrate > 0 && row.uscite === 0)
-        .map(([name, row]) => ({ name, amount: row.entrate }));
-      const costCategories = Object.entries(categoryBreakdown)
-        .filter(([, row]) => row.uscite > 0 && row.entrate === 0)
-        .map(([name, row]) => ({ name, amount: row.uscite }));
-      const mixedCategories = Object.entries(categoryBreakdown)
-        .filter(([, row]) => row.entrate > 0 && row.uscite > 0)
-        .map(([name, row]) => ({ name, entrate: row.entrate, uscite: row.uscite, saldo: row.saldo }));
+      const breakdown: Record<string, { entrate: number; uscite: number; saldo: number }> = {};
+      for (const [name, c] of stats.income) {
+        breakdown[name] = { entrate: c / 100, uscite: 0, saldo: c / 100 };
+      }
+      for (const [name, c] of stats.expense) {
+        const cur = breakdown[name] ?? { entrate: 0, uscite: 0, saldo: 0 };
+        cur.uscite = c / 100;
+        cur.saldo = cur.entrate - cur.uscite;
+        breakdown[name] = cur;
+      }
 
-      const res = await fetch('/api/bilancio/pdf', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body:    JSON.stringify({
-          periodLabel: label, from, to,
-          entrate, uscite, saldoPeriodo, saldoCumulativo,
-          categoryBreakdown,
-          revenueCategories,
-          costCategories,
-          mixedCategories,
+      const esito = scaricaConModulo('/api/bilancio/pdf', {
+        token,
+        ...(inline ? { inline: '1' } : {}),
+        payload: JSON.stringify({
+          periodLabel: label,
+          from,
+          to,
+          entrate: stats.entrate / 100,
+          uscite: stats.uscite / 100,
+          saldoPeriodo: stats.risultato / 100,
+          saldoCumulativo: stats.cumulato / 100,
+          categoryBreakdown: breakdown,
+          revenueCategories: Object.entries(breakdown)
+            .filter(([, r]) => r.entrate > 0 && r.uscite === 0)
+            .map(([name, r]) => ({ name, amount: r.entrate })),
+          costCategories: Object.entries(breakdown)
+            .filter(([, r]) => r.uscite > 0 && r.entrate === 0)
+            .map(([name, r]) => ({ name, amount: r.uscite })),
+          mixedCategories: Object.entries(breakdown)
+            .filter(([, r]) => r.entrate > 0 && r.uscite > 0)
+            .map(([name, r]) => ({ name, entrate: r.entrate, uscite: r.uscite, saldo: r.saldo })),
         }),
       });
-      if (!res.ok) { console.error('[bilancio] PDF error', await res.text()); return; }
-      const blob = await res.blob();
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement('a');
-      a.href     = url;
-      a.download = `bilancio-${label.replace(/\s+/g, '-').toLowerCase()}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
+      setEsitoPdf(esito.messaggio ?? '');
     } finally {
       setExporting(false);
     }
   }
 
-  /* ── Render ── */
+  const maxIncome = stats.income[0]?.[1] ?? 1;
+  const maxExpense = stats.expense[0]?.[1] ?? 1;
+  const empty = stats.income.length === 0 && stats.expense.length === 0;
+
   return (
     <div>
-      {/* ── Controls bar ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-8">
+      <PageHead
+        title="Bilancio"
+        subtitle="Quanto è entrato e quanto è uscito, e da dove."
+        action={
+          <div className="flex gap-2.5">
+            {/* «Apri» esiste per chi ha, nel browser, un'estensione che
+                si mette in mezzo ai download e rinomina i file: dal
+                visualizzatore il PDF si salva col nome giusto. */}
+            <ActionButton variant="quiet" onClick={() => exportPdf(true)} disabled={exporting || loading}>
+              Apri
+            </ActionButton>
+            <ActionButton onClick={() => exportPdf()} disabled={exporting || loading}>
+              <Download size={17} strokeWidth={1.9} />
+              {exporting ? 'Preparo…' : 'Esporta PDF'}
+            </ActionButton>
+          </div>
+        }
+      />
 
-        {/* Period type toggle */}
-        <div className="flex items-center gap-1 bg-[#fdf6f6] border border-[#eddada] rounded-lg p-1 shrink-0">
-          {(['monthly', 'quarterly', 'annual'] as PeriodType[]).map(pt => (
-            <button
-              key={pt}
-              onClick={() => changePeriodType(pt)}
-              className={`px-4 py-1.5 rounded-lg text-[10.5px] tracking-[0.12em] uppercase transition-all duration-150 ${
-                periodType === pt
-                  ? 'bg-[#731515] text-white shadow-sm'
-                  : 'text-[#7a4a4a]/55 hover:text-[#731515]'
-              }`}
-              style={{ fontFamily: 'var(--font-nunito)' }}
-            >
-              {pt === 'monthly' ? 'Mensile' : pt === 'quarterly' ? 'Trimestrale' : 'Annuale'}
-            </button>
-          ))}
-        </div>
+      {esitoPdf && (
+        <p className="mb-4 rounded-2xl border border-rule-paper px-4 py-3 text-fine text-on-paper-muted">
+          {esitoPdf}
+        </p>
+      )}
 
-        {/* Period navigation */}
-        <div className="flex items-center gap-2 sm:ml-auto">
+      {/* Periodo */}
+      <div className="mb-3 flex rounded-full border border-rule-paper p-1 lg:w-fit">
+        {(
+          [
+            { id: 'monthly', label: 'Mese' },
+            { id: 'quarterly', label: 'Trimestre' },
+            { id: 'annual', label: 'Anno' },
+          ] as { id: PeriodType; label: string }[]
+        ).map((p) => (
           <button
-            onClick={prevPeriod}
-            className="w-8 h-8 flex items-center justify-center rounded-lg border border-[#eddada] text-[#7a4a4a] hover:border-[#731515]/40 hover:text-[#731515] transition-colors"
+            key={p.id}
+            onClick={() => setKind(p.id)}
+            aria-pressed={kind === p.id}
+            className={`min-h-[44px] flex-1 rounded-full px-3 text-fine font-medium transition-colors lg:flex-none lg:px-7 ${
+              kind === p.id ? 'bg-accent text-paper' : 'text-on-paper-muted'
+            }`}
           >
-            <ChevronLeft size={15} />
+            {p.label}
           </button>
-          <span
-            className="text-sm font-medium text-[#1a0505] min-w-[160px] text-center select-none"
-            style={{ fontFamily: 'var(--font-nunito)' }}
-          >
-            {label}
-          </span>
-          <button
-            onClick={nextPeriod}
-            className="w-8 h-8 flex items-center justify-center rounded-lg border border-[#eddada] text-[#7a4a4a] hover:border-[#731515]/40 hover:text-[#731515] transition-colors"
-          >
-            <ChevronRight size={15} />
-          </button>
-        </div>
+        ))}
+      </div>
 
-        {/* Export button */}
+      <div className="mb-6 flex items-center gap-2">
+        <h2 className="ds-display mr-auto truncate text-[19px] leading-none tracking-[-0.02em] lg:text-[24px]">
+          {label}
+        </h2>
         <button
-          onClick={handleExport}
-          disabled={exporting || loading}
-          className="shrink-0 inline-flex items-center gap-2 px-4 py-2 bg-[#731515] text-white text-[10px] tracking-[0.25em] uppercase rounded-lg hover:bg-[#9b2323] disabled:opacity-50 transition-colors"
-          style={{ fontFamily: 'var(--font-nunito)' }}
+          onClick={() => step(-1)}
+          aria-label="Periodo precedente"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-rule-paper transition-colors hover:border-accent/40"
         >
-          {exporting ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
-          Esporta PDF
+          <ChevronLeft size={19} strokeWidth={1.8} />
+        </button>
+        <button
+          onClick={() => step(1)}
+          aria-label="Periodo successivo"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-rule-paper transition-colors hover:border-accent/40"
+        >
+          <ChevronRight size={19} strokeWidth={1.8} />
+        </button>
+        <button
+          onClick={goToday}
+          className="min-h-[40px] shrink-0 rounded-full border border-rule-paper px-3.5 text-fine font-medium transition-colors hover:border-accent/40"
+        >
+          Oggi
         </button>
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center h-48">
-          <Loader2 size={22} className="animate-spin text-[#731515]/30" />
+        <div className="flex justify-center py-20">
+          <span className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
         </div>
+      ) : error ? (
+        <EmptyState
+          title="Non riesco a leggere il registro"
+          body={error}
+          action={<ActionButton onClick={load}>Riprova</ActionButton>}
+        />
       ) : (
         <>
-          {/* ── Summary cards ── */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <SummaryCard label="Entrate"          value={entrate}         icon={TrendingUp}  variant="green"    />
-            <SummaryCard label="Uscite"           value={uscite}          icon={TrendingDown} variant="red"     />
-            <SummaryCard label="Saldo Periodo"    value={saldoPeriodo}    icon={BarChart3}   variant="bordeaux" signed />
-            <SummaryCard label="Saldo Cumulativo" value={saldoCumulativo} icon={Wallet}      variant="dark"     signed />
+          {/* I numeri */}
+          <div className="mb-8 grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+            {[
+              { k: 'Entrate', v: formatEur(stats.entrate) },
+              { k: 'Uscite', v: formatEur(stats.uscite) },
+              { k: 'Risultato del periodo', v: formatEur(stats.risultato, true), strong: true },
+              { k: 'Risultato cumulato', v: formatEur(stats.cumulato, true) },
+            ].map((c) => (
+              <div key={c.k} className="rounded-2xl border border-rule-paper p-4">
+                <p className="text-fine text-on-paper-muted">{c.k}</p>
+                <p
+                  className={`ds-display mt-1.5 text-[22px] leading-none tracking-[-0.02em] lg:text-[24px] ${
+                    c.strong && stats.risultato < 0 ? 'text-accent' : ''
+                  }`}
+                >
+                  {c.v}
+                </p>
+              </div>
+            ))}
           </div>
 
-          {/* ── Category breakdown table ── */}
-          {activeCategories.length === 0 ? (
-            <div
-              className="text-center py-16 text-[#7a4a4a]/40 text-sm"
-              style={{ fontFamily: 'var(--font-nunito)' }}
-            >
-              Nessuna transazione nel periodo selezionato.
-            </div>
+          {empty ? (
+            <EmptyState
+              title="Nessun movimento in questo periodo"
+              body="Prova con un altro mese, o passa alla vista annuale."
+            />
           ) : (
-            <>
-              <div className="bg-white border border-[#eddada] rounded-xl overflow-x-auto shadow-[0_1px_4px_rgba(107,26,26,0.06)]">
-                <table className="w-full min-w-[520px]">
-                  <thead>
-                    <tr className="bg-[#fdf6f6] border-b border-[#eddada]">
-                      <th className="text-left px-5 py-3 text-[9px] tracking-[0.4em] text-[#731515] uppercase font-semibold" style={{ fontFamily: 'var(--font-nunito)' }}>Categoria</th>
-                      <th className="text-right px-5 py-3 text-[9px] tracking-[0.4em] text-[#731515] uppercase font-semibold" style={{ fontFamily: 'var(--font-nunito)' }}>Entrate</th>
-                      <th className="text-right px-5 py-3 text-[9px] tracking-[0.4em] text-[#731515] uppercase font-semibold" style={{ fontFamily: 'var(--font-nunito)' }}>Uscite</th>
-                      <th className="text-right px-5 py-3 text-[9px] tracking-[0.4em] text-[#731515] uppercase font-semibold" style={{ fontFamily: 'var(--font-nunito)' }}>Saldo</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {activeCategories.map((cat, i) => {
-                      const row = categoryBreakdown[cat];
-                      return (
-                        <tr key={cat} className={`border-b border-[#eddada]/50 ${i % 2 === 1 ? 'bg-[#fdf6f6]/40' : ''}`}>
-                          <td className="px-5 py-3 text-[13px] text-[#1a0505]" style={{ fontFamily: 'var(--font-nunito)' }}>{cat}</td>
-                          <td className="px-5 py-3 text-right text-[13px] text-emerald-700 tabular-nums" style={{ fontFamily: 'var(--font-nunito)' }}>
-                            {row.entrate > 0 ? fmtEur(row.entrate) : <span className="text-[#7a4a4a]/30">—</span>}
-                          </td>
-                          <td className="px-5 py-3 text-right text-[13px] text-red-600 tabular-nums" style={{ fontFamily: 'var(--font-nunito)' }}>
-                            {row.uscite > 0 ? fmtEur(row.uscite) : <span className="text-[#7a4a4a]/30">—</span>}
-                          </td>
-                          <td className={`px-5 py-3 text-right text-[13px] font-semibold tabular-nums ${row.saldo >= 0 ? 'text-emerald-700' : 'text-red-600'}`} style={{ fontFamily: 'var(--font-nunito)' }}>
-                            {row.saldo >= 0 ? '+' : ''}{fmtEur(row.saldo)}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                  <tfoot>
-                    <tr className="bg-[#fdf0f0] border-t-2 border-[#eddada]">
-                      <td className="px-5 py-3 text-[10.5px] tracking-[0.25em] uppercase font-bold text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>Totale</td>
-                      <td className="px-5 py-3 text-right text-[13px] font-bold text-emerald-700 tabular-nums" style={{ fontFamily: 'var(--font-nunito)' }}>{fmtEur(entrate)}</td>
-                      <td className="px-5 py-3 text-right text-[13px] font-bold text-red-600 tabular-nums" style={{ fontFamily: 'var(--font-nunito)' }}>{fmtEur(uscite)}</td>
-                      <td className={`px-5 py-3 text-right text-[13px] font-bold tabular-nums ${saldoPeriodo >= 0 ? 'text-emerald-700' : 'text-red-600'}`} style={{ fontFamily: 'var(--font-nunito)' }}>
-                        {saldoPeriodo >= 0 ? '+' : ''}{fmtEur(saldoPeriodo)}
-                      </td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
+            <div className="flex flex-col gap-9">
+              <section>
+                <h3 className="mb-1 flex items-baseline justify-between gap-4 text-subtitle font-medium">
+                  Da dove sono entrati
+                  <span className="ds-numeric text-body tabular-nums">
+                    {formatEur(stats.entrate)}
+                  </span>
+                </h3>
+                {stats.income.length === 0 ? (
+                  <p className="py-5 text-body text-on-paper-muted">
+                    Nessuna entrata in questo periodo.
+                  </p>
+                ) : (
+                  <div className="divide-y divide-rule-paper border-t border-rule-paper">
+                    {stats.income.map(([name, cents]) => (
+                      <CategoryRow
+                        key={name}
+                        name={name}
+                        cents={cents}
+                        share={cents / maxIncome}
+                        tone="income"
+                      />
+                    ))}
+                  </div>
+                )}
+              </section>
 
-              <p className="mt-3 text-[10px] text-[#7a4a4a]/35" style={{ fontFamily: 'var(--font-nunito)' }}>
-                {periodTx.length} transazion{periodTx.length === 1 ? 'e' : 'i'} nel periodo
-              </p>
-            </>
+              <section>
+                <h3 className="mb-1 flex items-baseline justify-between gap-4 text-subtitle font-medium">
+                  Dove sono usciti
+                  <span className="ds-numeric text-body tabular-nums">
+                    {formatEur(stats.uscite)}
+                  </span>
+                </h3>
+                {stats.expense.length === 0 ? (
+                  <p className="py-5 text-body text-on-paper-muted">
+                    Nessuna uscita in questo periodo.
+                  </p>
+                ) : (
+                  <div className="divide-y divide-rule-paper border-t border-rule-paper">
+                    {stats.expense.map(([name, cents]) => (
+                      <CategoryRow
+                        key={name}
+                        name={name}
+                        cents={cents}
+                        share={cents / maxExpense}
+                        tone="expense"
+                      />
+                    ))}
+                  </div>
+                )}
+              </section>
+            </div>
           )}
+
+          <p className="mt-8 text-fine text-on-paper-muted">
+            {stats.count} {stats.count === 1 ? 'movimento' : 'movimenti'} nel periodo.
+            {stats.transfers > 0 && (
+              <>
+                {' '}
+                Esclusi {stats.transfers}{' '}
+                {stats.transfers === 1 ? 'fra rimborsi e versamenti' : 'fra rimborsi e versamenti'}:
+                spostano soldi fra la cassa e le tasche di qualcuno, non sono entrate né uscite.
+              </>
+            )}
+          </p>
         </>
       )}
     </div>

@@ -1,340 +1,335 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { X, Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react';
+import Link from 'next/link';
+import { useLocale, useTranslations } from 'next-intl';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { Check, Minus, Plus, ShoppingBag, Trash2, X } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
-import { useTranslations } from 'next-intl';
-import ConsentCheckbox from '@/components/ConsentCheckbox';
+
+/**
+ * Il carrello.
+ *
+ * È l'ultimo passo prima di pagare, e fino a ieri era anche il più
+ * trascurato: scritte maiuscole spaziate in mezzo a un sito che non
+ * le usa più, e soprattutto in inglese dentro un sito italiano —
+ * "CART", "SUBTOTAL", "DISCOUNT CODE", "CHECKOUT". Chi arriva qui ha
+ * già deciso di comprare: non è il momento di farlo sentire su un
+ * altro sito.
+ *
+ * Su un telefono sale dal basso e il totale con il pulsante restano
+ * fermi in fondo, come nella scheda prodotto.
+ */
+
+function eur(n: number) {
+  return `${n.toFixed(2).replace('.', ',')} €`;
+}
 
 export default function CartDrawer() {
-  const { items, isOpen, setIsOpen, removeItem, updateQuantity, total, clearCart } = useCart();
+  const t = useTranslations('shop');
   const tc = useTranslations('consent');
-  const reducedMotion = useReducedMotion();
-  const d = (n: number) => (reducedMotion ? 0 : n);
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [checkoutError, setCheckoutError]     = useState('');
-  const [discountCode, setDiscountCode]       = useState('');
-  const [discountApplied, setDiscountApplied] = useState(false);
-  const [discountError, setDiscountError]     = useState('');
-  const [discountLoading, setDiscountLoading] = useState(false);
-  const [globalShipping, setGlobalShipping]   = useState(0);
-  const [email, setEmail]                     = useState('');
-  // Consent — REQUIRED, blocks checkout until checked
-  const [consentPrivacyTerms, setConsentPrivacyTerms] = useState(false);
+  // Viaggia con il pagamento: e' l'unico momento in cui sappiamo in
+  // che lingua stava leggendo chi compra, e la mail di conferma la
+  // manda il server quando il browser e' gia' su Stripe.
+  const locale = useLocale();
+  const reduce = useReducedMotion();
+  const { items, removeItem, updateQuantity, clearCart, total, isOpen, setIsOpen } = useCart();
+
+  const [spedizioneBase, setSpedizioneBase] = useState(0);
+  const [codice, setCodice] = useState('');
+  const [sconto, setSconto] = useState(0);
+  const [codiceErrore, setCodiceErrore] = useState('');
+  const [codiceInCorso, setCodiceInCorso] = useState(false);
+  const [email, setEmail] = useState('');
+  const [consenso, setConsenso] = useState(false);
+  const [errore, setErrore] = useState('');
+  const [inCorso, setInCorso] = useState(false);
 
   useEffect(() => {
     fetch('/api/merch/settings')
-      .then(r => r.json())
-      .then(d => { if (typeof d?.shipping_cost === 'number') setGlobalShipping(d.shipping_cost); })
+      .then((r) => r.json())
+      .then((d) => { if (typeof d?.shipping_cost === 'number') setSpedizioneBase(d.shipping_cost); })
       .catch(() => {});
   }, []);
 
-  // Effective shipping = max per-product override across items, falling back to global
-  const effectiveShipping = items.length === 0 ? 0 : Math.max(
-    0,
-    ...items.map(item => item.shippingCost != null ? item.shippingCost : globalShipping),
+  // La spedizione più alta fra i prodotti nel carrello, o quella generale.
+  const spedizione = useMemo(
+    () => Math.max(0, ...items.map((i) => (i.shippingCost != null ? i.shippingCost : spedizioneBase))),
+    [items, spedizioneBase],
   );
 
-  const handleClose    = useCallback(() => setIsOpen(false), [setIsOpen]);
-  const handleBoutique = useCallback(() => {
-    setIsOpen(false);
-    document.querySelector('#boutique')?.scrollIntoView({ behavior: 'smooth' });
-  }, [setIsOpen]);
+  const scontato = sconto > 0 ? total * (1 - sconto / 100) : total;
+  const daPagare = scontato + (items.length > 0 ? spedizione : 0);
 
-  const handleApplyCode = useCallback(async () => {
-    const code = discountCode.trim().toUpperCase();
+  // Il tasto indietro del telefono chiude il carrello invece di uscire.
+  useEffect(() => {
+    if (!isOpen) return;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setIsOpen(false);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [isOpen, setIsOpen]);
+
+  const applicaCodice = useCallback(async () => {
+    const code = codice.trim().toUpperCase();
     if (!code) return;
-    setDiscountError('');
-    setDiscountLoading(true);
-    // Validate by attempting a dry-run checkout (we just peek at the code validity)
-    const res  = await fetch('/api/checkout', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ items, discountCode: code, validateOnly: true }),
-    });
-    const data = await res.json();
-    setDiscountLoading(false);
-    if (!res.ok) {
-      setDiscountError(data.error ?? 'Invalid code.');
-      setDiscountApplied(false);
-    } else {
-      setDiscountApplied(true);
-      setDiscountError('');
+    setCodiceInCorso(true);
+    setCodiceErrore('');
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items, discountCode: code, validateOnly: true }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error ?? '');
+      setSconto(d.discountPercent ?? 0);
+    } catch (e) {
+      setSconto(0);
+      setCodiceErrore(e instanceof Error && e.message ? e.message : 'Codice non valido.');
+    } finally {
+      setCodiceInCorso(false);
     }
-  }, [discountCode, items]);
+  }, [codice, items]);
 
-  const handleCheckout = useCallback(async () => {
-    if (!consentPrivacyTerms) {
-      setCheckoutError(tc('requiredErrorPrivacyTerms'));
-      return;
-    }
-    setCheckoutError('');
-    setCheckoutLoading(true);
+  const paga = useCallback(async () => {
+    if (!consenso) { setErrore(tc('requiredErrorPrivacyTerms')); return; }
+    setErrore('');
+    setInCorso(true);
     try {
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           items,
-          discountCode:  discountApplied ? discountCode.trim().toUpperCase() : undefined,
-          shippingCost:  effectiveShipping > 0 ? effectiveShipping : undefined,
+          discountCode: sconto > 0 ? codice.trim().toUpperCase() : undefined,
+          shippingCost: spedizione > 0 ? spedizione : undefined,
           customerEmail: email.trim() ? email.trim().toLowerCase() : undefined,
-          consentPrivacyTerms,
+          consentPrivacyTerms: consenso,
+          locale,
         }),
       });
-      const data = await res.json();
-      if (!res.ok || !data.url) throw new Error(data.error ?? 'Checkout failed');
-      window.location.href = data.url;
-    } catch (err) {
-      setCheckoutError(err instanceof Error ? err.message : 'Checkout failed');
-      setCheckoutLoading(false);
+      const d = await res.json();
+      if (!res.ok || !d.url) throw new Error(d.error ?? 'Pagamento non disponibile.');
+      window.location.href = d.url;
+    } catch (e) {
+      setErrore(e instanceof Error ? e.message : 'Errore.');
+      setInCorso(false);
     }
-  }, [items, discountCode, discountApplied, effectiveShipping, email, consentPrivacyTerms, tc]);
+  }, [items, codice, sconto, spedizione, email, consenso, locale, tc]);
+
+  const campo =
+    'w-full rounded-2xl border border-rule-paper bg-paper px-4 py-3 text-body placeholder:text-on-paper-muted/60 focus:border-accent/50 focus:outline-none [font-size:16px]';
 
   return (
     <AnimatePresence>
       {isOpen && (
-        <>
-          {/* Backdrop */}
-          <motion.div
+        <div className="ds fixed inset-0 z-[70] flex flex-col lg:items-end">
+          <motion.button
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: d(0.2) }}
-            onClick={handleClose}
-            className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm"
+            transition={{ duration: reduce ? 0 : 0.2 }}
+            aria-label={t('cartClose')}
+            onClick={() => setIsOpen(false)}
+            className="absolute inset-0 bg-ink/60 backdrop-blur-sm"
           />
 
-          {/* Drawer */}
-          <motion.div
-            initial={{ x: reducedMotion ? '0%' : '100%' }}
-            animate={{ x: '0%' }}
-            exit={{ x: reducedMotion ? '0%' : '100%' }}
-            transition={reducedMotion ? { duration: 0 } : { type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed right-0 z-[70] bg-white border-l border-[#e8d5d5] flex flex-col" style={{ top: 64, height: 'calc(100dvh - 64px)', width: 'min(100vw, 448px)' }}
+          <motion.aside
+            initial={reduce ? false : { y: '100%' }}
+            animate={{ y: 0 }}
+            exit={reduce ? undefined : { y: '100%' }}
+            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+            className="relative z-10 mt-auto flex max-h-[94dvh] w-full flex-col overflow-hidden rounded-t-3xl bg-paper text-on-paper lg:mt-0 lg:h-full lg:max-h-none lg:max-w-[460px] lg:rounded-none"
+            role="dialog"
+            aria-modal="true"
+            aria-label={t('cartTitle')}
           >
-            {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 sm:px-8 sm:py-6 border-b border-[#e8d5d5]">
-              <div className="flex items-center gap-3">
-                <ShoppingBag size={18} className="text-[#731515]" />
-                <span className="text-sm tracking-[0.3em] text-[#1a0505]">CART</span>
+            {/* ── Intestazione ── */}
+            <div className="flex items-center gap-3 border-b border-rule-paper px-5 py-4">
+              <ShoppingBag size={19} strokeWidth={1.8} className="shrink-0 text-accent" />
+              <h2 className="ds-display flex-1 text-[19px] tracking-[-0.02em]">
+                {t('cartTitle')}
                 {items.length > 0 && (
-                  <span className="text-xs text-[#7a4a4a]">({items.length})</span>
+                  <span className="ds-numeric ml-2 text-[14px] font-normal text-on-paper-muted">
+                    {items.reduce((n, i) => n + i.quantity, 0)}
+                  </span>
                 )}
-              </div>
-              <button onClick={handleClose} className="text-[#7a4a4a] hover:text-[#731515] transition-colors">
-                <X size={20} />
+              </h2>
+              <button
+                onClick={() => setIsOpen(false)}
+                aria-label={t('cartClose')}
+                className="grid h-11 w-11 place-items-center rounded-full hover:bg-paper-soft"
+              >
+                <X size={19} strokeWidth={1.8} />
               </button>
             </div>
 
-            {/* Items */}
-            <div className="flex-1 overflow-y-auto px-5 py-5 sm:px-8 sm:py-6">
-              <AnimatePresence>
-                {items.length === 0 ? (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: d(0.2) }}
-                    className="flex flex-col items-center justify-center h-full text-center gap-4"
-                  >
-                    <div className="text-6xl opacity-20">🍷</div>
-                    <p className="text-[#7a4a4a] text-sm italic" style={{ fontFamily: 'var(--font-nunito)' }}>
-                      Your cart is empty
-                    </p>
-                    <button
-                      onClick={handleBoutique}
-                      className="mt-2 text-[10px] tracking-[0.3em] text-[#731515] border border-[#731515]/40 px-6 py-3 hover:bg-[#731515]/8 transition-colors rounded-lg"
-                    >
-                      VISIT THE BOUTIQUE
-                    </button>
-                  </motion.div>
-                ) : (
-                  <div className="flex flex-col gap-4">
-                    {items.map((item) => (
-                      <motion.div
-                        key={item.cartKey}
-                        layout={!reducedMotion}
-                        initial={{ opacity: 0, x: reducedMotion ? 0 : 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: reducedMotion ? 0 : -20, height: 0 }}
-                        transition={{ duration: d(0.3) }}
-                        className="flex gap-4 p-4 glass-card"
-                      >
-                        {/* Product thumbnail */}
-                        <div className="w-[60px] h-[60px] rounded-lg overflow-hidden shrink-0 bg-[#f5eded] relative flex items-center justify-center">
-                          {item.image ? (
-                            <Image
-                              src={item.image}
-                              alt={item.name}
-                              fill
-                              className="object-cover"
-                              sizes="60px"
-                            />
-                          ) : (
-                            <span className="text-2xl">{item.icon}</span>
-                          )}
+            {items.length === 0 ? (
+              <div className="flex flex-1 flex-col items-center justify-center gap-5 px-6 py-16 text-center">
+                <p className="text-body text-on-paper-muted">{t('cartEmpty')}</p>
+                <Link
+                  href="/wear-the-club"
+                  onClick={() => setIsOpen(false)}
+                  className="inline-flex min-h-[48px] items-center rounded-full border border-rule-paper px-5 text-fine font-medium"
+                >
+                  {t('cartEmptyCta')}
+                </Link>
+              </div>
+            ) : (
+              <>
+                {/* ── Le righe ── */}
+                <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-4">
+                  <div className="flex flex-col gap-3">
+                    {items.map((i) => (
+                      <div key={i.cartKey} className="flex gap-3">
+                        <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-paper-soft">
+                          {i.image && <Image src={i.image} alt="" fill sizes="80px" className="object-cover" />}
                         </div>
 
-                        <div className="flex-1 min-w-0">
-                          <p
-                            className="text-sm text-[#1a0505] leading-snug mb-2 truncate"
-                            style={{ fontFamily: 'var(--font-syne)' }}
-                          >
-                            {item.name}
-                          </p>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
+                        <div className="flex min-w-0 flex-1 flex-col">
+                          <div className="flex items-start gap-2">
+                            <p className="min-w-0 flex-1 text-body leading-snug">{i.name}</p>
+                            <button
+                              onClick={() => removeItem(i.cartKey)}
+                              aria-label={t('cartRemove')}
+                              className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-on-paper-muted hover:bg-paper-soft hover:text-accent"
+                            >
+                              <Trash2 size={15} strokeWidth={1.8} />
+                            </button>
+                          </div>
+
+                          <div className="mt-auto flex items-center justify-between gap-3 pt-2">
+                            <div className="flex items-center gap-1 rounded-full border border-rule-paper">
                               <button
-                                onClick={() => updateQuantity(item.cartKey, item.quantity - 1)}
-                                className="w-8 h-8 flex items-center justify-center border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515] hover:text-[#731515] transition-colors rounded"
+                                onClick={() => updateQuantity(i.cartKey, i.quantity - 1)}
+                                aria-label="−"
+                                className="grid h-10 w-10 place-items-center rounded-full"
                               >
-                                <Minus size={10} />
+                                <Minus size={14} strokeWidth={2} />
                               </button>
-                              <span className="text-sm text-[#1a0505] w-5 text-center">{item.quantity}</span>
+                              <span className="ds-numeric min-w-[20px] text-center text-body">{i.quantity}</span>
                               <button
-                                onClick={() => updateQuantity(item.cartKey, item.quantity + 1)}
-                                className="w-8 h-8 flex items-center justify-center border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515] hover:text-[#731515] transition-colors rounded"
+                                onClick={() => updateQuantity(i.cartKey, i.quantity + 1)}
+                                aria-label="+"
+                                className="grid h-10 w-10 place-items-center rounded-full"
                               >
-                                <Plus size={10} />
-                              </button>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <span className="text-sm font-medium text-[#731515]" style={{ fontFamily: 'var(--font-syne)' }}>
-                                €{(item.price * item.quantity).toFixed(2)}
-                              </span>
-                              <button
-                                onClick={() => removeItem(item.cartKey)}
-                                className="text-[#7a4a4a]/50 hover:text-[#aa4848] transition-colors"
-                              >
-                                <Trash2 size={14} />
+                                <Plus size={14} strokeWidth={2} />
                               </button>
                             </div>
+                            <span className="ds-numeric text-body font-medium">{eur(i.price * i.quantity)}</span>
                           </div>
                         </div>
-                      </motion.div>
+                      </div>
                     ))}
                   </div>
-                )}
-              </AnimatePresence>
-            </div>
 
-            {/* Footer */}
-            {items.length > 0 && (
-              <div className="px-5 py-5 sm:px-8 sm:py-6 border-t border-[#e8d5d5] space-y-4">
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs tracking-[0.25em] text-[#7a4a4a]/70">SUBTOTAL</span>
-                    <span className="text-sm text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>
-                      €{total.toFixed(2)}
-                    </span>
+                  {/* ── Email e codice ── */}
+                  <div className="mt-6 flex flex-col gap-3">
+                    <label className="block">
+                      <span className="mb-1.5 block text-fine font-medium">
+                        {t('cartEmail')}
+                        <span className="ml-2 font-normal text-on-paper-muted">{t('cartEmailHint')}</span>
+                      </span>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="tu@email.com"
+                        className={campo}
+                      />
+                    </label>
+
+                    <div>
+                      <div className="flex gap-2">
+                        <input
+                          value={codice}
+                          onChange={(e) => { setCodice(e.target.value); setCodiceErrore(''); }}
+                          placeholder={t('cartDiscount')}
+                          className={`${campo} uppercase`}
+                        />
+                        <button
+                          onClick={applicaCodice}
+                          disabled={codiceInCorso || !codice.trim()}
+                          className="inline-flex min-h-[48px] shrink-0 items-center rounded-2xl border border-rule-paper px-4 text-fine font-medium disabled:opacity-45"
+                        >
+                          {t('cartApply')}
+                        </button>
+                      </div>
+                      {sconto > 0 && (
+                        <p className="mt-2 inline-flex items-center gap-1.5 text-fine text-accent">
+                          <Check size={14} strokeWidth={2.4} />
+                          −{sconto}% {t('cartApplied')}
+                        </p>
+                      )}
+                      {codiceErrore && <p className="mt-2 text-fine text-accent">{codiceErrore}</p>}
+                      {sconto === 0 && !codiceErrore && (
+                        <p className="mt-2 text-fine text-on-paper-muted">{t('cartSocioHint')}</p>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs tracking-[0.25em] text-[#7a4a4a]/70">SHIPPING</span>
-                    <span className="text-sm text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>
-                      {effectiveShipping > 0 ? `€${effectiveShipping.toFixed(2)}` : 'Free Shipping'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between pt-1.5 border-t border-[#e8d5d5]">
-                    <span className="text-xs tracking-[0.3em] text-[#7a4a4a]">TOTAL</span>
-                    <span className="text-2xl font-light text-[#731515]" style={{ fontFamily: 'var(--font-syne)' }}>
-                      €{(total + effectiveShipping).toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-                {/* Email (optional — pre-fills Stripe) */}
-                <div>
-                  <label className="block text-[9px] tracking-[0.3em] text-[#7a4a4a] mb-1.5">EMAIL <span className="text-[#7a4a4a]/40 normal-case tracking-normal">(per ricevere la conferma)</span></label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    placeholder="your@email.com"
-                    autoComplete="email"
-                    className="w-full bg-white border border-[#e8d5d5] px-3 py-2.5 text-xs text-[#1a0505] placeholder-[#b09090] focus:outline-none focus:border-[#731515] transition-colors rounded-lg"
-                    style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
-                  />
+
+                  <button
+                    onClick={clearCart}
+                    className="mt-6 text-fine text-on-paper-muted underline underline-offset-2"
+                  >
+                    {t('cartClear')}
+                  </button>
                 </div>
 
-                {/* Discount code */}
-                <div className="flex flex-col gap-1.5">
-                  <div className="flex gap-2">
+                {/* ── Il totale e il pagamento, fermi in fondo ── */}
+                <div
+                  className="border-t border-rule-paper px-5 py-4"
+                  style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
+                >
+                  <dl className="mb-3 flex flex-col gap-1.5">
+                    <div className="flex justify-between text-fine text-on-paper-muted">
+                      <dt>{t('cartSubtotal')}</dt>
+                      <dd className="ds-numeric">{eur(scontato)}</dd>
+                    </div>
+                    <div className="flex justify-between text-fine text-on-paper-muted">
+                      <dt>{t('cartShipping')}</dt>
+                      <dd className="ds-numeric">{spedizione > 0 ? eur(spedizione) : t('cartFreeShipping')}</dd>
+                    </div>
+                    <div className="flex items-baseline justify-between border-t border-rule-paper pt-2">
+                      <dt className="text-body font-medium">{t('cartTotal')}</dt>
+                      <dd className="ds-numeric text-[22px] font-medium">{eur(daPagare)}</dd>
+                    </div>
+                  </dl>
+
+                  <label className="mb-3 flex cursor-pointer items-start gap-3">
                     <input
-                      type="text"
-                      value={discountCode}
-                      onChange={(e) => {
-                        setDiscountCode(e.target.value);
-                        setDiscountApplied(false);
-                        setDiscountError('');
-                      }}
-                      placeholder="Discount code"
-                      className="flex-1 bg-white border border-[#e8d5d5] px-3 py-2.5 text-xs text-[#1a0505] placeholder-[#b09090] focus:outline-none focus:border-[#731515] transition-colors uppercase rounded-lg"
-                      style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
+                      type="checkbox"
+                      checked={consenso}
+                      onChange={(e) => { setConsenso(e.target.checked); setErrore(''); }}
+                      className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--color-accent)]"
                     />
-                    <button
-                      type="button"
-                      onClick={handleApplyCode}
-                      disabled={discountLoading || !discountCode.trim()}
-                      className="px-3 py-2 border border-[#731515] text-[#731515] text-[10px] tracking-[0.2em] hover:bg-[#731515] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors duration-200 rounded-lg"
-                    >
-                      {discountLoading ? '…' : 'APPLY'}
-                    </button>
-                  </div>
-                  {discountApplied && (
-                    <p className="text-[10px] text-green-700" style={{ fontFamily: 'var(--font-nunito)' }}>
-                      ✓ Code applied — discount will be shown at checkout.
-                    </p>
-                  )}
-                  {discountError && (
-                    <p className="text-[10px] text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>
-                      {discountError}
-                    </p>
-                  )}
+                    <span className="text-fine text-on-paper-muted">
+                      {tc.rich('privacyAndTermsRequired', {
+                        privacyLink: (c) => <a href="/privacy-policy" className="underline">{c}</a>,
+                        termsLink: (c) => <a href="/terms-of-service" className="underline">{c}</a>,
+                      })}
+                    </span>
+                  </label>
+
+                  {errore && <p className="mb-3 text-fine font-medium text-accent">{errore}</p>}
+
+                  <button
+                    onClick={paga}
+                    disabled={inCorso}
+                    className="inline-flex min-h-[56px] w-full items-center justify-center rounded-full bg-accent px-6 text-fine font-medium text-paper transition-opacity hover:opacity-90 disabled:opacity-50"
+                  >
+                    {inCorso ? t('cartCheckoutLoading') : t('cartCheckout')}
+                  </button>
                 </div>
-
-                {/* Consent — REQUIRED, blocks checkout until checked */}
-                <ConsentCheckbox
-                  id="cart-consent-privacy-terms"
-                  required
-                  checked={consentPrivacyTerms}
-                  onChange={setConsentPrivacyTerms}
-                  label={tc.rich('privacyAndTermsRequired', {
-                    privacyLink: (chunks) => (
-                      <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline hover:text-[#731515] transition-colors">
-                        {chunks}
-                      </a>
-                    ),
-                    termsLink: (chunks) => (
-                      <a href="/terms-of-service" target="_blank" rel="noopener noreferrer" className="underline hover:text-[#731515] transition-colors">
-                        {chunks}
-                      </a>
-                    ),
-                  })}
-                />
-
-                {checkoutError && (
-                  <p className="text-xs text-[#731515] text-center" style={{ fontFamily: 'var(--font-nunito)' }}>
-                    {checkoutError}
-                  </p>
-                )}
-                <button
-                  onClick={handleCheckout}
-                  disabled={checkoutLoading || !consentPrivacyTerms}
-                  className="w-full py-4 bg-[#731515] text-white text-[11px] tracking-[0.35em] hover:bg-[#aa4848] disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-300 rounded-lg"
-                >
-                  {checkoutLoading ? 'REDIRECTING…' : 'CHECKOUT'}
-                </button>
-                <button
-                  onClick={clearCart}
-                  className="w-full py-2.5 text-[10px] tracking-[0.3em] text-[#7a4a4a]/50 hover:text-[#7a4a4a] transition-colors"
-                >
-                  CLEAR CART
-                </button>
-              </div>
+              </>
             )}
-          </motion.div>
-        </>
+          </motion.aside>
+        </div>
       )}
     </AnimatePresence>
   );

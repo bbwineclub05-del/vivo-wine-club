@@ -1,556 +1,1068 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Upload, FileText, Trash2, Download,
-  Loader2, FolderOpen, Plus, X, CheckCircle2,
-  FileType2, Presentation,
+  ChevronRight,
+  Download,
+  ExternalLink,
+  File as FileIcon,
+  FileArchive,
+  FileAudio,
+  FileImage,
+  FileSpreadsheet,
+  FileText,
+  FileVideo,
+  Folder,
+  FolderPlus,
+  MoveRight,
+  Pencil,
+  Presentation,
+  Trash2,
+  Upload,
 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import { scaricaConModulo } from '@/lib/scarica';
+import { useOverlayBackClose } from '@/lib/useMobileOverlay';
+import {
+  ActionButton,
+  EmptyState,
+  Field,
+  PageHead,
+  SearchField,
+  Select,
+  Sheet,
+  TextArea,
+  TextInput,
+} from '@/components/admin/ui';
+import {
+  KIND_COLOR,
+  KIND_LABEL,
+  canOpenInline,
+  formatSize,
+  kindOf,
+  mimeOf,
+  rejectReason,
+  titleFromFileName,
+  type FileKind,
+} from '@/lib/documents';
 
-/* ── Types ── */
-interface Document {
-  id:          string;
-  title:       string;
+/**
+ * Documenti.
+ *
+ * Due cose non andavano, e nessuna delle due era estetica. La prima: le
+ * cartelle erano sei parole scritte nel codice, quindi per aggiungerne
+ * una serviva una modifica al sito. La seconda: si potevano caricare
+ * solo PDF, Word e PowerPoint — un Excel o la foto di una fattura
+ * venivano respinti da un archivio che si chiama "Documenti".
+ *
+ * Ora le cartelle stanno in una tabella e si creano da qui, e si carica
+ * qualunque cosa tranne i programmi. I file vanno nello storage
+ * direttamente dal browser, senza passare dal nostro server: è l'unico
+ * modo perché un PowerPoint da venti megabyte arrivi davvero una volta
+ * pubblicato.
+ */
+
+interface Doc {
+  id: string;
+  title: string;
   description: string | null;
-  category:    string;
-  file_name:   string;
-  file_size:   number | null;
+  category: string | null;
+  folder_id: string | null;
+  file_path: string;
+  file_name: string;
+  file_size: number | null;
   uploaded_by: string;
-  created_at:  string;
+  created_at: string;
 }
 
-/* ── Constants ── */
-const CATEGORIES = ['Pitch', 'Statuto', 'Preventivi', 'Contratti', 'Verbali', 'Altro'];
+interface FolderRow {
+  id: string;
+  name: string;
+  color: string;
+  count: number;
+}
 
-const ACCEPTED_MIME =
-  'application/pdf,' +
-  'application/msword,' +
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document,' +
-  'application/vnd.ms-powerpoint,' +
-  'application/vnd.openxmlformats-officedocument.presentationml.presentation,' +
-  '.pdf,.doc,.docx,.ppt,.pptx';
+const FOLDER_COLORS = [
+  '#731515', '#A3561A', '#1F5F8B', '#2F7A4F', '#5B3A8C', '#7A5252',
+];
 
-const ALLOWED_MIME_SET = new Set([
-  'application/pdf',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/vnd.ms-powerpoint',
-  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-]);
-
-const CATEGORY_COLORS: Record<string, string> = {
-  Pitch:      'bg-blue-50 text-blue-700 border-blue-200',
-  Statuto:    'bg-purple-50 text-purple-700 border-purple-200',
-  Preventivi: 'bg-amber-50 text-amber-700 border-amber-200',
-  Contratti:  'bg-emerald-50 text-emerald-700 border-emerald-200',
-  Verbali:    'bg-slate-50 text-slate-600 border-slate-200',
-  Altro:      'bg-[#fdf6f6] text-[#731515] border-[#eddada]',
+const KIND_ICON: Record<FileKind, React.ComponentType<{ size?: number; strokeWidth?: number }>> = {
+  pdf: FileText,
+  doc: FileText,
+  sheet: FileSpreadsheet,
+  slides: Presentation,
+  image: FileImage,
+  archive: FileArchive,
+  text: FileText,
+  video: FileVideo,
+  audio: FileAudio,
+  other: FileIcon,
 };
 
-/* ── Helpers ── */
-function fmtSize(bytes: number | null): string {
-  if (!bytes) return '';
-  if (bytes < 1024)           return `${bytes} B`;
-  if (bytes < 1024 * 1024)    return `${(bytes / 1024).toFixed(0)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+function fmtDate(iso: string) {
+  const d = new Date(iso);
+  return d.toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-function fmtDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('it-IT', {
-    day: '2-digit', month: 'short', year: 'numeric',
-  });
-}
+/* ─────────────────────────────────────────────
+   Un file, come riga
+───────────────────────────────────────────── */
+function DocRow({ doc, onOpen }: { doc: Doc; onOpen: (d: Doc) => void }) {
+  const kind = kindOf(doc.file_name);
+  const Icon = KIND_ICON[kind];
+  const color = KIND_COLOR[kind];
 
-function DocIcon({ fileName, size = 13 }: { fileName: string; size?: number }) {
-  const ext = fileName.split('.').pop()?.toLowerCase() ?? '';
-  if (ext === 'doc' || ext === 'docx')
-    return <FileType2 size={size} className="shrink-0" style={{ color: '#1e40af' }} />;
-  if (ext === 'ppt' || ext === 'pptx')
-    return <Presentation size={size} className="shrink-0" style={{ color: '#b45309' }} />;
-  return <FileText size={size} className="shrink-0 text-[#731515]" />;
-}
-
-function CategoryBadge({ category }: { category: string }) {
-  const cls = CATEGORY_COLORS[category] ?? CATEGORY_COLORS.Altro;
   return (
-    <span className={`inline-block text-[8px] tracking-[0.2em] px-2 py-0.5 border rounded-full whitespace-nowrap ${cls}`}>
-      {category.toUpperCase()}
-    </span>
+    <button
+      onClick={() => onOpen(doc)}
+      className="flex min-h-[68px] w-full items-center gap-3 rounded-2xl border border-rule-paper px-3 text-left transition-colors hover:border-accent/40 hover:bg-paper-soft"
+    >
+      <span
+        className="grid h-11 w-11 shrink-0 place-items-center rounded-xl"
+        style={{ backgroundColor: `${color}14`, color }}
+      >
+        <Icon size={20} strokeWidth={1.7} />
+      </span>
+
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-body">{doc.title}</span>
+        <span className="mt-0.5 block truncate text-fine text-on-paper-muted">
+          {KIND_LABEL[kind]} · {formatSize(doc.file_size)} · {fmtDate(doc.created_at)}
+        </span>
+      </span>
+
+      <ChevronRight size={18} strokeWidth={1.7} className="shrink-0 text-on-paper-muted" />
+    </button>
   );
 }
 
-/* ── Main component ── */
+/* ─────────────────────────────────────────────
+   Dettaglio del file
+───────────────────────────────────────────── */
+function DocDetail({
+  doc,
+  folders,
+  isAdmin,
+  token,
+  onClose,
+  onChanged,
+  onDeleted,
+}: {
+  doc: Doc | null;
+  folders: FolderRow[];
+  isAdmin: boolean;
+  token: string;
+  onClose: () => void;
+  onChanged: (d: Doc) => void;
+  onDeleted: (id: string) => void;
+}) {
+  const [busy, setBusy] = useState('');
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [renaming, setRenaming] = useState(false);
+  const [draftTitle, setDraftTitle] = useState('');
+  const [error, setError] = useState('');
+  useOverlayBackClose(!!doc, onClose);
+
+  useEffect(() => {
+    setRenaming(false);
+    setError('');
+    setDraftTitle(doc?.title ?? '');
+  }, [doc]);
+
+  if (!doc) return null;
+
+  const kind = kindOf(doc.file_name);
+  const Icon = KIND_ICON[kind];
+  const color = KIND_COLOR[kind];
+  const inlineable = canOpenInline(doc.file_name);
+  const confirming = confirmId === doc.id;
+
+  /**
+   * Il file si prende con fetch e non con un semplice link, perché la
+   * rotta vuole il token nell'intestazione e un tag <a> non può
+   * mandarlo. Da qui si ricava un blob locale.
+   */
+  async function fetchBlob(inline: boolean) {
+    const res = await fetch(`/api/documents/${doc!.id}/download${inline ? '?inline=1' : ''}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error('Impossibile scaricare il file.');
+    const raw = await res.blob();
+    // Il tipo viene ricalcolato qui dall'estensione: un blob creato con
+    // un tipo arbitrario erediterebbe la nostra origine quando lo si
+    // apre, e non è una cosa da lasciare al caso.
+    return new Blob([raw], { type: mimeOf(doc!.file_name) });
+  }
+
+  async function download() {
+    setBusy('download');
+    setError('');
+    try {
+      const esito = scaricaConModulo(`/api/documents/${doc!.id}/download`, { token });
+      if (!esito.ok) setError(esito.messaggio ?? 'Non sono riuscito a scaricare il file.');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Errore.');
+    } finally {
+      setBusy('');
+    }
+  }
+
+  async function openInline() {
+    // La scheda si apre subito, prima della richiesta: aperta dopo,
+    // il browser la considererebbe non richiesta dall'utente e la
+    // bloccherebbe.
+    const tab = window.open('', '_blank');
+    setBusy('open');
+    setError('');
+    try {
+      const blob = await fetchBlob(true);
+      const url = URL.createObjectURL(blob);
+      if (tab) tab.location.href = url;
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (e) {
+      tab?.close();
+      setError(e instanceof Error ? e.message : 'Errore.');
+    } finally {
+      setBusy('');
+    }
+  }
+
+  async function patch(body: Record<string, unknown>) {
+    setBusy('save');
+    setError('');
+    try {
+      const res = await fetch(`/api/documents/${doc!.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Errore.');
+      onChanged(data.document);
+      setRenaming(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Errore.');
+    } finally {
+      setBusy('');
+    }
+  }
+
+  async function remove() {
+    setBusy('delete');
+    setError('');
+    try {
+      const res = await fetch(`/api/documents/${doc!.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? 'Errore.');
+      }
+      onDeleted(doc!.id);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Errore.');
+      setBusy('');
+    }
+  }
+
+  return (
+    <Sheet
+      open
+      title="Documento"
+      onClose={onClose}
+      footer={
+        <div className="flex flex-wrap gap-2.5">
+          <ActionButton onClick={download} disabled={!!busy} className="flex-1">
+            <Download size={17} strokeWidth={1.9} />
+            {busy === 'download' ? 'Scarico…' : 'Scarica'}
+          </ActionButton>
+          {inlineable && (
+            <ActionButton variant="quiet" onClick={openInline} disabled={!!busy}>
+              <ExternalLink size={16} strokeWidth={1.8} />
+              Apri
+            </ActionButton>
+          )}
+          {isAdmin && (
+            <ActionButton
+              variant="danger"
+              onClick={() => (confirming ? remove() : setConfirmId(doc.id))}
+              disabled={!!busy}
+            >
+              <Trash2 size={16} strokeWidth={1.8} />
+              {confirming ? 'Confermi?' : 'Elimina'}
+            </ActionButton>
+          )}
+        </div>
+      }
+    >
+      <div className="flex items-start gap-3">
+        <span
+          className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl"
+          style={{ backgroundColor: `${color}14`, color }}
+        >
+          <Icon size={26} strokeWidth={1.6} />
+        </span>
+        <div className="min-w-0 flex-1">
+          {renaming ? (
+            <div className="flex flex-col gap-2.5">
+              <TextInput
+                autoFocus
+                value={draftTitle}
+                onChange={(e) => setDraftTitle(e.target.value)}
+                placeholder="Titolo del documento"
+              />
+              <div className="flex gap-2">
+                <ActionButton
+                  onClick={() => patch({ title: draftTitle })}
+                  disabled={busy === 'save' || !draftTitle.trim()}
+                >
+                  Salva
+                </ActionButton>
+                <ActionButton variant="quiet" onClick={() => setRenaming(false)}>
+                  Annulla
+                </ActionButton>
+              </div>
+            </div>
+          ) : (
+            <>
+              <h3 className="ds-display text-[21px] leading-tight tracking-[-0.02em]">
+                {doc.title}
+              </h3>
+              <button
+                onClick={() => setRenaming(true)}
+                className="mt-1.5 inline-flex items-center gap-1.5 text-fine font-medium text-accent"
+              >
+                <Pencil size={13} strokeWidth={1.9} />
+                Rinomina
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {doc.description && (
+        <p className="mt-4 whitespace-pre-wrap text-body text-on-paper-muted">{doc.description}</p>
+      )}
+
+      <dl className="mt-6 grid gap-px overflow-hidden rounded-2xl border border-rule-paper bg-rule-paper">
+        {[
+          { k: 'Nome file', v: doc.file_name },
+          { k: 'Tipo', v: KIND_LABEL[kind] },
+          { k: 'Dimensione', v: formatSize(doc.file_size) },
+          { k: 'Caricato il', v: fmtDate(doc.created_at) },
+          { k: 'Da', v: doc.uploaded_by },
+        ].map((r) => (
+          <div key={r.k} className="flex flex-wrap gap-x-4 gap-y-1 bg-paper px-4 py-3">
+            <dt className="min-w-[110px] shrink-0 text-fine text-on-paper-muted">{r.k}</dt>
+            <dd className="min-w-0 break-words text-body">{r.v}</dd>
+          </div>
+        ))}
+      </dl>
+
+      <div className="mt-5">
+        <Field label="Cartella">
+          <Select
+            value={doc.folder_id ?? ''}
+            onChange={(e) => patch({ folder_id: e.target.value || null })}
+            disabled={busy === 'save'}
+          >
+            <option value="">Fuori da ogni cartella</option>
+            {folders.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      </div>
+
+      {!inlineable && (
+        <p className="mt-4 text-fine text-on-paper-muted">
+          Questo tipo di file non si apre nel browser: va scaricato e aperto
+          con l&apos;applicazione che lo gestisce.
+        </p>
+      )}
+
+      {error && <p className="mt-4 text-fine font-medium text-accent">{error}</p>}
+    </Sheet>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   Caricamento
+───────────────────────────────────────────── */
+type QueueItem = {
+  id: string;
+  file: File;
+  title: string;
+  state: 'waiting' | 'uploading' | 'done' | 'error';
+  error?: string;
+};
+
+function UploadSheet({
+  initialFiles,
+  folders,
+  defaultFolder,
+  token,
+  onClose,
+  onUploaded,
+}: {
+  initialFiles: File[];
+  folders: FolderRow[];
+  defaultFolder: string;
+  token: string;
+  onClose: () => void;
+  onUploaded: (d: Doc) => void;
+}) {
+  const [queue, setQueue] = useState<QueueItem[]>(() =>
+    initialFiles.map((file, i) => ({
+      id: `${Date.now()}-${i}`,
+      file,
+      title: titleFromFileName(file.name),
+      state: rejectReason(file.name, file.size) ? 'error' : 'waiting',
+      error: rejectReason(file.name, file.size) ?? undefined,
+    })),
+  );
+  const [folderId, setFolderId] = useState(defaultFolder);
+  const [description, setDescription] = useState('');
+  const [running, setRunning] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  function addFiles(files: FileList | File[]) {
+    const list = Array.from(files);
+    setQueue((prev) => [
+      ...prev,
+      ...list.map((file, i) => {
+        const reason = rejectReason(file.name, file.size);
+        return {
+          id: `${Date.now()}-${prev.length + i}`,
+          file,
+          title: titleFromFileName(file.name),
+          state: (reason ? 'error' : 'waiting') as QueueItem['state'],
+          error: reason ?? undefined,
+        };
+      }),
+    ]);
+  }
+
+  const pending = queue.filter((q) => q.state === 'waiting');
+
+  /**
+   * Un file alla volta, di proposito: in parallelo su una connessione
+   * mobile si ottiene soltanto che falliscano tutti insieme, e qui
+   * l'ordine conta meno della certezza che ciò che è passato sia
+   * passato davvero.
+   */
+  async function run() {
+    setRunning(true);
+    for (const item of queue) {
+      if (item.state !== 'waiting') continue;
+      setQueue((p) => p.map((q) => (q.id === item.id ? { ...q, state: 'uploading' } : q)));
+      try {
+        // 1. il server decide il percorso e firma
+        const signRes = await fetch('/api/documents/upload-url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ fileName: item.file.name, size: item.file.size }),
+        });
+        const sign = await signRes.json();
+        if (!signRes.ok) throw new Error(sign.error ?? 'Errore.');
+
+        // 2. il file va allo storage senza passare dal nostro server
+        const up = await supabase.storage
+          .from(sign.bucket)
+          .uploadToSignedUrl(sign.path, sign.token, item.file);
+        if (up.error) throw new Error(up.error.message);
+
+        // 3. si registra la riga
+        const docRes = await fetch('/api/documents', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            title: item.title.trim() || item.file.name,
+            description: description.trim() || null,
+            folder_id: folderId || null,
+            file_path: sign.path,
+            file_name: item.file.name,
+            file_size: item.file.size,
+          }),
+        });
+        const doc = await docRes.json();
+        if (!docRes.ok) throw new Error(doc.error ?? 'Errore.');
+
+        onUploaded(doc.document);
+        setQueue((p) => p.map((q) => (q.id === item.id ? { ...q, state: 'done' } : q)));
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : 'Errore.';
+        setQueue((p) => p.map((q) => (q.id === item.id ? { ...q, state: 'error', error: msg } : q)));
+      }
+    }
+    setRunning(false);
+  }
+
+  const allDone = queue.length > 0 && queue.every((q) => q.state === 'done');
+
+  return (
+    <Sheet
+      open
+      title={queue.length > 1 ? `Carica ${queue.length} file` : 'Carica un file'}
+      onClose={onClose}
+      footer={
+        <div className="flex gap-2.5">
+          <ActionButton variant="quiet" onClick={onClose} className="flex-1">
+            {allDone ? 'Chiudi' : 'Annulla'}
+          </ActionButton>
+          <ActionButton
+            onClick={run}
+            disabled={running || pending.length === 0}
+            className="flex-[2]"
+          >
+            {running
+              ? 'Carico…'
+              : pending.length === 0
+                ? 'Niente da caricare'
+                : `Carica ${pending.length} file`}
+          </ActionButton>
+        </div>
+      }
+    >
+      <div className="flex flex-col gap-5">
+        <Field label="Cartella di destinazione">
+          <Select value={folderId} onChange={(e) => setFolderId(e.target.value)}>
+            <option value="">Fuori da ogni cartella</option>
+            {folders.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
+
+        <div>
+          <input
+            ref={inputRef}
+            type="file"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              if (e.target.files) addFiles(e.target.files);
+              e.target.value = '';
+            }}
+          />
+          <button
+            onClick={() => inputRef.current?.click()}
+            className="flex min-h-[56px] w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-rule-paper text-fine font-medium transition-colors hover:border-accent/50"
+          >
+            <Upload size={17} strokeWidth={1.8} />
+            Aggiungi altri file
+          </button>
+        </div>
+
+        {queue.length > 0 && (
+          <div className="flex flex-col gap-2">
+            {queue.map((q) => {
+              const kind = kindOf(q.file.name);
+              const Icon = KIND_ICON[kind];
+              return (
+                <div
+                  key={q.id}
+                  className="flex items-start gap-3 rounded-2xl border border-rule-paper p-3"
+                >
+                  <span
+                    className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-xl"
+                    style={{ backgroundColor: `${KIND_COLOR[kind]}14`, color: KIND_COLOR[kind] }}
+                  >
+                    <Icon size={18} strokeWidth={1.7} />
+                  </span>
+
+                  <div className="min-w-0 flex-1">
+                    {q.state === 'waiting' ? (
+                      <TextInput
+                        value={q.title}
+                        onChange={(e) =>
+                          setQueue((p) =>
+                            p.map((x) => (x.id === q.id ? { ...x, title: e.target.value } : x)),
+                          )
+                        }
+                        placeholder="Titolo"
+                        className="!py-2.5"
+                      />
+                    ) : (
+                      <p className="truncate text-body">{q.title}</p>
+                    )}
+                    <p className="mt-1 truncate text-fine text-on-paper-muted">
+                      {q.file.name} · {formatSize(q.file.size)}
+                    </p>
+                    {q.state === 'uploading' && (
+                      <p className="mt-1 text-fine text-on-paper-muted">Caricamento…</p>
+                    )}
+                    {q.state === 'done' && (
+                      <p className="mt-1 text-fine font-medium text-accent">Caricato</p>
+                    )}
+                    {q.state === 'error' && (
+                      <p className="mt-1 text-fine font-medium text-accent">{q.error}</p>
+                    )}
+                  </div>
+
+                  {q.state === 'waiting' && (
+                    <button
+                      onClick={() => setQueue((p) => p.filter((x) => x.id !== q.id))}
+                      aria-label="Togli dalla lista"
+                      className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-on-paper-muted hover:bg-paper-soft"
+                    >
+                      <Trash2 size={16} strokeWidth={1.8} />
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <Field label="Descrizione" hint="(opzionale, vale per tutti i file di questo caricamento)">
+          <TextArea
+            rows={2}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="A cosa servono questi file…"
+          />
+        </Field>
+
+        <p className="text-fine text-on-paper-muted">
+          Si carica qualunque tipo di file (PDF, Word, Excel, PowerPoint,
+          immagini, archivi) fino a 50 MB l&apos;uno. Sono esclusi solo i
+          programmi eseguibili.
+        </p>
+      </div>
+    </Sheet>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   Nuova cartella / rinomina
+───────────────────────────────────────────── */
+function FolderSheet({
+  target,
+  token,
+  onClose,
+  onSaved,
+}: {
+  target: FolderRow | 'new';
+  token: string;
+  onClose: () => void;
+  onSaved: (f: FolderRow) => void;
+}) {
+  const isNew = target === 'new';
+  const [name, setName] = useState(isNew ? '' : target.name);
+  const [color, setColor] = useState(isNew ? FOLDER_COLORS[0] : target.color);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  async function save() {
+    if (!name.trim()) {
+      setError('Serve un nome.');
+      return;
+    }
+    setSaving(true);
+    setError('');
+    try {
+      const res = await fetch(
+        isNew ? '/api/documents/folders' : `/api/documents/folders/${target.id}`,
+        {
+          method: isNew ? 'POST' : 'PATCH',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ name: name.trim(), color }),
+        },
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Errore.');
+      onSaved({ count: isNew ? 0 : target.count, ...data.folder });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Errore.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Sheet
+      open
+      title={isNew ? 'Nuova cartella' : 'Rinomina cartella'}
+      onClose={onClose}
+      footer={
+        <div className="flex gap-2.5">
+          <ActionButton variant="quiet" onClick={onClose} className="flex-1">
+            Annulla
+          </ActionButton>
+          <ActionButton onClick={save} disabled={saving} className="flex-[2]">
+            {saving ? 'Salvo…' : isNew ? 'Crea' : 'Salva'}
+          </ActionButton>
+        </div>
+      }
+    >
+      <div className="flex flex-col gap-5">
+        <TextInput
+          autoFocus
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Nome della cartella"
+          className="!py-4 !text-[19px]"
+        />
+
+        <Field label="Colore">
+          <div className="flex flex-wrap gap-2.5">
+            {FOLDER_COLORS.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setColor(c)}
+                aria-label={`Colore ${c}`}
+                aria-pressed={color === c}
+                className={`h-11 w-11 rounded-full border-2 transition-transform ${
+                  color === c ? 'scale-110 border-on-paper' : 'border-transparent'
+                }`}
+                style={{ backgroundColor: c }}
+              />
+            ))}
+          </div>
+        </Field>
+
+        {error && <p className="text-fine font-medium text-accent">{error}</p>}
+      </div>
+    </Sheet>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   Archivio
+───────────────────────────────────────────── */
 export default function DocumentManager({
   token,
   isAdmin,
 }: {
-  token:   string;
+  token: string;
   isAdmin: boolean;
 }) {
-  const [docs,        setDocs]        = useState<Document[]>([]);
-  const [loading,     setLoading]     = useState(true);
-  const [error,       setError]       = useState('');
-  const [showForm,    setShowForm]    = useState(false);
-  const [uploading,   setUploading]   = useState(false);
-  const [uploadError, setUploadError] = useState('');
-  const [uploadOk,    setUploadOk]    = useState(false);
-  const [deleting,    setDeleting]    = useState<string | null>(null);
-  const [downloading, setDownloading] = useState<string | null>(null);
+  const [docs, setDocs] = useState<Doc[]>([]);
+  const [folders, setFolders] = useState<FolderRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  /* form state */
-  const [title,       setTitle]       = useState('');
-  const [description, setDescription] = useState('');
-  const [category,    setCategory]    = useState('Altro');
-  const [file,        setFile]        = useState<File | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const [liveToken, setLiveToken] = useState(token);
+  const [openFolder, setOpenFolder] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
 
-  /* ── Load ── */
+  const [detail, setDetail] = useState<Doc | null>(null);
+  const [uploadFiles, setUploadFiles] = useState<File[] | null>(null);
+  const [folderSheet, setFolderSheet] = useState<FolderRow | 'new' | null>(null);
+  const [deletingFolder, setDeletingFolder] = useState(false);
+  const [dragging, setDragging] = useState(false);
+
+  useOverlayBackClose(!!uploadFiles, () => setUploadFiles(null));
+  useOverlayBackClose(!!folderSheet, () => setFolderSheet(null));
+
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const res  = await fetch('/api/documents', { headers: { Authorization: `Bearer ${token}` } });
-      const data = await res.json();
-      if (!res.ok || data.error) setError(data.error ?? 'Errore nel caricamento.');
-      else setDocs(data.documents ?? []);
-    } catch {
-      setError('Errore di rete.');
+      // Il token arriva come prop, ma lo si rilegge dalla sessione:
+      // quello passato è stato letto al montaggio della pagina e i
+      // token di accesso scadono dopo un'ora. Il client Supabase ne
+      // tiene uno valido, quindi conviene chiederlo a lui.
+      const { data: { session } } = await supabase.auth.getSession();
+      const live = session?.access_token || token;
+      setLiveToken(live);
+      const headers = { Authorization: `Bearer ${live}` };
+      const [docsRes, foldersRes] = await Promise.all([
+        fetch('/api/documents', { headers }),
+        fetch('/api/documents/folders', { headers }),
+      ]);
+
+      const docsJson = await docsRes.json().catch(() => ({}));
+      if (!docsRes.ok) throw new Error(docsJson.error ?? 'Impossibile caricare i documenti.');
+      setDocs(docsJson.documents ?? []);
+
+      if (foldersRes.ok) {
+        const f = await foldersRes.json().catch(() => ({}));
+        setFolders(f.folders ?? []);
+      } else {
+        // La tabella delle cartelle potrebbe non esistere ancora: in quel
+        // caso i file si vedono lo stesso, tutti insieme.
+        setFolders([]);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Errore.');
     } finally {
       setLoading(false);
     }
   }, [token]);
 
-  useEffect(() => { load(); }, [load]);
+  // Si carica comunque: la sessione la legge `load` da sé, quindi non
+  // dipende dal fatto che il prop sia già arrivato.
+  useEffect(() => {
+    load();
+  }, [load]);
 
-  /* ── Reset form ── */
-  function resetForm() {
-    setTitle(''); setDescription(''); setCategory('Altro'); setFile(null);
-    setUploadError(''); setUploadOk(false);
-    if (fileRef.current) fileRef.current.value = '';
-  }
+  /* ── Conteggi sempre derivati dai documenti, mai dal server ── */
+  const foldersWithCounts = useMemo(
+    () =>
+      folders.map((f) => ({
+        ...f,
+        count: docs.filter((d) => d.folder_id === f.id).length,
+      })),
+    [folders, docs],
+  );
 
-  /* ── Upload ── */
-  async function handleUpload(e: React.FormEvent) {
+  const current = openFolder ? foldersWithCounts.find((f) => f.id === openFolder) ?? null : null;
+
+  const searching = query.trim().length > 0;
+
+  const visibleDocs = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (q) {
+      return docs.filter(
+        (d) =>
+          d.title.toLowerCase().includes(q) ||
+          d.file_name.toLowerCase().includes(q) ||
+          (d.description ?? '').toLowerCase().includes(q),
+      );
+    }
+    return docs.filter((d) => (openFolder ? d.folder_id === openFolder : !d.folder_id));
+  }, [docs, query, openFolder]);
+
+  /* ── Trascinare file sopra la pagina ── */
+  function onDrop(e: React.DragEvent) {
     e.preventDefault();
-    if (!file) { setUploadError('Seleziona un file.'); return; }
-    if (!ALLOWED_MIME_SET.has(file.type)) {
-      setUploadError('Formato non supportato. Usa PDF, Word (.doc/.docx) o PowerPoint (.ppt/.pptx).');
-      return;
-    }
-    setUploadError(''); setUploading(true);
-    try {
-      const fd = new FormData();
-      fd.append('file',        file);
-      fd.append('title',       title);
-      fd.append('description', description);
-      fd.append('category',    category);
+    setDragging(false);
+    const files = Array.from(e.dataTransfer.files ?? []);
+    if (files.length) setUploadFiles(files);
+  }
 
-      const res  = await fetch('/api/documents', {
-        method:  'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body:    fd,
-      });
-      const data = await res.json();
-
-      if (!res.ok || data.error) { setUploadError(data.error ?? 'Errore upload.'); return; }
-
-      setUploadOk(true);
-      resetForm();
-      setTimeout(() => { setShowForm(false); setUploadOk(false); }, 1400);
-      load();
-    } catch {
-      setUploadError('Errore di rete.');
-    } finally {
-      setUploading(false);
+  async function deleteFolder(f: FolderRow) {
+    const res = await fetch(`/api/documents/folders/${f.id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${liveToken}` },
+    });
+    if (res.ok) {
+      setFolders((p) => p.filter((x) => x.id !== f.id));
+      setDocs((p) => p.map((d) => (d.folder_id === f.id ? { ...d, folder_id: null } : d)));
+      setOpenFolder(null);
+      setDeletingFolder(false);
     }
   }
 
-  /* ── Delete ── */
-  async function handleDelete(doc: Document) {
-    if (!confirm(`Eliminare "${doc.title}"? L'operazione non è reversibile.`)) return;
-    setDeleting(doc.id);
-    try {
-      await fetch(`/api/documents/${doc.id}`, {
-        method:  'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setDocs(prev => prev.filter(d => d.id !== doc.id));
-    } finally {
-      setDeleting(null);
-    }
-  }
-
-  /* ── Download ── */
-  async function handleDownload(doc: Document) {
-    setDownloading(doc.id);
-    try {
-      const res = await fetch(`/api/documents/${doc.id}/download`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) { console.error('[download] failed'); return; }
-      const blob = await res.blob();
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement('a');
-      a.href     = url;
-      a.download = doc.file_name;
-      a.click();
-      URL.revokeObjectURL(url);
-    } finally {
-      setDownloading(null);
-    }
-  }
-
-  /* ── Styles ── */
-  const inputCls =
-    'w-full bg-[#fdf6f6] border border-[#eddada] text-[#1a0505] px-3 py-2.5 text-sm placeholder:text-[#7a4a4a]/35 focus:outline-none focus:border-[#731515]/50 transition-colors duration-200 rounded-lg';
-
-  /* ── Render ── */
   return (
-    <div className="flex flex-col gap-6">
+    <div
+      onDragOver={(e) => {
+        e.preventDefault();
+        setDragging(true);
+      }}
+      onDragLeave={() => setDragging(false)}
+      onDrop={onDrop}
+      className={dragging ? 'rounded-3xl outline-2 outline-dashed outline-accent/50' : ''}
+    >
+      <PageHead
+        title="Documenti"
+        subtitle="L'archivio del club: statuti, contratti, preventivi e tutto il resto."
+        action={
+          <ActionButton onClick={() => setUploadFiles([])}>
+            <Upload size={17} strokeWidth={1.9} />
+            Carica
+          </ActionButton>
+        }
+      />
 
-      {/* ── Page header + upload button ── */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        <div>
-          <h1
-            className="text-[clamp(1.6rem,2.5vw,2.2rem)] font-light text-[#1a0505] leading-none tracking-tight"
-            style={{ fontFamily: 'var(--font-syne)' }}
-          >
-            Gestione Documenti
-          </h1>
-          <p
-            className="mt-2 text-sm text-[#7a4a4a]/70 font-light"
-            style={{ fontFamily: 'var(--font-nunito)' }}
-          >
-            Archivia e condividi documenti interni con il team.
-          </p>
-          <div className="mt-5 h-px w-16 bg-[#731515]/30" />
-        </div>
-        <button
-          onClick={() => { setShowForm(v => !v); if (showForm) resetForm(); }}
-          className="shrink-0 flex items-center gap-2 text-[10px] tracking-[0.25em] px-4 py-2.5 bg-[#731515] text-white rounded-lg hover:bg-[#9b2323] transition-colors duration-200 self-start"
-          style={{ fontFamily: 'var(--font-nunito)' }}
-        >
-          {showForm ? <X size={13} /> : <Plus size={13} />}
-          {showForm ? 'ANNULLA' : 'CARICA DOCUMENTO'}
-        </button>
+      <div className="mb-5">
+        <SearchField value={query} onChange={setQuery} placeholder="Cerca in tutti i documenti" />
       </div>
 
-      {/* ── Upload form (collapsible) ── */}
-      <AnimatePresence>
-        {showForm && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            className="overflow-hidden"
+      {/* Briciole: si vede sempre dove si è e come tornare su. */}
+      {!searching && (
+        <div className="mb-4 flex min-h-[44px] flex-wrap items-center gap-1.5 text-fine">
+          <button
+            onClick={() => setOpenFolder(null)}
+            className={openFolder ? 'font-medium text-accent' : 'text-on-paper-muted'}
           >
-            <div className="bg-white border border-[#eddada] rounded-xl p-6 shadow-[0_1px_4px_rgba(107,26,26,0.06),0_6px_20px_rgba(107,26,26,0.04)]">
-              <div className="flex items-center gap-2 mb-5">
-                <Upload size={13} className="text-[#731515]" />
-                <span className="text-[9px] tracking-[0.42em] text-[#731515] uppercase">
-                  Carica nuovo documento
-                </span>
-              </div>
+            Tutti i documenti
+          </button>
+          {current && (
+            <>
+              <ChevronRight size={14} strokeWidth={1.8} className="text-on-paper-muted" />
+              <span className="font-medium">{current.name}</span>
+            </>
+          )}
+        </div>
+      )}
 
-              {uploadOk ? (
-                <motion.div
-                  initial={{ opacity: 0, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center gap-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 px-4 py-3 rounded-lg"
-                  style={{ fontFamily: 'var(--font-nunito)' }}
-                >
-                  <CheckCircle2 size={14} />
-                  Documento caricato con successo.
-                </motion.div>
-              ) : (
-                <form onSubmit={handleUpload} className="flex flex-col gap-4">
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-2">
-                        TITOLO *
-                      </label>
-                      <input
-                        type="text" required
-                        value={title} onChange={e => setTitle(e.target.value)}
-                        placeholder="Es. Pitch Deck 2026"
-                        className={inputCls} style={{ fontFamily: 'var(--font-nunito)' }}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-2">
-                        CATEGORIA
-                      </label>
-                      <div className="relative">
-                        <select
-                          value={category} onChange={e => setCategory(e.target.value)}
-                          className={`${inputCls} appearance-none cursor-pointer`}
-                          style={{ fontFamily: 'var(--font-nunito)' }}
-                        >
-                          {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                        </select>
-                        <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
-                          <svg width="10" height="6" viewBox="0 0 10 6" fill="none">
-                            <path d="M1 1l4 4 4-4" stroke="#731515" strokeWidth="1.4"
-                              strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-2">
-                      DESCRIZIONE
-                    </label>
-                    <input
-                      type="text"
-                      value={description} onChange={e => setDescription(e.target.value)}
-                      placeholder="Descrizione opzionale"
-                      className={inputCls} style={{ fontFamily: 'var(--font-nunito)' }}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-2">
-                      FILE *
-                    </label>
-                    <div
-                      className="border-2 border-dashed border-[#eddada] rounded-lg p-6 text-center cursor-pointer hover:border-[#731515]/40 transition-colors duration-200"
-                      onClick={() => fileRef.current?.click()}
-                    >
-                      <input
-                        ref={fileRef}
-                        type="file" accept={ACCEPTED_MIME} className="hidden"
-                        onChange={e => setFile(e.target.files?.[0] ?? null)}
-                      />
-                      {file ? (
-                        <div
-                          className="flex items-center justify-center gap-2 text-sm text-[#1a0505]"
-                          style={{ fontFamily: 'var(--font-nunito)' }}
-                        >
-                          <DocIcon fileName={file.name} size={15} />
-                          <span className="truncate max-w-xs">{file.name}</span>
-                          <span className="text-[#7a4a4a]/40 text-xs shrink-0">
-                            ({fmtSize(file.size)})
-                          </span>
-                        </div>
-                      ) : (
-                        <div style={{ fontFamily: 'var(--font-nunito)' }}>
-                          <Upload size={20} className="text-[#7a4a4a]/25 mx-auto mb-2" />
-                          <p className="text-sm text-[#7a4a4a]/45">
-                            Clicca per selezionare un file
-                          </p>
-                          <p className="text-xs text-[#7a4a4a]/30 mt-1">
-                            PDF · Word · PowerPoint · Max 20 MB
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {uploadError && (
-                    <p className="text-xs text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>
-                      {uploadError}
-                    </p>
-                  )}
-
+      {loading ? (
+        <div className="flex justify-center py-20">
+          <span className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+        </div>
+      ) : error ? (
+        <EmptyState
+          title="Non riesco a leggere l'archivio"
+          body={error}
+          action={<ActionButton onClick={load}>Riprova</ActionButton>}
+        />
+      ) : (
+        <div className="flex flex-col gap-8">
+          {/* ── Le cartelle, solo alla radice ── */}
+          {!searching && !openFolder && (
+            <section>
+              <h3 className="mb-3 text-subtitle font-medium">Cartelle</h3>
+              <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+                {foldersWithCounts.map((f) => (
                   <button
-                    type="submit" disabled={uploading}
-                    className="w-full py-2.5 bg-[#731515] text-white text-[10px] tracking-[0.3em] hover:bg-[#9b2323] disabled:opacity-55 disabled:cursor-not-allowed transition-colors duration-200 rounded-lg flex items-center justify-center gap-2"
+                    key={f.id}
+                    onClick={() => setOpenFolder(f.id)}
+                    className="flex min-h-[104px] flex-col items-start gap-2 rounded-2xl border border-rule-paper p-3.5 text-left transition-colors hover:border-accent/40 hover:bg-paper-soft"
                   >
-                    {uploading
-                      ? <><Loader2 size={12} className="animate-spin" /> CARICAMENTO…</>
-                      : <><Upload size={12} /> CARICA</>
-                    }
+                    <span
+                      className="grid h-10 w-10 place-items-center rounded-xl"
+                      style={{ backgroundColor: `${f.color}16`, color: f.color }}
+                    >
+                      <Folder size={20} strokeWidth={1.7} />
+                    </span>
+                    <span className="mt-auto min-w-0 w-full">
+                      <span className="block truncate text-body">{f.name}</span>
+                      <span className="block text-fine text-on-paper-muted">
+                        {f.count === 1 ? '1 file' : `${f.count} file`}
+                      </span>
+                    </span>
                   </button>
-                </form>
+                ))}
+
+                <button
+                  onClick={() => setFolderSheet('new')}
+                  className="flex min-h-[104px] flex-col items-start gap-2 rounded-2xl border border-dashed border-rule-paper p-3.5 text-left transition-colors hover:border-accent/50"
+                >
+                  <span className="grid h-10 w-10 place-items-center rounded-xl bg-paper-soft text-on-paper-muted">
+                    <FolderPlus size={20} strokeWidth={1.7} />
+                  </span>
+                  <span className="mt-auto text-body text-on-paper-muted">Nuova cartella</span>
+                </button>
+              </div>
+            </section>
+          )}
+
+          {/* ── Azioni sulla cartella aperta ── */}
+          {!searching && current && (
+            <div className="flex flex-wrap gap-2.5">
+              <ActionButton variant="quiet" onClick={() => setFolderSheet(current)}>
+                <Pencil size={16} strokeWidth={1.8} />
+                Rinomina
+              </ActionButton>
+              {isAdmin && (
+                <ActionButton
+                  variant="danger"
+                  onClick={() => (deletingFolder ? deleteFolder(current) : setDeletingFolder(true))}
+                >
+                  <Trash2 size={16} strokeWidth={1.8} />
+                  {deletingFolder
+                    ? current.count > 0
+                      ? `Confermi? ${current.count} file restano in archivio`
+                      : 'Confermi?'
+                    : 'Elimina cartella'}
+                </ActionButton>
               )}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
 
-      {/* ── Error ── */}
-      {error && (
-        <p className="text-sm text-[#731515] text-center py-6" style={{ fontFamily: 'var(--font-nunito)' }}>
-          {error}
-        </p>
-      )}
+          {/* ── I file ── */}
+          <section>
+            <h3 className="mb-3 flex items-baseline gap-2 text-subtitle font-medium">
+              {searching
+                ? 'Risultati'
+                : current
+                  ? current.name
+                  : 'Fuori da ogni cartella'}
+              <span className="text-fine font-normal text-on-paper-muted">
+                {visibleDocs.length}
+              </span>
+            </h3>
 
-      {/* ── Document list ── */}
-      {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="w-5 h-5 border-2 border-[#e8d5d5] border-t-[#731515] rounded-full animate-spin" />
-        </div>
-      ) : docs.length === 0 ? (
-        <div className="bg-white border border-dashed border-[#eddada] rounded-xl p-16 text-center">
-          <FolderOpen size={32} className="text-[#7a4a4a]/20 mx-auto mb-3" strokeWidth={1.5} />
-          <p className="text-sm text-[#7a4a4a]/50 italic" style={{ fontFamily: 'var(--font-nunito)' }}>
-            Nessun documento caricato ancora.
-          </p>
-          <p className="text-xs text-[#7a4a4a]/30 mt-1" style={{ fontFamily: 'var(--font-nunito)' }}>
-            Usa il pulsante qui sopra per iniziare.
-          </p>
-        </div>
-      ) : (
-        <div className="bg-white border border-[#eddada] rounded-xl shadow-[0_1px_4px_rgba(107,26,26,0.06),0_6px_20px_rgba(107,26,26,0.04)] overflow-hidden">
+            {visibleDocs.length === 0 ? (
+              <EmptyState
+                title={searching ? 'Nessun risultato' : 'Niente qui dentro'}
+                body={
+                  searching
+                    ? 'Prova con una parola del titolo o del nome del file.'
+                    : 'Trascina qui i file, oppure usa il pulsante Carica in alto.'
+                }
+                action={
+                  searching ? undefined : (
+                    <ActionButton onClick={() => setUploadFiles([])}>
+                      <Upload size={17} strokeWidth={1.9} />
+                      Carica
+                    </ActionButton>
+                  )
+                }
+              />
+            ) : (
+              <div className="flex flex-col gap-1.5">
+                {visibleDocs.map((d) => (
+                  <DocRow key={d.id} doc={d} onOpen={setDetail} />
+                ))}
+              </div>
+            )}
 
-          {/* Table head */}
-          <div className="hidden sm:grid sm:grid-cols-[1fr_auto_auto_auto_auto] sm:gap-4 px-5 py-3 border-b border-[#f0e4e4] bg-[#fdf9f9]">
-            <div className="text-[9px] tracking-[0.35em] text-[#7a4a4a]/50">DOCUMENTO</div>
-            <div className="text-[9px] tracking-[0.35em] text-[#7a4a4a]/50">CATEGORIA</div>
-            <div className="text-[9px] tracking-[0.35em] text-[#7a4a4a]/50">CARICATO DA</div>
-            <div className="text-[9px] tracking-[0.35em] text-[#7a4a4a]/50">DATA</div>
-            <div />
-          </div>
-
-          <div className="divide-y divide-[#f5eded]">
-            {docs.map(doc => (
-              <motion.div
-                key={doc.id}
-                layout
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                {/* Desktop row */}
-                <div className="hidden sm:grid sm:grid-cols-[1fr_auto_auto_auto_auto] sm:gap-4 items-center px-5 py-4 hover:bg-[#fdf9f9] transition-colors duration-150">
-
-                  {/* Title block */}
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <DocIcon fileName={doc.file_name} size={13} />
-                      <span
-                        className="text-sm font-medium text-[#1a0505] truncate"
-                        style={{ fontFamily: 'var(--font-syne)' }}
-                      >
-                        {doc.title}
-                      </span>
-                    </div>
-                    {doc.description && (
-                      <p
-                        className="text-[11px] text-[#7a4a4a]/55 mt-0.5 ml-[21px] truncate"
-                        style={{ fontFamily: 'var(--font-nunito)' }}
-                      >
-                        {doc.description}
-                      </p>
-                    )}
-                    <p className="text-[10px] text-[#7a4a4a]/30 mt-0.5 ml-[21px] font-mono">
-                      {doc.file_name}{doc.file_size ? ` · ${fmtSize(doc.file_size)}` : ''}
-                    </p>
-                  </div>
-
-                  <CategoryBadge category={doc.category} />
-
-                  <span
-                    className="text-[11px] text-[#7a4a4a]/55 truncate max-w-[120px]"
-                    style={{ fontFamily: 'var(--font-nunito)' }}
-                  >
-                    {doc.uploaded_by.split('@')[0]}
-                  </span>
-
-                  <span
-                    className="text-[11px] text-[#7a4a4a]/45 whitespace-nowrap"
-                    style={{ fontFamily: 'var(--font-nunito)' }}
-                  >
-                    {fmtDate(doc.created_at)}
-                  </span>
-
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => handleDownload(doc)}
-                      disabled={downloading === doc.id}
-                      title="Scarica"
-                      className="w-8 h-8 flex items-center justify-center bg-white border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515]/40 hover:text-[#731515] disabled:opacity-40 transition-all duration-200 rounded-lg"
-                    >
-                      {downloading === doc.id
-                        ? <Loader2 size={12} className="animate-spin" />
-                        : <Download size={12} />
-                      }
-                    </button>
-                    {isAdmin && (
-                      <button
-                        onClick={() => handleDelete(doc)}
-                        disabled={deleting === doc.id}
-                        title="Elimina"
-                        className="w-8 h-8 flex items-center justify-center bg-white border border-[#e8d5d5] text-[#7a4a4a]/50 hover:border-red-300 hover:text-red-600 disabled:opacity-40 transition-all duration-200 rounded-lg"
-                      >
-                        {deleting === doc.id
-                          ? <Loader2 size={12} className="animate-spin" />
-                          : <Trash2 size={12} />
-                        }
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Mobile card */}
-                <div className="sm:hidden px-4 py-4 hover:bg-[#fdf9f9] transition-colors duration-150">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-start gap-2 min-w-0">
-                      <div className="mt-0.5"><DocIcon fileName={doc.file_name} size={14} /></div>
-                      <div className="min-w-0">
-                        <p
-                          className="text-sm font-medium text-[#1a0505] leading-snug"
-                          style={{ fontFamily: 'var(--font-syne)' }}
-                        >
-                          {doc.title}
-                        </p>
-                        {doc.description && (
-                          <p
-                            className="text-[11px] text-[#7a4a4a]/55 mt-0.5"
-                            style={{ fontFamily: 'var(--font-nunito)' }}
-                          >
-                            {doc.description}
-                          </p>
-                        )}
-                        <div className="flex flex-wrap items-center gap-2 mt-2">
-                          <CategoryBadge category={doc.category} />
-                          <span
-                            className="text-[10px] text-[#7a4a4a]/40"
-                            style={{ fontFamily: 'var(--font-nunito)' }}
-                          >
-                            {fmtDate(doc.created_at)} · {doc.uploaded_by.split('@')[0]}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <button
-                        onClick={() => handleDownload(doc)}
-                        disabled={downloading === doc.id}
-                        className="w-8 h-8 flex items-center justify-center bg-white border border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515]/40 hover:text-[#731515] disabled:opacity-40 transition-all duration-200 rounded-lg"
-                      >
-                        {downloading === doc.id
-                          ? <Loader2 size={12} className="animate-spin" />
-                          : <Download size={12} />
-                        }
-                      </button>
-                      {isAdmin && (
-                        <button
-                          onClick={() => handleDelete(doc)}
-                          disabled={deleting === doc.id}
-                          className="w-8 h-8 flex items-center justify-center bg-white border border-[#e8d5d5] text-[#7a4a4a]/50 hover:border-red-300 hover:text-red-600 disabled:opacity-40 transition-all duration-200 rounded-lg"
-                        >
-                          {deleting === doc.id
-                            ? <Loader2 size={12} className="animate-spin" />
-                            : <Trash2 size={12} />
-                          }
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+            {searching && (
+              <p className="mt-4 flex items-center gap-1.5 text-fine text-on-paper-muted">
+                <MoveRight size={14} strokeWidth={1.8} />
+                La ricerca guarda dentro tutte le cartelle.
+              </p>
+            )}
+          </section>
         </div>
       )}
 
+      <DocDetail
+        doc={detail}
+        folders={foldersWithCounts}
+        isAdmin={isAdmin}
+        token={liveToken}
+        onClose={() => setDetail(null)}
+        onChanged={(d) => {
+          setDocs((p) => p.map((x) => (x.id === d.id ? d : x)));
+          setDetail(d);
+        }}
+        onDeleted={(id) => {
+          setDocs((p) => p.filter((x) => x.id !== id));
+          setDetail(null);
+        }}
+      />
+
+      {uploadFiles && (
+        <UploadSheet
+          initialFiles={uploadFiles}
+          folders={foldersWithCounts}
+          defaultFolder={openFolder ?? ''}
+          token={liveToken}
+          onClose={() => setUploadFiles(null)}
+          onUploaded={(d) => setDocs((p) => [d, ...p])}
+        />
+      )}
+
+      {folderSheet && (
+        <FolderSheet
+          target={folderSheet}
+          token={liveToken}
+          onClose={() => setFolderSheet(null)}
+          onSaved={(f) => {
+            setFolders((p) => {
+              const i = p.findIndex((x) => x.id === f.id);
+              if (i >= 0) {
+                const next = [...p];
+                next[i] = f;
+                return next;
+              }
+              return [...p, f].sort((a, b) => a.name.localeCompare(b.name));
+            });
+            setFolderSheet(null);
+          }}
+        />
+      )}
     </div>
   );
 }

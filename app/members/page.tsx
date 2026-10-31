@@ -1,21 +1,19 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState, Suspense } from 'react';
+import { Caricamento } from '@/components/ui/Caricamento';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Home, CheckSquare, BarChart3, Users, FileText,
-  Mail, LogOut, KeyRound, ScanLine, Menu, X,
-  Wine, Shield, ArrowUpRight, CreditCard, User, CalendarDays, Images,
-  Database, ChevronDown, UsersRound, Lock, ShoppingBag, Tag, FolderOpen, Layers,
-  Camera, Loader2, Wallet, Receipt, BookOpen, Sparkles, Clock, Pencil, MapPin, Inbox,
+  KeyRound, ScanLine, Shield, ArrowUpRight, Lock,
+  Camera, Loader2, Pencil,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import TaskBoard, { isAdmin } from '@/components/TaskBoard';
 import AnalyticsDashboard from '@/components/AnalyticsDashboard';
-import MembershipPipeline from '@/components/MembershipPipeline';
+import MembershipHub from '@/components/MembershipHub';
 import NewsManager from '@/components/NewsManager';
 import CrmHub from '@/components/CrmHub';
 import EventManager from '@/components/EventManager';
@@ -34,76 +32,19 @@ import PedManager from '@/components/PedManager';
 import WineAssistant from '@/components/WineAssistant';
 import UpsellManager from '@/components/UpsellManager';
 import WineriesMapManager from '@/components/WineriesMapManager';
-import ApplicationsManager from '@/components/ApplicationsManager';
-import { isSuperAdmin, isFinanceUser } from '@/lib/admins';
+import { isFinanceUser } from '@/lib/admins';
+import { SECTION_PERMISSION } from '@/lib/access';
+import { AdminShell } from '@/components/admin/AdminShell';
+import { closeTopOverlay } from '@/lib/overlay-stack';
+import { ActionButton } from '@/components/admin/ui';
+import { type AdminRole } from '@/lib/admin-nav';
 import { useMobileOverlay } from '@/lib/useMobileOverlay';
 
 /* ─────────────────────────────────────────────
    Types
 ───────────────────────────────────────────── */
-type Section = 'overview' | 'settings' | 'wine-assistant' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm' | 'media' | 'team' | 'merch' | 'discounts' | 'documents' | 'finance' | 'bilancio' | 'quotes' | 'ped' | 'upsell' | 'wineries' | 'applications';
+type Section = 'overview' | 'settings' | 'wine-assistant' | 'tasks' | 'analytics' | 'pipeline' | 'events' | 'news' | 'crm' | 'media' | 'team' | 'merch' | 'discounts' | 'documents' | 'finance' | 'bilancio' | 'quotes' | 'ped' | 'upsell' | 'wineries';
 
-// Maps section IDs to the permission key in team_members.permissions
-const SECTION_PERM: Partial<Record<Section, string>> = {
-  tasks:     'tasks',
-  events:    'events',
-  news:      'news',
-  crm:       'crm',
-  media:     'media',
-  analytics: 'analytics',
-  pipeline:  'pipeline',
-  merch:     'merch',
-  discounts: 'merch',
-  upsell:    'merch',
-  documents: 'documents',
-  wineries:  'media', // reuses the Media permission — same content-curation audience
-};
-
-interface NavItem {
-  id: Section;
-  label: string;
-  icon: React.ElementType;
-}
-
-const NAV_MAIN: NavItem[] = [
-  { id: 'overview',       label: 'Overview',        icon: Home       },
-  { id: 'wine-assistant', label: 'Wine Assistant',  icon: Wine       },
-];
-
-const SETTINGS_ITEM: NavItem = { id: 'settings', label: 'Impostazioni', icon: KeyRound };
-
-// Sub-items for the collapsible Gestione group
-const GESTIONE_ITEMS: NavItem[] = [
-  { id: 'events',    label: 'Eventi',  icon: CalendarDays },
-  { id: 'news',      label: 'News',    icon: FileText     },
-  { id: 'merch',     label: 'Merch',   icon: ShoppingBag  },
-  { id: 'media',     label: 'Media',   icon: Images       },
-  { id: 'discounts', label: 'Sconti',  icon: Tag          },
-  { id: 'upsell',    label: 'Upsell',  icon: Sparkles     },
-  { id: 'wineries',  label: 'Mappa Cantine', icon: MapPin },
-];
-
-// Visible to both admin and staff
-const NAV_SHARED: NavItem[] = [
-  { id: 'tasks',     label: 'Task', icon: CheckSquare },
-  { id: 'ped',       label: 'PED',        icon: BookOpen    },
-  { id: 'documents', label: 'Documenti',  icon: FolderOpen  },
-  { id: 'quotes',    label: 'Preventivi', icon: Receipt     },
-];
-
-// Admin only
-const NAV_ADMIN_ONLY: NavItem[] = [
-  { id: 'analytics', label: 'Analytics',           icon: BarChart3 },
-  { id: 'pipeline',  label: 'Pipeline Membership', icon: Users     },
-];
-
-
-// Visible to both admin and staff
-const NAV_SHARED_BOTTOM: NavItem[] = [];
-
-/* ─────────────────────────────────────────────
-   Sub-components
-───────────────────────────────────────────── */
 
 /** Monogram avatar — shows photo if src is provided, falls back to initials */
 function UserAvatar({ name, size = 36, src }: { name: string; size?: number; src?: string | null }) {
@@ -125,328 +66,6 @@ function UserAvatar({ name, size = 36, src }: { name: string; size?: number; src
       className="rounded-full bg-gradient-to-br from-[#731515] to-[#3d0808] flex items-center justify-center text-white font-semibold select-none"
     >
       {initials}
-    </div>
-  );
-}
-
-/** Single sidebar nav button */
-function NavBtn({
-  item,
-  active,
-  onClick,
-  badge,
-}: {
-  item: NavItem;
-  active: boolean;
-  onClick: () => void;
-  /** Optional counter shown on the right (hidden when 0/undefined). */
-  badge?: number;
-}) {
-  const Icon = item.icon;
-  return (
-    <button
-      onClick={onClick}
-      className={`w-full flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-left transition-all duration-150 text-[12.5px] relative ${
-        active
-          ? 'bg-[#731515]/25 text-white'
-          : 'text-white/45 hover:text-white/75 hover:bg-white/[0.06]'
-      }`}
-      style={{ fontFamily: 'var(--font-nunito)' }}
-    >
-      {active && (
-        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-[#c84040] rounded-r-full" />
-      )}
-      <Icon size={14} className={active ? 'text-[#c84040]' : 'text-white/35'} />
-      {item.label}
-      {!!badge && badge > 0 && (
-        <span
-          className="ml-auto min-w-[18px] h-[18px] px-1.5 rounded-full bg-[#c84040] text-white text-[10px] leading-[18px] text-center font-semibold"
-          aria-label={`${badge} da gestire`}
-        >
-          {badge > 99 ? '99+' : badge}
-        </span>
-      )}
-    </button>
-  );
-}
-
-
-/** Collapsible Gestione group (Events, News, Merch) in the sidebar */
-function GestioneGroupNav({ activeSection, navigate }: { activeSection: Section; navigate: (s: Section) => void }) {
-  const isActive = GESTIONE_ITEMS.some((item) => item.id === activeSection);
-  const [open, setOpen] = useState(isActive);
-
-  useEffect(() => {
-    if (isActive) setOpen(true);
-  }, [isActive]);
-
-  return (
-    <div>
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className={`w-full flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-left transition-all duration-150 text-[12.5px] ${
-          isActive
-            ? 'text-white/75 bg-white/[0.04]'
-            : 'text-white/45 hover:text-white/75 hover:bg-white/[0.06]'
-        }`}
-        style={{ fontFamily: 'var(--font-nunito)' }}
-      >
-        <Layers size={14} className={isActive ? 'text-[#c84040]' : 'text-white/35'} />
-        Gestione
-        <ChevronDown
-          size={11}
-          className={`ml-auto text-white/25 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
-        />
-      </button>
-
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="overflow-hidden"
-          >
-            <div className="ml-3 pl-2.5 border-l border-white/[0.07] mt-0.5 mb-0.5 space-y-0.5">
-              {GESTIONE_ITEMS.map((item) => (
-                <NavBtn
-                  key={item.id}
-                  item={item}
-                  active={activeSection === item.id}
-                  onClick={() => navigate(item.id)}
-                />
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-const FINANCE_ITEMS: NavItem[] = [
-  { id: 'finance',  label: 'Transazioni', icon: Receipt  },
-  { id: 'bilancio', label: 'Bilancio',    icon: BarChart3 },
-];
-
-/** Collapsible Finance group (Transazioni, Bilancio) in the sidebar */
-function FinanceGroupNav({ activeSection, navigate }: { activeSection: Section; navigate: (s: Section) => void }) {
-  const isActive = FINANCE_ITEMS.some((item) => item.id === activeSection);
-  const [open, setOpen] = useState(isActive);
-
-  useEffect(() => {
-    if (isActive) setOpen(true);
-  }, [isActive]);
-
-  return (
-    <div>
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className={`w-full flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-left transition-all duration-150 text-[12.5px] ${
-          isActive
-            ? 'text-white/75 bg-white/[0.04]'
-            : 'text-white/45 hover:text-white/75 hover:bg-white/[0.06]'
-        }`}
-        style={{ fontFamily: 'var(--font-nunito)' }}
-      >
-        <Wallet size={14} className={isActive ? 'text-[#c84040]' : 'text-white/35'} />
-        Finance
-        <ChevronDown
-          size={11}
-          className={`ml-auto text-white/25 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
-        />
-      </button>
-
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="overflow-hidden"
-          >
-            <div className="ml-3 pl-2.5 border-l border-white/[0.07] mt-0.5 mb-0.5 space-y-0.5">
-              {FINANCE_ITEMS.map((item) => (
-                <NavBtn
-                  key={item.id}
-                  item={item}
-                  active={activeSection === item.id}
-                  onClick={() => navigate(item.id)}
-                />
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-/** Sidebar shell — rendered both in desktop aside and mobile drawer */
-function SidebarContent({
-  displayName,
-  email,
-  activeSection,
-  navigate,
-  onLogout,
-  admin,
-  isStaff,
-  canAccess,
-  superAdmin,
-  financeUser,
-  pendingApplications,
-}: {
-  displayName: string;
-  email: string;
-  activeSection: Section;
-  navigate: (s: Section) => void;
-  onLogout: () => void;
-  admin: boolean;
-  isStaff: boolean;
-  canAccess: (section: Section) => boolean;
-  superAdmin: boolean;
-  financeUser: boolean;
-  pendingApplications: number;
-}) {
-  return (
-    <div className="flex flex-col h-full overflow-hidden">
-
-      {/* Logo */}
-      <div className="px-5 pt-6 pb-5 shrink-0">
-        <Link href="/" className="inline-flex items-center gap-2 group">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logobianco.png" alt="Vivo Wine Club" className="h-7 opacity-80 group-hover:opacity-100 transition-opacity duration-200" />
-        </Link>
-        <div className="mt-1.5 text-[8px] tracking-[0.55em] text-white/20 uppercase">Members Area</div>
-      </div>
-
-      {/* Divider */}
-      <div className="mx-4 h-px bg-white/[0.07] shrink-0" />
-
-      {/* User card */}
-      <div className="px-4 py-4 shrink-0">
-        <div className="flex items-center gap-3">
-          <UserAvatar name={displayName} size={34} />
-          <div className="min-w-0">
-            <div
-              className="text-[13px] text-white/85 font-medium truncate leading-tight"
-              style={{ fontFamily: 'var(--font-syne)' }}
-            >
-              {displayName}
-            </div>
-            <div
-              className="text-[10px] text-white/30 truncate mt-0.5"
-              style={{ fontFamily: 'var(--font-nunito)' }}
-            >
-              {email}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Divider */}
-      <div className="mx-4 h-px bg-white/[0.07] mb-2 shrink-0" />
-
-      {/* Nav */}
-      <nav className="flex-1 overflow-y-auto px-3 py-1 space-y-0.5">
-        {NAV_MAIN.map(item => (
-          <NavBtn key={item.id} item={item} active={activeSection === item.id} onClick={() => navigate(item.id)} />
-        ))}
-
-        {(admin || isStaff) && (
-          <>
-            <div className="pt-5 pb-1.5 px-3 flex items-center gap-1.5">
-              {admin
-                ? <Shield size={8} className="text-white/20" />
-                : <ScanLine size={8} className="text-white/20" />
-              }
-              <span className="text-[8px] tracking-[0.55em] text-white/20 uppercase">
-                {admin ? 'Admin' : 'Gestione'}
-              </span>
-            </div>
-            <GestioneGroupNav activeSection={activeSection} navigate={navigate} />
-            {NAV_SHARED.map(item => (
-              <NavBtn key={item.id} item={item} active={activeSection === item.id} onClick={() => navigate(item.id)} />
-            ))}
-            {NAV_ADMIN_ONLY.map(item => (
-              <NavBtn key={item.id} item={item} active={activeSection === item.id} onClick={() => navigate(item.id)} />
-            ))}
-            <NavBtn
-              item={{ id: 'applications', label: 'Application', icon: Inbox }}
-              active={activeSection === 'applications'}
-              onClick={() => navigate('applications')}
-              badge={pendingApplications}
-            />
-            <NavBtn
-              item={{ id: 'crm', label: 'CRM', icon: Database }}
-              active={activeSection === 'crm'}
-              onClick={() => navigate('crm')}
-            />
-            {NAV_SHARED_BOTTOM.map(item => (
-              <NavBtn key={item.id} item={item} active={activeSection === item.id} onClick={() => navigate(item.id)} />
-            ))}
-          </>
-        )}
-
-        {superAdmin && (
-          <>
-            <div className="pt-5 pb-1.5 px-3 flex items-center gap-1.5">
-              <UsersRound size={8} className="text-white/20" />
-              <span className="text-[8px] tracking-[0.55em] text-white/20 uppercase">Super Admin</span>
-            </div>
-            <NavBtn
-              item={{ id: 'team', label: 'Team Management', icon: UsersRound }}
-              active={activeSection === 'team'}
-              onClick={() => navigate('team')}
-            />
-          </>
-        )}
-
-        {financeUser && (
-          <>
-            <div className="pt-5 pb-1.5 px-3 flex items-center gap-1.5">
-              <Wallet size={8} className="text-white/20" />
-              <span className="text-[8px] tracking-[0.55em] text-white/20 uppercase">Finance</span>
-            </div>
-            <FinanceGroupNav activeSection={activeSection} navigate={navigate} />
-          </>
-        )}
-
-        {/* Account — always last */}
-        <div className="pt-5 pb-1.5 px-3 flex items-center gap-1.5">
-          <KeyRound size={8} className="text-white/20" />
-          <span className="text-[8px] tracking-[0.55em] text-white/20 uppercase">Account</span>
-        </div>
-        <NavBtn
-          item={SETTINGS_ITEM}
-          active={activeSection === 'settings'}
-          onClick={() => navigate('settings')}
-        />
-      </nav>
-
-      {/* Bottom actions */}
-      <div className="mx-4 h-px bg-white/[0.07] shrink-0" />
-      <div className="px-3 py-3 shrink-0 space-y-0.5">
-        <Link
-          href="/"
-          className="flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-white/30 hover:text-white/55 hover:bg-white/[0.06] transition-all duration-150 text-[12px]"
-          style={{ fontFamily: 'var(--font-nunito)' }}
-        >
-          <ArrowUpRight size={12} />
-          vivowineclub.com
-        </Link>
-        <button
-          onClick={onLogout}
-          className="w-full flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-white/30 hover:text-[#e88a8a] hover:bg-white/[0.06] transition-all duration-150 text-[12px] text-left"
-          style={{ fontFamily: 'var(--font-nunito)' }}
-        >
-          <LogOut size={12} />
-          Esci
-        </button>
-      </div>
-
     </div>
   );
 }
@@ -520,9 +139,10 @@ function UnauthorisedSection({ title }: { title: string }) {
 }
 
 /* ─────────────────────────────────────────────
-   Next event countdown
+   Section: Overview
 ───────────────────────────────────────────── */
-/** "18:00 - 24:00" / "19:00" / null → Date for that day at the start time (midnight if none given) */
+
+/** "18:00 - 24:00" / "19:00" / null → quel giorno all'ora di inizio (mezzanotte se non c'è) */
 function parseEventDateTime(date: string, time: string | null): Date {
   let hh = 0, mm = 0;
   const m = time?.split('-')[0]?.trim().match(/(\d{1,2}):(\d{2})/);
@@ -531,123 +151,91 @@ function parseEventDateTime(date: string, time: string | null): Date {
   return new Date(y, (mo ?? 1) - 1, d ?? 1, hh, mm, 0);
 }
 
-function CountdownUnit({ value, label }: { value: number; label: string }) {
-  return (
-    <div className="flex flex-col items-center min-w-[52px]">
-      <span
-        className="text-[clamp(1.6rem,4vw,2.4rem)] font-light text-white leading-none tabular-nums"
-        style={{ fontFamily: 'var(--font-syne)' }}
-      >
-        {String(value).padStart(2, '0')}
-      </span>
-      <span className="mt-1.5 text-[8px] tracking-[0.3em] text-white/40 uppercase">{label}</span>
-    </div>
-  );
+/**
+ * Quanto manca, in una riga.
+ *
+ * Prima erano quattro riquadri con giorni, ore, minuti e secondi, e
+ * un timer che rifaceva il disegno ogni secondo. A tre settimane da un
+ * evento i secondi non dicono niente a nessuno: resta la frase che uno
+ * leggerebbe comunque ad alta voce.
+ */
+function timeUntil(target: Date, now: Date): string {
+  const ms = target.getTime() - now.getTime();
+  if (ms <= 0) return 'In corso';
+  const minutes = Math.ceil(ms / 60_000);
+  if (minutes < 60) return `fra ${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 48) return `fra ${hours} ${hours === 1 ? 'ora' : 'ore'}`;
+  return `fra ${Math.floor(hours / 24)} giorni`;
 }
 
-function EventCountdown() {
-  const [nextEvent, setNextEvent] = useState<{ title: string; date: string; time: string | null; location: string } | null>(null);
-  const [loading, setLoading]     = useState(true);
-  const [now, setNow]             = useState(() => new Date());
+/** Il prossimo evento in calendario. Senza eventi, non occupa spazio. */
+function NextEvent() {
+  const [event, setEvent] = useState<{ title: string; date: string; time: string | null; location: string } | null>(null);
+  const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
     fetch('/api/events')
       .then((r) => r.json())
-      .then((d) => setNextEvent((d.events ?? [])[0] ?? null))
-      .catch(() => {/* silent — countdown is non-critical */})
-      .finally(() => setLoading(false));
+      .then((d) => setEvent((d.events ?? [])[0] ?? null))
+      .catch(() => {/* senza, la pagina funziona comunque */});
   }, []);
 
+  // Al minuto, non al secondo: è la precisione che serve.
   useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 1000);
+    const id = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(id);
   }, []);
 
-  if (loading) return null;
+  if (!event) return null;
 
-  if (!nextEvent) {
-    return (
-      <div className="rounded-xl bg-gradient-to-br from-[#6b1a1a] to-[#350707] p-6 text-center">
-        <p className="text-[11px] text-white/50" style={{ fontFamily: 'var(--font-nunito)' }}>
-          Nessun evento in programma al momento.
-        </p>
-      </div>
-    );
-  }
-
-  const target = parseEventDateTime(nextEvent.date, nextEvent.time);
-  const diffMs = Math.max(0, target.getTime() - now.getTime());
-  const totalSeconds = Math.floor(diffMs / 1000);
-  const days    = Math.floor(totalSeconds / 86400);
-  const hours   = Math.floor((totalSeconds % 86400) / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-  const isNow   = diffMs === 0;
-
-  const dateLabel = new Date(nextEvent.date + 'T12:00:00Z').toLocaleDateString('it-IT', {
+  const dateLabel = new Date(`${event.date}T12:00:00Z`).toLocaleDateString('it-IT', {
     weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC',
   });
 
   return (
-    <div className="rounded-xl bg-gradient-to-br from-[#6b1a1a] to-[#350707] p-6 relative overflow-hidden">
-      <div
-        className="absolute inset-0 opacity-[0.06]"
-        style={{ backgroundImage: 'radial-gradient(circle at 80% 20%, white 0%, transparent 60%)' }}
-      />
-      <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
-        <div>
-          <div className="flex items-center gap-1.5 text-white/45 mb-2">
-            <Clock size={10} />
-            <span className="text-[9px] tracking-[0.35em]">PROSSIMO EVENTO</span>
-          </div>
-          <div className="text-[19px] font-light text-white leading-tight" style={{ fontFamily: 'var(--font-syne)' }}>
-            {nextEvent.title}
-          </div>
-          <p className="mt-1.5 text-[12px] text-white/50 capitalize" style={{ fontFamily: 'var(--font-nunito)' }}>
-            {dateLabel}{nextEvent.time ? ` · ${nextEvent.time}` : ''} · {nextEvent.location}
-          </p>
-        </div>
-
-        {isNow ? (
-          <span className="text-[13px] tracking-[0.2em] text-white/80 shrink-0" style={{ fontFamily: 'var(--font-syne)' }}>
-            IN CORSO
-          </span>
-        ) : (
-          <div className="flex items-center gap-3 sm:gap-5 shrink-0">
-            <CountdownUnit value={days}    label={days === 1 ? 'Giorno' : 'Giorni'} />
-            <span className="text-white/20 text-xl font-light -mt-3">:</span>
-            <CountdownUnit value={hours}   label="Ore" />
-            <span className="text-white/20 text-xl font-light -mt-3">:</span>
-            <CountdownUnit value={minutes} label="Min" />
-            <span className="text-white/20 text-xl font-light -mt-3">:</span>
-            <CountdownUnit value={seconds} label="Sec" />
-          </div>
-        )}
-      </div>
+    <div className="rounded-2xl border border-accent/30 bg-accent/[0.06] p-5">
+      <p className="text-fine text-on-paper-muted">Prossimo evento</p>
+      <p className="ds-display mt-2 text-[22px] leading-none tracking-[-0.02em]">{event.title}</p>
+      {/* "sabato 7 novembre": in italiano maiuscola solo la prima lettera. */}
+      <p className="mt-2 text-fine text-on-paper-muted first-letter:uppercase">
+        {dateLabel}{event.time ? ` · ${event.time}` : ''} · {event.location}
+      </p>
+      <p className="ds-display mt-4 text-[26px] leading-none tracking-[-0.02em] text-accent">
+        {timeUntil(parseEventDateTime(event.date, event.time), now)}
+      </p>
     </div>
   );
 }
 
-/* ─────────────────────────────────────────────
-   Section: Overview
-───────────────────────────────────────────── */
+/**
+ * Overview: chi sei, cosa hai in mano, cosa succede adesso.
+ *
+ * Era una scheda profilo con nome, email, telefono e data di nascita,
+ * quattro campi che uno conosce già a memoria — e in fondo una
+ * citazione sul vino. Di proprio non serviva niente: restano la
+ * tessera, il prossimo evento e lo scanner, cioè le tre cose che da
+ * qui si usano davvero. Al posto dei contatti c'è la qualifica, che è
+ * l'unica informazione su di sé che valga la pena leggere.
+ */
 function OverviewSection({
   user,
   isAdmin,
   isStaff,
   token,
+  canScan,
 }: {
   user:    { name?: string | null; email?: string | null };
   isAdmin: boolean;
   isStaff: boolean;
   token:   string;
+  /** Lo scanner si vede solo se Team Management lo lascia acceso. */
+  canScan: boolean;
 }) {
-  const [avatarUrl,   setAvatarUrl]  = useState<string | null>(null);
-  const [uploading,   setUploading]  = useState(false);
+  const [avatarUrl,   setAvatarUrl]   = useState<string | null>(null);
+  const [uploading,   setUploading]   = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const [profile, setProfile] = useState<{ phone: string | null; date_of_birth: string | null } | null>(null);
 
   const [cardData, setCardData] = useState<{ memberId: string; name: string; tier: string; memberSince: number } | null>(null);
   const [cardLoading, setCardLoading] = useState(true);
@@ -655,87 +243,57 @@ function OverviewSection({
   const [cardDownloading, setCardDownloading] = useState(false);
   const [cardLinkCopied,  setCardLinkCopied]  = useState(false);
 
+  // Il nome si può correggere da qui: è l'unica cosa che compare anche
+  // sulla tessera, quindi un refuso si vede.
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ name: '', email: '', phone: '', dob: '' });
+  const [draftName, setDraftName] = useState('');
+  const [savedName, setSavedName] = useState<string | null>(null);
   const [saving, setSaving]       = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [saveMsg, setSaveMsg]     = useState<string | null>(null);
 
   useEffect(() => {
     if (!token) return;
     fetch('/api/member/profile', { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.json())
-      .then(d => {
-        if (d.profile?.avatar_url) setAvatarUrl(d.profile.avatar_url);
-        setProfile({ phone: d.profile?.phone ?? null, date_of_birth: d.profile?.date_of_birth ?? null });
-      })
-      .catch(() => {/* silent — avatar/profile are optional */});
+      .then((r) => r.json())
+      .then((d) => { if (d.profile?.avatar_url) setAvatarUrl(d.profile.avatar_url); })
+      .catch(() => {/* la foto è un di più */});
   }, [token]);
 
   useEffect(() => {
     if (!token) return;
     setCardLoading(true);
     fetch('/api/member/card', { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.json())
-      .then(d => { if (d.memberId) setCardData(d); })
-      .catch(() => {/* silent */})
+      .then((r) => r.json())
+      .then((d) => { if (d.memberId) setCardData(d); })
+      .catch(() => {/* gestito dallo stato vuoto */})
       .finally(() => setCardLoading(false));
   }, [token]);
 
-  // Keep the edit form in sync with fresh data — but only while not actively editing,
-  // so live updates don't clobber unsaved input.
-  useEffect(() => {
-    if (editing) return;
-    setForm({
-      name:  user.name  ?? '',
-      email: user.email ?? '',
-      phone: profile?.phone ?? '',
-      dob:   profile?.date_of_birth ?? '',
-    });
-  }, [editing, user.name, user.email, profile]);
+  const name = savedName ?? user.name ?? user.email?.split('@')[0] ?? 'Socio';
+  const role = isAdmin ? 'Board' : isStaff ? 'Staff' : 'Membro';
 
-  async function handleSaveProfile() {
+  async function saveName() {
+    const next = draftName.trim();
+    if (!next || next === name) { setEditing(false); return; }
     setSaving(true);
     setSaveError(null);
-    setSaveMsg(null);
     try {
-      const nameChanged  = form.name.trim()  !== (user.name ?? '');
-      const emailChanged = form.email.trim() !== (user.email ?? '');
-
-      if (nameChanged) {
-        const { error } = await supabase.auth.updateUser({ data: { full_name: form.name.trim() } });
-        if (error) throw error;
-      }
-      if (emailChanged) {
-        const { error } = await supabase.auth.updateUser({ email: form.email.trim() });
-        if (error) throw error;
-      }
-
+      const { error } = await supabase.auth.updateUser({ data: { full_name: next } });
+      if (error) throw error;
       const res  = await fetch('/api/member/profile', {
         method:  'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body:    JSON.stringify({
-          full_name:     form.name.trim(),
-          phone:         form.phone.trim() || null,
-          date_of_birth: form.dob || null,
-        }),
+        body:    JSON.stringify({ full_name: next }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? 'Salvataggio fallito.');
-
-      setProfile({ phone: data.profile?.phone ?? null, date_of_birth: data.profile?.date_of_birth ?? null });
+      setSavedName(next);
       setEditing(false);
-      if (emailChanged) setSaveMsg('Controlla la nuova email per confermare il cambio indirizzo.');
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : 'Errore durante il salvataggio.');
     } finally {
       setSaving(false);
     }
-  }
-
-  function handleCancelEdit() {
-    setEditing(false);
-    setSaveError(null);
   }
 
   async function handleDownloadCard() {
@@ -758,11 +316,13 @@ function OverviewSection({
 
   function handleCopyCardLink() {
     if (!cardData) return;
-    const url = `https://vivowineclub.com/card/${cardData.memberId}`;
-    navigator.clipboard.writeText(url).then(() => {
-      setCardLinkCopied(true);
-      setTimeout(() => setCardLinkCopied(false), 2000);
-    }).catch(() => {});
+    navigator.clipboard
+      .writeText(`https://vivowineclub.com/card/${cardData.memberId}`)
+      .then(() => {
+        setCardLinkCopied(true);
+        setTimeout(() => setCardLinkCopied(false), 2000);
+      })
+      .catch(() => {});
   }
 
   async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -779,230 +339,125 @@ function OverviewSection({
         body:    fd,
       });
       const data = await res.json();
-      if (!res.ok) {
-        setAvatarError(data.error ?? 'Upload failed');
-        return;
-      }
+      if (!res.ok) { setAvatarError(data.error ?? 'Caricamento fallito.'); return; }
       if (data.url) setAvatarUrl(data.url);
     } catch {
-      setAvatarError('Upload failed — please try again');
+      setAvatarError('Caricamento fallito, riprova.');
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   }
 
-  const displayName = user.name || user.email?.split('@')[0] || 'U';
-
   return (
     <>
-      <SectionHeader title="Overview" subtitle="Il tuo profilo e la tua membership." />
+      {/* ── Chi sei: foto, nome, qualifica. Niente contatti. ── */}
+      <header className="mb-7 flex items-center gap-4">
+        <div className="relative shrink-0">
+          <UserAvatar name={name} size={64} src={avatarUrl} />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            title="Cambia foto"
+            className="absolute -bottom-0.5 -right-0.5 grid h-[26px] w-[26px] place-items-center rounded-full bg-accent text-paper transition-colors hover:bg-accent-lift disabled:opacity-50"
+          >
+            {uploading ? <Loader2 size={12} className="animate-spin" /> : <Camera size={12} />}
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleAvatarChange}
+          />
+        </div>
 
-      <div className="mb-5">
-        <EventCountdown />
-      </div>
+        <div className="min-w-0 flex-1">
+          {editing ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                value={draftName}
+                onChange={(e) => setDraftName(e.target.value)}
+                autoFocus
+                className="min-h-[44px] w-full rounded-xl border border-rule-paper bg-paper px-3 text-body focus:border-accent/50 focus:outline-none [font-size:16px] sm:w-auto sm:min-w-0 sm:flex-1"
+              />
+              <ActionButton onClick={saveName} disabled={saving}>
+                {saving ? 'Salvo…' : 'Salva'}
+              </ActionButton>
+              <ActionButton variant="quiet" onClick={() => { setEditing(false); setSaveError(null); }}>
+                Annulla
+              </ActionButton>
+            </div>
+          ) : (
+            <>
+              <h1 className="ds-display truncate text-[26px] leading-none tracking-[-0.03em] lg:text-[32px]">
+                {name}
+              </h1>
+              <div className="mt-2.5 flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/35 bg-accent/8 px-3 py-1 text-fine text-accent">
+                  <Shield size={13} strokeWidth={2} />
+                  {role}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => { setDraftName(name); setEditing(true); }}
+                  title="Modifica nome"
+                  className="grid h-9 w-9 place-items-center rounded-full text-on-paper-muted transition-colors hover:bg-paper-soft hover:text-on-paper"
+                >
+                  <Pencil size={14} />
+                </button>
+              </div>
+            </>
+          )}
+          {saveError   && <p className="mt-2 text-fine text-accent">{saveError}</p>}
+          {avatarError && <p className="mt-2 text-fine text-accent">{avatarError}</p>}
+        </div>
+      </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-
-        {/* Membership */}
-        <Card>
-          <CardLabel icon={CreditCard} label="My Membership" />
+      <div className="grid gap-4 lg:grid-cols-2">
+        {/* ── La tessera ── */}
+        <div className="rounded-2xl border border-rule-paper p-5">
+          <p className="mb-4 text-fine text-on-paper-muted">La tua tessera</p>
           {cardLoading ? (
-            <div className="flex items-center justify-center h-40">
-              <div className="w-5 h-5 rounded-full border-2 border-[#731515]/20 border-t-[#731515]/60 animate-spin" />
+            <div className="flex h-44 items-center justify-center text-accent">
+              <Caricamento dimensione={92} />
             </div>
           ) : cardData ? (
-            <div className="flex flex-col items-center gap-4">
-              <div className="max-w-[300px] w-full mx-auto">
+            <>
+              <div className="mx-auto w-full max-w-[320px]">
                 <MembershipCard {...cardData} cardRef={cardRef} />
               </div>
-
-              <div className="flex items-center gap-2 flex-wrap justify-center w-full">
-                <button
-                  onClick={handleDownloadCard}
-                  disabled={cardDownloading}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#731515] text-white text-[9px] tracking-[0.2em] rounded-lg hover:bg-[#9b2323] disabled:opacity-50 transition-colors duration-200"
-                  style={{ fontFamily: 'var(--font-nunito)' }}
-                >
-                  {cardDownloading ? 'DOWNLOAD...' : 'DOWNLOAD PNG'}
-                </button>
-
-                <button
-                  onClick={handleCopyCardLink}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-[#731515]/30 text-[#731515] text-[9px] tracking-[0.2em] rounded-lg hover:bg-[#fdf0f0] hover:border-[#731515]/50 transition-all duration-200"
-                  style={{ fontFamily: 'var(--font-nunito)' }}
-                >
-                  {cardLinkCopied ? 'LINK COPIATO' : 'CONDIVIDI LINK'}
-                </button>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <ActionButton onClick={handleDownloadCard} disabled={cardDownloading}>
+                  {cardDownloading ? 'Scarico…' : 'Scarica PNG'}
+                </ActionButton>
+                <ActionButton variant="quiet" onClick={handleCopyCardLink}>
+                  {cardLinkCopied ? 'Link copiato' : 'Copia link'}
+                </ActionButton>
               </div>
-
-              <div
-                className="w-full bg-[#fdf6f6] border border-[#e8d5d5] rounded-lg px-3 py-2 text-[10.5px] text-[#1a0505] truncate text-center"
-                style={{ fontFamily: 'var(--font-nunito)' }}
-              >
-                vivowineclub.com/card/{cardData.memberId}
-              </div>
-            </div>
+            </>
           ) : (
-            <p className="text-[12px] text-[#7a4a4a]/50 italic py-8 text-center" style={{ fontFamily: 'var(--font-nunito)' }}>
-              Impossibile caricare la tessera.
+            <p className="py-10 text-center text-fine text-on-paper-muted">
+              Non riesco a caricare la tessera.
             </p>
           )}
-        </Card>
-
-        {/* Profile */}
-        <Card className="lg:col-span-2">
-          <div className="flex items-center justify-between mb-5">
-            <CardLabel icon={User} label="My Profile" />
-            {!editing && (
-              <button
-                type="button"
-                onClick={() => setEditing(true)}
-                title="Modifica profilo"
-                className="w-7 h-7 flex items-center justify-center rounded-lg text-[#7a4a4a]/50 hover:text-[#731515] hover:bg-[#fdf6f6] transition-colors duration-200 -mt-5"
-              >
-                <Pencil size={13} />
-              </button>
-            )}
-          </div>
-
-          {/* Avatar + info row */}
-          <div className="flex items-start gap-5 mb-4">
-
-            {/* Avatar with camera overlay */}
-            <div className="relative shrink-0">
-              <UserAvatar name={displayName} size={88} src={avatarUrl} />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                title="Cambia foto profilo"
-                className="absolute -bottom-1 -right-1 w-[22px] h-[22px] bg-[#731515] rounded-full flex items-center justify-center hover:bg-[#9b2323] disabled:opacity-50 transition-colors duration-200 shadow-sm"
-              >
-                {uploading
-                  ? <Loader2 size={11} className="animate-spin text-white" />
-                  : <Camera size={11} className="text-white" />}
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleAvatarChange}
-              />
-            </div>
-
-            {/* Info fields */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 flex-1 min-w-0">
-              {avatarError && (
-                <p className="col-span-full text-[10px] text-red-400 mb-1">{avatarError}</p>
-              )}
-              {editing ? (
-                <>
-                  {[
-                    { key: 'name'  as const, label: 'NOME COMPLETO',  type: 'text'  },
-                    { key: 'email' as const, label: 'EMAIL',          type: 'email' },
-                    { key: 'phone' as const, label: 'TELEFONO',       type: 'tel'   },
-                    { key: 'dob'   as const, label: 'DATA DI NASCITA', type: 'date' },
-                  ].map(({ key, label, type }) => (
-                    <div key={key}>
-                      <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">{label}</div>
-                      <input
-                        type={type}
-                        value={form[key]}
-                        onChange={(e) => setForm(f => ({ ...f, [key]: e.target.value }))}
-                        placeholder={key === 'phone' ? '+39 ...' : undefined}
-                        className="w-full bg-[#fdf6f6] border border-[#eddada] text-[#1a0505] px-3 py-2 text-[13px] placeholder:text-[#7a4a4a]/35 focus:outline-none focus:border-[#731515]/50 transition-colors rounded-lg"
-                        style={{ fontFamily: 'var(--font-nunito)' }}
-                      />
-                    </div>
-                  ))}
-                </>
-              ) : (
-                <>
-                  {[
-                    { label: 'NOME COMPLETO',   value: user.name,                                  muted: !user.name },
-                    { label: 'EMAIL',           value: user.email,                                  muted: false },
-                    { label: 'TELEFONO',        value: profile?.phone,                              muted: !profile?.phone },
-                    { label: 'DATA DI NASCITA', value: profile?.date_of_birth ? new Date(profile.date_of_birth + 'T12:00:00Z').toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }) : null, muted: !profile?.date_of_birth },
-                  ].map(({ label, value, muted }) => (
-                    <div key={label} className="border-l-2 border-[#eddada] pl-4">
-                      <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">{label}</div>
-                      <div
-                        className={`text-[13px] leading-snug ${muted ? 'text-[#7a4a4a]/40 italic' : 'text-[#1a0505]'}`}
-                        style={{ fontFamily: 'var(--font-nunito)' }}
-                      >
-                        {value ?? '—'}
-                      </div>
-                    </div>
-                  ))}
-                </>
-              )}
-            </div>
-          </div>
-
-          {saveError && (
-            <p className="text-[11px] text-[#731515] mb-3" style={{ fontFamily: 'var(--font-nunito)' }}>{saveError}</p>
-          )}
-          {saveMsg && !editing && (
-            <p className="text-[11px] text-emerald-600 mb-3" style={{ fontFamily: 'var(--font-nunito)' }}>{saveMsg}</p>
-          )}
-
-          {editing ? (
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={handleSaveProfile}
-                disabled={saving}
-                className="inline-flex items-center gap-2 px-5 py-2 bg-[#731515] text-white text-[10px] tracking-[0.3em] rounded-lg hover:bg-[#9b2323] disabled:opacity-50 transition-colors duration-200"
-                style={{ fontFamily: 'var(--font-nunito)' }}
-              >
-                {saving ? 'SALVATAGGIO…' : 'SALVA'}
-              </button>
-              <button
-                type="button"
-                onClick={handleCancelEdit}
-                disabled={saving}
-                className="px-5 py-2 border border-[#eddada] text-[#7a4a4a] text-[10px] tracking-[0.3em] rounded-lg hover:border-[#731515]/40 transition-colors duration-200"
-                style={{ fontFamily: 'var(--font-nunito)' }}
-              >
-                ANNULLA
-              </button>
-            </div>
-          ) : (
-            <p className="text-[10px] text-[#7a4a4a]/35 italic" style={{ fontFamily: 'var(--font-nunito)' }}>
-              * Cambiare l&apos;email richiede una conferma dal nuovo indirizzo.
-            </p>
-          )}
-        </Card>
-
-        {/* Event Scanner — visible to all authenticated users */}
-        <div className="lg:col-span-3 flex justify-center sm:justify-start">
-          <Link
-            href="/checkin"
-            className="inline-flex items-center gap-2.5 text-[10px] tracking-[0.3em] text-white bg-[#731515] px-7 py-3.5 rounded-xl hover:bg-[#9b2323] transition-colors duration-200 uppercase shadow-[0_4px_20px_rgba(115,21,21,0.25)]"
-          >
-            <ScanLine size={15} />
-            Apri Scanner Eventi
-            <ArrowUpRight size={12} />
-          </Link>
         </div>
-      </div>
 
-      {/* ── Quote ── */}
-      <div className="mt-14 pt-10 border-t border-[#eddada] flex flex-col items-center text-center select-none">
-        <div
-          className="text-[88px] leading-none text-[#731515]/15 mb-[-18px]"
-          style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-        >
-          &#8220;
+        {/* ── Cosa succede adesso, e l'unica cosa da aprire in evento ── */}
+        <div className="flex flex-col gap-4">
+          <NextEvent />
+          {canScan && (
+            <Link
+              href="/checkin"
+              className="flex min-h-[64px] items-center gap-3 rounded-2xl border border-rule-paper px-5 transition-colors hover:border-accent/40"
+            >
+              <ScanLine size={19} strokeWidth={1.8} className="shrink-0 text-accent" />
+              <span className="flex-1 text-body font-medium">Scanner eventi</span>
+              <ArrowUpRight size={15} className="shrink-0 text-on-paper-muted" />
+            </Link>
+          )}
         </div>
-        <p
-          className="text-[clamp(0.9rem,1.8vw,1.1rem)] italic text-[#7a4a4a]/55 leading-relaxed tracking-wide max-w-2xl px-4"
-          style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-        >
-          Dio aveva fatto soltanto l&apos;acqua, ma l&apos;uomo ha fatto il vino
-        </p>
       </div>
     </>
   );
@@ -1079,16 +534,18 @@ function SettingsSection() {
 }
 
 /** Total pending applications across all types (sidebar badge). null on failure. */
+/** Quante candidature sono arrivate e nessuno ha ancora guardato. */
 async function fetchPendingApplications(token: string): Promise<number | null> {
   try {
-    const res = await fetch('/api/admin/applications?summary=1', {
+    const res = await fetch('/api/collaboration-applications', {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) return null;
     const data = await res.json();
-    return typeof data.total === 'number' ? data.total : null;
+    if (!Array.isArray(data.applications)) return null;
+    return data.applications.filter((a: { stage?: string }) => a.stage === 'new').length;
   } catch {
-    return null; // non-fatal — badge only
+    return null; // è solo il numerino: se non arriva, pazienza
   }
 }
 
@@ -1101,7 +558,14 @@ function MembersPageInner() {
   const searchParams     = useSearchParams();
 
   // If the invite link contains ?section=settings, open that tab immediately
-  const initialSection = (searchParams.get('section') as Section | null) ?? 'overview';
+  // `applications` era una sezione a sé prima che soci e candidature
+  // finissero insieme: i link già in giro devono continuare ad aprire
+  // qualcosa invece di una pagina vuota.
+  const requestedSection = searchParams.get('section');
+  const initialSection: Section =
+    requestedSection === 'applications'
+      ? 'pipeline'
+      : ((requestedSection as Section | null) ?? 'overview');
   const [activeSection,     setActiveSection]     = useState<Section>(initialSection);
   const [sidebarOpen,       setSidebarOpen]        = useState(false);
   useMobileOverlay(sidebarOpen, () => setSidebarOpen(false));
@@ -1111,6 +575,44 @@ function MembersPageInner() {
   const [token,             setToken]              = useState('');
   const [staffPermissions,  setStaffPermissions]   = useState<Record<string, boolean> | null>(null);
   const [pendingApplications, setPendingApplications] = useState(0);
+
+  /**
+   * Il tasto indietro del browser e il gesto del telefono.
+   *
+   * Gli overlay (schede, fogli) spingono una loro tappa e la chiudono
+   * da soli: quando il back ne chiude uno, qui arriva un popstate con
+   * la sezione già corrente, e non si fa niente.
+   */
+  const sectionRef = useRef(activeSection);
+  useEffect(() => { sectionRef.current = activeSection; }, [activeSection]);
+
+  useEffect(() => {
+    // La tappa di partenza, così la cronologia sa da dove si viene.
+    if (!window.history.state?.vivoSection) {
+      window.history.replaceState({ ...window.history.state, vivoSection: sectionRef.current }, '');
+    }
+
+    const onPop = () => {
+      // Con un pannello aperto, indietro chiude quello: la tappa
+      // appena consumata viene rimessa, così il back successivo torna
+      // davvero alla sezione precedente.
+      if (closeTopOverlay()) {
+        window.history.pushState(
+          { vivoSection: sectionRef.current },
+          '',
+          `?section=${sectionRef.current}`,
+        );
+        return;
+      }
+
+      const s = window.history.state?.vivoSection as Section | undefined;
+      if (!s || s === sectionRef.current) return;
+      setActiveSection(s);
+    };
+
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -1135,6 +637,26 @@ function MembersPageInner() {
         }
       } catch {/* non-fatal */}
     });
+  }, []);
+
+  /**
+   * Tiene il token aggiornato per tutta la durata della sessione.
+   *
+   * `getSession()` lo legge una volta sola, al montaggio. I token di
+   * accesso scadono dopo un'ora: il client Supabase ne ottiene uno
+   * nuovo da solo, ma questa pagina continuava a passare ai componenti
+   * quello vecchio. Dopo un'ora con l'area aperta, ogni chiamata fatta
+   * con quel token tornava 401 — ed era il motivo per cui Documenti
+   * diceva "non autorizzato" pur essendo loggati.
+   *
+   * Le sezioni che chiedono la sessione da sé non se ne accorgevano;
+   * le sei che ricevono il token da qui sì.
+   */
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setToken(session?.access_token ?? '');
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
   // Re-fetch permissions when the window regains focus so that changes made
@@ -1166,7 +688,7 @@ function MembersPageInner() {
   }, [token, isStaff]);
 
   // Pending applications badge (sidebar → Application). Refreshed on focus and
-  // after a status change in ApplicationsManager.
+  // after a status change in MembershipHub.
   const canManage = isStaff || isAdmin(user?.email ?? '');
   const refreshPendingApplications = useCallback(() => {
     if (!token || !canManage) return;
@@ -1196,7 +718,6 @@ function MembersPageInner() {
   if (!user) return null;
 
   const admin       = isAdmin(user.email ?? '');
-  const superAdmin  = isSuperAdmin(user.email ?? '');
   const financeUser = isFinanceUser(user.email ?? '');
   const displayName = user.name || user.email?.split('@')[0] || 'Member';
 
@@ -1224,117 +745,88 @@ function MembersPageInner() {
 
   /** Returns true if the current user can access this section. */
   function canAccess(section: Section): boolean {
-    if (admin) return true; // admins always have full access
-    if (!isStaff) return false;
-    if (staffPermissions === null) return true; // still loading — optimistic to avoid false UnauthorisedSection flash
-    const permKey = SECTION_PERM[section];
-    if (!permKey) return true; // overview, settings, etc. — always accessible
-    return staffPermissions[permKey] ?? false;
+    // /api/team/me already applied the rules in lib/access.ts, including
+    // the board check and the deactivation that the hardcoded list used
+    // to override. Here we only read its answer.
+    if (section === 'overview' || section === 'settings' || section === 'wine-assistant') return true;
+    if (section === 'team') return admin;
+    if (staffPermissions === null) return true; // still loading: avoid a flash of "unauthorised"
+
+    const permKey = SECTION_PERMISSION[section];
+    if (!permKey) return false; // an unmapped section is a bug, not an invitation
+    return staffPermissions[permKey] !== false;
   }
 
-  function navigate(s: Section) {
-    setActiveSection(s);
-    setSidebarOpen(false);
+  /**
+   * Quali destinazioni compaiono nel menù.
+   *
+   * È la stessa risposta di `canAccess`, data per destinazione invece
+   * che per sezione: quello che è spento non si vede, invece di vedersi
+   * e sbattere la porta dopo il clic.
+   */
+  function canOpen(id: string): boolean {
+    if (id === 'team') return admin;
+    if (staffPermissions === null) return true; // ancora in caricamento
+    const key = SECTION_PERMISSION[id];
+    if (!key) return true; // destinazione sempre aperta (riepilogo, impostazioni)
+    return staffPermissions[key] !== false;
   }
+
+  /**
+   * Spostarsi dentro l'area, lasciando una traccia.
+   *
+   * Prima cambiare sezione cambiava solo uno stato: l'indirizzo
+   * restava quello di partenza e il gesto "indietro" del telefono,
+   * non trovando niente da annullare, buttava fuori dall'area. Ora
+   * ogni passaggio è una tappa nella cronologia del browser, quindi
+   * il gesto, il tasto indietro e la freccia qui sopra fanno tutti e
+   * tre la stessa cosa.
+   */
+  function navigate(s: Section) {
+    setSidebarOpen(false);
+    if (s === activeSection) return;
+    setActiveSection(s);
+    window.history.pushState({ vivoSection: s }, '', `?section=${s}`);
+  }
+
 
   async function handleLogout() {
     await logout();
     router.push('/');
   }
 
-  const sidebarProps = {
-    displayName,
-    email:     user.email ?? '',
-    activeSection,
-    navigate,
-    onLogout:  handleLogout,
-    admin,
-    isStaff,
-    canAccess,
-    superAdmin,
-    financeUser,
-    pendingApplications,
-  };
+  const destination = destinationOf(activeSection);
 
   return (
-    <div className="flex overflow-hidden relative" style={{ height: '100dvh', background: '#0a0101' }}>
+    <AdminShell
+      role={(admin ? 'board' : 'staff') as AdminRole}
+      active={destination}
+      onNavigate={(id) => navigate((DESTINATION_FIRST_SECTION[id] ?? id) as Section)}
+      userName={displayName}
+      pendingApplications={pendingApplications}
+      can={canOpen}
+      onLogout={handleLogout}
+    >
+      <div id="members-scroll-root" className="mx-auto max-w-[1180px] px-5 py-7 lg:px-10 lg:py-10">
+        <SectionTabs destination={destination} active={activeSection} onPick={navigate} />
 
-      {/* ── Fixed background image (vigna.jpg) ── */}
-      <div
-        className="fixed inset-0 z-0 pointer-events-none"
-        style={{ backgroundImage: 'url(/vigna.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }}
-      >
-        <div className="absolute inset-0 bg-[#0a0101]/65" />
-      </div>
-
-      {/* ── Desktop sidebar ── */}
-      <aside className="hidden lg:flex w-[230px] shrink-0 bg-[#0e0202] flex-col border-r border-white/[0.04] relative z-10" style={{ height: '100dvh' }}>
-        <SidebarContent {...sidebarProps} />
-      </aside>
-
-      {/* ── Mobile overlay ── */}
-      <AnimatePresence>
-        {sidebarOpen && (
-          <>
-            <motion.div
-              key="overlay"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.18 }}
-              className="fixed inset-0 bg-black/55 z-40 lg:hidden"
-              onClick={() => setSidebarOpen(false)}
-            />
-            <motion.aside
-              key="drawer"
-              initial={{ x: -230 }}
-              animate={{ x: 0 }}
-              exit={{ x: -230 }}
-              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-              className="fixed left-0 top-0 h-full w-[230px] bg-[#0e0202] z-50 flex flex-col border-r border-white/[0.04] lg:hidden"
-            >
-              <button
-                onClick={() => setSidebarOpen(false)}
-                className="absolute top-2 right-2 text-white/35 hover:text-white/65 min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors"
-              >
-                <X size={17} />
-              </button>
-              <SidebarContent {...sidebarProps} />
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* ── Main content ── */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative z-10">
-
-        {/* Mobile top bar */}
-        <div className="lg:hidden flex items-center justify-between px-4 py-3 bg-[#0e0202] border-b border-white/[0.06] shrink-0">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="text-white/50 hover:text-white min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors"
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeSection}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -5 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
           >
-            <Menu size={20} />
-          </button>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logobianco.png" alt="Vivo" className="h-6 opacity-70" />
-          <UserAvatar name={displayName} size={28} />
-        </div>
-
-        {/* Scrollable content area */}
-        <main id="members-scroll-root" className="flex-1 overflow-y-auto bg-white">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-6 sm:py-10">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeSection}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-              >
 
                 {activeSection === 'overview' && (
-                  <OverviewSection user={{ name: user.name, email: user.email }} isAdmin={admin} isStaff={isStaff} token={token} />
+                  <OverviewSection
+                    user={{ name: user.name, email: user.email }}
+                    isAdmin={admin}
+                    isStaff={isStaff}
+                    token={token}
+                    canScan={canOpen('scanner')}
+                  />
                 )}
 
                 {activeSection === 'settings' && <SettingsSection />}
@@ -1342,90 +834,67 @@ function MembersPageInner() {
                 {activeSection === 'wine-assistant' && <WineAssistant />}
 
                 {(admin || isStaff) && activeSection === 'tasks' && (
+                  // TaskBoard porta la propria intestazione: un SectionHeader
+                  // qui sopra stamperebbe il titolo due volte.
                   canAccess('tasks') ? (
-                    <>
-                      <SectionHeader title="Task" subtitle="Assegna e gestisci task tra i founder." />
-                      <TaskBoard currentEmail={user.email ?? ''} />
-                    </>
+                    <TaskBoard currentEmail={user.email ?? ''} />
                   ) : <UnauthorisedSection title="Task" />
                 )}
 
                 {(admin || isStaff) && activeSection === 'analytics' && (
-                  canAccess('analytics') ? (
-                    <>
-                      <SectionHeader title="Analytics" subtitle="KPI e metriche del club in tempo reale." />
-                      <AnalyticsDashboard />
-                    </>
-                  ) : <UnauthorisedSection title="Analytics" />
+                  // AnalyticsDashboard porta la propria intestazione.
+                  canAccess('analytics')
+                    ? <AnalyticsDashboard />
+                    : <UnauthorisedSection title="Analytics" />
                 )}
 
+                {/* Soci e candidature insieme: MembershipHub ha le sue schede. */}
                 {(admin || isStaff) && activeSection === 'pipeline' && (
-                  canAccess('pipeline') ? (
-                    <>
-                      <SectionHeader title="Pipeline Membership" subtitle="Gestisci le richieste di adesione." />
-                      <MembershipPipeline />
-                    </>
-                  ) : <UnauthorisedSection title="Pipeline Membership" />
+                  canAccess('pipeline')
+                    ? <MembershipHub onChanged={refreshPendingApplications} />
+                    : <UnauthorisedSection title="Membership" />
                 )}
 
-                {(admin || isStaff) && activeSection === 'applications' && (
-                  <>
-                    <SectionHeader title="Application" subtitle="Candidature ricevute dal sito." />
-                    <ApplicationsManager token={token} onChanged={refreshPendingApplications} />
-                  </>
-                )}
 
                 {(admin || isStaff) && activeSection === 'events' && (
                   canAccess('events') ? <EventManager /> : <UnauthorisedSection title="Gestione Eventi" />
                 )}
 
                 {(admin || isStaff) && activeSection === 'news' && (
-                  canAccess('news') ? (
-                    <>
-                      <SectionHeader title="Gestione News" subtitle="Crea e modifica le card della homepage." />
-                      <NewsManager />
-                    </>
-                  ) : <UnauthorisedSection title="Gestione News" />
+                  // NewsManager porta la propria intestazione.
+                  canAccess('news')
+                    ? <NewsManager />
+                    : <UnauthorisedSection title="News" />
                 )}
 
                 {(admin || isStaff) && activeSection === 'crm' && (
                   canAccess('crm') ? <CrmHub /> : <UnauthorisedSection title="CRM" />
                 )}
 
+                {/* FinanceManager porta la propria intestazione. */}
                 {financeUser && activeSection === 'finance' && (
-                  <>
-                    <SectionHeader title="Transazioni" subtitle="Gestione contabile — revenues, costi e saldo di cassa." />
-                    <FinanceManager />
-                  </>
+                  <FinanceManager isAdmin={admin} />
                 )}
 
-                {financeUser && activeSection === 'bilancio' && (
-                  <>
-                    <SectionHeader title="Bilancio" subtitle="Analisi dei flussi finanziari per periodo — mensile, trimestrale, annuale." />
-                    <BilancioManager />
-                  </>
-                )}
+                {/* BilancioManager porta la propria intestazione. */}
+                {financeUser && activeSection === 'bilancio' && <BilancioManager />}
 
                 {(admin || isStaff) && activeSection === 'media' && (
-                  canAccess('media') ? (
-                    <>
-                      <SectionHeader title="Gestione Media" subtitle="Carica immagini per le gallerie del sito — Wine Party, Wine Lounge, Winery Visit e singole cantine." />
-                      <MediaManager />
-                    </>
-                  ) : <UnauthorisedSection title="Gestione Media" />
+                  // MediaManager porta la propria intestazione.
+                  canAccess('media')
+                    ? <MediaManager />
+                    : <UnauthorisedSection title="Media" />
                 )}
 
                 {(admin || isStaff) && activeSection === 'merch' && (
                   canAccess('merch') ? <MerchManager /> : <UnauthorisedSection title="Gestione Merch" />
                 )}
 
+                {/* DiscountManager porta la propria intestazione. */}
                 {(admin || isStaff) && activeSection === 'discounts' && (
-                  canAccess('discounts') ? (
-                    <>
-                      <SectionHeader title="Gestione Sconti" subtitle="Sconti e convenzioni per i membri del club." />
-                      <DiscountManager token={token} />
-                    </>
-                  ) : <UnauthorisedSection title="Gestione Sconti" />
+                  canAccess('discounts')
+                    ? <DiscountManager token={token} />
+                    : <UnauthorisedSection title="Convenzioni" />
                 )}
 
                 {(admin || isStaff) && activeSection === 'documents' && (
@@ -1434,7 +903,7 @@ function MembersPageInner() {
                   ) : <UnauthorisedSection title="Gestione Documenti" />
                 )}
 
-                {superAdmin && activeSection === 'team' && <TeamManagement />}
+                {admin && activeSection === 'team' && <TeamManagement />}
 
                 {(admin || isStaff) && activeSection === 'quotes' && (
                   <>
@@ -1442,31 +911,95 @@ function MembersPageInner() {
                   </>
                 )}
 
-                {(admin || isStaff) && activeSection === 'ped' && (
-                  <>
-                    <SectionHeader title="Piano Editoriale" subtitle="Pianificazione e tracciamento dei contenuti social e digitali." />
-                    <PedManager />
-                  </>
-                )}
+                {/* Come per Task: PedManager ha già la sua intestazione. */}
+                {(admin || isStaff) && activeSection === 'ped' && <PedManager />}
 
                 {(admin || isStaff) && activeSection === 'upsell' && (
                   canAccess('upsell') ? <UpsellManager /> : <UnauthorisedSection title="Upsell" />
                 )}
 
                 {(admin || isStaff) && activeSection === 'wineries' && (
-                  canAccess('wineries') ? (
-                    <>
-                      <SectionHeader title="Mappa Cantine" subtitle="Posizione, foto e vini degustati per ogni cantina visitata o in catalogo." />
-                      <WineriesMapManager />
-                    </>
-                  ) : <UnauthorisedSection title="Mappa Cantine" />
+                  // WineriesMapManager porta la propria intestazione.
+                  canAccess('wineries')
+                    ? <WineriesMapManager />
+                    : <UnauthorisedSection title="Cantine" />
                 )}
 
-              </motion.div>
-            </AnimatePresence>
-          </div>
-        </main>
+          </motion.div>
+        </AnimatePresence>
       </div>
+    </AdminShell>
+  );
+}
+
+
+/* ─────────────────────────────────────────────
+   Destinations and the sections inside them
+
+   The navigation speaks in destinations; the render below still speaks
+   in the original section ids. Three destinations hold more than one
+   section, so these two maps translate between them and nothing in the
+   rendering had to change.
+───────────────────────────────────────────── */
+const SECTION_TO_DESTINATION: Record<string, string> = {
+  news: 'site', media: 'site', wineries: 'site',
+  discounts: 'offers', upsell: 'offers',
+  finance: 'finance', bilancio: 'finance', quotes: 'finance',
+  pipeline: 'membership',
+};
+
+const DESTINATION_FIRST_SECTION: Record<string, Section> = {
+  site: 'news', offers: 'discounts', finance: 'finance', membership: 'pipeline',
+};
+
+/** The tab labels inside a grouped destination, in render order. */
+const DESTINATION_SECTIONS: Record<string, { id: Section; label: string }[]> = {
+  site: [
+    { id: 'news', label: 'News' },
+    { id: 'media', label: 'Media' },
+    { id: 'wineries', label: 'Mappa cantine' },
+  ],
+  offers: [
+    { id: 'discounts', label: 'Sconti' },
+    { id: 'upsell', label: 'Upsell' },
+  ],
+  finance: [
+    { id: 'finance', label: 'Transazioni' },
+    { id: 'bilancio', label: 'Bilancio' },
+    { id: 'quotes', label: 'Preventivi' },
+  ],
+};
+
+function destinationOf(section: Section): string {
+  return SECTION_TO_DESTINATION[section] ?? section;
+}
+
+/** One row of tabs, shown only where a destination holds several sections. */
+function SectionTabs({
+  destination, active, onPick,
+}: {
+  destination: string;
+  active: Section;
+  onPick: (s: Section) => void;
+}) {
+  const tabs = DESTINATION_SECTIONS[destination];
+  if (!tabs) return null;
+  return (
+    <div className="mb-7 flex flex-wrap gap-2">
+      {tabs.map((t) => (
+        <button
+          key={t.id}
+          onClick={() => onPick(t.id)}
+          aria-current={active === t.id ? 'page' : undefined}
+          className={`min-h-[44px] rounded-full border px-5 text-[13px] font-medium transition-colors ${
+            active === t.id
+              ? 'border-[#731515] bg-[#731515] text-white'
+              : 'border-[#E4D6D3] text-[#1A0505] hover:border-[#731515]/40'
+          }`}
+        >
+          {t.label}
+        </button>
+      ))}
     </div>
   );
 }

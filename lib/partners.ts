@@ -20,6 +20,22 @@ export interface Partner {
   quoteAuthor?: string;
 }
 
+/**
+ * Dove porta il logo di un partner.
+ *
+ * Al suo sito. Una pagina nostra che riassume una cantina e poi
+ * rimanda al sito vero e' un passaggio in piu' che non aggiunge
+ * niente: chi clicca su Ca' del Bosco vuole Ca' del Bosco.
+ *
+ * Resta la scheda interna per chi un sito non ce l'ha, cosi' nessun
+ * logo diventa una figurina che non si puo' aprire.
+ */
+export function linkPartner(p: Partner): { href: string; esterno: boolean } {
+  return p.externalUrl
+    ? { href: p.externalUrl, esterno: true }
+    : { href: `/partners/${p.slug}`, esterno: false };
+}
+
 /** Pick the right-language string for the given locale, falling back to English. */
 export function localized(text: LocalizedText, locale: string): string {
   return text[locale as Locale] ?? text.en;
@@ -91,6 +107,7 @@ export const PARTNERS: Partner[] = [
     name:     'Utopia',
     category: 'location',
     logo:     '/sponsors/utopia.png',
+    externalUrl: 'https://www.instagram.com/utopia.paris_/',
     subtitle: {
       it: 'Cocktail Bar',
       en: 'Cocktail Bar',
@@ -137,7 +154,3 @@ export const PARTNERS: Partner[] = [
     externalUrl: 'https://ilcantodelgallowinebar.it/',
   },
 ];
-
-export function getPartnerBySlug(slug: string): Partner | undefined {
-  return PARTNERS.find((p) => p.slug === slug);
-}

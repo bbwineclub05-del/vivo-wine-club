@@ -1,18 +1,20 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { requireAdminOrStaff } from '@/lib/auth-guard';
-
-export const dynamic = 'force-dynamic';
+import { fetchAllRows } from '@/lib/crm';
 
 /**
  * GET /api/events/guest-counts
- * Returns all events that have at least 1 participant (guest list OR paid ticket),
- * sorted newest → oldest, with combined participant count.
- * Used by EventInviteModal to populate the "Partecipanti evento..." dropdown.
  *
- * Sources:
- *  - event_guests (free/invite-only events, field: event_slug)
- *  - tickets      (paid events, field: event_id = slug, payment_status = 'paid')
+ * Gli eventi passati con quante persone distinte ci sono state.
+ *
+ * "Distinte" è la parola che prima non era vera. Il conteggio costruiva
+ * un insieme di email per evento, ma dagli ospiti leggeva solo lo slug
+ * e ci infilava chiavi inventate — `_row_0`, `_row_1` — che per
+ * definizione non si ripetono mai: contava righe fingendo di contare
+ * persone. Chi si era iscritto e aveva anche comprato un biglietto
+ * veniva contato due volte. E la lettura si fermava comunque a mille
+ * righe su 1184 ospiti.
  */
 export async function GET(request: Request) {
   const auth = await requireAdminOrStaff(request);
@@ -21,52 +23,62 @@ export async function GET(request: Request) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db = getSupabaseAdmin() as any;
 
-  // Fetch from both sources in parallel
-  const [guestsRes, ticketsRes] = await Promise.all([
-    db.from('event_guests').select('event_slug'),
-    db.from('tickets').select('event_id, email').eq('payment_status', 'paid'),
-  ]);
+  try {
+    const [guests, tickets] = await Promise.all([
+      fetchAllRows<{ event_slug: string | null; email: string | null }>(db, (q) =>
+        q
+          .from('event_guests')
+          .select('event_slug, email')
+          .order('created_at', { ascending: true }),
+      ),
+      fetchAllRows<{ event_id: string | null; email: string | null }>(db, (q) =>
+        q
+          .from('tickets')
+          .select('event_id, email')
+          .eq('payment_status', 'paid')
+          .order('created_at', { ascending: true }),
+      ),
+    ]);
 
-  if (guestsRes.error) console.error('[guest-counts] event_guests error:', guestsRes.error);
-  if (ticketsRes.error) console.error('[guest-counts] tickets error:', ticketsRes.error);
+    const emailsBySlug: Record<string, Set<string>> = {};
+    const add = (slug: string | null, email: string | null, i: number) => {
+      if (!slug) return;
+      const set = (emailsBySlug[slug] ??= new Set());
+      const clean = (email ?? '').trim().toLowerCase();
+      // Senza email non si può sapere se è una persona già vista: la si
+      // conta una volta sola con una chiave sua, invece di scartarla.
+      set.add(clean || `#senza-email-${slug}-${i}`);
+    };
 
-  // Build count map: slug → unique email count
-  // Use Sets to avoid double-counting if the same person appears multiple times
-  const emailsBySlug: Record<string, Set<string>> = {};
+    guests.forEach((g, i) => add(g.event_slug, g.email, i));
+    tickets.forEach((t, i) => add(t.event_id, t.email, i));
 
-  for (const row of (guestsRes.data ?? []) as Array<{ event_slug: string }>) {
-    if (!row.event_slug) continue;
-    if (!emailsBySlug[row.event_slug]) emailsBySlug[row.event_slug] = new Set();
-    // event_guests doesn't expose email in this select — just count rows
-    emailsBySlug[row.event_slug].add(`_row_${emailsBySlug[row.event_slug].size}`);
+    const slugs = Object.keys(emailsBySlug);
+    if (slugs.length === 0) return NextResponse.json({ events: [] });
+
+    const { data: eventsData, error } = await db
+      .from('events')
+      .select('slug, title, date')
+      .in('slug', slugs)
+      .order('date', { ascending: false });
+
+    if (error) {
+      console.error('[guest-counts] events fetch error:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    const events = ((eventsData ?? []) as { slug: string; title: string; date: string }[])
+      .map((e) => ({
+        slug: e.slug,
+        title: e.title,
+        date: e.date,
+        count: emailsBySlug[e.slug]?.size ?? 0,
+      }))
+      .filter((e) => e.count > 0);
+
+    return NextResponse.json({ events });
+  } catch (err) {
+    console.error('[guest-counts]', err);
+    return NextResponse.json({ error: 'DB error' }, { status: 500 });
   }
-
-  for (const row of (ticketsRes.data ?? []) as Array<{ event_id: string; email: string }>) {
-    if (!row.event_id) continue;
-    if (!emailsBySlug[row.event_id]) emailsBySlug[row.event_id] = new Set();
-    if (row.email) emailsBySlug[row.event_id].add(row.email.toLowerCase());
-  }
-
-  const slugs = Object.keys(emailsBySlug);
-  if (slugs.length === 0) {
-    return NextResponse.json({ events: [] });
-  }
-
-  // Fetch event titles + dates for those slugs
-  const { data: eventsData, error: evtErr } = await db
-    .from('events')
-    .select('slug, title, date')
-    .in('slug', slugs)
-    .order('date', { ascending: false });
-
-  if (evtErr) {
-    console.error('[guest-counts] events fetch error:', evtErr);
-    return NextResponse.json({ error: evtErr.message }, { status: 500 });
-  }
-
-  const events = ((eventsData ?? []) as Array<{ slug: string; title: string; date: string }>)
-    .map(e => ({ slug: e.slug, title: e.title, date: e.date, count: emailsBySlug[e.slug]?.size ?? 0 }))
-    .filter(e => e.count > 0);
-
-  return NextResponse.json({ events });
 }

@@ -40,7 +40,7 @@ export async function POST(request: Request) {
 
     const { data, error } = await db()
       .from('contacts_wine')
-      .insert({ applied: applied || null, people: people || '', company: company || '', source: source || '', place: place || '', role: role || '', notes: notes || '' })
+      .insert({ applied: applied || null, people: people || '', company: company || '', source: source || '', place: place || '', role: role || '', notes: notes || '', stage: body.stage || 'new', owner_email: body.owner_email || null, next_action_at: body.next_action_at || null })
       .select()
       .single();
 

@@ -1,45 +1,45 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { getAuthUser } from '@/lib/auth-guard';
-import { isAdminEmail } from '@/lib/admins';
-
-const FULL_PERMISSIONS = {
-  tasks: true, events: true, news: true, crm: true,
-  media: true, scanner: true, analytics: true, pipeline: true, merch: true, documents: true,
-};
+import { resolveAccess, PERMISSION_KEYS, type TeamRow } from '@/lib/access';
 
 /**
  * GET /api/team/me
- * Returns the current user's team permissions.
- * Admins always receive full permissions.
- * Staff receive their row from team_members.
+ *
+ * What the signed-in person may open. The answer comes from
+ * `team_members` through `resolveAccess`, so Team Management is binding:
+ * a row switched off closes the area, a toggle switched off closes that
+ * section, and the board is not exempt. The single exception, the super
+ * admin, is written down in lib/access.ts.
  */
 export async function GET(request: Request) {
   const auth = await getAuthUser(request);
   if (!auth.ok) return auth.response;
 
-  if (isAdminEmail(auth.email)) {
-    return NextResponse.json({ permissions: FULL_PERMISSIONS, active: true });
+  let row: TeamRow | null = null;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = getSupabaseAdmin() as any;
+    const { data } = await db
+      .from('team_members')
+      .select('permissions, active, role')
+      .eq('email', auth.email)
+      .maybeSingle();
+    row = (data as TeamRow | null) ?? null;
+  } catch (err) {
+    // A failed lookup must not quietly hand out full access.
+    console.error('[team/me] lookup failed:', err instanceof Error ? err.message : err);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const db = getSupabaseAdmin() as any;
-  const { data } = await db
-    .from('team_members')
-    .select('permissions, active, role')
-    .eq('email', auth.email)
-    .maybeSingle();
+  const access = resolveAccess(auth.email, row);
 
-  if (!data) {
-    // Not in team_members — treat as no permissions
-    return NextResponse.json({ permissions: {}, active: false });
-  }
+  // Expanded to an explicit answer per key, so the rules stay in one
+  // file instead of being re-implemented on the client.
+  const permissions = Object.fromEntries(PERMISSION_KEYS.map((key) => [key, access.can(key)]));
 
-  // Team members with role 'admin' get full permissions (same as ADMIN_EMAILS founders)
-  // This covers non-founder admins invited via Team Management.
-  if (data.role === 'admin') {
-    return NextResponse.json({ permissions: FULL_PERMISSIONS, active: data.active });
-  }
-
-  return NextResponse.json({ permissions: data.permissions ?? {}, active: data.active });
+  return NextResponse.json({
+    permissions,
+    active: access.active,
+    board: access.board,
+  });
 }

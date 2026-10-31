@@ -1,736 +1,366 @@
 'use client';
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
-import { pixel } from '@/lib/pixel';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Check, ChevronLeft, ChevronRight, Plus, Minus, ShoppingBag, Zap, ArrowLeft, Sparkles } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { ArrowLeft, Check, ChevronDown, ShoppingBag } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
-import { useLocale } from 'next-intl';
-import type { ProductFull, ProductVariant, ProductTextVariant } from './page';
+import { pixel } from '@/lib/pixel';
+import type {
+  ProductFull, ProductTextVariant, ProductVariant,
+} from './page';
 
-const LOW_STOCK_THRESHOLD = 3;
+/**
+ * La scheda di un prodotto.
+ *
+ * Era lunga settecento righe e chiedeva due decisioni per comprare —
+ * "aggiungi al carrello" e "compra ora", che facevano quasi la stessa
+ * cosa — con il pulsante in mezzo alla pagina: su un telefono, dopo
+ * aver scelto taglia e colore, bisognava risalire per trovarlo.
+ *
+ * Adesso c'è un gesto solo, e il prezzo con il pulsante restano
+ * incollati in fondo allo schermo mentre si scorre. Comprare da
+ * telefono è il caso normale, non quello difficile.
+ */
 
-interface CrossSellProduct {
-  id:               string;
-  title:            string;
-  price:            number;
-  images:           string[];
-  slug:             string | null;
-  product_variants: { id: string; images: string[] }[];
+interface CrossSell {
+  id: string;
+  title: string;
+  price: number;
+  images: string[];
+  slug: string | null;
+  product_variants?: { images: string[] }[];
 }
 
-const UPSELL_TITLE: Record<string, string> = {
-  it: 'Potrebbe interessarti anche',
-  en: 'You might also like',
-  fr: 'Cela pourrait aussi vous plaire',
-};
-
-/** Return the first usable image for a cross-sell product (variants take priority). */
-function getCrossSellImage(p: CrossSellProduct): string {
-  for (const v of p.product_variants ?? []) {
-    if (v.images?.length > 0) return v.images[0];
-  }
-  return p.images?.[0] ?? '';
+/**
+ * La copertina di un prodotto.
+ *
+ * Molti prodotti non hanno foto proprie: le immagini stanno sulle
+ * varianti di colore. Guardando solo `images` le anteprime restavano
+ * dei riquadri vuoti.
+ */
+function copertina(p: CrossSell): string | null {
+  return p.images?.[0] ?? p.product_variants?.find((v) => v.images?.length)?.images[0] ?? null;
 }
 
-const LOW_STOCK_LABELS: Record<string, (n: number) => string> = {
-  it: n => n === 1 ? 'Solo 1 rimasto!' : `Solo ${n} rimasti!`,
-  en: n => n === 1 ? 'Only 1 left!'    : `Only ${n} left!`,
-  fr: n => n === 1 ? "Plus qu\u20191 en stock !" : `Plus que ${n} en stock !`,
-};
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function isLight(hex: string): boolean {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return (r * 299 + g * 587 + b * 114) / 1000 > 180;
+function eur(n: number) {
+  return `${Number.isInteger(n) ? n : n.toFixed(2).replace('.', ',')} €`;
 }
-
-// ── Details accordion ─────────────────────────────────────────────────────────
-
-function AccordionItem({ label, children }: { label: string; children: React.ReactNode }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="border-t border-[#e8d5d5]">
-      <button
-        onClick={() => setOpen(v => !v)}
-        className="w-full flex items-center justify-between py-4 text-left group"
-      >
-        <span
-          className="text-[11px] tracking-[0.35em] text-[#1a0505] group-hover:text-[#731515] transition-colors"
-          style={{ fontFamily: 'var(--font-nunito)' }}
-        >
-          {label}
-        </span>
-        {open
-          ? <Minus size={13} className="text-[#731515]/60 shrink-0" />
-          : <Plus  size={13} className="text-[#731515]/60 shrink-0" />
-        }
-      </button>
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-            className="overflow-hidden"
-          >
-            <div className="pb-6">
-              {children}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-// ── Main component ────────────────────────────────────────────────────────────
 
 export default function ProductDetailClient({ product }: { product: ProductFull }) {
+  const t = useTranslations('shop');
   const { addItem, setIsOpen: openCart } = useCart();
-  const locale = useLocale();
 
-  const hasVariants     = product.product_variants.length > 0;
-  const hasSizes        = product.sizes.length > 0;
-  const hasTextVariants = product.product_text_variants.length > 0;
+  const varianti = product.product_variants ?? [];
+  const incisioni = product.product_text_variants ?? [];
+  const taglie = product.sizes ?? [];
 
-  // Build combination lookup: "textVariantId:colorVariantId" → images[]
-  // Memoised so it's not rebuilt on every keystroke/interaction render.
-  const combinationMap = useMemo(() => {
-    const combs = product.product_variant_combinations ?? [];
-    const map = new Map<string, string[]>(
-      combs
-        .filter(c => Array.isArray(c.images) && c.images.length > 0)
-        .map(c => [`${c.text_variant_id}:${c.color_variant_id}`, c.images]),
-    );
-    return map;
-  }, [product.product_variant_combinations]);
+  const [colore, setColore] = useState<ProductVariant | null>(varianti[0] ?? null);
+  const [incisione, setIncisione] = useState<ProductTextVariant | null>(null);
+  const [taglia, setTaglia] = useState<string>(taglie[0] ?? '');
+  const [foto, setFoto] = useState(0);
+  const [aggiunto, setAggiunto] = useState(false);
+  const [mancante, setMancante] = useState<'taglia' | 'colore' | null>(null);
+  const [dettagliAperti, setDettagliAperti] = useState(false);
+  const [altri, setAltri] = useState<CrossSell[]>([]);
 
   useEffect(() => {
     pixel.viewProduct({ content_name: product.title, value: product.price });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /* ── Cross-sell (you might also like) ── */
-  const [crossSell, setCrossSell] = useState<CrossSellProduct[]>([]);
+  /* ── Le immagini: quelle della combinazione scelta, se ci sono ── */
+  const combinazioni = useMemo(
+    () =>
+      new Map(
+        (product.product_variant_combinations ?? [])
+          .filter((c) => Array.isArray(c.images) && c.images.length > 0)
+          .map((c) => [`${c.text_variant_id}:${c.color_variant_id}`, c.images]),
+      ),
+    [product.product_variant_combinations],
+  );
+
+  const immagini = useMemo(() => {
+    if (incisione && colore) {
+      const comb = combinazioni.get(`${incisione.id}:${colore.id}`);
+      if (comb?.length) return comb;
+    }
+    if (incisione?.images?.length) return incisione.images;
+    if (colore?.images?.length) return colore.images;
+    return product.images ?? [];
+  }, [incisione, colore, combinazioni, product.images]);
+
+  const fotoSicura = Math.min(foto, Math.max(immagini.length - 1, 0));
+
+  /* ── Disponibilità ── */
+  const giacenza = useCallback(
+    (variantId: string | null, sz: string | null) => {
+      const e = product.product_stock?.find((s) => s.variant_id === variantId && s.size === sz);
+      return e === undefined ? Infinity : e.quantity;
+    },
+    [product.product_stock],
+  );
+
+  const esaurito = giacenza(colore?.id ?? null, taglie.length ? taglia : null) === 0;
+
+  /* ── Altri prodotti ── */
   useEffect(() => {
-    Promise.all([
-      fetch('/api/merch/products/public').then(r => r.json()),
-      fetch(`/api/upsell?context=merch&slug=${product.slug}`).then(r => r.json()),
-    ]).then(([productsData, upsellData]) => {
-      const all: CrossSellProduct[] = productsData.products ?? [];
-      // Never show the product the user is currently viewing
-      const others = all.filter(p => p.id !== product.id);
+    fetch('/api/merch/products/public')
+      .then((r) => r.json())
+      .then((d) => {
+        const tutti: CrossSell[] = d.products ?? [];
+        setAltri(tutti.filter((p) => p.id !== product.id).slice(0, 4));
+      })
+      .catch(() => {});
+  }, [product.id]);
 
-      // If admin configured specific products, respect that order; otherwise auto cross-sell
-      const adminIds: string[] = (upsellData.configs ?? []).map((c: { product_id: string }) => c.product_id);
-      if (adminIds.length > 0) {
-        const adminSet = new Set(adminIds);
-        const picks = others.filter(p => adminSet.has(p.id));
-        setCrossSell(picks.length > 0 ? picks.slice(0, 3) : shuffle(others).slice(0, 3));
-      } else {
-        setCrossSell(shuffle(others).slice(0, 3));
-      }
-    }).catch(() => {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [product.id, product.slug]);
+  /* ── Comprare ── */
+  function aggiungi() {
+    if (taglie.length && !taglia) { setMancante('taglia'); return; }
+    if (varianti.length && !colore) { setMancante('colore'); return; }
+    if (esaurito) return;
 
-  function shuffle<T>(arr: T[]): T[] {
-    const a = [...arr];
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
-  }
+    const parti = [product.title];
+    if (taglia) parti.push(taglia);
+    if (colore) parti.push(colore.display_name || colore.color_name);
+    if (incisione) parti.push(`"${incisione.text_label}"`);
 
-  const [selectedVariant,     setSelectedVariant]     = useState<ProductVariant | null>(null);
-  const [selectedTextVariant, setSelectedTextVariant] = useState<ProductTextVariant | null>(null);
-  const [size,                setSize]                = useState<string>(product.sizes[0] ?? '');
-  const [activeImg,           setActiveImg]           = useState(0);
-  const [added,               setAdded]               = useState(false);
-  const [sizeErr,             setSizeErr]             = useState(false);
-  const [colorErr,            setColorErr]            = useState(false);
-  const [touchStartX,         setTouchStartX]         = useState<number | null>(null);
-
-  // Current stock for the active selection (used for low-stock warning)
-  const currentStock = getStock(selectedVariant?.id ?? null, hasSizes ? size : null);
-  const lowStockLabel = LOW_STOCK_LABELS[locale] ?? LOW_STOCK_LABELS.en;
-
-  // Image priority:
-  //   1. colour+text combination (most specific) — only when BOTH are selected
-  //   2. fallback to colour images when both selected but no combo exists
-  //   3. text variant images (only text selected, no colour)
-  //   4. colour variant images (only colour selected, no text)
-  //   5. first colour variant with images
-  //   6. product-level images (legacy)
-  const displayImages: string[] = (() => {
-    if (selectedTextVariant && selectedVariant) {
-      // Both selected: check for combination first
-      const combImgs = combinationMap.get(`${selectedTextVariant.id}:${selectedVariant.id}`);
-      if (combImgs && combImgs.length > 0) return combImgs;
-      // No combination — fall back to the colour images so the swatch stays meaningful
-      if (selectedVariant.images.length > 0) return selectedVariant.images;
-    }
-    if (selectedTextVariant && selectedTextVariant.images.length > 0) return selectedTextVariant.images;
-    if (selectedVariant && selectedVariant.images.length > 0) return selectedVariant.images;
-    return product.product_variants.find(v => v.images.length > 0)?.images ?? product.images;
-  })();
-  // Clamp activeImg to the current gallery length (avoids blank image after switching
-  // from a longer gallery to a shorter one without an explicit reset).
-  const safeActiveImg = Math.min(activeImg, Math.max(0, displayImages.length - 1));
-  const currentImage  = displayImages[safeActiveImg] ?? '';
-
-  // Composite key for AnimatePresence: includes selection IDs so the crossfade
-  // always fires when the user switches text or colour variants — even when the
-  // fallback URL happens to be identical (e.g. switching text variants with no
-  // combination images, both falling back to the same colour image).
-  const galleryKey = `${selectedTextVariant?.id ?? 'none'}:${selectedVariant?.id ?? 'none'}:${currentImage || 'empty'}`;
-
-  function selectVariant(v: ProductVariant) {
-    setSelectedVariant(v);
-    setActiveImg(0);
-    setColorErr(false);
-  }
-
-  function selectTextVariant(tv: ProductTextVariant) {
-    // Toggle off if already selected
-    if (selectedTextVariant?.id === tv.id) {
-      setSelectedTextVariant(null);
-    } else {
-      setSelectedTextVariant(tv);
-    }
-    setActiveImg(0);
-  }
-
-  function getStock(variantId: string | null, sz: string | null): number {
-    const entry = product.product_stock?.find(
-      s => s.variant_id === variantId && s.size === sz,
-    );
-    return entry === undefined ? Infinity : entry.quantity;
-  }
-  function isSoldOut(variantId: string | null, sz: string | null) {
-    return getStock(variantId, sz) === 0;
-  }
-
-  // Touch swipe to navigate images
-  function handleTouchStart(e: React.TouchEvent) {
-    setTouchStartX(e.touches[0].clientX);
-  }
-  function handleTouchEnd(e: React.TouchEvent) {
-    if (touchStartX === null || displayImages.length < 2) return;
-    const dx = e.changedTouches[0].clientX - touchStartX;
-    if (Math.abs(dx) > 40) {
-      // Use safeActiveImg as the base so we never start from an out-of-bounds index
-      setActiveImg(
-        dx < 0
-          ? (safeActiveImg + 1) % displayImages.length
-          : (safeActiveImg - 1 + displayImages.length) % displayImages.length,
-      );
-    }
-    setTouchStartX(null);
-  }
-
-  const validate = useCallback((): boolean => {
-    let ok = true;
-    if (hasSizes && !size)               { setSizeErr(true);  ok = false; }
-    if (hasVariants && !selectedVariant) { setColorErr(true); ok = false; }
-    return ok;
-  }, [hasSizes, size, hasVariants, selectedVariant]);
-
-  const buildCartItem = useCallback(() => {
-    const vid  = selectedVariant?.id ?? null;
-    const tvid = selectedTextVariant?.id ?? null;
-    const sz   = hasSizes ? size : null;
-    const cartKey = `${product.id}:${vid ?? ''}:${sz ?? ''}:${tvid ?? ''}`;
-
-    const parts = [product.title];
-    if (hasSizes    && size)            parts.push(size);
-    if (hasVariants && selectedVariant) parts.push(selectedVariant.display_name || selectedVariant.color_name);
-    if (selectedTextVariant)            parts.push(`"${selectedTextVariant.text_label}"`);
-
-    return {
-      id:           product.id,
-      cartKey,
-      name:         parts.join(' — '),
-      price:        product.price,
-      icon:         '',
-      image:        currentImage,
-      variantId:    vid,
-      size:         sz,
+    addItem({
+      id: product.id,
+      cartKey: `${product.id}:${colore?.id ?? ''}:${taglia}:${incisione?.id ?? ''}`,
+      name: parti.join(', '),
+      price: product.price,
+      icon: '',
+      image: immagini[fotoSicura] ?? '',
+      variantId: colore?.id ?? null,
+      size: taglie.length ? taglia : null,
       shippingCost: product.shipping_cost,
-    };
-  }, [product, size, selectedVariant, selectedTextVariant, hasSizes, hasVariants, currentImage]);
-
-  const handleAddToCart = useCallback(() => {
-    if (!validate()) return;
-    const vid = selectedVariant?.id ?? null;
-    const sz  = hasSizes ? size : null;
-    if (isSoldOut(vid, sz)) return;
-    addItem(buildCartItem());
+    });
     pixel.addToCart({ content_name: product.title, value: product.price });
-    setAdded(true);
-    setTimeout(() => setAdded(false), 1800);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [validate, buildCartItem, addItem, selectedVariant, size, hasSizes]);
 
-  const handleBuyNow = useCallback(() => {
-    if (!validate()) return;
-    const vid = selectedVariant?.id ?? null;
-    const sz  = hasSizes ? size : null;
-    if (isSoldOut(vid, sz)) return;
-    addItem(buildCartItem());
-    pixel.initiateCheckout({ value: product.price, content_name: product.title });
-    openCart(true);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [validate, buildCartItem, addItem, openCart, selectedVariant, size, hasSizes]);
+    setAggiunto(true);
+    setMancante(null);
+    // Il carrello si apre da solo: è lì che si paga, e un secondo
+    // pulsante "compra ora" diceva la stessa cosa due volte.
+    setTimeout(() => { openCart(true); setAggiunto(false); }, 450);
+  }
 
-  const { details } = product;
+  const dettagli = product.details ?? {};
+  const righeDettaglio = [
+    ['Materiale', dettagli.material],
+    ['Dimensioni', dettagli.dimensions],
+    ['Cura', dettagli.care],
+    ['Spedizione', dettagli.shipping],
+  ].filter(([, v]) => !!v) as [string, string][];
 
   return (
-    <div className="pt-6 pb-12 md:pt-10 md:pb-16">
+    <div className="mx-auto max-w-[1180px] px-5 pb-[calc(104px+env(safe-area-inset-bottom))] pt-6 lg:px-10 lg:pb-20 lg:pt-10">
+      <Link
+        href="/wear-the-club"
+        className="ds-link group mb-6 inline-flex min-h-[44px] items-center gap-2 text-fine no-underline hover:text-accent"
+      >
+        <ArrowLeft size={15} strokeWidth={1.9} className="transition-transform group-hover:-translate-x-0.5" />
+        {t('backToShop')}
+      </Link>
 
-      {/* Breadcrumb — stays padded on all viewports */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 mb-6 md:mb-8">
-        <div className="flex items-center gap-2 text-[10px] tracking-[0.3em] text-[#7a4a4a]/50">
-          <Link href="/wear-the-club" className="hover:text-[#731515] transition-colors flex items-center gap-1">
-            <ArrowLeft size={11} />
-            WEAR THE CLUB
-          </Link>
-          <span>/</span>
-          <span className="text-[#1a0505]/60">{product.title.toUpperCase()}</span>
-        </div>
-      </div>
+      <div className="grid gap-8 lg:grid-cols-2 lg:gap-14">
+        {/* ── Le foto ── */}
+        <div>
+          <div className="relative aspect-square overflow-hidden rounded-2xl bg-paper-soft">
+            {immagini[fotoSicura] && (
+              <Image
+                src={immagini[fotoSicura]}
+                alt={product.title}
+                fill
+                priority
+                sizes="(max-width: 1024px) 100vw, 560px"
+                className="object-cover"
+              />
+            )}
+          </div>
 
-      {/* Main layout — no horizontal padding on mobile so image is full-width */}
-      <div className="max-w-7xl mx-auto lg:px-10">
-        <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-10 xl:gap-16">
-
-          {/* ── Left: image gallery (full-width on mobile) ── */}
-          <div className="flex flex-col gap-3">
-
-            {/* Main image */}
-            <div
-              className="relative aspect-square lg:rounded-2xl overflow-hidden bg-[#f5eded] group"
-              onTouchStart={handleTouchStart}
-              onTouchEnd={handleTouchEnd}
-            >
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.div
-                  key={galleryKey}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="absolute inset-0"
+          {immagini.length > 1 && (
+            <div className="mt-3 flex gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {immagini.map((src, i) => (
+                <button
+                  key={src + i}
+                  onClick={() => setFoto(i)}
+                  aria-label={`Foto ${i + 1}`}
+                  className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border transition-colors ${
+                    i === fotoSicura ? 'border-accent' : 'border-rule-paper'
+                  }`}
                 >
-                  {currentImage ? (
-                    <Image
-                      src={currentImage}
-                      alt={product.title}
-                      fill
-                      priority
-                      quality={90}
-                      sizes="(min-width: 1024px) 50vw, 100vw"
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-6xl opacity-20">🍷</div>
-                  )}
-                </motion.div>
-              </AnimatePresence>
-
-              {/* Nav arrows — always visible on mobile, hover-only on desktop */}
-              {displayImages.length > 1 && (
-                <>
-                  <button
-                    onClick={() => setActiveImg(i => (i - 1 + displayImages.length) % displayImages.length)}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 lg:w-9 lg:h-9 rounded-full bg-white/80 hover:bg-white flex items-center justify-center shadow-sm transition-opacity lg:opacity-0 lg:group-hover:opacity-100"
-                    aria-label="Previous image"
-                  >
-                    <ChevronLeft size={16} className="text-[#731515]" />
-                  </button>
-                  <button
-                    onClick={() => setActiveImg(i => (i + 1) % displayImages.length)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 lg:w-9 lg:h-9 rounded-full bg-white/80 hover:bg-white flex items-center justify-center shadow-sm transition-opacity lg:opacity-0 lg:group-hover:opacity-100"
-                    aria-label="Next image"
-                  >
-                    <ChevronRight size={16} className="text-[#731515]" />
-                  </button>
-
-                  {/* Dot indicators */}
-                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-                    {displayImages.map((_, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setActiveImg(i)}
-                        aria-label={`Image ${i + 1}`}
-                        className={`w-1.5 h-1.5 rounded-full transition-colors ${i === safeActiveImg ? 'bg-white' : 'bg-white/40'}`}
-                      />
-                    ))}
-                  </div>
-                </>
-              )}
+                  <Image src={src} alt="" fill sizes="64px" className="object-cover" />
+                </button>
+              ))}
             </div>
+          )}
+        </div>
 
-            {/* Thumbnails — add padding on mobile to align with content below */}
-            {displayImages.length > 1 && (
-              <div className="flex gap-2 flex-wrap px-4 sm:px-6 lg:px-0">
-                {displayImages.map((src, i) => (
+        {/* ── Le scelte ── */}
+        <div>
+          <h1 className="ds-display text-[clamp(1.8rem,5vw,2.6rem)] leading-[1.05] tracking-[-0.03em]">
+            {product.title}
+          </h1>
+
+          <p className="ds-numeric mt-3 text-[22px] font-medium">{eur(product.price)}</p>
+
+          {product.description && (
+            <p className="mt-5 max-w-[56ch] text-body text-on-paper-muted">{product.description}</p>
+          )}
+
+          {varianti.length > 0 && (
+            <div className="mt-7">
+              <p className="mb-2.5 text-fine font-medium">
+                {t('colour')}
+                {colore && <span className="ml-2 font-normal text-on-paper-muted">{colore.display_name || colore.color_name}</span>}
+              </p>
+              <div className="flex flex-wrap gap-2.5">
+                {varianti.map((v) => {
+                  const fuori = giacenza(v.id, taglie.length ? taglia : null) === 0;
+                  return (
+                    <button
+                      key={v.id}
+                      onClick={() => { setColore(v); setFoto(0); setMancante(null); }}
+                      aria-label={v.display_name || v.color_name}
+                      aria-pressed={colore?.id === v.id}
+                      className={`relative h-11 w-11 rounded-full border-2 transition-all ${
+                        colore?.id === v.id ? 'border-accent' : 'border-rule-paper'
+                      } ${fuori ? 'opacity-35' : ''}`}
+                      style={{ backgroundColor: v.color_hex }}
+                    />
+                  );
+                })}
+              </div>
+              {mancante === 'colore' && <p className="mt-2 text-fine text-accent">{t('pickColour')}</p>}
+            </div>
+          )}
+
+          {incisioni.length > 0 && (
+            <div className="mt-7">
+              <p className="mb-2.5 text-fine font-medium">{t('engraving')}</p>
+              <div className="flex flex-wrap gap-2">
+                {incisioni.map((iv) => (
                   <button
-                    key={i}
-                    onClick={() => setActiveImg(i)}
-                    className={`relative w-16 h-16 rounded-xl overflow-hidden border-2 transition-all duration-200 ${
-                      i === safeActiveImg
-                        ? 'border-[#731515] shadow-md'
-                        : 'border-transparent hover:border-[#731515]/40'
+                    key={iv.id}
+                    onClick={() => { setIncisione(incisione?.id === iv.id ? null : iv); setFoto(0); }}
+                    aria-pressed={incisione?.id === iv.id}
+                    className={`inline-flex min-h-[44px] items-center rounded-full border px-4 text-fine transition-colors ${
+                      incisione?.id === iv.id ? 'border-accent bg-accent text-paper' : 'border-rule-paper'
                     }`}
                   >
-                    <Image src={src} alt="" fill quality={90} className="object-cover" sizes="64px" />
+                    {iv.text_label}
                   </button>
                 ))}
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
-          {/* ── Right: product info — padded on mobile ── */}
-          <div className="flex flex-col px-4 sm:px-6 lg:px-0 pt-6 lg:pt-0">
+          {taglie.length > 0 && (
+            <div className="mt-7">
+              <p className="mb-2.5 text-fine font-medium">{t('size')}</p>
+              <div className="flex flex-wrap gap-2">
+                {taglie.map((sz) => {
+                  const fuori = giacenza(colore?.id ?? null, sz) === 0;
+                  return (
+                    <button
+                      key={sz}
+                      onClick={() => { setTaglia(sz); setMancante(null); }}
+                      disabled={fuori}
+                      aria-pressed={taglia === sz}
+                      className={`inline-flex min-h-[44px] min-w-[52px] items-center justify-center rounded-full border px-4 text-fine font-medium transition-colors ${
+                        taglia === sz ? 'border-accent bg-accent text-paper' : 'border-rule-paper'
+                      } ${fuori ? 'opacity-35 line-through' : ''}`}
+                    >
+                      {sz}
+                    </button>
+                  );
+                })}
+              </div>
+              {mancante === 'taglia' && <p className="mt-2 text-fine text-accent">{t('pickSize')}</p>}
+            </div>
+          )}
 
-            {/* Label */}
-            <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-3">VIVO WINE CLUB</div>
+          {/* Il pulsante sul computer: sul telefono sta incollato in fondo. */}
+          <button
+            onClick={aggiungi}
+            disabled={esaurito}
+            className="mt-8 hidden min-h-[56px] w-full items-center justify-center gap-2 rounded-full bg-accent px-6 text-fine font-medium text-paper transition-opacity hover:opacity-90 disabled:opacity-45 lg:inline-flex"
+          >
+            {aggiunto ? <Check size={18} strokeWidth={2.4} /> : <ShoppingBag size={18} strokeWidth={1.9} />}
+            {esaurito ? t('soldOut') : aggiunto ? t('added') : t('addToCart')}
+          </button>
 
-            {/* Title */}
-            <h1
-              className="text-[clamp(1.8rem,4vw,3rem)] font-light text-[#1a0505] leading-tight mb-2"
-              style={{ fontFamily: 'var(--font-syne)' }}
-            >
-              {product.title}
-            </h1>
-
-            {/* Price */}
-            <div className="flex items-baseline gap-3 mb-5">
-              <span
-                className="text-2xl font-light text-[#731515]"
-                style={{ fontFamily: 'var(--font-syne)' }}
+          {righeDettaglio.length > 0 && (
+            <div className="mt-8 border-t border-rule-paper pt-4">
+              <button
+                onClick={() => setDettagliAperti((v) => !v)}
+                aria-expanded={dettagliAperti}
+                className="flex min-h-[48px] w-full items-center justify-between text-left text-body font-medium"
               >
-                €{product.price}
-              </span>
-              {product.shipping_cost != null && (
-                <span className="text-[11px] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
-                  {product.shipping_cost > 0 ? `+ €${product.shipping_cost} shipping` : 'Free Shipping'}
-                </span>
+                {t('details')}
+                <ChevronDown size={18} className={`transition-transform ${dettagliAperti ? 'rotate-180' : ''}`} />
+              </button>
+              {dettagliAperti && (
+                <dl className="pb-2">
+                  {righeDettaglio.map(([k, v]) => (
+                    <div key={k} className="flex flex-wrap gap-x-4 gap-y-1 border-t border-rule-paper py-3">
+                      <dt className="min-w-[110px] text-fine text-on-paper-muted">{k}</dt>
+                      <dd className="min-w-0 flex-1 text-fine">{v}</dd>
+                    </div>
+                  ))}
+                </dl>
               )}
             </div>
-
-            {/* Divider */}
-            <div className="w-full h-px bg-gradient-to-r from-[#731515]/20 to-transparent mb-5" />
-
-            {/* Description */}
-            {product.description && (
-              <p
-                className="text-sm text-[#7a4a4a] font-light leading-relaxed mb-6"
-                style={{ fontFamily: 'var(--font-nunito)' }}
-              >
-                {product.description}
-              </p>
-            )}
-
-            {/* Color selector */}
-            {hasVariants && (
-              <div className="mb-5">
-                <div className="flex items-center justify-between mb-2.5">
-                  <span className="text-[10px] tracking-[0.35em] text-[#1a0505]">COLOR</span>
-                  {selectedVariant && (
-                    <span className="text-[11px] text-[#7a4a4a]/70" style={{ fontFamily: 'var(--font-nunito)' }}>
-                      {selectedVariant.display_name || selectedVariant.color_name}
-                    </span>
-                  )}
-                </div>
-                <div className="flex flex-wrap gap-3">
-                  {product.product_variants.map(v => {
-                    const active  = selectedVariant?.id === v.id;
-                    const light   = isLight(v.color_hex);
-                    const soldOut = hasSizes
-                      ? product.sizes.every(s => isSoldOut(v.id, s))
-                      : isSoldOut(v.id, null);
-                    return (
-                      <button
-                        key={v.id}
-                        type="button"
-                        title={soldOut ? `${v.display_name || v.color_name} — Sold out` : (v.display_name || v.color_name)}
-                        disabled={soldOut}
-                        onClick={() => { if (!soldOut) selectVariant(v); }}
-                        className={`relative w-10 h-10 rounded-full border-2 transition-all duration-200 ${
-                          soldOut    ? 'opacity-35 cursor-not-allowed'
-                          : active   ? 'border-[#731515] scale-110 shadow-md'
-                          : colorErr ? 'border-red-300 hover:border-[#731515]'
-                          : light    ? 'border-[#e8d5d5] hover:border-[#731515]'
-                                     : 'border-transparent hover:border-[#731515]'
-                        }`}
-                        style={{ background: v.color_hex }}
-                        aria-label={v.display_name || v.color_name}
-                      >
-                        {soldOut && (
-                          <span className="absolute inset-0 flex items-center justify-center rounded-full overflow-hidden">
-                            <span className="block w-full h-px bg-[#731515]/50 rotate-45" />
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-                {colorErr && (
-                  <p className="text-[10px] text-[#731515] mt-2" style={{ fontFamily: 'var(--font-nunito)' }}>
-                    Select a color
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* Text variant selector */}
-            {hasTextVariants && (
-              <div className="mb-5">
-                <div className="flex items-center justify-between mb-2.5">
-                  <span className="text-[10px] tracking-[0.35em] text-[#1a0505]">ENGRAVING</span>
-                  {selectedTextVariant && (
-                    <span className="text-[11px] text-[#7a4a4a]/70" style={{ fontFamily: 'var(--font-nunito)' }}>
-                      {selectedTextVariant.text_label}
-                    </span>
-                  )}
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {product.product_text_variants.map(tv => {
-                    const active = selectedTextVariant?.id === tv.id;
-                    return (
-                      <button
-                        key={tv.id}
-                        type="button"
-                        onClick={() => selectTextVariant(tv)}
-                        className={`px-4 py-2 text-[11px] tracking-wide border transition-all duration-150 rounded-lg ${
-                          active
-                            ? 'border-[#731515] bg-[#731515] text-white'
-                            : 'border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515] hover:text-[#731515]'
-                        }`}
-                        style={{ fontFamily: 'var(--font-nunito)' }}
-                      >
-                        {tv.text_label}
-                      </button>
-                    );
-                  })}
-                </div>
-                <p className="text-[9px] text-[#7a4a4a]/40 mt-2" style={{ fontFamily: 'var(--font-nunito)' }}>
-                  Click to preview the engraving. Click again to deselect.
-                </p>
-              </div>
-            )}
-
-            {/* Size selector */}
-            {hasSizes && (
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-2.5">
-                  <span className="text-[10px] tracking-[0.35em] text-[#1a0505]">SIZE</span>
-                  {size && (
-                    <span className="text-[11px] text-[#7a4a4a]/70" style={{ fontFamily: 'var(--font-nunito)' }}>
-                      {size}
-                    </span>
-                  )}
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {product.sizes.map(s => {
-                    const soldOut = isSoldOut(selectedVariant?.id ?? null, s);
-                    return (
-                      <button
-                        key={s}
-                        type="button"
-                        disabled={soldOut}
-                        onClick={() => { if (!soldOut) { setSize(s); setSizeErr(false); } }}
-                        title={soldOut ? 'Sold out' : undefined}
-                        className={`relative w-12 h-12 text-[11px] tracking-widest border transition-all duration-150 rounded-lg ${
-                          soldOut
-                            ? 'border-[#e8d5d5] text-[#c0a0a0]/40 cursor-not-allowed line-through'
-                            : size === s
-                            ? 'border-[#731515] bg-[#731515] text-white'
-                            : sizeErr
-                            ? 'border-red-300 text-[#7a4a4a] hover:border-[#731515]'
-                            : 'border-[#e8d5d5] text-[#7a4a4a] hover:border-[#731515] hover:text-[#731515]'
-                        }`}
-                      >
-                        {s}
-                      </button>
-                    );
-                  })}
-                </div>
-                {sizeErr && (
-                  <p className="text-[10px] text-[#731515] mt-2" style={{ fontFamily: 'var(--font-nunito)' }}>
-                    Select a size
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* Low-stock warning — shown when active selection has 1-3 units left */}
-            {currentStock > 0 && currentStock <= LOW_STOCK_THRESHOLD && (
-              <motion.p
-                key={`low-${currentStock}`}
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="text-[11px] font-semibold text-orange-600"
-                style={{ fontFamily: 'var(--font-nunito)' }}
-              >
-                ⚠ {lowStockLabel(currentStock)}
-              </motion.p>
-            )}
-
-            {/* CTA buttons — full-width on all viewports */}
-            <div className="flex flex-col gap-3 mt-auto">
-              <motion.button
-                onClick={handleAddToCart}
-                whileTap={{ scale: 0.98 }}
-                className={`w-full flex items-center justify-center gap-2.5 py-4 border text-[11px] tracking-[0.3em] transition-all duration-300 rounded-lg ${
-                  added
-                    ? 'border-[#2d6e2d] bg-[#2d6e2d] text-white'
-                    : 'border-[#731515] text-[#731515] hover:bg-[#731515] hover:text-white'
-                }`}
-              >
-                <AnimatePresence mode="wait" initial={false}>
-                  {added ? (
-                    <motion.span key="check" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} transition={{ duration: 0.18 }}>
-                      <Check size={14} strokeWidth={2.5} />
-                    </motion.span>
-                  ) : (
-                    <motion.span key="bag" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} transition={{ duration: 0.15 }}>
-                      <ShoppingBag size={14} />
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-                {added ? 'ADDED TO CART' : 'ADD TO CART'}
-              </motion.button>
-
-              <motion.button
-                onClick={handleBuyNow}
-                whileTap={{ scale: 0.98 }}
-                className="w-full flex items-center justify-center gap-2.5 py-4 bg-[#731515] text-white text-[11px] tracking-[0.3em] hover:bg-[#5a1010] transition-colors duration-300 rounded-lg"
-              >
-                <Zap size={13} />
-                BUY NOW
-              </motion.button>
-            </div>
-
-            {/* Shipping note */}
-            <p className="mt-4 text-[10px] text-[#7a4a4a]/40 text-center" style={{ fontFamily: 'var(--font-nunito)' }}>
-              Ships in 5–7 business days
-            </p>
-          </div>
+          )}
         </div>
       </div>
 
-      {/* ── Additional Info accordion — always visible ── */}
-      <div className="mt-12 lg:mt-14 max-w-2xl lg:mx-auto px-4 sm:px-6 lg:px-10">
-        <AccordionItem label="ADDITIONAL INFO">
-          <div className="space-y-5">
-            <div>
-              <p className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">FABRIC</p>
-              <p className="text-sm font-light leading-relaxed" style={{ fontFamily: 'var(--font-nunito)', color: details?.material ? '#7a4a4a' : '#b8a0a0' }}>
-                {details?.material || 'Details coming soon.'}
-              </p>
-            </div>
-            <div>
-              <p className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">DIMENSIONS</p>
-              <p className="text-sm font-light leading-relaxed" style={{ fontFamily: 'var(--font-nunito)', color: details?.dimensions ? '#7a4a4a' : '#b8a0a0' }}>
-                {details?.dimensions || 'Details coming soon.'}
-              </p>
-            </div>
-            <div>
-              <p className="text-[9px] tracking-[0.35em] text-[#731515] mb-1.5">SHIPPING & RETURNS</p>
-              <p className="text-sm font-light leading-relaxed" style={{ fontFamily: 'var(--font-nunito)', color: details?.shipping ? '#7a4a4a' : '#b8a0a0' }}>
-                {details?.shipping || 'Ships in 5–7 business days. Contact us for returns.'}
-              </p>
-            </div>
-          </div>
-        </AccordionItem>
-        <div className="border-t border-[#e8d5d5]" />
-      </div>
-
-      {/* ── Cross-sell section ── */}
-      {crossSell.length > 0 && (
-        <div className="mt-6 mb-4 max-w-7xl mx-auto px-4 sm:px-6 lg:px-10">
-          <div className="flex items-center gap-1.5 mb-2.5">
-            <Sparkles size={10} className="text-[#731515]" />
-            <span className="text-[8px] tracking-[0.4em] text-[#731515]">
-              {(UPSELL_TITLE[locale] ?? UPSELL_TITLE.en).toUpperCase()}
-            </span>
-          </div>
-          <div className="flex justify-center gap-4">
-            {crossSell.map(p => {
-              const imgSrc = getCrossSellImage(p);
-              const href   = `/wear-the-club/${p.slug ?? p.id}`;
-              return (
-                <div
-                  key={p.id}
-                  className="group w-48 shrink-0 rounded-lg border border-[#e8d5d5] overflow-hidden bg-white hover:border-[#731515]/40 hover:shadow-sm transition-all duration-200"
-                >
-                  <Link href={href}>
-                    <div className="relative w-full h-32 bg-[#f5eded] overflow-hidden">
-                      {imgSrc ? (
-                        <Image
-                          src={imgSrc}
-                          alt={p.title}
-                          fill
-                          sizes="192px"
-                          className="object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-[#e8d5d5]">
-                          <ShoppingBag size={16} />
-                        </div>
-                      )}
-                    </div>
-                  </Link>
-                  <div className="p-2.5">
-                    <Link href={href}>
-                      <p className="text-[11px] font-medium text-[#1a0505] truncate mb-0.5 hover:text-[#731515] transition-colors" style={{ fontFamily: 'var(--font-syne)' }}>
-                        {p.title}
-                      </p>
-                    </Link>
-                    <p className="text-[12px] text-[#731515] mb-2" style={{ fontFamily: 'var(--font-syne)' }}>
-                      €{Number(p.price).toFixed(2)}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        addItem({
-                          id:           p.id,
-                          cartKey:      p.id,
-                          name:         p.title,
-                          price:        p.price,
-                          icon:         '',
-                          image:        imgSrc,
-                          variantId:    null,
-                          size:         null,
-                          shippingCost: null,
-                        });
-                      }}
-                      className="w-full h-7 flex items-center justify-center gap-1 border border-[#731515] text-[#731515] text-[9px] tracking-[0.15em] rounded hover:bg-[#731515] hover:text-white transition-all duration-200"
-                      style={{ fontFamily: 'var(--font-nunito)' }}
-                    >
-                      <ShoppingBag size={10} />
-                      {locale === 'it' ? 'AGGIUNGI' : 'ADD'}
-                    </button>
-                  </div>
+      {/* ── Altri pezzi ── */}
+      {altri.length > 0 && (
+        <section className="mt-14">
+          <h2 className="ds-display mb-5 text-[22px] leading-none tracking-[-0.02em]">{t('alsoLike')}</h2>
+          <div className="-mx-5 flex snap-x gap-3 overflow-x-auto px-5 pb-2 [scrollbar-width:none] lg:mx-0 lg:grid lg:grid-cols-4 lg:px-0 [&::-webkit-scrollbar]:hidden">
+            {altri.map((p) => (
+              <Link
+                key={p.id}
+                href={`/wear-the-club/${p.slug ?? p.id}`}
+                className="w-[150px] shrink-0 snap-start lg:w-auto"
+              >
+                <div className="relative aspect-square overflow-hidden rounded-xl bg-paper-soft">
+                  {copertina(p) && (
+                    <Image src={copertina(p)!} alt={p.title} fill sizes="200px" className="object-cover" />
+                  )}
                 </div>
-              );
-            })}
+                <p className="mt-2 truncate text-fine font-medium">{p.title}</p>
+                <p className="ds-numeric text-fine text-on-paper-muted">{eur(p.price)}</p>
+              </Link>
+            ))}
           </div>
-        </div>
+        </section>
       )}
 
+      {/* ── Il prezzo e il pulsante, incollati in fondo sul telefono ── */}
+      <div
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-rule-paper bg-paper/95 px-5 py-3 backdrop-blur lg:hidden"
+        style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
+      >
+        <div className="flex items-center gap-3">
+          <div className="min-w-0">
+            <p className="ds-numeric text-[19px] font-medium leading-none">{eur(product.price)}</p>
+            {taglia && <p className="mt-1 truncate text-fine text-on-paper-muted">{taglia}</p>}
+          </div>
+          <button
+            onClick={aggiungi}
+            disabled={esaurito}
+            className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full bg-accent px-5 text-fine font-medium text-paper disabled:opacity-45"
+          >
+            {aggiunto ? <Check size={18} strokeWidth={2.4} /> : <ShoppingBag size={17} strokeWidth={1.9} />}
+            {esaurito ? t('soldOut') : aggiunto ? t('added') : t('addToCart')}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,770 +1,415 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Users, Mail, X, Search, RefreshCw,
-  ChevronDown, ChevronUp, Send, Check, AlertCircle,
-} from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Mail, Search, Ticket, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useOverlayBackClose } from '@/lib/useMobileOverlay';
+import {
+  ActionButton,
+  EmptyState,
+  Field,
+  PageHead,
+  Sheet,
+  TextArea,
+  TextInput,
+} from '@/components/admin/ui';
+import { formatEur } from '@/lib/ledger';
 
-/* ── Types ── */
+/**
+ * Membri.
+ *
+ * Fino a ieri questa pagina diceva a tutti zero eventi e zero spesa.
+ * Non perché fosse vero: l'API chiedeva due colonne che non esistono,
+ * la query falliva a ogni caricamento e l'errore veniva solo scritto
+ * nei log. Ora i numeri arrivano, e undici account hanno dei biglietti.
+ *
+ * La distinzione che conta è fra chi ha una membership e chi ha solo
+ * fatto un account per comprare un biglietto: i secondi sono
+ * "Registrato" e non hanno una tessera. Oggi sono venticinque su
+ * quarantacinque.
+ */
+
 interface Member {
   id: string;
   email: string;
   name: string;
+  city: string | null;
+  phone: string | null;
+  member_id: string | null;
+  member_since: number | null;
+  tier: string | null;
   created_at: string;
   last_sign_in: string | null;
-  tier: string;
   events: string[];
   tickets: number;
   spend: number;
 }
 
-type SortKey = 'name' | 'created_at' | 'tickets' | 'spend';
-type SortDir = 'asc' | 'desc';
+const TIERS = ['Member', 'Founder', 'Staff'] as const;
+const NO_TIER = 'Registrato';
 
-/* ── Helpers ── */
-function fmt(d: string | null) {
-  if (!d) return '—';
-  return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+function tierOf(m: Member) {
+  return m.tier?.trim() || NO_TIER;
 }
 
-const inputClass =
-  'w-full bg-[#fdf6f6] border border-[#e8d5d5] text-[#1a0505] px-4 py-3 text-sm placeholder-[#7a4a4a]/40 focus:outline-none focus:border-[#731515]/50 transition-colors duration-200';
-
-/* ── Communication modal ── */
-function CommunicationModal({
-  recipients,
-  onClose,
-}: {
-  recipients: Member[];
-  onClose: () => void;
-}) {
-  const [subject, setSubject] = useState('');
-  const [body,    setBody]    = useState('');
-  const [status,  setStatus]  = useState<'idle' | 'sending' | 'done' | 'error'>('idle');
-  const [result,  setResult]  = useState<{ sent: number; failed: number } | null>(null);
-  const [failedEmails, setFailedEmails] = useState<{ email: string; error: string }[]>([]);
-
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = prev; };
-  }, []);
-
-  async function handleSend(e: React.FormEvent, overrideRecipients?: Member[]) {
-    e.preventDefault();
-    setStatus('sending');
-    const targets = overrideRecipients ?? recipients;
-    try {
-      const res = await fetch('/api/crm/send', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({
-          type:       'custom',
-          recipients: targets.map((m) => ({ email: m.email, name: m.name })),
-          subject,
-          text:       body,
-        }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error);
-      setResult({ sent: json.sent, failed: json.failed });
-      setFailedEmails(json.failedEmails ?? []);
-      setStatus('done');
-    } catch {
-      setStatus('error');
-    }
-  }
-
-  function handleRetryFailed() {
-    const failedSet = new Set(failedEmails.map((f) => f.email));
-    const targets = recipients.filter((m) => failedSet.has(m.email));
-    handleSend({ preventDefault() {} } as React.FormEvent, targets);
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
-      <motion.div
-        initial={{ opacity: 0, scale: 0.97, y: 12 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.97 }}
-        transition={{ duration: 0.2 }}
-        className="bg-white w-full max-w-2xl max-h-[90vh] flex flex-col rounded-xl overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="p-6 border-b border-[#e8d5d5] flex items-center justify-between shrink-0">
-          <div>
-            <div className="text-[10px] tracking-[0.4em] text-[#731515] mb-1">INVIA COMUNICAZIONE</div>
-            <p className="text-xs text-[#7a4a4a]" style={{ fontFamily: 'var(--font-nunito)' }}>
-              {recipients.length} destinatari selezionati
-            </p>
-          </div>
-          <button onClick={onClose} aria-label="Chiudi" className="min-w-[48px] min-h-[48px] flex items-center justify-center text-[#7a4a4a]/50 hover:text-[#731515] transition-colors rounded-lg">
-            <X size={18} />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto" style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
-        {status === 'done' ? (
-          <div className="p-10 text-center flex flex-col items-center gap-4">
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${failedEmails.length > 0 ? 'bg-amber-50' : 'bg-green-50'}`}>
-              {failedEmails.length > 0 ? <AlertCircle size={22} className="text-amber-600" /> : <Check size={22} className="text-green-600" />}
-            </div>
-            <div>
-              <p className="text-base font-medium text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>
-                {failedEmails.length > 0 ? 'Invio completato con errori' : 'Mail inviate con successo'}
-              </p>
-              <p className="text-sm text-[#7a4a4a] mt-1" style={{ fontFamily: 'var(--font-nunito)' }}>
-                {result?.sent} inviate · {result?.failed} fallite
-              </p>
-            </div>
-
-            {failedEmails.length > 0 && (
-              <div className="w-full text-left bg-[#fdf6f6] border border-[#e8d5d5] rounded-lg p-3 max-h-40 overflow-y-auto">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[9px] tracking-[0.2em] text-[#731515]">DESTINATARI FALLITI</span>
-                  <button
-                    type="button"
-                    onClick={() => navigator.clipboard.writeText(failedEmails.map((f) => f.email).join('\n'))}
-                    className="text-[9px] tracking-[0.15em] text-[#7a4a4a]/60 hover:text-[#731515] underline underline-offset-2"
-                  >
-                    COPIA LISTA
-                  </button>
-                </div>
-                <ul className="space-y-1">
-                  {failedEmails.map((f) => (
-                    <li key={f.email} className="text-[11px] text-[#7a4a4a]" style={{ fontFamily: 'var(--font-nunito)' }}>
-                      {f.email} <span className="text-[#7a4a4a]/40">— {f.error}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            <div className="flex items-center gap-3">
-              {failedEmails.length > 0 && (
-                <button onClick={handleRetryFailed} className="text-[9px] tracking-[0.3em] text-[#731515] border border-[#731515]/30 bg-white px-5 py-3 hover:bg-[#fdf0f0] transition-colors">
-                  RIPROVA I FALLITI
-                </button>
-              )}
-              <button onClick={onClose} className="text-[9px] tracking-[0.3em] text-white bg-[#731515] px-6 py-3 hover:bg-[#aa4848] transition-colors">
-                CHIUDI
-              </button>
-            </div>
-          </div>
-        ) : status === 'error' ? (
-          <div className="p-10 text-center flex flex-col items-center gap-4">
-            <AlertCircle size={32} className="text-[#731515]" />
-            <p className="text-sm text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>
-              Errore nell&apos;invio. Riprova.
-            </p>
-            <button onClick={() => setStatus('idle')} className="text-[9px] tracking-[0.3em] text-[#731515] border border-[#731515]/30 bg-white px-5 py-2.5">
-              RIPROVA
-            </button>
-          </div>
-        ) : (
-          <form onSubmit={handleSend} className="p-6 flex flex-col gap-4">
-            {/* Recipient chips */}
-            <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-3 bg-[#fdf6f6] border border-[#e8d5d5]">
-              {recipients.slice(0, 20).map((m) => (
-                <span key={m.id} className="text-[9px] tracking-[0.1em] px-2 py-1 bg-[#fde8e8] text-[#731515]">
-                  {m.name}
-                </span>
-              ))}
-              {recipients.length > 20 && (
-                <span className="text-[9px] text-[#7a4a4a]/50 px-2 py-1">
-                  +{recipients.length - 20} altri
-                </span>
-              )}
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[9px] tracking-[0.3em] text-[#731515]">OGGETTO *</label>
-              <input
-                type="text"
-                required
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                placeholder="Es. Nuovo evento: Wine Lounge — Milano"
-                className={inputClass}
-                style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[9px] tracking-[0.3em] text-[#731515]">TESTO *</label>
-              <textarea
-                required
-                rows={10}
-                value={body}
-                onChange={(e) => setBody(e.target.value)}
-                placeholder={"Ciao,\n\nScriviamo per informarti di…\n\nA presto,\nIl team di Vivo Wine Club"}
-                className={`${inputClass} resize-none`}
-                style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
-              />
-              <p className="text-[9px] text-[#7a4a4a]/40">Il testo viene convertito automaticamente in HTML con lo stile Vivo Wine Club.</p>
-            </div>
-
-            <div className="flex gap-3 justify-end pt-2">
-              <button type="button" onClick={onClose}
-                className="text-[9px] tracking-[0.3em] text-[#7a4a4a] border border-[#e8d5d5] bg-white px-5 py-3 hover:text-[#731515] transition-colors">
-                ANNULLA
-              </button>
-              <button type="submit" disabled={status === 'sending'}
-                className="inline-flex items-center gap-2 text-[9px] tracking-[0.3em] text-white bg-[#731515] px-6 py-3 hover:bg-[#aa4848] disabled:opacity-60 disabled:cursor-not-allowed transition-colors">
-                <Send size={11} />
-                {status === 'sending' ? `INVIO IN CORSO… (${recipients.length})` : `INVIA A ${recipients.length} MEMBRI`}
-              </button>
-            </div>
-          </form>
-        )}
-        </div>
-      </motion.div>
-    </div>
-  );
+function fmtDate(iso: string | null) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-/* ── Event email modal ── */
-function EventEmailModal({
-  recipients,
-  onClose,
-}: {
-  recipients: Member[];
-  onClose: () => void;
-}) {
-  const [form, setForm] = useState({
-    eventTitle:       '',
-    eventDate:        '',
-    eventLocation:    '',
-    eventDescription: '',
-    ctaText:          'SCOPRI L\'EVENTO',
-    ctaLink:          'https://vivowineclub.com/events',
-  });
-  const [status, setStatus]  = useState<'idle' | 'sending' | 'done' | 'error'>('idle');
-  const [result, setResult]  = useState<{ sent: number; failed: number } | null>(null);
-  const [failedEmails, setFailedEmails] = useState<{ email: string; error: string }[]>([]);
-
-  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-    setForm((p) => ({ ...p, [k]: e.target.value }));
-
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = prev; };
-  }, []);
-
-  async function handleSend(e: React.FormEvent, overrideRecipients?: Member[]) {
-    e.preventDefault();
-    setStatus('sending');
-    const targets = overrideRecipients ?? recipients;
-    try {
-      const res = await fetch('/api/crm/send', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({
-          type:        'event',
-          recipients:  targets.map((m) => ({ email: m.email, name: m.name })),
-          subject:     `Nuovo evento: ${form.eventTitle} — Vivo Wine Club`,
-          eventParams: form,
-        }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error);
-      setResult({ sent: json.sent, failed: json.failed });
-      setFailedEmails(json.failedEmails ?? []);
-      setStatus('done');
-    } catch {
-      setStatus('error');
-    }
-  }
-
-  function handleRetryFailed() {
-    const failedSet = new Set(failedEmails.map((f) => f.email));
-    const targets = recipients.filter((m) => failedSet.has(m.email));
-    handleSend({ preventDefault() {} } as React.FormEvent, targets);
-  }
-
+function TierPill({ tier }: { tier: string }) {
+  // Solo "Member" è acceso: è l'unico che risponde alla domanda per cui
+  // si apre questa pagina.
+  const strong = tier === 'Member';
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
-      <motion.div
-        initial={{ opacity: 0, scale: 0.97, y: 12 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.97 }}
-        transition={{ duration: 0.2 }}
-        className="bg-white w-full max-w-2xl max-h-[90vh] flex flex-col rounded-xl overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="p-6 border-b border-[#e8d5d5] flex items-center justify-between shrink-0">
-          <div>
-            <div className="text-[10px] tracking-[0.4em] text-[#731515] mb-1">ANNUNCIO NUOVO EVENTO</div>
-            <p className="text-xs text-[#7a4a4a]" style={{ fontFamily: 'var(--font-nunito)' }}>
-              Verrà inviata a {recipients.length} membri con il template Vivo Wine Club
-            </p>
-          </div>
-          <button onClick={onClose} aria-label="Chiudi" className="min-w-[48px] min-h-[48px] flex items-center justify-center text-[#7a4a4a]/50 hover:text-[#731515] transition-colors rounded-lg">
-            <X size={18} />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto" style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
-        {status === 'done' ? (
-          <div className="p-10 text-center flex flex-col items-center gap-4">
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${failedEmails.length > 0 ? 'bg-amber-50' : 'bg-green-50'}`}>
-              {failedEmails.length > 0 ? <AlertCircle size={22} className="text-amber-600" /> : <Check size={22} className="text-green-600" />}
-            </div>
-            <div>
-              <p className="text-base font-medium text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>
-                {failedEmails.length > 0 ? 'Invio completato con errori' : 'Email evento inviata!'}
-              </p>
-              <p className="text-sm text-[#7a4a4a] mt-1" style={{ fontFamily: 'var(--font-nunito)' }}>
-                {result?.sent} inviate · {result?.failed} fallite
-              </p>
-            </div>
-
-            {failedEmails.length > 0 && (
-              <div className="w-full text-left bg-[#fdf6f6] border border-[#e8d5d5] rounded-lg p-3 max-h-40 overflow-y-auto">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[9px] tracking-[0.2em] text-[#731515]">DESTINATARI FALLITI</span>
-                  <button
-                    type="button"
-                    onClick={() => navigator.clipboard.writeText(failedEmails.map((f) => f.email).join('\n'))}
-                    className="text-[9px] tracking-[0.15em] text-[#7a4a4a]/60 hover:text-[#731515] underline underline-offset-2"
-                  >
-                    COPIA LISTA
-                  </button>
-                </div>
-                <ul className="space-y-1">
-                  {failedEmails.map((f) => (
-                    <li key={f.email} className="text-[11px] text-[#7a4a4a]" style={{ fontFamily: 'var(--font-nunito)' }}>
-                      {f.email} <span className="text-[#7a4a4a]/40">— {f.error}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            <div className="flex items-center gap-3">
-              {failedEmails.length > 0 && (
-                <button onClick={handleRetryFailed} className="text-[9px] tracking-[0.3em] text-[#731515] border border-[#731515]/30 bg-white px-5 py-3 hover:bg-[#fdf0f0] transition-colors">
-                  RIPROVA I FALLITI
-                </button>
-              )}
-              <button onClick={onClose} className="text-[9px] tracking-[0.3em] text-white bg-[#731515] px-6 py-3 hover:bg-[#aa4848] transition-colors">
-                CHIUDI
-              </button>
-            </div>
-          </div>
-        ) : status === 'error' ? (
-          <div className="p-10 text-center flex flex-col items-center gap-4">
-            <AlertCircle size={32} className="text-[#731515]" />
-            <p className="text-sm text-[#731515]">Errore nell&apos;invio. Riprova.</p>
-            <button onClick={() => setStatus('idle')} className="text-[9px] tracking-[0.3em] text-[#731515] border border-[#731515]/30 bg-white px-5 py-2.5">
-              RIPROVA
-            </button>
-          </div>
-        ) : (
-          <form onSubmit={handleSend} className="p-6 flex flex-col gap-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="sm:col-span-2 flex flex-col gap-1.5">
-                <label className="text-[9px] tracking-[0.3em] text-[#731515]">NOME EVENTO *</label>
-                <input type="text" required value={form.eventTitle} onChange={set('eventTitle')}
-                  placeholder="Wine Lounge · Milano" className={inputClass} style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }} />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[9px] tracking-[0.3em] text-[#731515]">DATA *</label>
-                <input type="text" required value={form.eventDate} onChange={set('eventDate')}
-                  placeholder="15 June 2026" className={inputClass} style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }} />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[9px] tracking-[0.3em] text-[#731515]">LOCATION *</label>
-                <input type="text" required value={form.eventLocation} onChange={set('eventLocation')}
-                  placeholder="Milano, Italy" className={inputClass} style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }} />
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[9px] tracking-[0.3em] text-[#731515]">DESCRIZIONE *</label>
-              <textarea required rows={5} value={form.eventDescription} onChange={set('eventDescription')}
-                placeholder={"Siamo felici di annunciare…\n\nSaranno presenti..."}
-                className={`${inputClass} resize-none`} style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }} />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[9px] tracking-[0.3em] text-[#731515]">TESTO PULSANTE</label>
-                <input type="text" value={form.ctaText} onChange={set('ctaText')}
-                  className={inputClass} style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }} />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[9px] tracking-[0.3em] text-[#731515]">LINK PULSANTE</label>
-                <input type="url" value={form.ctaLink} onChange={set('ctaLink')}
-                  className={inputClass} style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }} />
-              </div>
-            </div>
-
-            <div className="flex gap-3 justify-end pt-2">
-              <button type="button" onClick={onClose}
-                className="text-[9px] tracking-[0.3em] text-[#7a4a4a] border border-[#e8d5d5] bg-white px-5 py-3 hover:text-[#731515] transition-colors">
-                ANNULLA
-              </button>
-              <button type="submit" disabled={status === 'sending'}
-                className="inline-flex items-center gap-2 text-[9px] tracking-[0.3em] text-white bg-[#731515] px-6 py-3 hover:bg-[#aa4848] disabled:opacity-60 disabled:cursor-not-allowed transition-colors">
-                <Send size={11} />
-                {status === 'sending' ? 'INVIO IN CORSO…' : `INVIA A ${recipients.length} MEMBRI`}
-              </button>
-            </div>
-          </form>
-        )}
-        </div>
-      </motion.div>
-    </div>
-  );
-}
-
-/* ── Sortable column header ── */
-function SortHeader({
-  label, k, sort, dir, onSort,
-}: {
-  label: string; k: SortKey; sort: SortKey; dir: SortDir; onSort: (k: SortKey) => void;
-}) {
-  const active = sort === k;
-  return (
-    <button
-      onClick={() => onSort(k)}
-      className={`flex items-center gap-1 text-[8px] tracking-[0.25em] transition-colors duration-150 ${
-        active ? 'text-[#731515]' : 'text-[#7a4a4a]/50 hover:text-[#7a4a4a]'
+    <span
+      className={`inline-flex shrink-0 items-center whitespace-nowrap rounded-full border px-2.5 py-0.5 text-fine ${
+        strong ? 'border-accent/35 bg-accent/8 text-accent' : 'border-rule-paper text-on-paper-muted'
       }`}
     >
-      {label}
-      {active ? (dir === 'asc' ? <ChevronUp size={10} /> : <ChevronDown size={10} />) : null}
-    </button>
+      {tier}
+    </span>
   );
 }
 
-/* ── Main component ── */
-export default function MemberCRM() {
-  const [members, setMembers]   = useState<Member[]>([]);
-  const [loading, setLoading]   = useState(true);
-  const [error,   setError]     = useState('');
-  const [search,  setSearch]    = useState('');
-  const [sort,    setSort]      = useState<SortKey>('tickets');
-  const [dir,     setDir]       = useState<SortDir>('desc');
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [modal,   setModal]     = useState<'comm' | 'event' | null>(null);
-  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
-  // Both modal branches lock scroll on their own — only add back-close here.
-  useOverlayBackClose(modal !== null, () => setModal(null));
-  const [accessToken, setAccessToken] = useState<string | null>(null);
+/* ─────────────────────────────────────────────
+   Scheda
+───────────────────────────────────────────── */
+function MemberSheet({ member, onClose }: { member: Member | null; onClose: () => void }) {
+  useOverlayBackClose(!!member, onClose);
+  if (!member) return null;
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setAccessToken(session?.access_token ?? null);
-    });
-  }, []);
+  return (
+    <Sheet open title={member.name} onClose={onClose}>
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <TierPill tier={tierOf(member)} />
+        {member.member_id && (
+          <span className="text-fine text-on-paper-muted">Tessera {member.member_id}</span>
+        )}
+      </div>
+
+      <dl className="grid gap-px overflow-hidden rounded-2xl border border-rule-paper bg-rule-paper">
+        {[
+          { k: 'Email', v: member.email },
+          { k: 'Telefono', v: member.phone || '—' },
+          { k: 'Città', v: member.city || '—' },
+          { k: 'Membro dal', v: member.member_since ? String(member.member_since) : '—' },
+          { k: 'Account creato', v: fmtDate(member.created_at) },
+          { k: 'Ultimo accesso', v: fmtDate(member.last_sign_in) },
+          { k: 'Biglietti pagati', v: String(member.tickets) },
+          { k: 'Speso', v: member.spend > 0 ? formatEur(Math.round(member.spend * 100)) : '—' },
+        ].map((r) => (
+          <div key={r.k} className="flex flex-wrap gap-x-4 gap-y-1 bg-paper px-4 py-3">
+            <dt className="min-w-[130px] shrink-0 text-fine text-on-paper-muted">{r.k}</dt>
+            <dd className="min-w-0 break-words text-body">{r.v}</dd>
+          </div>
+        ))}
+      </dl>
+
+      {member.events.length > 0 && (
+        <div className="mt-5">
+          <p className="mb-2 text-fine font-medium">Eventi</p>
+          <div className="flex flex-wrap gap-2">
+            {member.events.map((e) => (
+              <span
+                key={e}
+                className="inline-flex items-center rounded-full border border-rule-paper px-3 py-1 text-fine text-on-paper-muted"
+              >
+                {e}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </Sheet>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   Scrivi
+───────────────────────────────────────────── */
+function ComposeSheet({
+  recipients,
+  token,
+  onClose,
+  onSent,
+}: {
+  recipients: { email: string; name: string }[];
+  token: string;
+  onClose: () => void;
+  onSent: (msg: string) => void;
+}) {
+  const [subject, setSubject] = useState('');
+  const [text, setText] = useState('');
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState('');
+
+  async function send() {
+    if (!subject.trim() || !text.trim()) {
+      setError('Servono oggetto e testo.');
+      return;
+    }
+    setError('');
+    setSending(true);
+    try {
+      const res = await fetch('/api/crm/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ type: 'custom', recipients, subject: subject.trim(), text: text.trim() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? 'Invio non riuscito.');
+      onSent(`Mail inviata a ${data.sent ?? recipients.length} persone.`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Errore.');
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <Sheet
+      open
+      title={`Scrivi a ${recipients.length}`}
+      onClose={onClose}
+      footer={
+        <div className="flex gap-2.5">
+          <ActionButton variant="quiet" onClick={onClose} className="flex-1">
+            Annulla
+          </ActionButton>
+          <ActionButton onClick={send} disabled={sending} className="flex-[2]">
+            {sending ? 'Invio…' : 'Invia'}
+          </ActionButton>
+        </div>
+      }
+    >
+      <div className="flex flex-col gap-5">
+        <Field label="Oggetto">
+          <TextInput autoFocus value={subject} onChange={(e) => setSubject(e.target.value)} />
+        </Field>
+        <Field label="Messaggio" hint="({{name}} diventa il nome di chi legge)">
+          <TextArea
+            rows={8}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder={'Ciao {{name}},\n\n…'}
+          />
+        </Field>
+        <p className="text-fine text-on-paper-muted">
+          Sono persone con un account sul sito: ricevono comunicazioni che riguardano il loro
+          rapporto col club.
+        </p>
+        {error && <p className="text-fine font-medium text-accent">{error}</p>}
+      </div>
+    </Sheet>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   Membri
+───────────────────────────────────────────── */
+export default function MemberCRM() {
+  const [members, setMembers] = useState<Member[]>([]);
+  const [priced, setPriced] = useState({ priced: 0, total: 0 });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [token, setToken] = useState('');
+  const [message, setMessage] = useState('');
+
+  const [tier, setTier] = useState<string>('');
+  const [query, setQuery] = useState('');
+  const [detail, setDetail] = useState<Member | null>(null);
+  const [compose, setCompose] = useState(false);
+
+  useOverlayBackClose(compose, () => setCompose(false));
 
   const load = useCallback(async () => {
-    if (!accessToken) return; // don't fetch until auth session is ready
-    setLoading(true);
     setError('');
     try {
-      const res  = await fetch('/api/crm/members', {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const tk = session?.access_token ?? '';
+      setToken(tk);
+      const res = await fetch('/api/crm/members', { headers: { Authorization: `Bearer ${tk}` } });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? 'Failed to load');
+      if (!res.ok) throw new Error(json.error ?? 'Impossibile leggere i membri.');
       setMembers(json.members ?? []);
-      setLastRefresh(new Date());
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error');
+      setPriced({ priced: json.pricedEvents ?? 0, total: json.totalEvents ?? 0 });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Errore.');
     } finally {
       setLoading(false);
     }
-  }, [accessToken]);
+  }, []);
 
-  useEffect(() => { load(); }, [load]);
-
-  // ── Realtime: re-fetch when tickets or members change ────────────────────
   useEffect(() => {
-    if (!accessToken) return;
-    supabase.realtime.setAuth(accessToken);
-    const channel = supabase
-      .channel('crm_realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, () => {
-        load();
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [accessToken, load]);
+    load();
+  }, [load]);
 
-  /* Sort + filter */
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase();
-    const list = members.filter(
-      (m) => !q || m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q),
+  const counts = useMemo(() => {
+    const c: Record<string, number> = {};
+    for (const m of members) {
+      const t = tierOf(m);
+      c[t] = (c[t] ?? 0) + 1;
+    }
+    return c;
+  }, [members]);
+
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return members.filter((m) => {
+      if (tier && tierOf(m) !== tier) return false;
+      if (q && !`${m.name} ${m.email} ${m.member_id ?? ''}`.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }, [members, tier, query]);
+
+  const recipients = useMemo(() => {
+    const seen = new Set<string>();
+    const out: { email: string; name: string }[] = [];
+    for (const m of visible) {
+      const e = m.email.trim().toLowerCase();
+      if (!e || !e.includes('@') || seen.has(e)) continue;
+      seen.add(e);
+      out.push({ email: e, name: m.name });
+    }
+    return out;
+  }, [visible]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-20">
+        <span className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+      </div>
     );
-    return [...list].sort((a, b) => {
-      let diff = 0;
-      if (sort === 'name')       diff = a.name.localeCompare(b.name);
-      if (sort === 'created_at') diff = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-      if (sort === 'tickets')    diff = a.tickets - b.tickets;
-      if (sort === 'spend')      diff = a.spend - b.spend;
-      return dir === 'asc' ? diff : -diff;
-    });
-  }, [members, search, sort, dir]);
-
-  function handleSort(k: SortKey) {
-    if (sort === k) setDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    else { setSort(k); setDir('desc'); }
   }
-
-  function toggleSelect(id: string) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  }
-
-  function selectAll() {
-    setSelected(new Set(filtered.map((m) => m.id)));
-  }
-  function deselectAll() { setSelected(new Set()); }
-
-  const selectedMembers = members.filter((m) => selected.has(m.id));
-  const allSelected = filtered.length > 0 && filtered.every((m) => selected.has(m.id));
-
-  /* KPIs */
-  const totalSpend = members.reduce((s, m) => s + m.spend, 0);
-  const totalTickets = members.reduce((s, m) => s + m.tickets, 0);
-  const activeMembers = members.filter((m) => m.tickets > 0).length;
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-[#fde8e8] flex items-center justify-center shrink-0">
-            <Users size={15} className="text-[#731515]" />
-          </div>
-          <h2 className="text-[10px] tracking-[0.4em] text-[#1a0505]">CRM MEMBRI</h2>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          {lastRefresh && (
-            <span className="text-[9px] text-[#7a4a4a]/40" style={{ fontFamily: 'var(--font-nunito)' }}>
-              {lastRefresh.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-            </span>
-          )}
-          <button onClick={load} disabled={loading}
-            className="w-7 h-7 flex items-center justify-center border border-[#e8d5d5] bg-white text-[#7a4a4a] hover:border-[#731515]/40 hover:text-[#731515] disabled:opacity-40 transition-all">
-            <RefreshCw size={11} className={loading ? 'animate-spin' : ''} />
-          </button>
-          <button
-            onClick={() => { if (selected.size === 0) selectAll(); setModal('comm'); }}
-            disabled={loading}
-            className="inline-flex items-center gap-1.5 text-[9px] tracking-[0.25em] text-white bg-[#731515] hover:bg-[#aa4848] disabled:opacity-40 px-4 py-2.5 transition-colors"
-          >
-            <Mail size={11} />
-            {selected.size > 0 ? `INVIA A ${selected.size}` : 'INVIA A TUTTI'}
-          </button>
-        </div>
-      </div>
+    <div>
+      <PageHead
+        title="Membri"
+        subtitle={`${counts.Member ?? 0} con la membership su ${members.length} account registrati.`}
+        action={
+          <ActionButton onClick={() => setCompose(true)} disabled={recipients.length === 0}>
+            <Mail size={17} strokeWidth={1.9} />
+            Scrivi a {recipients.length}
+          </ActionButton>
+        }
+      />
 
-      {/* KPI row */}
-      {!loading && members.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[
-            { label: 'TOTALE MEMBRI',   value: members.length },
-            { label: 'CON TICKET',      value: activeMembers },
-            { label: 'TICKET TOTALI',   value: totalTickets },
-            { label: 'REVENUE TOTALE',  value: `€${totalSpend}` },
-          ].map(({ label, value }) => (
-            <div key={label} className="bg-white border border-[#e8d5d5] p-4">
-              <div className="text-[8px] tracking-[0.3em] text-[#7a4a4a]/50 mb-1">{label}</div>
-              <div className="text-xl font-light text-[#731515]" style={{ fontFamily: 'var(--font-syne)' }}>
-                {value}
-              </div>
-            </div>
-          ))}
-        </div>
+      {message && (
+        <p className="mb-5 rounded-2xl border border-rule-paper px-4 py-3 text-fine font-medium">
+          {message}
+        </p>
       )}
 
-      {/* Search + select-all */}
-      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-        <div className="relative flex-1">
-          <Search size={13} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7a4a4a]/40" />
-          <input
-            type="text"
-            placeholder="Cerca per nome o email…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-white border border-[#e8d5d5] text-[#1a0505] pl-10 pr-4 py-2.5 text-sm placeholder-[#7a4a4a]/40 focus:outline-none focus:border-[#731515]/50 transition-colors"
-            style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
-          />
-        </div>
-        {filtered.length > 0 && (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={allSelected ? deselectAll : selectAll}
-              className="text-[9px] tracking-[0.2em] text-[#7a4a4a]/60 hover:text-[#731515] transition-colors"
-              style={{ fontFamily: 'var(--font-nunito)' }}
-            >
-              {allSelected ? 'DESELEZIONA TUTTI' : 'SELEZIONA TUTTI'}
-            </button>
-            {selected.size > 0 && (
-              <span className="text-[9px] text-[#731515]">({selected.size} selezionati)</span>
+      {error ? (
+        <EmptyState
+          title="Non riesco a leggere i membri"
+          body={error}
+          action={<ActionButton onClick={load}>Riprova</ActionButton>}
+        />
+      ) : (
+        <>
+          <div className="-mx-1 mb-4 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {[{ id: '', label: `Tutti · ${members.length}` }, ...[...TIERS, NO_TIER].map((t) => ({
+              id: t,
+              label: `${t} · ${counts[t] ?? 0}`,
+            }))].map((o) => (
+              <button
+                key={o.id || 'all'}
+                onClick={() => setTier(o.id)}
+                aria-pressed={tier === o.id}
+                className={`inline-flex min-h-[40px] shrink-0 items-center rounded-full border px-3.5 text-fine font-medium transition-colors ${
+                  tier === o.id
+                    ? 'border-accent bg-accent text-paper'
+                    : 'border-rule-paper text-on-paper'
+                }`}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="mb-5 flex min-w-[220px] items-center gap-2.5 rounded-full border border-rule-paper px-4">
+            <Search size={17} strokeWidth={1.8} className="shrink-0 text-on-paper-muted" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Cerca nome, email o tessera"
+              className="min-h-[48px] w-full bg-transparent text-body placeholder:text-on-paper-muted/60 focus:outline-none [font-size:16px]"
+            />
+            {query && (
+              <button
+                onClick={() => setQuery('')}
+                aria-label="Pulisci"
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full hover:bg-paper-soft"
+              >
+                <X size={15} strokeWidth={2} />
+              </button>
             )}
           </div>
-        )}
-      </div>
 
-      {/* Table */}
-      {loading && members.length === 0 ? (
-        <div className="py-12 text-center text-xs text-[#7a4a4a]/40 italic" style={{ fontFamily: 'var(--font-nunito)' }}>
-          Caricamento membri…
-        </div>
-      ) : error ? (
-        <div className="py-8 text-center text-xs text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>{error}</div>
-      ) : members.length === 0 ? (
-        <div className="py-10 text-center text-xs text-[#7a4a4a]/40 italic" style={{ fontFamily: 'var(--font-nunito)' }}>
-          Nessun membro trovato.
-        </div>
-      ) : (
-        <div className="overflow-x-auto bg-white rounded-xl border border-[#e8d5d5]">
-          <table className="w-full min-w-[640px] border-collapse">
-            <thead>
-              <tr className="border-b border-[#e8d5d5] bg-white">
-                <th className="pb-3 pr-4 text-left w-8">
-                  <input
-                    type="checkbox"
-                    checked={allSelected}
-                    onChange={allSelected ? deselectAll : selectAll}
-                    className="accent-[#731515] w-3.5 h-3.5"
-                  />
-                </th>
-                <th className="pb-3 pr-4 text-left">
-                  <SortHeader label="MEMBRO" k="name" sort={sort} dir={dir} onSort={handleSort} />
-                </th>
-                <th className="pb-3 pr-4 text-left">
-                  <SortHeader label="ISCRITTO" k="created_at" sort={sort} dir={dir} onSort={handleSort} />
-                </th>
-                <th className="pb-3 pr-4 text-left hidden sm:table-cell">
-                  <span className="text-[8px] tracking-[0.25em] text-[#7a4a4a]/50">TIER</span>
-                </th>
-                <th className="pb-3 pr-4 text-right">
-                  <SortHeader label="TICKET" k="tickets" sort={sort} dir={dir} onSort={handleSort} />
-                </th>
-                <th className="pb-3 text-right">
-                  <SortHeader label="SPESA" k="spend" sort={sort} dir={dir} onSort={handleSort} />
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <AnimatePresence>
-                {filtered.map((m) => (
-                  <motion.tr
-                    key={m.id}
-                    layout
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    onClick={() => toggleSelect(m.id)}
-                    className={`border-b border-[#e8d5d5] cursor-pointer transition-colors duration-150 ${
-                      selected.has(m.id) ? 'bg-[#fde8e8]' : 'bg-white hover:bg-[#fdf6f6]'
-                    }`}
-                  >
-                    <td className="py-3.5 pr-4">
-                      <input
-                        type="checkbox"
-                        checked={selected.has(m.id)}
-                        onChange={() => toggleSelect(m.id)}
-                        onClick={(e) => e.stopPropagation()}
-                        className="accent-[#731515] w-3.5 h-3.5"
-                      />
-                    </td>
-                    <td className="py-3.5 pr-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-[#fde8e8] flex items-center justify-center text-[#731515] text-xs font-medium shrink-0" style={{ fontFamily: 'var(--font-syne)' }}>
-                          {m.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="min-w-0">
-                          <div className="text-sm font-medium text-[#1a0505] truncate" style={{ fontFamily: 'var(--font-syne)' }}>
-                            {m.name}
-                          </div>
-                          <div className="text-[10px] text-[#7a4a4a]/50 truncate" style={{ fontFamily: 'var(--font-nunito)' }}>
-                            {m.email}
-                          </div>
-                          {m.events.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-1">
-                              {m.events.map((ev) => (
-                                <span key={ev} className="text-[7px] tracking-[0.1em] px-1.5 py-0.5 bg-[#fde8e8] text-[#731515]">
-                                  {ev}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-3.5 pr-4">
-                      <div className="text-xs text-[#7a4a4a]" style={{ fontFamily: 'var(--font-nunito)' }}>
-                        {fmt(m.created_at)}
-                      </div>
-                      {m.last_sign_in && (
-                        <div className="text-[9px] text-[#7a4a4a]/40 mt-0.5" style={{ fontFamily: 'var(--font-nunito)' }}>
-                          Last: {fmt(m.last_sign_in)}
-                        </div>
+          {visible.length === 0 ? (
+            <EmptyState title="Nessuno corrisponde" body="Prova ad allargare i filtri." />
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              {visible.map((m) => (
+                <button
+                  key={m.id}
+                  onClick={() => setDetail(m)}
+                  className="flex min-h-[68px] w-full items-center gap-3 rounded-2xl border border-rule-paper px-3.5 py-3 text-left transition-colors hover:border-accent/40"
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center gap-2">
+                      <span className="min-w-0 truncate text-body">{m.name}</span>
+                      <TierPill tier={tierOf(m)} />
+                    </span>
+                    <span className="mt-0.5 flex flex-wrap items-center gap-x-3 truncate text-fine text-on-paper-muted">
+                      {m.email}
+                      {m.tickets > 0 && (
+                        <span className="inline-flex items-center gap-1">
+                          <Ticket size={12} strokeWidth={1.9} />
+                          {m.tickets} {m.tickets === 1 ? 'biglietto' : 'biglietti'}
+                        </span>
                       )}
-                    </td>
-                    <td className="py-3.5 pr-4 hidden sm:table-cell">
-                      <span className={`text-[8px] tracking-[0.2em] px-2 py-0.5 border ${
-                        m.tier === 'Staff'
-                          ? 'border-[#731515]/40 text-[#731515] bg-[#fde8e8]'
-                          : 'border-[#e8d5d5] text-[#7a4a4a]/60 bg-white'
-                      }`}>
-                        {m.tier.toUpperCase()}
-                      </span>
-                    </td>
-                    <td className="py-3.5 pr-4 text-right">
-                      <span className="text-sm text-[#1a0505]" style={{ fontFamily: 'var(--font-syne)' }}>
-                        {m.tickets || '—'}
-                      </span>
-                    </td>
-                    <td className="py-3.5 text-right">
-                      <span className={`text-sm font-medium ${m.spend > 0 ? 'text-[#731515]' : 'text-[#7a4a4a]/30'}`} style={{ fontFamily: 'var(--font-syne)' }}>
-                        {m.spend > 0 ? `€${m.spend}` : '—'}
-                      </span>
-                    </td>
-                  </motion.tr>
-                ))}
-              </AnimatePresence>
-            </tbody>
-          </table>
-          {filtered.length === 0 && search && (
-            <div className="py-8 text-center text-xs text-[#7a4a4a]/40 italic" style={{ fontFamily: 'var(--font-nunito)' }}>
-              Nessun risultato per &ldquo;{search}&rdquo;
+                    </span>
+                  </span>
+                </button>
+              ))}
             </div>
           )}
-        </div>
+
+          <p className="mt-5 text-fine text-on-paper-muted">
+            {visible.length} di {members.length}.
+            {priced.total > 0 && priced.priced < priced.total && (
+              <>
+                {' '}
+                La spesa è calcolabile solo sugli eventi che hanno un prezzo in anagrafica:{' '}
+                {priced.priced} su {priced.total}. Per gli altri risulta zero anche se il biglietto
+                è stato pagato.
+              </>
+            )}
+          </p>
+        </>
       )}
 
-      {/* Modals */}
-      <AnimatePresence>
-        {modal === 'comm' && (
-          <CommunicationModal
-            recipients={selected.size > 0 ? selectedMembers : members}
-            onClose={() => setModal(null)}
-          />
-        )}
-        {modal === 'event' && (
-          <EventEmailModal
-            recipients={selected.size > 0 ? selectedMembers : members}
-            onClose={() => setModal(null)}
-          />
-        )}
-      </AnimatePresence>
+      <MemberSheet member={detail} onClose={() => setDetail(null)} />
+
+      {compose && (
+        <ComposeSheet
+          recipients={recipients}
+          token={token}
+          onClose={() => setCompose(false)}
+          onSent={(m) => {
+            setMessage(m);
+            setCompose(false);
+          }}
+        />
+      )}
     </div>
   );
 }

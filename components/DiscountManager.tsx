@@ -1,609 +1,497 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import Image from 'next/image';
+import { Eye, EyeOff, ImagePlus, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import { useOverlayBackClose } from '@/lib/useMobileOverlay';
 import {
-  Plus, Pencil, Trash2, X, Loader2, Eye, EyeOff,
-  Tag, ImagePlus, CheckCircle,
-} from 'lucide-react';
-import { useMobileOverlay } from '@/lib/useMobileOverlay';
+  ActionButton,
+  EmptyState,
+  Field,
+  NewButton,
+  PageHead,
+  Sheet,
+  TextArea,
+  TextInput,
+} from '@/components/admin/ui';
 
-// ── Types ──────────────────────────────────────────────────────────────────────
+/**
+ * Le convenzioni per i soci.
+ *
+ * Una sola cosa conta davvero qui: se il socio la vede o no. Quindi
+ * l'occhio sulla riga accende e spegne la convenzione con un tocco,
+ * senza aprire niente — era l'azione più frequente e stava dentro un
+ * modulo da compilare.
+ *
+ * Le convenzioni scadute restano in elenco, separate: sono da
+ * rinnovare, non da ritrovare.
+ */
 
 interface Discount {
-  id:          string;
-  title:       string;
+  id: string;
+  title: string;
   description: string | null;
-  logo_url:    string | null;
-  code:        string | null;
-  partner:     string | null;
-  expires_at:  string | null;
-  visible:     boolean;
-  sort_order:  number;
-  created_at:  string;
+  logo_url: string | null;
+  code: string | null;
+  partner: string | null;
+  expires_at: string | null;
+  visible: boolean;
+  sort_order: number;
+  created_at: string;
 }
 
-// ── Shared input styles ────────────────────────────────────────────────────────
-const inp = 'w-full bg-[#fdf6f6] border border-[#eddada] text-[#1a0505] px-3.5 py-2.5 text-sm placeholder:text-[#7a4a4a]/35 focus:outline-none focus:border-[#731515]/50 transition-colors rounded-lg';
+function today() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 
-// ── Image uploader (single image, folder=discounts) ───────────────────────────
+function fmtDate(iso: string | null) {
+  if (!iso) return null;
+  const [y, m, d] = iso.slice(0, 10).split('-');
+  const mesi = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'];
+  return `${Number(d)} ${mesi[Number(m) - 1]} ${y}`;
+}
 
-function DiscountImageUploader({
-  url,
-  onChange,
+function isExpired(d: Discount, now = today()) {
+  return !!d.expires_at && d.expires_at.slice(0, 10) < now;
+}
+
+/* ─────────────────────────────────────────────
+   Modulo
+───────────────────────────────────────────── */
+function DiscountSheet({
+  target,
   token,
+  onClose,
+  onSaved,
 }: {
-  url:      string | null;
-  onChange: (url: string | null) => void;
-  token:    string;
+  target: Discount | 'new';
+  token: string;
+  onClose: () => void;
+  onSaved: () => void;
 }) {
-  const [uploading, setUploading] = useState(false);
-  const [uploadErr, setUploadErr] = useState('');
-  const fileRef = useRef<HTMLInputElement>(null);
+  const isNew = target === 'new';
+  const current = isNew ? null : target;
 
-  async function handleFile(files: FileList | null) {
-    if (!files || files.length === 0) return;
+  const [form, setForm] = useState({
+    title: current?.title ?? '',
+    partner: current?.partner ?? '',
+    description: current?.description ?? '',
+    code: current?.code ?? '',
+    expires_at: current?.expires_at?.slice(0, 10) ?? '',
+    logo_url: current?.logo_url ?? '',
+    visible: current?.visible ?? true,
+  });
+  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  function set<K extends keyof typeof form>(k: K, v: (typeof form)[K]) {
+    setForm((p) => ({ ...p, [k]: v }));
+  }
+
+  async function upload(file: File) {
     setUploading(true);
-    setUploadErr('');
+    setError('');
     try {
       const fd = new FormData();
-      fd.append('file', files[0]);
+      fd.append('file', file);
       fd.append('folder', 'discounts');
-      const res  = await fetch('/api/media/upload', {
-        method:  'POST',
+      const res = await fetch('/api/media/upload', {
+        method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
-        body:    fd,
+        body: fd,
       });
       const data = await res.json();
-      if (!res.ok || !data.url) {
-        setUploadErr(data.error ?? 'Errore upload immagine');
-        return;
-      }
-      onChange(data.url);
-    } catch {
-      setUploadErr('Errore di rete durante l\'upload');
+      if (!res.ok || !data.url) throw new Error(data.error ?? 'Caricamento non riuscito.');
+      set('logo_url', data.url);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Errore.');
     } finally {
       setUploading(false);
     }
   }
 
-  return (
-    <div>
-      <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-2">LOGO / IMMAGINE</label>
-      {url && (
-        <div className="relative w-20 h-20 rounded-lg overflow-hidden border border-[#eddada] mb-3 group">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={url} alt="" className="w-full h-full object-cover" />
-          <button
-            type="button"
-            onClick={() => onChange(null)}
-            className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
-          >
-            <X size={16} className="text-white" />
-          </button>
-        </div>
-      )}
-      <button
-        type="button"
-        onClick={() => fileRef.current?.click()}
-        disabled={uploading}
-        className="flex items-center gap-2 text-[10px] tracking-[0.25em] border border-dashed border-[#eddada] text-[#7a4a4a]/60 hover:border-[#731515]/40 hover:text-[#731515]/60 px-4 py-2.5 rounded-lg transition-colors disabled:opacity-50 w-full justify-center"
-      >
-        {uploading ? <Loader2 size={13} className="animate-spin" /> : <ImagePlus size={13} />}
-        {uploading ? 'UPLOAD IN CORSO…' : url ? 'CAMBIA IMMAGINE' : 'CARICA LOGO'}
-      </button>
-      <input
-        ref={fileRef} type="file" accept="image/*" className="hidden"
-        onChange={e => { setUploadErr(''); handleFile(e.target.files); }}
-      />
-      {uploadErr && (
-        <p className="text-[10px] text-[#731515] mt-1" style={{ fontFamily: 'var(--font-nunito)' }}>{uploadErr}</p>
-      )}
-    </div>
-  );
-}
-
-// ── Discount Modal ─────────────────────────────────────────────────────────────
-
-interface ModalState {
-  mode:     'create' | 'edit';
-  discount: Partial<Discount>;
-}
-
-function DiscountModal({
-  state,
-  token,
-  onClose,
-  onSaved,
-}: {
-  state:   ModalState;
-  token:   string;
-  onClose: () => void;
-  onSaved: (d: Discount) => void;
-}) {
-  const isEdit = state.mode === 'edit';
-  const [form, setForm] = useState<Partial<Discount>>({
-    title:       '',
-    description: '',
-    logo_url:    null,
-    code:        '',
-    partner:     '',
-    expires_at:  null,
-    visible:     true,
-    sort_order:  0,
-    ...state.discount,
-  });
-  const [saving, setSaving] = useState(false);
-  const [err,    setErr]    = useState('');
-
-  function set<K extends keyof Discount>(key: K, val: Discount[K]) {
-    setForm(f => ({ ...f, [key]: val }));
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!form.title?.trim()) { setErr('Il titolo è obbligatorio'); return; }
+  async function save() {
+    if (!form.title.trim()) {
+      setError('Serve un titolo.');
+      return;
+    }
+    setError('');
     setSaving(true);
-    setErr('');
     try {
-      const url    = isEdit ? `/api/discounts/${state.discount.id}` : '/api/discounts';
-      const method = isEdit ? 'PATCH' : 'POST';
-      const res    = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type':  'application/json',
-          Authorization:   `Bearer ${token}`,
-        },
+      const res = await fetch(isNew ? '/api/discounts' : `/api/discounts/${current!.id}`, {
+        method: isNew ? 'POST' : 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
-          title:       form.title?.trim(),
-          description: form.description?.trim() || null,
-          logo_url:    form.logo_url || null,
-          code:        form.code?.trim() || null,
-          partner:     form.partner?.trim() || null,
-          expires_at:  form.expires_at || null,
-          visible:     form.visible ?? true,
-          sort_order:  Number(form.sort_order) || 0,
+          title: form.title.trim(),
+          partner: form.partner.trim() || null,
+          description: form.description.trim() || null,
+          code: form.code.trim() || null,
+          expires_at: form.expires_at || null,
+          logo_url: form.logo_url || null,
+          visible: form.visible,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) { setErr(data.error ?? 'Errore salvataggio'); return; }
-      onSaved(data.discount);
-    } catch {
-      setErr('Errore di rete');
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? 'Errore.');
+      onSaved();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Errore.');
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <motion.div
-      key="modal-backdrop"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.18 }}
-      className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 pt-12 overflow-y-auto"
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+    <Sheet
+      open
+      title={isNew ? 'Nuova convenzione' : 'Modifica convenzione'}
+      onClose={onClose}
+      footer={
+        <div className="flex gap-2.5">
+          <ActionButton variant="quiet" onClick={onClose} className="flex-1">
+            Annulla
+          </ActionButton>
+          <ActionButton onClick={save} disabled={saving} className="flex-[2]">
+            {saving ? 'Salvo…' : 'Salva'}
+          </ActionButton>
+        </div>
+      }
     >
-      <motion.div
-        initial={{ opacity: 0, y: 18, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0,  scale: 1    }}
-        exit={{ opacity: 0,    y: 8,  scale: 0.98 }}
-        transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-[#eddada]/60"
-        onClick={e => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[#eddada]">
-          <div>
-            <h2
-              className="text-[16px] font-light text-[#1a0505]"
-              style={{ fontFamily: 'var(--font-syne)' }}
-            >
-              {isEdit ? 'Modifica Sconto' : 'Nuovo Sconto'}
-            </h2>
-            <p className="text-[10px] text-[#7a4a4a]/50 mt-0.5" style={{ fontFamily: 'var(--font-nunito)' }}>
-              {isEdit ? 'Aggiorna i dettagli dello sconto' : 'Aggiungi un nuovo sconto per i membri'}
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-[#7a4a4a]/40 hover:text-[#7a4a4a]/80 transition-colors p-1"
-          >
-            <X size={18} />
-          </button>
+      <div className="flex flex-col gap-5">
+        <TextInput
+          autoFocus
+          value={form.title}
+          onChange={(e) => set('title', e.target.value)}
+          placeholder="10% da Il Canto del Gallo"
+          className="!py-4 !text-[19px]"
+        />
+
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field label="Partner">
+            <TextInput
+              value={form.partner}
+              onChange={(e) => set('partner', e.target.value)}
+              placeholder="Chi offre lo sconto"
+            />
+          </Field>
+          <Field label="Codice" hint="(se serve)">
+            <TextInput
+              value={form.code}
+              onChange={(e) => set('code', e.target.value)}
+              placeholder="VIVO10"
+            />
+          </Field>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+        <Field label="Come funziona">
+          <TextArea
+            rows={3}
+            value={form.description}
+            onChange={(e) => set('description', e.target.value)}
+            placeholder="Cosa deve fare il socio per usarlo…"
+          />
+        </Field>
 
-          {/* Title */}
-          <div>
-            <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-2">TITOLO *</label>
-            <input
-              className={inp}
-              value={form.title ?? ''}
-              onChange={e => set('title', e.target.value)}
-              placeholder="es. 20% di sconto su…"
-              style={{ fontFamily: 'var(--font-nunito)' }}
-            />
-          </div>
+        <Field label="Scade il" hint="(lascia vuoto se non scade)">
+          <TextInput
+            type="date"
+            value={form.expires_at}
+            onChange={(e) => set('expires_at', e.target.value)}
+          />
+        </Field>
 
-          {/* Partner */}
-          <div>
-            <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-2">PARTNER</label>
-            <input
-              className={inp}
-              value={form.partner ?? ''}
-              onChange={e => set('partner', e.target.value)}
-              placeholder="es. Vineria Rossi"
-              style={{ fontFamily: 'var(--font-nunito)' }}
-            />
-          </div>
+        {/* Non un `Field`: quello e' una `<label>`, e un pulsante dentro
+            una label fa partire due volte lo stesso selettore di file —
+            uno apre, l'altro chiude, e sembra che il pulsante sia rotto.
+            Qui la label *e'* il pulsante, come si fa da sempre. */}
+        <div>
+          <p className="mb-2 text-fine font-medium text-on-paper">Logo</p>
+          <div className="flex items-center gap-3">
+            {form.logo_url ? (
+              <span className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-rule-paper">
+                <Image src={form.logo_url} alt="" fill sizes="64px" className="object-contain" />
+              </span>
+            ) : (
+              <span className="grid h-16 w-16 shrink-0 place-items-center rounded-xl border border-dashed border-rule-paper text-on-paper-muted">
+                <ImagePlus size={20} strokeWidth={1.7} />
+              </span>
+            )}
 
-          {/* Description */}
-          <div>
-            <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-2">DESCRIZIONE</label>
-            <textarea
-              className={`${inp} resize-none`}
-              rows={3}
-              value={form.description ?? ''}
-              onChange={e => set('description', e.target.value)}
-              placeholder="Descrivi il vantaggio per i membri…"
-              style={{ fontFamily: 'var(--font-nunito)' }}
-            />
-          </div>
+            <div className="flex flex-wrap gap-2">
+              <label
+                className={`inline-flex min-h-[48px] cursor-pointer items-center gap-2 rounded-full border border-rule-paper px-5 text-fine font-medium transition-colors hover:border-accent/40 ${
+                  uploading ? 'pointer-events-none opacity-45' : ''
+                }`}
+              >
+                {uploading ? <Loader2 size={16} className="animate-spin" /> : <ImagePlus size={16} strokeWidth={1.8} />}
+                {uploading ? 'Carico…' : form.logo_url ? 'Cambia' : 'Carica'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) upload(f);
+                    e.target.value = '';
+                  }}
+                />
+              </label>
 
-          {/* Code */}
-          <div>
-            <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-2">CODICE SCONTO</label>
-            <input
-              className={`${inp} font-mono`}
-              value={form.code ?? ''}
-              onChange={e => set('code', e.target.value)}
-              placeholder="es. VIVO20"
-              style={{ fontFamily: 'var(--font-nunito)' }}
-            />
-          </div>
-
-          {/* Expires at + Sort order */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-2">SCADENZA</label>
-              <input
-                type="date"
-                className={inp}
-                value={form.expires_at ?? ''}
-                onChange={e => set('expires_at', e.target.value || null)}
-                style={{ fontFamily: 'var(--font-nunito)' }}
-              />
-            </div>
-            <div>
-              <label className="block text-[9px] tracking-[0.35em] text-[#731515] mb-2">ORDINE</label>
-              <input
-                type="number"
-                className={inp}
-                value={form.sort_order ?? 0}
-                onChange={e => set('sort_order', Number(e.target.value))}
-                min={0}
-                style={{ fontFamily: 'var(--font-nunito)' }}
-              />
+              {form.logo_url && (
+                <ActionButton variant="quiet" onClick={() => set('logo_url', '')}>
+                  Togli
+                </ActionButton>
+              )}
             </div>
           </div>
-
-          {/* Logo uploader */}
-          <DiscountImageUploader
-            url={form.logo_url ?? null}
-            onChange={url => set('logo_url', url)}
-            token={token}
-          />
-
-          {/* Visible toggle */}
-          <div className="flex items-center justify-between bg-[#fdf6f6] border border-[#eddada] rounded-lg px-4 py-3">
-            <span className="text-[12px] text-[#1a0505]" style={{ fontFamily: 'var(--font-nunito)' }}>
-              Visibile ai membri
-            </span>
-            <button
-              type="button"
-              onClick={() => set('visible', !form.visible)}
-              className={`w-9 h-5 rounded-full transition-colors relative ${form.visible ? 'bg-[#731515]' : 'bg-[#eddada]'}`}
-            >
-              <span
-                className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${form.visible ? 'left-[18px]' : 'left-0.5'}`}
-              />
-            </button>
-          </div>
-
-          {err && (
-            <p className="text-[12px] text-[#731515]" style={{ fontFamily: 'var(--font-nunito)' }}>{err}</p>
-          )}
-
-          {/* Actions */}
-          <div className="flex gap-3 pt-1">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 py-2.5 border border-[#eddada] text-[#7a4a4a] text-[10px] tracking-[0.25em] hover:bg-[#fdf6f6] transition-colors rounded-lg"
-            >
-              ANNULLA
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="flex-1 py-2.5 bg-[#731515] text-white text-[10px] tracking-[0.25em] hover:bg-[#9b2323] disabled:opacity-55 disabled:cursor-not-allowed transition-colors rounded-lg flex items-center justify-center gap-2"
-            >
-              {saving ? <Loader2 size={12} className="animate-spin" /> : null}
-              {saving ? 'SALVATAGGIO…' : isEdit ? 'AGGIORNA' : 'CREA SCONTO'}
-            </button>
-          </div>
-        </form>
-      </motion.div>
-    </motion.div>
-  );
-}
-
-// ── Discount Card ──────────────────────────────────────────────────────────────
-
-function DiscountCard({
-  discount,
-  token,
-  onEdit,
-  onDeleted,
-  onToggleVisible,
-}: {
-  discount:        Discount;
-  token:           string;
-  onEdit:          () => void;
-  onDeleted:       () => void;
-  onToggleVisible: () => void;
-}) {
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [deleting,      setDeleting]      = useState(false);
-
-  async function handleDelete() {
-    if (!confirmDelete) { setConfirmDelete(true); return; }
-    setDeleting(true);
-    try {
-      const res = await fetch(`/api/discounts/${discount.id}`, {
-        method:  'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) onDeleted();
-    } finally {
-      setDeleting(false);
-    }
-  }
-
-  const expiryStr = discount.expires_at
-    ? new Date(discount.expires_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })
-    : null;
-
-  return (
-    <div
-      className={`bg-white border border-[#eddada] rounded-xl p-4 shadow-[0_1px_4px_rgba(107,26,26,0.06)] flex flex-col gap-3 ${!discount.visible ? 'opacity-55' : ''}`}
-    >
-      {/* Top: logo + title/partner */}
-      <div className="flex items-start gap-3">
-        {discount.logo_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={discount.logo_url}
-            alt={discount.partner ?? discount.title}
-            className="w-10 h-10 rounded-lg object-cover border border-[#eddada] shrink-0"
-          />
-        ) : (
-          <div className="w-10 h-10 rounded-lg bg-[#fdf6f6] border border-[#eddada] flex items-center justify-center shrink-0">
-            <Tag size={16} className="text-[#731515]/40" />
-          </div>
-        )}
-        <div className="min-w-0 flex-1">
-          {discount.partner && (
-            <div className="text-[9px] tracking-[0.35em] text-[#731515] mb-0.5 truncate uppercase">{discount.partner}</div>
-          )}
-          <div className="text-[13px] font-light text-[#1a0505] leading-snug" style={{ fontFamily: 'var(--font-syne)' }}>
-            {discount.title}
-          </div>
         </div>
-      </div>
 
-      {/* Description */}
-      {discount.description && (
-        <p className="text-[11px] text-[#7a4a4a]/70 font-light leading-relaxed" style={{ fontFamily: 'var(--font-nunito)' }}>
-          {discount.description}
-        </p>
-      )}
-
-      {/* Code chip */}
-      {discount.code && (
-        <div className="flex items-center gap-2">
-          <span className="px-3 py-1 bg-[#f8f0f0] border border-[#eddada] text-[#731515] text-[11px] font-mono rounded-lg">
-            {discount.code}
-          </span>
-        </div>
-      )}
-
-      {/* Expiry */}
-      {expiryStr && (
-        <p className="text-[10px] text-[#7a4a4a]/50" style={{ fontFamily: 'var(--font-nunito)' }}>
-          Scade il {expiryStr}
-        </p>
-      )}
-
-      {/* Actions */}
-      <div className="flex items-center gap-2 pt-1 border-t border-[#eddada] mt-auto">
         <button
-          onClick={onEdit}
-          className="flex items-center gap-1.5 text-[10px] tracking-[0.2em] text-[#7a4a4a]/60 hover:text-[#731515] transition-colors px-2.5 py-1.5 rounded-lg hover:bg-[#fdf6f6]"
-        >
-          <Pencil size={11} />
-          MODIFICA
-        </button>
-        <button
-          onClick={onToggleVisible}
-          className="flex items-center gap-1.5 text-[10px] tracking-[0.2em] text-[#7a4a4a]/60 hover:text-[#731515] transition-colors px-2.5 py-1.5 rounded-lg hover:bg-[#fdf6f6]"
-          title={discount.visible ? 'Nascondi' : 'Mostra'}
-        >
-          {discount.visible ? <EyeOff size={11} /> : <Eye size={11} />}
-          {discount.visible ? 'NASCONDI' : 'MOSTRA'}
-        </button>
-        <button
-          onClick={handleDelete}
-          disabled={deleting}
-          className={`ml-auto flex items-center gap-1.5 text-[10px] tracking-[0.2em] transition-colors px-2.5 py-1.5 rounded-lg ${
-            confirmDelete
-              ? 'text-white bg-[#731515] hover:bg-[#9b2323]'
-              : 'text-[#7a4a4a]/60 hover:text-[#731515] hover:bg-[#fdf6f6]'
+          type="button"
+          onClick={() => set('visible', !form.visible)}
+          aria-pressed={form.visible}
+          className={`inline-flex min-h-[48px] items-center gap-2 self-start rounded-full border px-4 text-fine font-medium transition-colors ${
+            form.visible ? 'border-accent bg-accent text-paper' : 'border-rule-paper text-on-paper'
           }`}
         >
-          {deleting ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />}
-          {confirmDelete ? 'CONFERMA' : 'ELIMINA'}
+          {form.visible ? <Eye size={16} strokeWidth={1.8} /> : <EyeOff size={16} strokeWidth={1.8} />}
+          {form.visible ? 'Visibile ai soci' : 'Nascosta'}
         </button>
+
+        {error && <p className="text-fine font-medium text-accent">{error}</p>}
       </div>
-    </div>
+    </Sheet>
   );
 }
 
-// ── Main component ─────────────────────────────────────────────────────────────
-
+/* ─────────────────────────────────────────────
+   Convenzioni
+───────────────────────────────────────────── */
 export default function DiscountManager({ token }: { token: string }) {
-  const [discounts, setDiscounts] = useState<Discount[]>([]);
-  const [loading,   setLoading]   = useState(true);
-  const [error,     setError]     = useState('');
-  const [modal,     setModal]     = useState<ModalState | null>(null);
-  // DiscountModal has no scroll lock of its own — use the full treatment.
-  useMobileOverlay(!!modal, () => setModal(null));
+  const [rows, setRows] = useState<Discount[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [liveToken, setLiveToken] = useState(token);
+  const [sheet, setSheet] = useState<Discount | 'new' | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
 
-  async function loadDiscounts() {
-    setLoading(true);
+  useOverlayBackClose(!!sheet, () => setSheet(null));
+
+  const load = useCallback(async () => {
     setError('');
     try {
-      const res  = await fetch('/api/discounts', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (!res.ok) { setError(data.error ?? 'Errore caricamento'); return; }
-      setDiscounts(data.discounts ?? []);
-    } catch {
-      setError('Errore di rete');
+      // La sessione si rilegge qui: il token che arriva come prop è
+      // stato letto al montaggio della pagina e dopo un'ora scade.
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const live = session?.access_token || token;
+      setLiveToken(live);
+
+      const res = await fetch('/api/discounts', { headers: { Authorization: `Bearer ${live}` } });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? 'Impossibile leggere le convenzioni.');
+      setRows(json.discounts ?? json ?? []);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Errore.');
     } finally {
       setLoading(false);
     }
-  }
-
-  useEffect(() => {
-    loadDiscounts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
-  function openCreate() {
-    setModal({ mode: 'create', discount: {} });
-  }
+  useEffect(() => {
+    load();
+  }, [load]);
 
-  function openEdit(d: Discount) {
-    setModal({ mode: 'edit', discount: d });
-  }
-
-  function handleSaved(d: Discount) {
-    setDiscounts(prev => {
-      const idx = prev.findIndex(x => x.id === d.id);
-      if (idx >= 0) {
-        const next = [...prev];
-        next[idx] = d;
-        return next;
-      }
-      return [d, ...prev];
+  /** Accende e spegne la visibilità: un tocco, senza aprire niente. */
+  async function toggle(d: Discount) {
+    setBusyId(d.id);
+    setRows((p) => p.map((x) => (x.id === d.id ? { ...x, visible: !x.visible } : x)));
+    const res = await fetch(`/api/discounts/${d.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${liveToken}` },
+      body: JSON.stringify({ visible: !d.visible }),
     });
-    setModal(null);
-  }
-
-  function handleDeleted(id: string) {
-    setDiscounts(prev => prev.filter(d => d.id !== id));
-  }
-
-  async function toggleVisible(d: Discount) {
-    const res  = await fetch(`/api/discounts/${d.id}`, {
-      method:  'PATCH',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body:    JSON.stringify({ visible: !d.visible }),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setDiscounts(prev => prev.map(x => x.id === d.id ? data.discount : x));
+    if (!res.ok) {
+      // Rimettere com'era: un interruttore che mente è peggio di uno lento.
+      setRows((p) => p.map((x) => (x.id === d.id ? { ...x, visible: d.visible } : x)));
     }
+    setBusyId(null);
+  }
+
+  async function remove(d: Discount) {
+    setBusyId(d.id);
+    const res = await fetch(`/api/discounts/${d.id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${liveToken}` },
+    });
+    if (res.ok) setRows((p) => p.filter((x) => x.id !== d.id));
+    setBusyId(null);
+    setConfirmId(null);
+  }
+
+  const now = today();
+  const { attive, scadute } = useMemo(() => {
+    const attive: Discount[] = [];
+    const scadute: Discount[] = [];
+    for (const d of rows) (isExpired(d, now) ? scadute : attive).push(d);
+    return { attive, scadute };
+  }, [rows, now]);
+
+  const visibili = attive.filter((d) => d.visible).length;
+  const nascoste = attive.length - visibili;
+
+  // Un conteggio per gruppo invece di "1 su 3": il totale mescolava le
+  // scadute, che stanno in un elenco a parte e i soci non vedono.
+  const riepilogo = [
+    `${visibili} ${visibili === 1 ? 'visibile' : 'visibili'} ai soci`,
+    nascoste > 0 && `${nascoste} ${nascoste === 1 ? 'nascosta' : 'nascoste'}`,
+    scadute.length > 0 && `${scadute.length} ${scadute.length === 1 ? 'scaduta' : 'scadute'}`,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-20">
+        <span className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+      </div>
+    );
+  }
+
+  function Card({ d }: { d: Discount }) {
+    const expired = isExpired(d, now);
+    const confirming = confirmId === d.id;
+    return (
+      <div
+        className={`flex items-start gap-3 rounded-2xl border border-rule-paper p-3.5 ${
+          expired || !d.visible ? 'opacity-60' : ''
+        }`}
+      >
+        {d.logo_url ? (
+          <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-rule-paper">
+            <Image src={d.logo_url} alt="" fill sizes="48px" className="object-contain" />
+          </span>
+        ) : (
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-paper-soft text-on-paper-muted">
+            <ImagePlus size={18} strokeWidth={1.7} />
+          </span>
+        )}
+
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-body">{d.title}</p>
+          <p className="mt-0.5 flex flex-wrap items-center gap-x-3 text-fine text-on-paper-muted">
+            {d.partner && <span className="truncate">{d.partner}</span>}
+            {d.code && <span className="tabular-nums">{d.code}</span>}
+            {d.expires_at && (
+              <span className={expired ? 'font-medium text-accent' : ''}>
+                {expired ? 'scaduta il' : 'fino al'} {fmtDate(d.expires_at)}
+              </span>
+            )}
+          </p>
+
+          <div className="mt-2.5 flex flex-wrap gap-2">
+            <button
+              onClick={() => toggle(d)}
+              disabled={busyId === d.id}
+              aria-pressed={d.visible}
+              className={`inline-flex min-h-[40px] items-center gap-2 rounded-full border px-3.5 text-fine font-medium transition-colors disabled:opacity-50 ${
+                d.visible ? 'border-accent bg-accent text-paper' : 'border-rule-paper text-on-paper'
+              }`}
+            >
+              {d.visible ? <Eye size={15} strokeWidth={1.8} /> : <EyeOff size={15} strokeWidth={1.8} />}
+              {d.visible ? 'Visibile' : 'Nascosta'}
+            </button>
+            <button
+              onClick={() => setSheet(d)}
+              className="inline-flex min-h-[40px] items-center gap-2 rounded-full border border-rule-paper px-3.5 text-fine font-medium transition-colors hover:border-accent/40"
+            >
+              <Pencil size={15} strokeWidth={1.8} />
+              Modifica
+            </button>
+            <button
+              onClick={() => (confirming ? remove(d) : setConfirmId(d.id))}
+              disabled={busyId === d.id}
+              className="inline-flex min-h-[40px] items-center gap-2 rounded-full border border-accent/40 px-3.5 text-fine font-medium text-accent transition-colors hover:bg-accent/5 disabled:opacity-50"
+            >
+              <Trash2 size={15} strokeWidth={1.8} />
+              {confirming ? 'Confermi?' : 'Elimina'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2
-            className="text-[15px] font-light text-[#1a0505]"
-            style={{ fontFamily: 'var(--font-syne)' }}
-          >
-            Gestione Sconti
-          </h2>
-          <p className="text-[11px] text-[#7a4a4a]/60 mt-0.5" style={{ fontFamily: 'var(--font-nunito)' }}>
-            {discounts.length} {discounts.length === 1 ? 'sconto' : 'sconti'} configurati
-          </p>
-        </div>
-        <button
-          onClick={openCreate}
-          className="flex items-center gap-2 bg-[#731515] text-white text-[10px] tracking-[0.25em] px-4 py-2.5 rounded-lg hover:bg-[#9b2323] transition-colors"
-        >
-          <Plus size={13} />
-          NUOVO SCONTO
-        </button>
-      </div>
+      <PageHead
+        title="Convenzioni"
+        subtitle={riepilogo}
+        action={<NewButton label="Nuova convenzione" onClick={() => setSheet('new')} />}
+      />
 
-      {/* Error */}
-      {error && (
-        <div className="bg-[#fde8e8] border border-[#731515]/20 text-[#731515] text-sm px-4 py-3 rounded-lg mb-5">
-          {error}
-        </div>
-      )}
-
-      {/* Loading */}
-      {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 size={22} className="animate-spin text-[#731515]/40" />
-        </div>
-      ) : discounts.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="w-14 h-14 rounded-full bg-[#fdf6f6] border border-[#eddada] flex items-center justify-center mb-4">
-            <Tag size={22} className="text-[#731515]/30" strokeWidth={1.5} />
-          </div>
-          <p className="text-[9px] tracking-[0.5em] text-[#7a4a4a]/40 uppercase mb-2">Nessuno sconto</p>
-          <p className="text-sm text-[#7a4a4a]/50 font-light" style={{ fontFamily: 'var(--font-nunito)' }}>
-            Crea il primo sconto cliccando "+ NUOVO SCONTO"
-          </p>
-        </div>
+      {error ? (
+        <EmptyState
+          title="Non riesco a leggere le convenzioni"
+          body={error}
+          action={<ActionButton onClick={load}>Riprova</ActionButton>}
+        />
+      ) : rows.length === 0 ? (
+        <EmptyState
+          title="Nessuna convenzione"
+          body="Gli sconti e le convenzioni che i soci trovano nella loro area."
+          action={
+            <ActionButton onClick={() => setSheet('new')}>
+              <Plus size={17} strokeWidth={2} />
+              Nuova convenzione
+            </ActionButton>
+          }
+        />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {discounts.map(d => (
-            <DiscountCard
-              key={d.id}
-              discount={d}
-              token={token}
-              onEdit={() => openEdit(d)}
-              onDeleted={() => handleDeleted(d.id)}
-              onToggleVisible={() => toggleVisible(d)}
-            />
-          ))}
+        <div className="flex flex-col gap-8">
+          <section>
+            <div className="flex flex-col gap-2">
+              {attive.map((d) => (
+                <Card key={d.id} d={d} />
+              ))}
+            </div>
+          </section>
+
+          {scadute.length > 0 && (
+            <section>
+              <h3 className="mb-2.5 flex items-baseline gap-2 text-subtitle font-medium">
+                Scadute
+                <span className="text-fine font-normal text-on-paper-muted">{scadute.length}</span>
+              </h3>
+              <p className="mb-3 text-fine text-on-paper-muted">
+                Restano qui perché sono da rinnovare, non da ritrovare. I soci non le vedono.
+              </p>
+              <div className="flex flex-col gap-2">
+                {scadute.map((d) => (
+                  <Card key={d.id} d={d} />
+                ))}
+              </div>
+            </section>
+          )}
         </div>
       )}
 
-      {/* Modal */}
-      <AnimatePresence>
-        {modal && (
-          <DiscountModal
-            state={modal}
-            token={token}
-            onClose={() => setModal(null)}
-            onSaved={handleSaved}
-          />
-        )}
-      </AnimatePresence>
+      {sheet && (
+        <DiscountSheet
+          target={sheet}
+          token={liveToken}
+          onClose={() => setSheet(null)}
+          onSaved={() => {
+            setSheet(null);
+            load();
+          }}
+        />
+      )}
     </div>
   );
 }

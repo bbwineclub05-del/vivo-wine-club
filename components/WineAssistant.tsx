@@ -204,7 +204,7 @@ export default function WineAssistant() {
   const WELCOME: Message = {
     id: 'welcome',
     role: 'assistant',
-    content: 'Ciao! Sono il tuo sommelier virtuale. Chiedimi tutto sul vino — bottiglie, abbinamenti, regioni, annate, produttori. 🍷',
+    content: 'Ciao! Sono il tuo sommelier virtuale. Chiedimi tutto sul vino: bottiglie, abbinamenti, regioni, annate, produttori. 🍷',
   };
 
   const [messages,      setMessages]      = useState<Message[]>([WELCOME]);
@@ -368,7 +368,7 @@ export default function WineAssistant() {
           <div className="flex items-center gap-2 mb-2 bg-[#fdf6f6] border border-[#eddada] rounded-xl px-3 py-2 w-fit">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={pendingImage.dataUrl} alt="Anteprima etichetta" className="w-10 h-10 rounded-lg object-cover" />
-            <span className="text-[11px] text-[#7a4a4a]" style={{ fontFamily: 'var(--font-nunito)' }}>Foto pronta — descrivi o invia direttamente</span>
+            <span className="text-[11px] text-[#7a4a4a]" style={{ fontFamily: 'var(--font-nunito)' }}>Foto pronta: descrivi o invia direttamente</span>
             <button
               onClick={() => setPendingImage(null)}
               className="w-6 h-6 rounded-full flex items-center justify-center text-[#7a4a4a]/50 hover:text-[#731515] hover:bg-white transition-colors"

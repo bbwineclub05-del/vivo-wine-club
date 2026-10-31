@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     { title: 'Classic Tee',       description: 'Soft 100% cotton tee with embroidered club crest.',             price: 35,  sizes: ['S','M','L','XL'], images: ['/merch/maglietta.png'],      sort_order: 1  },
     { title: 'Club Hoodie',       description: 'Heavyweight fleece with chest logo.',                           price: 65,  sizes: ['S','M','L','XL'], images: ['/merch/felpa.png'],           sort_order: 2  },
     { title: 'Club Cap',          description: 'Structured 6-panel cap with tonal logo.',                       price: 30,  sizes: [],                 images: ['/merch/cappellino.png'],     sort_order: 3  },
-    { title: 'Tote Bag',          description: 'Heavy canvas tote — fits two bottles.',                         price: 25,  sizes: [],                 images: ['/merch/totebag.png'],        sort_order: 4  },
+    { title: 'Tote Bag',          description: 'Heavy canvas tote, fits two bottles.',                         price: 25,  sizes: [],                 images: ['/merch/totebag.png'],        sort_order: 4  },
     { title: 'Wine Carrier',      description: 'Insulated carrier for up to 4 bottles.',                        price: 45,  sizes: [],                 images: ['/merch/portabicchiere.png'], sort_order: 5  },
     { title: 'Wine Glass',        description: 'Crystal-clear glass with engraved club logo.',                  price: 18,  sizes: [],                 images: ['/merch/bicchiere.png'],      sort_order: 6  },
     { title: 'Corkscrew',         description: "Professional-grade waiter's corkscrew.",                        price: 20,  sizes: [],                 images: ['/merch/cavatappi.png'],      sort_order: 7  },

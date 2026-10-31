@@ -1,14 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Syne, Nunito } from "next/font/google";
+import { Syne, Nunito, Geist } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/contexts/CartContext";
 import { AuthProvider } from "@/lib/auth";
 import CartDrawer from "@/components/CartDrawer";
-import CookieBanner from "@/components/CookieBanner";
+import EntryGate from "@/components/ui/EntryGate";
 import ConsentGatedScripts from "@/components/ConsentGatedScripts";
 import WineAssistantWidget from "@/components/WineAssistantWidget";
 import { NextIntlClientProvider } from 'next-intl';
-import { cookies } from 'next/headers';
+import { localeDellaRichiesta } from '@/i18n/request';
 import messagesEn from '../messages/en.json';
 import messagesIt from '../messages/it.json';
 import messagesFr from '../messages/fr.json';
@@ -27,6 +27,14 @@ const nunito = Nunito({
   variable: "--font-nunito",
   display: "swap",
   weight: ["300", "400", "500", "600", "700"],
+});
+
+// Text and UI face for the 2026 redesign. Replaces Nunito page by page;
+// Nunito stays loaded until the last legacy surface is converted.
+const geist = Geist({
+  subsets: ["latin"],
+  variable: "--font-geist",
+  display: "swap",
 });
 
 export const viewport: Viewport = {
@@ -72,17 +80,16 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const LOCALES = ['en', 'it', 'fr'] as const;
-  const cookieStore = await cookies();
-  const raw = cookieStore.get('locale')?.value ?? '';
-  const locale = (LOCALES as readonly string[]).includes(raw) ? (raw as keyof typeof MESSAGES_MAP) : 'en';
+  // La stessa scelta che fa next-intl, non una copia: cookie se c'e',
+  // altrimenti la lingua del browser.
+  const locale = await localeDellaRichiesta();
   const messages = MESSAGES_MAP[locale];
 
   return (
     <html
       lang={locale}
       translate="no"
-      className={`${syne.variable} ${nunito.variable} notranslate`}
+      className={`${syne.variable} ${nunito.variable} ${geist.variable} notranslate`}
     >
       <head>
         <meta name="google" content="notranslate" />
@@ -100,7 +107,7 @@ export default async function RootLayout({
             <CartProvider>
               {children}
               <CartDrawer />
-              <CookieBanner />
+              <EntryGate />
               <WineAssistantWidget />
             </CartProvider>
           </AuthProvider>

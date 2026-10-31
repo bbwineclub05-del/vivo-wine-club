@@ -6,173 +6,128 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { WINERIES, type Winery } from '@/lib/wineries';
 
-interface DbWinery {
+/**
+ * Le cantine del club.
+ *
+ * Prima questa griglia univa due elenchi: trentaquattro cantine
+ * scritte dentro il codice e quelle del database, tenendo le prime e
+ * scartando le omonime. Il risultato era che ciò che si correggeva
+ * dall'area riservata — nome, regione, logo — non arrivava mai qui.
+ * La fonte adesso è una, `/api/wineries`, la stessa che riempie la
+ * mappa e le schede.
+ */
+
+interface Winery {
   slug: string;
   name: string;
+  region: string | null;
+  country: string | null;
   logo_url: string | null;
-  region: string;
-  country: string;
+  classification: string | null;
+  visit_date: string | null;
 }
 
-/**
- * Normalizes free-text region values before grouping: trims stray whitespace
- * (some DB-entered wineries have trailing spaces), groups Barolo/Barbaresco
- * under one Langhe filter, and collapses any Bolgheri variant (e.g. "Toscana,
- * Bolgheri") into a single "Bolgheri" filter.
- */
-function regionGroup(region: string): string {
-  const trimmed = region.trim();
-  if (trimmed === 'Barolo' || trimmed === 'Barbaresco') return 'Barolo & Barbaresco';
-  if (/bolgheri/i.test(trimmed)) return 'Bolgheri';
-  return trimmed;
+/** Barolo e Barbaresco vivono nelle Langhe: nel filtro stanno insieme. */
+function regionGroup(region: string | null): string {
+  const r = (region ?? '').trim();
+  if (!r) return 'Altre';
+  if (/barolo|barbaresco|langhe/i.test(r)) return 'Langhe';
+  return r;
 }
 
-/**
- * Estate / winery credibility grid, filterable by region.
- * Used both as a capped preview inside the Events hub (`limit` set) and as
- * the full listing at /wineries (no `limit`, every estate shown).
- */
 export default function EstatesGrid({ limit, initialRegion }: { limit?: number; initialRegion?: string }) {
-  const t       = useTranslations('eventsHub');
+  const t = useTranslations('eventsHub');
   const tCommon = useTranslations('common');
-  const [dbWineries, setDbWineries] = useState<DbWinery[]>([]);
+  const [wineries, setWineries] = useState<Winery[]>([]);
   const [regionFilter, setRegionFilter] = useState(initialRegion ?? 'all');
 
   useEffect(() => {
     fetch('/api/wineries')
       .then((r) => r.json())
-      .then((j) => { if (Array.isArray(j.wineries)) setDbWineries(j.wineries as DbWinery[]); })
+      .then((j) => { if (Array.isArray(j.wineries)) setWineries(j.wineries as Winery[]); })
       .catch(() => {});
   }, []);
 
-  const hardcodedSlugs  = new Set(WINERIES.map((w) => w.slug));
-  const extraDbWineries = dbWineries.filter((w) => !hardcodedSlugs.has(w.slug));
-
   const regions = useMemo(() => {
     const set = new Set<string>();
-    WINERIES.forEach((w) => set.add(regionGroup(w.region)));
-    extraDbWineries.forEach((w) => { if (w.region) set.add(regionGroup(w.region)); });
+    wineries.forEach((w) => set.add(regionGroup(w.region)));
     return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [extraDbWineries]);
+  }, [wineries]);
 
-  const filteredWineries = regionFilter === 'all'
-    ? WINERIES
-    : WINERIES.filter((w) => regionGroup(w.region) === regionFilter);
-  const filteredExtra = regionFilter === 'all'
-    ? extraDbWineries
-    : extraDbWineries.filter((w) => regionGroup(w.region) === regionFilter);
+  const filtered = useMemo(
+    () =>
+      regionFilter === 'all'
+        ? wineries
+        : wineries.filter((w) => regionGroup(w.region) === regionFilter),
+    [wineries, regionFilter],
+  );
 
-  const total   = filteredWineries.length + filteredExtra.length;
-  const visibleWineries = limit ? filteredWineries.slice(0, limit) : filteredWineries;
-  const visibleExtra    = limit ? filteredExtra.slice(0, Math.max(0, limit - visibleWineries.length)) : filteredExtra;
-  const shownCount = visibleWineries.length + visibleExtra.length;
-
+  const visible = limit ? filtered.slice(0, limit) : filtered;
   const seeMoreHref = regionFilter === 'all' ? '/wineries' : `/wineries?region=${encodeURIComponent(regionFilter)}`;
 
   return (
     <>
-      {/* Region filter */}
-      <div className="flex flex-wrap gap-2 mb-8">
+      <div className="mb-8 flex flex-wrap gap-2">
         {['all', ...regions].map((r) => (
           <button
             key={r}
             onClick={() => setRegionFilter(r)}
-            className={`px-4 py-2 text-[9px] tracking-[0.25em] rounded-full border transition-all duration-200 ${
+            className={`min-h-[44px] rounded-full border px-5 text-[12px] font-medium transition-all duration-200 ${
               regionFilter === r
-                ? 'bg-[#5a1010] border-[#5a1010] text-[#F5EEE6]'
-                : 'border-white/20 text-white/60 hover:border-[#5a1010]/50 hover:text-[#5a1010]'
+                ? 'border-accent bg-accent text-paper'
+                : 'border-rule-paper text-on-paper-muted hover:border-accent/50 hover:text-accent'
             }`}
-            style={{ fontFamily: 'var(--font-nunito)' }}
           >
             {(r === 'all' ? t('filterAll') : r).toUpperCase()}
           </button>
         ))}
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {visibleWineries.map((winery: Winery, i) => (
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+        {visible.map((w, i) => (
           <motion.div
-            key={winery.slug}
+            key={w.slug}
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: '-20px' }}
             transition={{ duration: 0.55, delay: (i % 8) * 0.06 }}
           >
             <Link
-              href={`/wineries/${winery.slug}`}
-              className="group flex flex-col bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:border-[#5a1010]/50 transition-all duration-300"
+              href={`/wineries/${w.slug}`}
+              className="group flex h-full flex-col overflow-hidden rounded-2xl border border-rule-paper bg-paper transition-all duration-300 hover:border-accent/50"
             >
-              <div className="flex items-center justify-center h-28 px-6 bg-gray-50 group-hover:bg-white transition-colors duration-300">
-                {winery.logo ? (
+              <div className="flex h-28 items-center justify-center bg-paper-soft px-6 transition-colors duration-300 group-hover:bg-paper">
+                {w.logo_url ? (
                   <Image
-                    src={winery.logo}
-                    alt={winery.name}
+                    src={w.logo_url}
+                    alt={w.name}
                     width={160}
                     height={80}
-                    className="w-full h-20 object-contain transition-all duration-300"
+                    className="h-20 w-full object-contain"
                     sizes="(max-width: 768px) 45vw, 200px"
                   />
                 ) : (
-                  <div className="text-[#731515] text-2xl font-light tracking-widest opacity-50 group-hover:opacity-80 transition-opacity" style={{ fontFamily: 'var(--font-syne)' }}>
-                    {winery.name.slice(0, 2).toUpperCase()}
-                  </div>
+                  <span className="ds-display text-[22px] text-accent/50 transition-opacity group-hover:opacity-80">
+                    {w.name.slice(0, 2).toUpperCase()}
+                  </span>
                 )}
               </div>
-              <div className="flex flex-col gap-1 px-4 py-4">
-                <p className="text-[#1a0505] text-sm font-medium leading-tight group-hover:text-[#731515] transition-colors" style={{ fontFamily: 'var(--font-syne)' }}>
-                  {winery.name}
-                </p>
-                <p className="text-[#7a4a4a] text-[11px] tracking-wide">
-                  {winery.region} · {winery.country}
-                </p>
-                {winery.classification && (
-                  <p className="text-[#731515]/60 text-[10px] tracking-wide mt-0.5 leading-tight line-clamp-1">
-                    {winery.classification}
-                  </p>
-                )}
-              </div>
-            </Link>
-          </motion.div>
-        ))}
 
-        {visibleExtra.map((winery, i) => (
-          <motion.div
-            key={winery.slug}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-20px' }}
-            transition={{ duration: 0.55, delay: (i % 8) * 0.06 }}
-          >
-            <Link
-              href={`/wineries/${winery.slug}`}
-              className="group flex flex-col bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:border-[#5a1010]/50 transition-all duration-300"
-            >
-              <div className="flex items-center justify-center h-28 px-6 bg-gray-50 group-hover:bg-white transition-colors duration-300">
-                {winery.logo_url ? (
-                  <Image
-                    src={winery.logo_url}
-                    alt={winery.name}
-                    width={160}
-                    height={80}
-                    className="w-full h-20 object-contain transition-all duration-300"
-                    sizes="(max-width: 768px) 45vw, 200px"
-                  />
-                ) : (
-                  <div className="text-[#731515] text-2xl font-light tracking-widest opacity-50 group-hover:opacity-80 transition-opacity" style={{ fontFamily: 'var(--font-syne)' }}>
-                    {winery.name.slice(0, 2).toUpperCase()}
-                  </div>
-                )}
-              </div>
-              <div className="flex flex-col gap-1 px-4 py-4">
-                <p className="text-[#1a0505] text-sm font-medium leading-tight group-hover:text-[#731515] transition-colors" style={{ fontFamily: 'var(--font-syne)' }}>
-                  {winery.name}
+              <div className="flex flex-1 flex-col gap-1 px-4 py-4">
+                <p className="text-body font-medium leading-tight transition-colors group-hover:text-accent">
+                  {w.name}
                 </p>
-                {(winery.region || winery.country) && (
-                  <p className="text-[#7a4a4a] text-[11px] tracking-wide">
-                    {[winery.region, winery.country].filter(Boolean).join(' · ')}
+                {(w.region || w.country) && (
+                  <p className="text-fine text-on-paper-muted">
+                    {[w.region, w.country].filter(Boolean).join(' · ')}
                   </p>
+                )}
+                {w.classification && (
+                  <p className="line-clamp-1 text-[11px] leading-tight text-accent/60">{w.classification}</p>
+                )}
+                {w.visit_date && (
+                  <p className="mt-auto pt-2 text-[11px] text-accent">Visitata dal club</p>
                 )}
               </div>
             </Link>
@@ -180,12 +135,11 @@ export default function EstatesGrid({ limit, initialRegion }: { limit?: number; 
         ))}
       </div>
 
-      {limit && total > shownCount && (
-        <div className="flex justify-center mt-10">
+      {limit && filtered.length > visible.length && (
+        <div className="mt-10 flex justify-center">
           <Link
             href={seeMoreHref}
-            className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] text-white border border-white/20 px-6 py-3 rounded-lg hover:bg-white/10 hover:border-white/50 transition-all duration-300"
-            style={{ fontFamily: 'var(--font-nunito)' }}
+            className="inline-flex min-h-[48px] items-center gap-2 rounded-full border border-rule-paper px-6 text-fine font-medium transition-colors duration-200 hover:border-accent/50 hover:text-accent"
           >
             {tCommon('exploreMore')}
             <ArrowRight size={12} />

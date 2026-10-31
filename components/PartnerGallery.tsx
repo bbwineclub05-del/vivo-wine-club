@@ -44,7 +44,7 @@ export default function PartnerGallery({ slug, name }: { slug: string; name: str
               <div key={src} className="relative aspect-square overflow-hidden rounded-lg">
                 <Image
                   src={src}
-                  alt={`${name} — foto ${i + 1}`}
+                  alt={`${name}, foto ${i + 1}`}
                   fill
                   className="object-cover"
                   sizes="(max-width: 768px) 45vw, 180px"

@@ -93,9 +93,14 @@ export default function WineMap({ markers, selectedSlug, onMarkerClick, onMapPic
       const Lref = Lmod.default;
 
       const map = Lref.map(containerRef.current, { zoomControl: true, scrollWheelZoom: true }).setView([44.5, 8.5], 5);
-      Lref.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a> &copy; OpenStreetMap',
-        subdomains: 'abcd', maxZoom: 19,
+      // OpenStreetMap, senza chiave. Le tessere chiare di CARTO che
+      // c'erano prima adesso tornano timbrate "API KEY REQUIRED" sopra
+      // la mappa: rispondono 200, quindi niente segnalava il problema,
+      // ma la scritta copriva mezza cartina. Il filtro qui sotto le
+      // scolora quel tanto che basta a farle somigliare al resto.
+      Lref.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 19,
       }).addTo(map);
 
       markerLayerRef.current = Lref.layerGroup().addTo(map);
@@ -153,5 +158,28 @@ export default function WineMap({ markers, selectedSlug, onMarkerClick, onMapPic
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mapReady, flyTo?.lat, flyTo?.lng, flyTo?.zoom, flyTo?.key]);
 
-  return <div ref={containerRef} className={`w-full ${heightClassName}`} />;
+  return (
+    <>
+      {/* Le tessere scolorate: la mappa resta leggibile ma smette di
+          litigare con i colori del sito. */}
+      <style jsx global>{`
+        /* Leaflet dà ai suoi strati z-index alti (fino a 800 per i
+           controlli), che senza un contesto di impilamento proprio
+           passano sopra ai pannelli dell'area riservata: la mappa della
+           pagina sotto si vedeva attraverso il foglio aperto. */
+        .vivo-map {
+          position: relative;
+          z-index: 0;
+          isolation: isolate;
+        }
+        .vivo-map .leaflet-tile-pane {
+          filter: grayscale(0.82) contrast(0.92) brightness(1.06);
+        }
+        .vivo-map .leaflet-container {
+          background: var(--color-paper-soft, #f5f0ee);
+        }
+      `}</style>
+      <div ref={containerRef} className={`vivo-map w-full ${heightClassName}`} />
+    </>
+  );
 }

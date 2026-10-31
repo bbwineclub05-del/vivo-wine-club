@@ -1,13 +1,15 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { getAuthUser } from '@/lib/auth-guard';
-import { isSuperAdmin, isAdminEmail, FOUNDERS } from '@/lib/admins';
+import { isAdminEmail, FOUNDERS } from '@/lib/admins';
+import { fullPermissions, normalizePermissions } from '@/lib/access';
 
-const DEFAULT_PERMISSIONS = {
-  tasks: true, events: true, news: true, crm: true,
-  media: true, scanner: true, analytics: true, pipeline: true,
-  merch: true, documents: true,
-};
+// Chi entra entra con tutto acceso, e poi si spegne quello che non
+// serve. Prima questa lista era scritta a mano con le chiavi di due
+// riorganizzazioni fa — news, media, pipeline — e non nominava né
+// Finance né PED né Membership: quelle sezioni restavano aperte a
+// chiunque perché nessuno le aveva mai scritte.
+const DEFAULT_PERMISSIONS = fullPermissions();
 
 /** Name lookup: founders first, then user_metadata, then email prefix. */
 const FOUNDER_NAME: Record<string, string> = Object.fromEntries(
@@ -26,7 +28,8 @@ function resolveName(email: string, meta: Record<string, string> | null): string
 async function assertSuperAdmin(request: Request) {
   const auth = await getAuthUser(request);
   if (!auth.ok) return { ok: false as const, response: auth.response };
-  if (!isSuperAdmin(auth.email)) {
+  // Team Management is board-only: staff can neither see it nor write to it.
+  if (!isAdminEmail(auth.email)) {
     return { ok: false as const, response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
   }
   return { ok: true as const };
@@ -112,6 +115,7 @@ export async function GET(request: Request) {
     const au = authByEmail.get(m.email as string);
     return {
       ...m,
+      permissions:    normalizePermissions(m.permissions as Record<string, boolean> | null),
       name:           m.name || resolveName(m.email as string, au?.user_metadata as Record<string, string> ?? null),
       email_confirmed: au?.email_confirmed_at != null,
       last_sign_in:    au?.last_sign_in_at ?? null,

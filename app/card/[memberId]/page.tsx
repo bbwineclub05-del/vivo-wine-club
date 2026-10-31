@@ -38,10 +38,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!card) return { title: 'Vivo Wine Club' };
 
   return {
-    title:       `${card.name} — Vivo Wine Club`,
+    title:       `${card.name} | Vivo Wine Club`,
     description: `${card.name} is a ${card.tier} of Vivo Wine Club, member since ${card.memberSince}.`,
     openGraph: {
-      title:       `${card.name} — Vivo Wine Club`,
+      title:       `${card.name} | Vivo Wine Club`,
       description: `${card.tier} · Member since ${card.memberSince}`,
       siteName:    'Vivo Wine Club',
     },

@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback, Suspense } from 'react';
+import { Caricamento } from '@/components/ui/Caricamento';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import { CheckCircle, XCircle, Loader2, QrCode, KeyRound, RotateCcw } from 'lucide-react';
-import { ADMIN_EMAILS } from '@/lib/admins';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -81,8 +81,8 @@ function QrScanner({ onScan, paused }: { onScan: (token: string) => void; paused
 function ResultScreen({ result, onReset }: { result: ScanResult; onReset: () => void }) {
   if (result.status === 'loading') {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 py-8">
-        <Loader2 size={40} className="animate-spin text-[#731515]" />
+      <div className="flex flex-col items-center justify-center gap-4 py-8 text-[#731515]">
+        <Caricamento dimensione={120} />
         <p className="text-sm text-[#7a4a4a] tracking-widest">VERIFYING…</p>
       </div>
     );
@@ -165,12 +165,23 @@ function CheckinContent() {
   const [manualToken,  setManualToken]  = useState('');
 
   // ── Auth check ──
+  //
+  // La domanda la fa Team Management, non il ruolo scritto nel token:
+  // prima bastava avere ruolo "staff", quindi chi era stato spento o a
+  // cui era stato tolto lo scanner entrava lo stesso, e un admin
+  // invitato dal pannello (che staff non è) restava fuori.
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { setAuthState('unauthorized'); return; }
-      const role  = session.user.app_metadata?.role ?? session.user.user_metadata?.role;
-      const email = session.user.email ?? '';
-      if (role !== 'staff' && !ADMIN_EMAILS.includes(email)) {
+      try {
+        const res = await fetch('/api/team/me', {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        const data = res.ok ? await res.json() : null;
+        if (!data?.active || data.permissions?.scanner === false) {
+          setAuthState('not_staff'); return;
+        }
+      } catch {
         setAuthState('not_staff'); return;
       }
       setAccessToken(session.access_token);

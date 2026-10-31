@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { isAdminEmail } from '@/lib/admins';
+import { requirePermission } from '@/lib/auth-guard';
 
 /**
  * POST /api/checkin
@@ -13,25 +13,11 @@ import { isAdminEmail } from '@/lib/admins';
  */
 export async function POST(request: Request) {
   // ── Auth ──────────────────────────────────────────────────────────────────────
-  const authHeader  = request.headers.get('Authorization');
-  const accessToken = authHeader?.replace('Bearer ', '').trim();
-
-  if (!accessToken) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const { data: { user }, error: authError } =
-    await getSupabaseAdmin().auth.getUser(accessToken);
-
-  if (authError || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const role      = user.app_metadata?.role ?? user.user_metadata?.role;
-  const userEmail = user.email ?? '';
-  if (role !== 'staff' && !isAdminEmail(userEmail)) {
-    return NextResponse.json({ error: 'Forbidden — staff or admin only' }, { status: 403 });
-  }
+  // Lo scanner è una funzionalità come le altre: chi ha l'interruttore
+  // spento in Team Management non deve poter timbrare un biglietto,
+  // nemmeno chiamando l'API a mano. Prima bastava avere ruolo "staff".
+  const auth = await requirePermission(request, 'scanner');
+  if (!auth.ok) return auth.response;
 
   // ── Token ─────────────────────────────────────────────────────────────────────
   const body  = await request.json();
@@ -42,7 +28,7 @@ export async function POST(request: Request) {
 
   const db  = getSupabaseAdmin() as any; // eslint-disable-line @typescript-eslint/no-explicit-any
   const now = new Date().toISOString();
-  const by  = user.email ?? user.id;
+  const by  = auth.email || auth.userId;
 
   // ── Atomic check-in ──────────────────────────────────────────────────────────
   // Try to update by qr_code first (new tickets), then by order_id (legacy).

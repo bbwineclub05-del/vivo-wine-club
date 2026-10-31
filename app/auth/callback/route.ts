@@ -20,6 +20,11 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // No code present — send back to login.
-  return NextResponse.redirect(`${origin}/login`);
+  // Niente codice. Puo' voler dire due cose: che qualcuno e' passato
+  // di qui a mano, oppure che la sessione viaggia dopo il cancelletto
+  // — e quella parte dell'indirizzo al server non arriva. In quel
+  // secondo caso il browser se la porta dietro nel reindirizzamento,
+  // quindi si manda alla pagina che la sa usare invece che al login,
+  // che la butterebbe via facendo entrare senza cambiare niente.
+  return NextResponse.redirect(`${origin}/reset-password`);
 }

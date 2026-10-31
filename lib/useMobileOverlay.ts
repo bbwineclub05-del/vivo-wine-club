@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useLayoutEffect, useRef } from 'react';
+import { registerOverlay } from './overlay-stack';
 
 /**
  * Locks scroll on both `<body>` and the app's real scroll container while
@@ -37,35 +38,27 @@ export function useScrollLock(active: boolean) {
  * improvement over today (back leaves the app entirely), and covers the
  * overwhelming majority of cases where only one overlay is open at a time.
  */
+/**
+ * Fa sì che il tasto indietro del telefono chiuda un pannello invece
+ * di uscire dall'area.
+ *
+ * Non spinge più una tappa nella cronologia per conto suo: si mette in
+ * fila nella pila dei pannelli aperti, e il tasto indietro lo gestisce
+ * l'area riservata in un posto solo (vedi lib/overlay-stack.ts). Il
+ * giro di prima — spingi una tappa, poi riprendila — faceva chiudere
+ * da solo il pannello che prendeva il posto di un altro.
+ */
 export function useOverlayBackClose(active: boolean, onClose: () => void) {
   const onCloseRef = useRef(onClose);
   useLayoutEffect(() => { onCloseRef.current = onClose; });
-  const closingViaBack = useRef(false);
 
   useEffect(() => {
     if (!active) return;
-    closingViaBack.current = false;
-    history.pushState({ vivoOverlay: true }, '');
-    const handlePopState = () => {
-      closingViaBack.current = true;
-      onCloseRef.current();
-    };
-    window.addEventListener('popstate', handlePopState);
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-      if (!closingViaBack.current && history.state?.vivoOverlay) {
-        history.back();
-      }
-    };
+    return registerOverlay(() => onCloseRef.current());
   }, [active]);
 }
 
-/**
- * Convenience wrapper combining both behaviours above, for overlays that
- * don't already implement their own scroll lock. If a component already
- * locks scroll correctly on its own, use `useOverlayBackClose` alone instead
- * to avoid a redundant second lock on the same element.
- */
+/** Blocco dello scorrimento e tasto indietro insieme, per un pannello. */
 export function useMobileOverlay(active: boolean, onClose: () => void) {
   useScrollLock(active);
   useOverlayBackClose(active, onClose);

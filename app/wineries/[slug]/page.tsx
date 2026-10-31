@@ -1,245 +1,185 @@
 import { notFound } from 'next/navigation';
-import Image from 'next/image';
 import Link from 'next/link';
+import { getLocale, getTranslations } from 'next-intl/server';
 import { ArrowLeft, MapPin } from 'lucide-react';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
-import { getWineryBySlug, WINERIES } from '@/lib/wineries';
+import { SiteFooter } from '@/components/ui/SiteFooter';
+import { SiteNav } from '@/components/ui/SiteNav';
+import { Section } from '@/components/ui/Section';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import WineryGallery from '@/components/WineryGallery';
+import WineryPhotos from '@/components/WineryPhotos';
+import WineryLocation from '@/components/WineryLocation';
 
-// Pre-render the 48 hardcoded winery pages at build time.
-// New DB-based wineries are rendered on demand (dynamicParams = true).
-export const dynamicParams = true;
+/**
+ * La scheda di una cantina.
+ *
+ * Prima questa pagina leggeva prima di tutto un elenco scritto dentro
+ * il codice, e solo se non trovava niente guardava il database. Le
+ * trentaquattro cantine presenti in entrambi mostravano quindi la
+ * versione del codice: foto caricate, posizione corretta a mano,
+ * descrizione riscritta dall'area riservata — niente di tutto questo
+ * arrivava mai al sito. Adesso la fonte è una sola, il database, che è
+ * anche l'unica che si può modificare senza un rilascio.
+ */
 
-export function generateStaticParams() {
-  return WINERIES.map((w) => ({ slug: w.slug }));
+/**
+ * Pagina dinamica, non in cache.
+ *
+ * La lingua arriva da un cookie: una pagina messa in cache verrebbe
+ * servita a tutti nella lingua di chi l'ha chiesta per primo. E le
+ * schede si modificano dall'area riservata, quindi la correzione deve
+ * vedersi subito, non dopo cinque minuti.
+ */
+export const dynamic = 'force-dynamic';
+
+interface Winery {
+  slug: string;
+  name: string;
+  logo_url: string | null;
+  region: string | null;
+  country: string | null;
+  classification: string | null;
+  short_description: string | null;
+  description: string | null;
+  visit_date: string | null;
+  event_slug: string | null;
+  lat: number | null;
+  lng: number | null;
 }
 
-/* ── DB winery shape ── */
-interface DbWinery {
-  slug:        string;
-  name:        string;
-  logo_url:    string | null;
-  region:      string;
-  country:     string;
-  description: string;
-  visit_date:  string | null;
+interface Wine {
+  id: string;
+  name: string;
+  vintage: string | null;
+  grape: string | null;
+  rating: number | null;
+  note: string | null;
 }
 
-/* ── Bottle icon fallback ── */
-function BottleIcon() {
-  return (
-    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M8 2h8" />
-      <path d="M9 2v2.5c0 .8-.4 1.5-1 2L6 8.5C5.4 9 5 9.7 5 10.5V20a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9.5c0-.8-.4-1.5-1-2L16 6.5c-.6-.5-1-1.2-1-2V2" />
-    </svg>
-  );
+/** La data nella lingua di chi legge, non in quella di chi scrive. */
+function fmtDate(iso: string, locale: string) {
+  return new Date(`${iso.slice(0, 10)}T12:00:00Z`).toLocaleDateString(locale, {
+    day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
+  });
 }
 
-/* ── Shared page shell ── */
-function WineryPageShell({
-  slug,
-  name,
-  logo,
-  region,
-  country,
-  classification,
-  description,
-}: {
-  slug:            string;
-  name:            string;
-  logo:            string | null;
-  region:          string;
-  country:         string;
-  classification?: string;
-  description:     string[];
-}) {
-  return (
-    <>
-      <Navbar />
-      <main className="min-h-screen pt-16">
-
-        {/* ── Back link ── */}
-        <div className="max-w-5xl mx-auto px-6 lg:px-10 pt-6">
-          <Link
-            href="/events#estates"
-            className="inline-flex items-center gap-2 text-[10px] tracking-[0.3em] text-[#7a4a4a] hover:text-[#731515] transition-colors duration-300 group"
-          >
-            <ArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform duration-300" />
-            WINE VISITS
-          </Link>
-        </div>
-
-        {/* ── HERO ── */}
-        <section className="relative overflow-hidden py-20 md:py-28">
-          <div className="fog-center" />
-
-          <div className="max-w-5xl mx-auto px-6 lg:px-10">
-            <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 lg:gap-16">
-
-              {/* Text side */}
-              <div className="flex-1">
-                <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-4">WINERY</div>
-                <h1
-                  className="text-[clamp(2.4rem,7vw,5.5rem)] font-light text-[#1a0505] leading-none section-title mb-5"
-                  style={{ fontFamily: 'var(--font-syne)' }}
-                >
-                  {name}
-                </h1>
-
-                {(region || country) && (
-                  <div className="flex items-center gap-2 text-sm text-[#7a4a4a] mb-4">
-                    <MapPin size={13} className="text-[#731515] shrink-0" />
-                    <span>{[region, country].filter(Boolean).join(', ')}</span>
-                  </div>
-                )}
-
-                {classification && (
-                  <div className="text-[10px] tracking-[0.2em] text-[#7a4a4a]/70 mb-6"
-                    style={{ fontFamily: 'var(--font-nunito)' }}>
-                    {classification}
-                  </div>
-                )}
-
-                <span className="inline-flex items-center gap-2 text-[9px] tracking-[0.3em] px-4 py-2 border border-[#731515]/30 text-[#731515] rounded-lg">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#731515] inline-block" />
-                  VISITED BY VIVO WINE CLUB
-                </span>
-              </div>
-
-              {/* Logo side */}
-              {logo ? (
-                <div className="shrink-0 w-full lg:w-56 xl:w-64">
-                  <div className="relative bg-white border border-[#e8d5d5] p-6 flex items-center justify-center rounded-lg" style={{ height: '180px' }}>
-                    <Image
-                      src={logo}
-                      alt={name}
-                      fill
-                      className="object-contain p-6"
-                      sizes="(max-width: 1024px) 80vw, 256px"
-                      priority
-                    />
-                  </div>
-                </div>
-              ) : (
-                <div className="shrink-0 w-full lg:w-56 xl:w-64">
-                  <div className="bg-white border border-[#e8d5d5] flex items-center justify-center text-[#731515]/30 rounded-lg" style={{ height: '180px' }}>
-                    <BottleIcon />
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </section>
-
-        {/* ── ABOUT ── */}
-        {description.length > 0 && description.some(p => p.trim()) && (
-          <section className="relative overflow-hidden pb-20 md:pb-24">
-            <div className="fog-left" style={{ top: '10%' }} />
-
-            <div className="max-w-5xl mx-auto px-6 lg:px-10">
-              <div className="w-full h-px bg-gradient-to-r from-[#731515]/30 via-[#731515]/10 to-transparent mb-16" />
-
-              <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr] gap-12 lg:gap-20 items-start">
-                <div>
-                  <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-3">ABOUT</div>
-                  <h2
-                    className="text-2xl font-light text-[#1a0505] leading-snug"
-                    style={{ fontFamily: 'var(--font-syne)' }}
-                  >
-                    The Estate
-                  </h2>
-                </div>
-
-                <div className="flex flex-col gap-6">
-                  {description.map((para, i) => (
-                    <p
-                      key={i}
-                      className="text-base md:text-lg text-[#7a4a4a] font-light leading-relaxed"
-                      style={{ fontFamily: 'var(--font-nunito)' }}
-                    >
-                      {para}
-                    </p>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* ── OUR VISIT ── */}
-        <section className="relative overflow-hidden pb-28 md:pb-32">
-          <div className="fog-right" style={{ top: '5%' }} />
-
-          <div className="max-w-5xl mx-auto px-6 lg:px-10">
-            <div className="w-full h-px bg-gradient-to-r from-[#731515]/30 via-[#731515]/10 to-transparent mb-14" />
-
-            <div className="mb-10">
-              <div className="text-[10px] tracking-[0.5em] text-[#731515] mb-3">OUR VISIT</div>
-              <h2
-                className="text-[clamp(2rem,5vw,3.5rem)] font-light text-[#1a0505] leading-none"
-                style={{ fontFamily: 'var(--font-syne)' }}
-              >
-                Gallery
-              </h2>
-            </div>
-
-            <WineryGallery slug={slug} />
-          </div>
-        </section>
-
-      </main>
-      <Footer />
-    </>
-  );
-}
-
-/* ── Page ── */
-export default async function WineryPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export default async function WineryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  const t = await getTranslations('winery');
+  const locale = await getLocale();
 
-  // 1. Try the 48 hardcoded wineries first
-  const hardcoded = getWineryBySlug(slug);
-  if (hardcoded) {
-    return (
-      <WineryPageShell
-        slug={hardcoded.slug}
-        name={hardcoded.name}
-        logo={hardcoded.logo ?? null}
-        region={hardcoded.region}
-        country={hardcoded.country}
-        classification={hardcoded.classification}
-        description={hardcoded.description}
-      />
-    );
-  }
-
-  // 2. Fall back to the DB (auto-created from past winery_visit events)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db = getSupabaseAdmin() as any;
-  const { data } = await db.from('wineries').select('*').eq('slug', slug).maybeSingle();
-  if (!data) notFound();
+  const [{ data: winery }, { data: wineRows }] = await Promise.all([
+    db.from('wineries').select('*').eq('slug', slug).maybeSingle(),
+    db.from('winery_wines').select('*').eq('winery_slug', slug).order('sort_order'),
+  ]);
 
-  const winery = data as DbWinery;
+  if (!winery) notFound();
 
-  // DB description is a plain string — split on double newlines to get paragraphs
-  const paragraphs = winery.description
-    ? winery.description.split(/\n\n+/).map((p: string) => p.trim()).filter(Boolean)
-    : [];
+  const w = winery as Winery;
+  const wines = (wineRows ?? []) as Wine[];
+  const paragraphs = (w.description ?? '')
+    .split(/\n\n+/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  const place = [w.region, w.country].filter(Boolean).join(', ');
 
   return (
-    <WineryPageShell
-      slug={winery.slug}
-      name={winery.name}
-      logo={winery.logo_url}
-      region={winery.region}
-      country={winery.country}
-      description={paragraphs}
-    />
+    <>
+      <SiteNav />
+      <main className="ds bg-paper text-on-paper">
+        {/* ── Chi è ── */}
+        {/* Non `bleed`: quello toglie il margine laterale, e va bene
+            per i titoli a tutta pagina. Qui dentro c'e' del testo, e
+            senza margine il nome della cantina toccava il bordo
+            dello schermo. */}
+        <Section width="wide" className="pt-band">
+          <Link
+            href="/wineries"
+            className="ds-link group mb-8 inline-flex min-h-[48px] items-center gap-2 text-body no-underline hover:text-accent"
+          >
+            <ArrowLeft size={16} strokeWidth={1.75} className="transition-transform duration-300 group-hover:-translate-x-0.5" />
+            {t('backToWineries')}
+          </Link>
+
+          <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+            <div className="min-w-0">
+              <h1 className="ds-display text-[clamp(2.1rem,7vw,4rem)] leading-[0.95] tracking-[-0.03em]">
+                {w.name}
+              </h1>
+
+              {place && (
+                <p className="mt-4 flex items-center gap-2 text-lead text-on-paper-muted">
+                  <MapPin size={17} strokeWidth={1.8} className="shrink-0 text-accent" />
+                  {place}
+                </p>
+              )}
+
+              {w.classification && (
+                <p className="mt-2 text-body text-on-paper-muted">{w.classification}</p>
+              )}
+
+              {w.visit_date && (
+                <p className="mt-5 inline-flex items-center rounded-full border border-accent/35 bg-accent/8 px-4 py-1.5 text-fine text-accent">
+                  {t('visitedOn', { date: fmtDate(w.visit_date, locale) })}
+                </p>
+              )}
+            </div>
+
+            {w.logo_url && (
+              <div className="flex w-full max-w-[260px] shrink-0 items-center justify-center rounded-2xl border border-rule-paper bg-paper-soft p-6">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={w.logo_url} alt={w.name} className="max-h-24 w-auto object-contain" />
+              </div>
+            )}
+          </div>
+        </Section>
+
+        {/* ── Dov'è, davvero ── */}
+        {w.lat != null && w.lng != null && (
+          <Section tight>
+            <WineryLocation name={w.name} lat={w.lat} lng={w.lng} />
+          </Section>
+        )}
+
+        {/* ── Le foto della visita ── */}
+        <Section tight>
+          <WineryPhotos slug={w.slug} />
+        </Section>
+
+        {/* ── I vini assaggiati ── */}
+        {wines.length > 0 && (
+          <Section tight>
+            <h2 className="ds-display mb-6 text-[26px] leading-none tracking-[-0.02em]">
+              {t('whatWeTasted')}
+            </h2>
+            <div className="divide-y divide-rule-paper">
+              {wines.map((wine) => (
+                <div key={wine.id} className="flex flex-wrap items-baseline gap-x-4 gap-y-1 py-4">
+                  <span className="text-body font-medium">{wine.name}</span>
+                  {wine.vintage && <span className="ds-numeric text-body text-on-paper-muted">{wine.vintage}</span>}
+                  {wine.grape && <span className="text-fine text-on-paper-muted">{wine.grape}</span>}
+                  {wine.note && <p className="w-full text-fine text-on-paper-muted">{wine.note}</p>}
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {/* ── La storia ── */}
+        {paragraphs.length > 0 && (
+          <Section tight className="pb-band">
+            <h2 className="ds-display mb-6 text-[26px] leading-none tracking-[-0.02em]">{t('theEstate')}</h2>
+            <div className="flex max-w-[68ch] flex-col gap-5">
+              {paragraphs.map((p, i) => (
+                <p key={i} className="text-lead text-on-paper-muted">{p}</p>
+              ))}
+            </div>
+          </Section>
+        )}
+      </main>
+
+      <SiteFooter />
+    </>
   );
 }

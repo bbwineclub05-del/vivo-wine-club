@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { supabase } from '@/lib/supabase';
 import { dbEventToEventData, type DbEvent } from '@/lib/events';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { sendEventConfirmationEmails } from '@/app/api/checkout/event/route';
-import { sendMerchOrderConfirmation } from '@/lib/merch-email';
+import { sendMerchOrderConfirmation, sendMerchOrderNotification } from '@/lib/merch-email';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2026-04-22.dahlia',
@@ -63,6 +62,7 @@ export async function GET(request: Request) {
         qty,
         total,
         partnerCode: meta.partner_code || undefined,
+        locale:      meta.locale || null,
         consentPrivacyAcceptedAt:   meta.consent_privacy_at,
         consentPrivacyVersion:      meta.consent_privacy_version,
         consentTermsAcceptedAt:     meta.consent_terms_at,
@@ -126,11 +126,28 @@ export async function GET(request: Request) {
     // ── Merch order — mark discount code as used + save to merch_orders ─────────
     const code = meta.discount_code;
     if (code) {
-      await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: dc } = await (getSupabaseAdmin() as any)
         .from('discount_codes')
-        .update({ used: true })
+        .select('id, reusable, uses')
         .eq('code', code)
-        .eq('used', false);
+        .maybeSingle();
+
+      if (dc?.reusable) {
+        // Il codice dei soci resta valido: si tiene solo il conto.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (getSupabaseAdmin() as any)
+          .from('discount_codes')
+          .update({ uses: (dc.uses ?? 0) + 1 })
+          .eq('id', dc.id);
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (getSupabaseAdmin() as any)
+          .from('discount_codes')
+          .update({ used: true })
+          .eq('code', code)
+          .eq('used', false);
+      }
     }
 
     // Persist order for admin panel (idempotent via stripe_session_id UNIQUE)
@@ -211,19 +228,46 @@ export async function GET(request: Request) {
         console.error('[confirm] stock decrement error (non-fatal):', stockErr);
       }
 
-      // Send order confirmation email
-      if (customerEmail) {
-        try {
-          await sendMerchOrderConfirmation({
-            to:    customerEmail,
-            name:  customerName,
-            items,
-            total,
-          });
-        } catch (emailErr) {
-          console.error('[confirm] merch confirmation email error (non-fatal):', emailErr);
+      // Le mail dell'ordine: la conferma a chi ha comprato, nella
+      // lingua in cui stava navigando, e l'avviso a noi che c'e' da
+      // preparare un pacco. L'avviso parte anche se l'indirizzo del
+      // cliente manca, perche' l'ordine esiste comunque e qualcuno lo
+      // deve evadere.
+      const indirizzo = [
+        shipping?.line1,
+        shipping?.line2,
+        [shipping?.postal_code, shipping?.city].filter(Boolean).join(' '),
+        [shipping?.state, shipping?.country].filter(Boolean).join(' '),
+      ].filter(Boolean).join(', ') || null;
+
+      const esiti = await Promise.allSettled([
+        customerEmail
+          ? sendMerchOrderConfirmation({
+              to:    customerEmail,
+              name:  customerName,
+              items,
+              total,
+              locale: meta.locale || null,
+            })
+          : Promise.resolve(),
+        sendMerchOrderNotification({
+          name:  customerName,
+          email: customerEmail,
+          items,
+          total,
+          phone,
+          indirizzo,
+          note: deliveryNotes,
+        }),
+      ]);
+      esiti.forEach((esito, i) => {
+        if (esito.status === 'rejected') {
+          console.error(
+            `[confirm] mail merch ${i === 0 ? 'al cliente' : 'a noi'} non mandata (non-fatal):`,
+            esito.reason,
+          );
         }
-      }
+      });
     } catch (orderErr) {
       console.error('[confirm] merch_orders upsert error (non-fatal):', orderErr);
     }

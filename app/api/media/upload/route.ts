@@ -32,6 +32,9 @@ export async function POST(request: Request) {
     // .rotate() with no args reads the EXIF Orientation tag and auto-corrects
     // the rotation — fixes upside-down/sideways photos from smartphones.
     let processedBuffer: Buffer;
+    let estensione = 'webp';
+    let tipo = 'image/webp';
+
     try {
       processedBuffer = await sharp(inputBuffer)
         .rotate()
@@ -39,15 +42,45 @@ export async function POST(request: Request) {
         .webp({ quality: 88 })
         .toBuffer();
     } catch {
-      // Fallback: upload original (e.g. SVG or corrupt image)
+      /**
+       * La conversione non e' riuscita. Prima qui si caricava il file
+       * originale chiamandolo `.webp` e dichiarandolo `image/webp`:
+       * il caricamento sembrava andato a buon fine e il file era
+       * illeggibile per qualunque browser.
+       *
+       * E' successo davvero, con cinque foto di una visita in
+       * cantina: erano HEIC appena uscite da un iPhone, sharp non le
+       * sa aprire, e sul sito restavano cinque riquadri vuoti senza
+       * che nessuno se ne accorgesse.
+       *
+       * Un SVG passa com'e', perche' e' un formato che il browser
+       * legge benissimo. Tutto il resto viene respinto dicendo cosa
+       * fare, invece di mentire sul risultato.
+       */
+      const nome = (file.name ?? '').toLowerCase();
+      const svg = nome.endsWith('.svg') || file.type === 'image/svg+xml';
+
+      if (!svg) {
+        return NextResponse.json(
+          {
+            error:
+              'Non riesco a leggere questa immagine. Se arriva da un iPhone e' +
+              ' probabilmente in formato HEIC: esportala in JPG o PNG e riprova.',
+          },
+          { status: 415 },
+        );
+      }
+
       processedBuffer = inputBuffer;
+      estensione = 'svg';
+      tipo = 'image/svg+xml';
     }
 
-    const storagePath = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.webp`;
+    const storagePath = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${estensione}`;
 
     const { error: uploadError } = await supabase.storage
       .from(BUCKET)
-      .upload(storagePath, processedBuffer, { contentType: 'image/webp', upsert: false });
+      .upload(storagePath, processedBuffer, { contentType: tipo, upsert: false });
 
     if (uploadError) {
       return NextResponse.json({ error: uploadError.message }, { status: 500 });

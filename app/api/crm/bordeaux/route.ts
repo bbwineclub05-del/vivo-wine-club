@@ -40,7 +40,7 @@ export async function POST(request: Request) {
 
     const { data, error } = await db()
       .from('contacts_bordeaux')
-      .insert({ company: company || '', name: name || '', email: email || '', phone: phone || '', last_follow_up: last_follow_up || null, note: note || '' })
+      .insert({ company: company || '', name: name || '', email: email || '', phone: phone || '', last_follow_up: last_follow_up || null, note: note || '', stage: body.stage || 'new', owner_email: body.owner_email || null, next_action_at: body.next_action_at || null })
       .select()
       .single();
 

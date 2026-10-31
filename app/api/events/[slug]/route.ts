@@ -78,12 +78,22 @@ export async function PATCH(
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    const aggiorna = (b: Record<string, unknown>) => (supabase as any)
       .from('events')
-      .update({ ...body, updated_at: new Date().toISOString() })
+      .update({ ...b, updated_at: new Date().toISOString() })
       .eq('slug', slug)
       .select()
       .single();
+
+    let { data, error } = await aggiorna(body);
+
+    /* Come nella POST: senza la colonna `members_only` l'evento si
+       salva comunque, solo senza la targhetta. */
+    if (error && /members_only/.test(error.message ?? '')) {
+      console.warn('[events PATCH] colonna members_only assente: migration da applicare');
+      const { members_only: _ignorato, ...senza } = body;
+      ({ data, error } = await aggiorna(senza));
+    }
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ event: data });

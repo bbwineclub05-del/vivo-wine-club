@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { requireAdminOrStaff } from '@/lib/auth-guard';
+import { fetchAllRows } from '@/lib/crm';
 
 /**
  * POST /api/admin/sync-guests-to-crm
@@ -14,34 +15,52 @@ export async function POST(request: Request) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db = getSupabaseAdmin() as any;
 
-  // Load all event guests
-  const { data: guests, error: gErr } = await db
-    .from('event_guests')
-    .select('email, first_name, last_name, event_slug, created_at')
-    .order('created_at', { ascending: true });
+  // Load all event guests.
+  // Paginato: senza, PostgREST si ferma a mille righe e il sync
+  // lavorerebbe su una fetta della tabella credendola intera — con il
+  // risultato che gli ospiti oltre la millesima non diventerebbero mai
+  // clienti, e che i clienti oltre la millesima verrebbero riscritti
+  // come se fossero nuovi.
+  type GuestRow = { email: string; first_name: string; last_name: string; event_slug: string; created_at: string };
 
-  if (gErr) return NextResponse.json({ error: gErr.message }, { status: 500 });
+  let guests: GuestRow[];
+  try {
+    guests = await fetchAllRows<GuestRow>(db, (q) =>
+      q
+        .from('event_guests')
+        .select('email, first_name, last_name, event_slug, created_at')
+        .order('created_at', { ascending: true }),
+    );
+  } catch (err) {
+    return NextResponse.json({ error: (err as Error).message }, { status: 500 });
+  }
 
   // Group by email
-  type GuestRow = { email: string; first_name: string; last_name: string; event_slug: string; created_at: string };
   const byEmail = new Map<string, GuestRow[]>();
-  for (const g of (guests as GuestRow[]) ?? []) {
+  for (const g of guests) {
     if (!g.email) continue;
     const list = byEmail.get(g.email) ?? [];
     list.push(g);
     byEmail.set(g.email, list);
   }
 
-  // Load existing customers (email → row)
-  const { data: existing, error: cErr } = await db
-    .from('customers')
-    .select('id, email, events, total_events, first_purchase_at, last_purchase_at');
-
-  if (cErr) return NextResponse.json({ error: cErr.message }, { status: 500 });
-
+  // Load existing customers (email → row), anche qui per intero.
   type CustomerRow = { id: string; email: string; events: string[] | null; total_events: number; first_purchase_at: string; last_purchase_at: string };
+
+  let existing: CustomerRow[];
+  try {
+    existing = await fetchAllRows<CustomerRow>(db, (q) =>
+      q
+        .from('customers')
+        .select('id, email, events, total_events, first_purchase_at, last_purchase_at')
+        .order('created_at', { ascending: true }),
+    );
+  } catch (err) {
+    return NextResponse.json({ error: (err as Error).message }, { status: 500 });
+  }
+
   const customerMap = new Map<string, CustomerRow>();
-  for (const c of (existing as CustomerRow[]) ?? []) {
+  for (const c of existing) {
     customerMap.set(c.email, c);
   }
 
