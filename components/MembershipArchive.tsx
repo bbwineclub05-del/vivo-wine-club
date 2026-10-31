@@ -89,7 +89,12 @@ export default function MembershipArchive() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? 'Errore.');
-      setMessage(`Tessera ${data.membership.member_id} creata per ${row.name}.`);
+      // Si dice anche se la mail è partita: creare la tessera e non
+      // dire niente della mail è il motivo per cui si poteva credere
+      // che fosse partita quando non lo era.
+      setMessage(
+        `Tessera ${data.membership.member_id} per ${row.name}. ${data.avviso ?? ''}`.trim(),
+      );
       await load();
     } catch (e) {
       setMessage(e instanceof Error ? e.message : 'Errore.');

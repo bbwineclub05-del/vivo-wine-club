@@ -872,9 +872,9 @@
   },
   "reset": {
     "back": "Back to sign in",
-    "title": "Choose a new password",
+    "title": "Choose your password",
     "subtitle": "From now on you will sign in with this one.",
-    "newPassword": "New password",
+    "newPassword": "Password",
     "repeat": "Repeat the password",
     "rule": "At least eight characters.",
     "show": "Show password",
@@ -888,6 +888,6 @@
     "noToken": "Open this page from the link we emailed you.",
     "askAgain": "Ask for another one",
     "doneTitle": "Done",
-    "doneBody": "Password changed. Taking you to your area."
+    "doneBody": "Password saved. Taking you to your area."
   }
 }

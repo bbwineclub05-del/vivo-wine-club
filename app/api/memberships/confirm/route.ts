@@ -4,6 +4,7 @@ import { Resend } from 'resend';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { membershipEmail } from '@/lib/emails/membership-emails';
 import { notificaIscrizione } from '@/lib/emails/notifica-iscrizione';
+import { preparaAccessoSocio } from '@/lib/member-access';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const FROM = 'Vivo Wine Club <noreply@vivowineclub.com>';
@@ -118,6 +119,12 @@ export async function POST(request: Request) {
       const primaVolta = !membership.welcome_sent_at;
 
       try {
+        // Solo per chi arriva da zero: chi rinnova ha gia' una
+        // password, e proporgli di impostarne una sarebbe sospetto.
+        const accesso = primaVolta
+          ? await preparaAccessoSocio(db, membership.email, membership.full_name)
+          : null;
+
         const { subject, html } = membershipEmail(
           primaVolta ? 'benvenuto' : 'rinnovo',
           {
@@ -127,6 +134,8 @@ export async function POST(request: Request) {
             renewalCents: membership.offer_price_cents ?? membership.standard_price_cents,
             standardCents: membership.standard_price_cents,
             paidCents: payment.amount_cents,
+            passwordLink: accesso?.link ?? null,
+            haPassword: accesso?.haPassword ?? false,
           },
           membership.locale,
         );

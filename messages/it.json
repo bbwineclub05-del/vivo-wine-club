@@ -872,9 +872,9 @@
   },
   "reset": {
     "back": "Torna all’accesso",
-    "title": "Scegli una nuova password",
+    "title": "Scegli la tua password",
     "subtitle": "Da adesso entrerai con questa.",
-    "newPassword": "Nuova password",
+    "newPassword": "Password",
     "repeat": "Ripeti la password",
     "rule": "Almeno otto caratteri.",
     "show": "Mostra la password",
@@ -888,6 +888,6 @@
     "noToken": "Questo indirizzo va aperto dal link che ti abbiamo mandato per email.",
     "askAgain": "Chiedine un altro",
     "doneTitle": "Fatto",
-    "doneBody": "Password cambiata. Ti stiamo portando nella tua area."
+    "doneBody": "Password salvata. Ti stiamo portando nella tua area."
   }
 }

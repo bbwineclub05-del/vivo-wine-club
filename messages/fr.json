@@ -872,9 +872,9 @@
   },
   "reset": {
     "back": "Retour à la connexion",
-    "title": "Choisissez un nouveau mot de passe",
+    "title": "Choisis ton mot de passe",
     "subtitle": "C’est celui-ci que vous utiliserez désormais.",
-    "newPassword": "Nouveau mot de passe",
+    "newPassword": "Mot de passe",
     "repeat": "Répétez le mot de passe",
     "rule": "Huit caractères au minimum.",
     "show": "Afficher le mot de passe",
@@ -888,6 +888,6 @@
     "noToken": "Ouvrez cette page depuis le lien envoyé par email.",
     "askAgain": "En demander un autre",
     "doneTitle": "C’est fait",
-    "doneBody": "Mot de passe changé. Nous vous emmenons dans votre espace."
+    "doneBody": "Mot de passe enregistré. Nous t’emmenons dans ton espace."
   }
 }

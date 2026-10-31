@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { requireAdminOrStaff } from '@/lib/auth-guard';
+import { preparaAccessoSocio } from '@/lib/member-access';
 import { membershipEmail, type MembershipEmailKind } from '@/lib/emails/membership-emails';
 import { priceFor, type Membership } from '@/lib/membership';
 
@@ -52,6 +53,28 @@ export async function POST(request: Request) {
       if (m.welcome_sent_at && !forza) { esiti.push({ email: m.email, esito: 'già mandata' }); continue; }
 
       const price = priceFor(m);
+
+      // L'accesso prima della mail: se l'account non c'è si crea, se
+      // c'è gli si mette il timbro del ruolo, e se la password non è
+      // mai stata scelta torna l'indirizzo per scegliersela. Senza
+      // questo passo la mail manda a una pagina di login dove la
+      // persona non ha niente da inserire.
+      //
+      // Se qui qualcosa va storto la mail non parte: mandare un
+      // benvenuto che porta in un vicolo cieco è peggio che non
+      // mandarlo, e `welcome_sent_at` resta vuoto, quindi si può
+      // riprovare senza perdere il conto.
+      let accesso;
+      try {
+        accesso = await preparaAccessoSocio(db, m.email, m.full_name);
+      } catch (e) {
+        esiti.push({
+          email: m.email,
+          esito: `accesso non preparato: ${e instanceof Error ? e.message : 'errore'}`,
+        });
+        continue;
+      }
+
       // Nella lingua della persona: quella salvata all'iscrizione, o
       // l'italiano per chi è entrato prima che la chiedessimo.
       const { subject, html } = membershipEmail(
@@ -62,6 +85,8 @@ export async function POST(request: Request) {
           expiresAt: m.expires_at,
           renewalCents: price.cents,
           standardCents: price.fullCents,
+          passwordLink: accesso.link,
+          haPassword: accesso.haPassword,
         },
         (m as Membership & { locale?: string | null }).locale,
       );
@@ -73,7 +98,10 @@ export async function POST(request: Request) {
           .from('memberships')
           .update({ welcome_sent_at: new Date().toISOString() })
           .eq('id', m.id);
-        esiti.push({ email: m.email, esito: 'mandata' });
+        esiti.push({
+          email: m.email,
+          esito: accesso.haPassword ? 'mandata' : `mandata, con link password (${accesso.nota})`,
+        });
       } catch (e) {
         esiti.push({ email: m.email, esito: e instanceof Error ? e.message : 'invio fallito' });
       }

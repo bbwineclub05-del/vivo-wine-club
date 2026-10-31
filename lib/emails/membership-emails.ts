@@ -97,6 +97,18 @@ export interface MembershipEmailData {
   standardCents?: number | null;
   /** Quanto ha pagato adesso: serve solo alla mail del rinnovo. */
   paidCents?: number | null;
+  /**
+   * L'indirizzo dove impostare la password. Arriva sempre, anche per
+   * chi una password ce l'ha: cambia solo come viene presentato.
+   */
+  passwordLink?: string | null;
+  /**
+   * `true` se la password questa persona ce l'ha già. Allora il
+   * pulsante resta «entra» e il link diventa una riga sotto, per chi
+   * non se la ricorda: l'ultimo accesso di queste persone è di mesi
+   * fa, e un benvenuto senza via d'ingresso è un vicolo cieco.
+   */
+  haPassword?: boolean;
 }
 
 /* ── Chi arriva da zero ───────────────────────────────────────────── */
@@ -155,6 +167,14 @@ const COPY = {
     rinnovoImporto: (importo: string) => `Hai pagato <strong>${importo}</strong>.`,
     rinnovoAnnoNuovo:
       'Un altro anno di serate, visite in cantina e sconti riservati. Ci vediamo alla prossima.',
+
+    bottonePassword: 'Imposta la tua password',
+    nonRicordi: 'Non ricordi la password?',
+    rifalla: 'Impostane una nuova',
+    scegliPassword:
+      'Per entrare nella tua area ti serve una password: sceglila da qui, ci vuole un minuto. ' +
+      'Il link è personale e vale qualche giorno; se scade, dalla pagina di accesso puoi ' +
+      'chiederne un altro con «Password dimenticata».',
   },
 
   en: {
@@ -208,6 +228,14 @@ const COPY = {
     rinnovoImporto: (importo: string) => `You paid <strong>${importo}</strong>.`,
     rinnovoAnnoNuovo:
       'Another year of nights, winery visits and members’ discounts. See you at the next one.',
+
+    bottonePassword: 'Set your password',
+    nonRicordi: 'Don’t remember your password?',
+    rifalla: 'Set a new one',
+    scegliPassword:
+      'To get into your area you need a password: choose one here, it takes a minute. The link ' +
+      'is personal and lasts a few days; if it expires, you can ask for another one from the ' +
+      'login page with “Forgot password”.',
   },
 
   fr: {
@@ -262,8 +290,51 @@ const COPY = {
     rinnovoAnnoNuovo:
       'Une autre année de soirées, de visites dans les domaines et de remises réservées. ' +
       'À la prochaine.',
+
+    bottonePassword: 'Choisis ton mot de passe',
+    nonRicordi: 'Tu ne te souviens plus de ton mot de passe ?',
+    rifalla: 'Choisis-en un nouveau',
+    scegliPassword:
+      'Pour entrer dans ton espace il te faut un mot de passe : choisis-le ici, ça prend une ' +
+      'minute. Le lien est personnel et valable quelques jours ; s’il expire, tu peux en ' +
+      'demander un autre depuis la page de connexion avec « Mot de passe oublié ».',
   },
 } as const;
+
+/* ── Il passo finale: impostare la password, oppure entrare ───────── */
+
+/**
+ * Chi non ha ancora una password la imposta da qui; chi ce l'ha entra.
+ *
+ * Il pulsante e' uno, e cambia dove porta: due pulsanti vicini, «entra»
+ * e «imposta la password», sono il modo migliore per far cliccare
+ * quello sbagliato.
+ */
+function accesso(d: MembershipEmailData, t: (typeof COPY)[EmailLocale]) {
+  // Non ha ancora una password: il pulsante e' quello.
+  if (d.passwordLink && !d.haPassword) {
+    return [
+      para(t.scegliPassword),
+      `<div style="margin:24px 0 0;">${ctaButton(t.bottonePassword, d.passwordLink)}</div>`,
+    ].join('');
+  }
+
+  const entra = `<div style="margin:24px 0 0;">${ctaButton(t.bottone, 'https://vivowineclub.com/members')}</div>`;
+
+  // Ce l'ha, ma l'ultimo accesso e' di mesi fa: la via d'uscita sta
+  // sotto il pulsante, scritta piccola. Non e' un secondo pulsante,
+  // e' una nota a pie' di pagina: due pulsanti vicini sono il modo
+  // migliore per far premere quello sbagliato.
+  if (!d.passwordLink) return entra;
+
+  return [
+    entra,
+    para(
+      `${t.nonRicordi} <a href="${d.passwordLink}" style="color:#731515;">${t.rifalla}</a>.`,
+      'font-size:13px;color:#7a4a4a;margin-top:14px;',
+    ),
+  ].join('');
+}
 
 /* ── Chi arriva da zero ───────────────────────────────────────────── */
 
@@ -286,7 +357,7 @@ function benvenuto(d: MembershipEmailData, locale: EmailLocale) {
         divider(),
         para(t.gratuitaFino(fmtDate(d.expiresAt, locale), eur(d.standardCents ?? 3000))),
         para(t.areaPersonale),
-        `<div style="margin:24px 0 0;">${ctaButton(t.bottone, 'https://vivowineclub.com/members')}</div>`,
+        accesso(d, t),
         para(t.firma, 'font-size:13px;color:#7a4a4a;'),
         para(t.rispondi, 'font-size:13px;color:#7a4a4a;'),
       ].join(''),
@@ -317,7 +388,7 @@ function attivazione(d: MembershipEmailData, locale: EmailLocale) {
           ? para(t.scontoFedelta(eur(d.renewalCents!), eur(d.standardCents!)))
           : para(t.senzaSconto(fmtDate(d.expiresAt, locale), eur(d.standardCents ?? 3000))),
         para(t.areaPersonale),
-        `<div style="margin:24px 0 0;">${ctaButton(t.bottone, 'https://vivowineclub.com/members')}</div>`,
+        accesso(d, t),
         para(t.rispondi, 'font-size:13px;color:#7a4a4a;'),
       ].join(''),
     ),
@@ -348,7 +419,7 @@ function rinnovo(d: MembershipEmailData, locale: EmailLocale) {
         d.paidCents != null ? para(t.rinnovoImporto(eur(d.paidCents))) : '',
         divider(),
         para(t.rinnovoAnnoNuovo),
-        `<div style="margin:24px 0 0;">${ctaButton(t.bottone, 'https://vivowineclub.com/members')}</div>`,
+        accesso(d, t),
         para(t.firma, 'font-size:13px;color:#7a4a4a;'),
         para(t.rispondi, 'font-size:13px;color:#7a4a4a;'),
       ].join(''),

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { membershipEmail, emailLocale } from '@/lib/emails/membership-emails';
 import { notificaIscrizione } from '@/lib/emails/notifica-iscrizione';
+import { preparaAccessoSocio } from '@/lib/member-access';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { requireAdminOrStaff } from '@/lib/auth-guard';
 import { fetchAllRows } from '@/lib/crm';
@@ -164,6 +165,11 @@ export async function POST(request: Request) {
     // e la mail si può rimandare dall'area riservata.
     if (plan.dueNowCents === 0) {
       try {
+        // Chi si iscrive dal modulo non ha ancora un modo di entrare:
+        // l'account si crea adesso, e la mail porta la password da
+        // impostare invece di un login senza password.
+        const accesso = await preparaAccessoSocio(db, inserted.email, inserted.full_name);
+
         // Chi arriva dal modulo pubblico non sa ancora cosa sia VIVO:
         // la mail glielo racconta prima di elencare i vantaggi.
         const { subject, html } = membershipEmail('benvenuto', {
@@ -172,6 +178,8 @@ export async function POST(request: Request) {
           expiresAt: inserted.expires_at,
           renewalCents: inserted.offer_price_cents ?? inserted.standard_price_cents,
           standardCents: inserted.standard_price_cents,
+          passwordLink: accesso.link,
+          haPassword: accesso.haPassword,
         }, inserted.locale);
         const { error: mailErr } = await new Resend(process.env.RESEND_API_KEY).emails.send({
           from: 'Vivo Wine Club <noreply@vivowineclub.com>',
