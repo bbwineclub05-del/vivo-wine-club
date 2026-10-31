@@ -10,6 +10,7 @@
  */
 
 import { Suspense, useEffect, useState } from 'react';
+import { notFound } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
 import { Monitor, Smartphone } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
@@ -110,6 +111,10 @@ function Cornice() {
 }
 
 export default function AnteprimaSocio() {
+  /* Pagina di servizio: in produzione non esiste. Serve a guardare i
+     pezzi del sito mentre si lavora, non a chi visita il sito. */
+  if (process.env.NODE_ENV !== 'development') notFound();
+
   return (
     <Suspense>
       <Cornice />

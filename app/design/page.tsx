@@ -1,4 +1,5 @@
 import { Button, ButtonLink } from '@/components/ui/Button';
+import { notFound } from 'next/navigation';
 import { Chapter, Statement } from '@/components/ui/Chapter';
 import { DoorCard } from '@/components/ui/DoorCard';
 import { Marquee } from '@/components/ui/Marquee';
@@ -29,6 +30,10 @@ const SCALE = [
 const CITIES = ['Parigi', 'Torino', 'Milano', 'Brescia', 'Versilia', 'Lago di Garda', 'Oltrepò Pavese', 'Pescia'];
 
 export default function DesignSystemPage() {
+  /* Pagina di servizio: in produzione non esiste. Serve a guardare i
+     pezzi del sito mentre si lavora, non a chi visita il sito. */
+  if (process.env.NODE_ENV !== 'development') notFound();
+
   return (
     <main className="ds bg-paper text-on-paper">
       {/* ── Palette ─────────────────────────────────────────────── */}

@@ -1,4 +1,5 @@
 import { ClubEvents } from '@/components/ui/ClubEvents';
+import { notFound } from 'next/navigation';
 import { Section } from '@/components/ui/Section';
 import type { EventData } from '@/lib/events';
 
@@ -38,6 +39,10 @@ const FINTI: EventData[] = [
 ];
 
 export default function AnteprimaEventi() {
+  /* Pagina di servizio: in produzione non esiste. Serve a guardare i
+     pezzi del sito mentre si lavora, non a chi visita il sito. */
+  if (process.env.NODE_ENV !== 'development') notFound();
+
   return (
     <main className="ds bg-paper text-on-paper">
       <Section>

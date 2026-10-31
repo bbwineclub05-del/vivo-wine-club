@@ -24,7 +24,6 @@ const PAGINE: { href: string; label: string }[] = [
   { href: '/brands', label: 'Studio' },
   { href: '/wineries', label: 'Cantine' },
   { href: '/partners', label: 'Partner' },
-  { href: '/news', label: 'News' },
   { href: '/faq', label: 'FAQ' },
   { href: '/login', label: 'Accesso' },
   { href: '/privacy-policy', label: 'Privacy' },

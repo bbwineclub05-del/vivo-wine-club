@@ -198,7 +198,7 @@ function Invito() {
         onClick={() => setAperto(true)}
         className="min-h-[48px] rounded-full bg-accent px-5 text-fine font-medium text-paper"
       >
-        Apri "Invita a un evento"
+        Apri &laquo;Invita a un evento&raquo;
       </button>
       {aperto && (
         <EventInvite

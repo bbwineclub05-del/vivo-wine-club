@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { notFound } from 'next/navigation';
 import { AdminShell } from '@/components/admin/AdminShell';
 import {
   ActionButton, Column, DataList, EmptyState, Field, FilterPills, NewButton,
@@ -30,6 +31,10 @@ const ROWS: Row[] = [
 const TONE = { aperto: 'good', 'sold out': 'warn', concluso: 'off' } as const;
 
 export default function AdminShellPreview() {
+  /* Pagina di servizio: in produzione non esiste. Serve a guardare i
+     pezzi del sito mentre si lavora, non a chi visita il sito. */
+  if (process.env.NODE_ENV !== 'development') notFound();
+
   const [role, setRole] = useState<AdminRole>('board');
   const [active, setActive] = useState('events');
   const [query, setQuery] = useState('');

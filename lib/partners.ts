@@ -154,7 +154,3 @@ export const PARTNERS: Partner[] = [
     externalUrl: 'https://ilcantodelgallowinebar.it/',
   },
 ];
-
-export function getPartnerBySlug(slug: string): Partner | undefined {
-  return PARTNERS.find((p) => p.slug === slug);
-}

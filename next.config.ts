@@ -103,6 +103,17 @@ const nextConfig: NextConfig = {
       { source: '/collaborate',               destination: '/apply',                 permanent: true },
       { source: '/collaborate/companies',     destination: '/apply?kind=company',    permanent: true },
       { source: '/collaborate/ambassador',    destination: '/apply?kind=ambassador', permanent: true },
+
+      // Pagine che non esistono piu'. Erano le ultime rimaste con la
+      // grafica di prima e dal sito non ci arrivava nessun link, ma un
+      // indirizzo girato su WhatsApp o finito su Google continua a
+      // essere battuto: ognuna porta dove il suo contenuto e' finito,
+      // invece di finire su una pagina di errore.
+      { source: '/events/party',              destination: '/events#party',  permanent: true },
+      { source: '/events/lounge',             destination: '/events#lounge', permanent: true },
+      { source: '/partners/:slug',            destination: '/partners',      permanent: true },
+      { source: '/wine-regions/:slug',        destination: '/wineries',      permanent: true },
+      { source: '/news',                      destination: '/',              permanent: true },
     ];
   },
 
