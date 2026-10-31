@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { membershipEmail, emailLocale } from '@/lib/emails/membership-emails';
+import { notificaIscrizione } from '@/lib/emails/notifica-iscrizione';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { requireAdminOrStaff } from '@/lib/auth-guard';
 import { fetchAllRows } from '@/lib/crm';
@@ -189,6 +190,16 @@ export async function POST(request: Request) {
       } catch (e) {
         console.error('[memberships POST] benvenuto non mandato:', e);
       }
+
+      // E ce lo diciamo anche fra noi: prima un'iscrizione si vedeva
+      // solo andandola a cercare nell'area riservata. Quando c'è da
+      // pagare, l'avviso lo manda la conferma del pagamento: una
+      // tessera non confermata non è ancora un socio.
+      await notificaIscrizione(
+        new Resend(process.env.RESEND_API_KEY),
+        inserted,
+        plan.dueNowCents,
+      );
     }
 
     return NextResponse.json({

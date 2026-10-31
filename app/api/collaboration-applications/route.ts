@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
+import { Resend } from 'resend';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { avvisoCandidatura, candidaturaRicevuta } from '@/lib/emails/candidature-emails';
 import { requireAdminOrStaff } from '@/lib/auth-guard';
 import { getClientIp, PRIVACY_POLICY_VERSION } from '@/lib/consent';
 import { fetchAllRows } from '@/lib/crm';
@@ -14,6 +16,9 @@ import { fetchAllRows } from '@/lib/crm';
  */
 
 export const dynamic = 'force-dynamic';
+
+const FROM = 'Vivo Wine Club <noreply@vivowineclub.com>';
+const A_NOI = 'info@vivowineclub.com';
 
 const KINDS = ['ambassador', 'company', 'creator', 'staff'] as const;
 type Kind = (typeof KINDS)[number];
@@ -83,6 +88,41 @@ export async function POST(request: Request) {
     // dimostrare il consenso, e la data con la versione della privacy
     // lo dimostrano già senza tenersi un dato personale in più.
     void getClientIp(request);
+
+    // Due mail: la conferma a chi si è proposto, nella sua lingua, e
+    // l'avviso a noi. Prima non partiva niente, e una candidatura si
+    // vedeva solo entrando nell'area riservata a cercarla.
+    //
+    // Nessuna delle due può far fallire la candidatura: la riga è già
+    // salvata, e perderla perché un invio è andato storto sarebbe il
+    // modo peggiore di gestire l'errore. Partono in parallelo, perché
+    // una non dipende dall'altra.
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    const conferma = candidaturaRicevuta(row);
+    const avviso = avvisoCandidatura(row);
+    const esiti = await Promise.allSettled([
+      resend.emails.send({
+        from: FROM,
+        replyTo: A_NOI,
+        to: email,
+        subject: conferma.subject,
+        html: conferma.html,
+      }),
+      resend.emails.send({
+        from: FROM,
+        to: A_NOI,
+        subject: avviso.subject,
+        html: avviso.html,
+      }),
+    ]);
+    esiti.forEach((esito, i) => {
+      const quale = i === 0 ? 'conferma al candidato' : 'avviso a noi';
+      if (esito.status === 'rejected') {
+        console.error(`[collaboration-applications] ${quale} non mandata:`, esito.reason);
+      } else if (esito.value.error) {
+        console.error(`[collaboration-applications] ${quale} non mandata:`, esito.value.error.message);
+      }
+    });
 
     return NextResponse.json({ ok: true });
   } catch {

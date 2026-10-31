@@ -34,6 +34,9 @@ export interface Membership {
   /** Fino a quando vale lo sconto. */
   offer_expires_at: string | null;
   cancelled_at: string | null;
+  /** La lingua scelta al momento dell'iscrizione: decide in che lingua
+   *  riceve le mail, oggi e fra un anno. */
+  locale: string | null;
   reminded_30_at: string | null;
   reminded_7_at: string | null;
   reminded_0_at: string | null;

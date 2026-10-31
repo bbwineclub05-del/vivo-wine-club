@@ -20,8 +20,8 @@ interface CartItem {
 
 export async function POST(request: Request) {
   try {
-    const { items, discountCode, validateOnly, shippingCost, customerEmail, consentPrivacyTerms }: {
-      items: CartItem[]; discountCode?: string; validateOnly?: boolean; shippingCost?: number; customerEmail?: string; consentPrivacyTerms?: boolean;
+    const { items, discountCode, validateOnly, shippingCost, customerEmail, consentPrivacyTerms, locale }: {
+      items: CartItem[]; discountCode?: string; validateOnly?: boolean; shippingCost?: number; customerEmail?: string; consentPrivacyTerms?: boolean; locale?: string;
     } = await request.json();
 
     if (!items || items.length === 0) {
@@ -149,6 +149,10 @@ export async function POST(request: Request) {
         },
       ],
       metadata: {
+        // La lingua di chi compra: la mail di conferma parte dal
+        // server quando il browser e' su Stripe, quindi l'unico modo
+        // di saperla dopo e' farla viaggiare con la sessione.
+        locale:            typeof locale === 'string' ? locale.slice(0, 8) : '',
         discount_code:     validatedCode ?? '',
         shipping_cost:     shippingEur.toString(),
         stock_adjustments: JSON.stringify(items.map((item) => ({

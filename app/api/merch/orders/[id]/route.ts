@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { requireAdminOrStaff } from '@/lib/auth-guard';
-import { sendMerchShippingNotification } from '@/lib/merch-email';
+import { linguaDalPaese, sendMerchShippingNotification } from '@/lib/merch-email';
 
 const VALID_STATUSES = ['da_evadere', 'evaso', 'spedito'] as const;
 
@@ -99,6 +99,10 @@ export async function POST(
     trackingUrl:    order.tracking_url,
     shippingNotes:  order.shipping_notes,
     shippingAddress,
+    // Qui la lingua del sito non c'e' piu': l'ordine e' di giorni fa e
+    // la riga non la conserva. Il paese di consegna e' l'indizio che
+    // resta, ed e' meglio di scrivere a tutti in italiano.
+    locale:         linguaDalPaese(order.shipping_country),
   });
 
   return NextResponse.json({ ok: true, order });

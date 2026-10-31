@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { Resend } from 'resend';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { membershipEmail } from '@/lib/emails/membership-emails';
+import { notificaIscrizione } from '@/lib/emails/notifica-iscrizione';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+const FROM = 'Vivo Wine Club <noreply@vivowineclub.com>';
 
 /**
  * Conferma il pagamento di una tessera al ritorno da Stripe.
@@ -97,10 +101,78 @@ export async function POST(request: Request) {
         ...shipping,
       })
       .eq('id', payment.membership_id)
-      .select('member_id, expires_at, full_name, email')
+      .select('*')
       .single();
 
-    return NextResponse.json({ ok: true, membership });
+    // Le mail partono da qui, non da chi ha creato l'iscrizione:
+    // prima della conferma di Stripe non c'era niente da confermare.
+    //
+    // Due invii indipendenti, e di proposito: quella al socio, che è
+    // il benvenuto se non l'ha mai ricevuto e la ricevuta del rinnovo
+    // se ce l'ha già, e quella a noi. Se salta una, l'altra parte
+    // comunque, e nessuna delle due può far fallire la conferma: il
+    // pagamento è andato a buon fine, e le mail si rimandano
+    // dall'area riservata.
+    if (membership?.email) {
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      const primaVolta = !membership.welcome_sent_at;
+
+      try {
+        const { subject, html } = membershipEmail(
+          primaVolta ? 'benvenuto' : 'rinnovo',
+          {
+            fullName: membership.full_name,
+            memberId: membership.member_id,
+            expiresAt: membership.expires_at,
+            renewalCents: membership.offer_price_cents ?? membership.standard_price_cents,
+            standardCents: membership.standard_price_cents,
+            paidCents: payment.amount_cents,
+          },
+          membership.locale,
+        );
+        const { error: mailErr } = await resend.emails.send({
+          from: FROM,
+          to: membership.email,
+          subject,
+          html,
+        });
+        if (mailErr) {
+          console.error('[memberships/confirm] mail non mandata:', mailErr.message);
+        } else if (primaVolta) {
+          await db
+            .from('memberships')
+            .update({ welcome_sent_at: new Date().toISOString() })
+            .eq('id', membership.id);
+        }
+      } catch (e) {
+        console.error('[memberships/confirm] mail non mandata:', e);
+      }
+
+      // L'avviso a noi, in entrambi i casi: una tessera nuova pagata e
+      // un socio che decide di restare un altro anno sono due cose che
+      // vogliamo sapere subito, non andando a cercarle nell'area
+      // riservata. Si occupa da sé dei propri errori.
+      await notificaIscrizione(
+        resend,
+        membership,
+        payment.amount_cents,
+        primaVolta ? 'iscrizione' : 'rinnovo',
+      );
+    }
+
+    // Alla pagina di ritorno tornano solo i tre campi che mostra: la
+    // riga intera contiene indirizzo di spedizione, prezzi e mail, e
+    // non ha motivo di uscire dal server.
+    return NextResponse.json({
+      ok: true,
+      membership: membership
+        ? {
+            member_id: membership.member_id,
+            expires_at: membership.expires_at,
+            full_name: membership.full_name,
+          }
+        : null,
+    });
   } catch (err) {
     console.error('[memberships/confirm]', err);
     return NextResponse.json({ error: 'Non sono riuscito a confermare.' }, { status: 500 });

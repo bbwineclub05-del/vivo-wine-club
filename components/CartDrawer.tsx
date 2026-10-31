@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Check, Minus, Plus, ShoppingBag, Trash2, X } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
@@ -29,6 +29,10 @@ function eur(n: number) {
 export default function CartDrawer() {
   const t = useTranslations('shop');
   const tc = useTranslations('consent');
+  // Viaggia con il pagamento: e' l'unico momento in cui sappiamo in
+  // che lingua stava leggendo chi compra, e la mail di conferma la
+  // manda il server quando il browser e' gia' su Stripe.
+  const locale = useLocale();
   const reduce = useReducedMotion();
   const { items, removeItem, updateQuantity, clearCart, total, isOpen, setIsOpen } = useCart();
 
@@ -106,6 +110,7 @@ export default function CartDrawer() {
           shippingCost: spedizione > 0 ? spedizione : undefined,
           customerEmail: email.trim() ? email.trim().toLowerCase() : undefined,
           consentPrivacyTerms: consenso,
+          locale,
         }),
       });
       const d = await res.json();
@@ -115,7 +120,7 @@ export default function CartDrawer() {
       setErrore(e instanceof Error ? e.message : 'Errore.');
       setInCorso(false);
     }
-  }, [items, codice, sconto, spedizione, email, consenso, tc]);
+  }, [items, codice, sconto, spedizione, email, consenso, locale, tc]);
 
   const campo =
     'w-full rounded-2xl border border-rule-paper bg-paper px-4 py-3 text-body placeholder:text-on-paper-muted/60 focus:border-accent/50 focus:outline-none [font-size:16px]';

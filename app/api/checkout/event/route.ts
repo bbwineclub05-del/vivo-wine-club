@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { emailLocale, type EmailLocale } from '@/lib/emails/membership-emails';
 import Stripe from 'stripe';
 import { Resend } from 'resend';
 import { dbEventToEventData, type EventData, type DbEvent } from '@/lib/events';
@@ -41,6 +42,8 @@ interface Body {
   consentPrivacyTerms?: boolean;
   consentMarketing?:    boolean;
   consentPhotoVideo?:   boolean;
+  /** La lingua del sito al momento dell'acquisto. */
+  locale?:              string;
 }
 
 interface ConsentParams {
@@ -56,22 +59,99 @@ interface ConsentParams {
 
 // ── Email helpers ─────────────────────────────────────────────────────────────
 
+/**
+ * Il biglietto, nella lingua di chi l'ha comprato.
+ *
+ * Era solo in inglese, anche per chi aveva comprato navigando il sito
+ * in italiano. La lingua arriva dal modulo e, per gli eventi a
+ * pagamento, torna dai dati della sessione di Stripe: e' l'unico modo
+ * di saperla, perche' la mail la manda il server quando il browser e'
+ * ancora sulla pagina di Stripe.
+ *
+ * L'avviso a noi resta in inglese come era: lo leggiamo noi.
+ */
+const TICKET_COPY: Record<EmailLocale, {
+  oggetto: (titolo: string, molti: boolean) => string;
+  titolo: (nome: string) => string;
+  sottotitolo: (titolo: string, molti: boolean) => string;
+  allegati: (qty: number) => string;
+  evento: string;
+  data: string;
+  luogo: string;
+  biglietti: string;
+  totale: string;
+  gratuito: string;
+  ordine: string;
+}> = {
+  it: {
+    oggetto: (titolo, molti) => `${molti ? 'I tuoi biglietti' : 'Il tuo biglietto'} per ${titolo} | Vivo Wine Club`,
+    titolo: (nome) => `Ci sei, ${nome}!`,
+    sottotitolo: (titolo, molti) =>
+      molti ? `I tuoi biglietti per ${titolo} sono confermati.` : `Il tuo biglietto per ${titolo} è confermato.`,
+    allegati: (qty) => qty > 1
+      ? `Trovi i ${qty} biglietti in PDF allegati a questa mail.`
+      : 'Trovi il biglietto in PDF allegato a questa mail.',
+    evento: 'Evento',
+    data: 'Data',
+    luogo: 'Dove',
+    biglietti: 'Biglietti',
+    totale: 'Totale',
+    gratuito: 'Gratuito',
+    ordine: 'Numero d’ordine',
+  },
+  en: {
+    oggetto: (titolo, molti) => `Your ticket${molti ? 's' : ''} for ${titolo} | Vivo Wine Club`,
+    titolo: (nome) => `You're in, ${nome}!`,
+    sottotitolo: (titolo, molti) =>
+      `Your ticket${molti ? 's' : ''} for ${titolo} ${molti ? 'are' : 'is'} confirmed.`,
+    allegati: (qty) => qty > 1
+      ? `Find your ${qty} ticket PDFs attached to this email.`
+      : 'Find your ticket PDF attached to this email.',
+    evento: 'Event',
+    data: 'Date',
+    luogo: 'Location',
+    biglietti: 'Tickets',
+    totale: 'Total',
+    gratuito: 'Free',
+    ordine: 'Order ID',
+  },
+  fr: {
+    oggetto: (titolo, molti) => `${molti ? 'Tes billets' : 'Ton billet'} pour ${titolo} | Vivo Wine Club`,
+    titolo: (nome) => `Tu y es, ${nome} !`,
+    sottotitolo: (titolo, molti) =>
+      molti ? `Tes billets pour ${titolo} sont confirmés.` : `Ton billet pour ${titolo} est confirmé.`,
+    allegati: (qty) => qty > 1
+      ? `Tu trouveras tes ${qty} billets en PDF joints à cet e-mail.`
+      : 'Tu trouveras ton billet en PDF joint à cet e-mail.',
+    evento: 'Événement',
+    data: 'Date',
+    luogo: 'Lieu',
+    biglietti: 'Billets',
+    totale: 'Total',
+    gratuito: 'Gratuit',
+    ordine: 'Numéro de commande',
+  },
+};
+
+
 function buyerEmailHtml(params: {
   firstName: string;
   event: EventData;
   qty: number;
   total: number;
   orderId: string;
+  locale?: string | null;
 }): string {
   const { firstName, event, qty, total, orderId } = params;
+  const t = TICKET_COPY[emailLocale(params.locale)];
   const eventDate  = `${event.month} ${event.day}, ${event.year}`;
-  const totalLabel = total === 0 ? 'Free' : `&euro;${total.toFixed(2)}`;
+  const totalLabel = total === 0 ? t.gratuito : `&euro;${total.toFixed(2)}`;
 
   const detailRows = [
-    ['Event',    event.title,        'font-weight:700;'],
-    ['Date',     eventDate,          ''],
-    ['Location', event.locationFull, ''],
-    ['Tickets',  String(qty),        ''],
+    [t.evento,    event.title,        'font-weight:700;'],
+    [t.data,      eventDate,          ''],
+    [t.luogo,     event.locationFull, ''],
+    [t.biglietti, String(qty),        ''],
   ].map(([label, value, extra]) => `
     <tr>
       <td style="padding:10px 0;border-bottom:1px solid #f0e4e4;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#7a4a4a;" class="em-p">${label}</td>
@@ -79,18 +159,18 @@ function buyerEmailHtml(params: {
     </tr>`).join('');
 
   const body = `
-${heading(`You're in, ${firstName}!`, `Your ticket${qty > 1 ? 's' : ''} for ${event.title} ${qty > 1 ? 'are' : 'is'} confirmed.`)}
-${para(`Find your ${qty > 1 ? `${qty} ticket PDFs` : 'ticket PDF'} attached to this email.`, 'text-align:center;')}
+${heading(t.titolo(firstName), t.sottotitolo(event.title, qty > 1))}
+${para(t.allegati(qty), 'text-align:center;')}
 ${divider()}
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:20px;">
   ${detailRows}
   <tr>
-    <td style="padding:14px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#7a4a4a;" class="em-p">Total</td>
+    <td style="padding:14px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#7a4a4a;" class="em-p">${t.totale}</td>
     <td style="padding:14px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;color:#731515;text-align:right;">${totalLabel}</td>
   </tr>
 </table>
 ${divider('8px 0 0')}
-<p style="margin:12px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#7a4a4a;text-align:center;line-height:1.6;" class="em-muted">Order ID: ${orderId}</p>`;
+<p style="margin:12px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#7a4a4a;text-align:center;line-height:1.6;" class="em-muted">${t.ordine}: ${orderId}</p>`;
 
   return emailShell(body);
 }
@@ -271,9 +351,11 @@ export async function sendEventConfirmationEmails(params: {
   qty:          number;
   total:        number;
   partnerCode?: string;
+  /** La lingua di chi ha comprato. Se manca, inglese. */
+  locale?:      string | null;
 } & ConsentParams) {
   const {
-    orderId, event, firstName, lastName, email, phone, qty, total, partnerCode,
+    orderId, event, firstName, lastName, email, phone, qty, total, partnerCode, locale,
     consentPrivacyAcceptedAt, consentPrivacyVersion, consentTermsAcceptedAt, consentTermsVersion,
     consentMarketing, consentMarketingAcceptedAt, consentPhotoVideo, consentIp,
   } = params;
@@ -368,8 +450,8 @@ export async function sendEventConfirmationEmails(params: {
       from:     'Vivo Wine Club <noreply@vivowineclub.com>',
       replyTo: 'info@vivowineclub.com',
       to:       email,
-      subject:  `Your ticket${qty > 1 ? 's' : ''} for ${event.title} | Vivo Wine Club`,
-      html:    buyerEmailHtml({ firstName, event, qty, total, orderId }),
+      subject:  TICKET_COPY[emailLocale(locale)].oggetto(event.title, qty > 1),
+      html:    buyerEmailHtml({ firstName, event, qty, total, orderId, locale }),
       attachments,
     });
     if (buyerResult.error) {
@@ -448,6 +530,7 @@ export async function POST(request: Request) {
   if (grandTotal === 0) {
     await sendEventConfirmationEmails({
       orderId, event, firstName, lastName, email, phone, qty, total, partnerCode,
+      locale: body.locale ?? null,
       consentPrivacyAcceptedAt:   consentNow,
       consentPrivacyVersion:      PRIVACY_POLICY_VERSION,
       consentTermsAcceptedAt:     consentNow,
@@ -521,6 +604,7 @@ export async function POST(request: Request) {
       buyer_email:      email,
       buyer_phone:      phone,
       ticket_count:     String(qty),
+      locale:           typeof body.locale === 'string' ? body.locale.slice(0, 8) : '',
       ref_code:         refCode     ?? '',
       partner_code:     partnerCode ?? '',
       upsell_items:     upsellItems.length > 0 ? JSON.stringify(upsellItems).slice(0, 500) : '',

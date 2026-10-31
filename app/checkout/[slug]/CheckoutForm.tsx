@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Check, Minus, Plus } from 'lucide-react';
 import { pixel } from '@/lib/pixel';
 import type { EventData } from '@/lib/events';
@@ -48,6 +48,9 @@ export default function CheckoutForm({
 }) {
   const t = useTranslations('events');
   const tc = useTranslations('consent');
+  // Viaggia col pagamento: il biglietto lo manda il server quando il
+  // browser e' ancora su Stripe, e la lingua la si sa solo qui.
+  const locale = useLocale();
 
   const [qty, setQty] = useState(1);
   const [nome, setNome] = useState('');
@@ -133,6 +136,7 @@ export default function CheckoutForm({
           consentPrivacyTerms: consenso,
           consentMarketing: marketing,
           consentPhotoVideo: foto,
+          locale,
         }),
       });
       const data = await res.json();

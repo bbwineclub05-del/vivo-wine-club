@@ -9,9 +9,9 @@ export function emailLocale(raw: string | null | undefined): EmailLocale {
 }
 
 /**
- * Le due mail della tessera.
+ * Le tre mail della tessera.
  *
- * Sono due perché parlano a due persone diverse.
+ * Sono tre perché parlano a tre persone diverse.
  *
  * **Benvenuto** va a chi arriva da zero: non sa ancora bene cosa sia
  * VIVO, e la mail glielo racconta prima di elencargli i vantaggi.
@@ -21,6 +21,11 @@ export function emailLocale(raw: string | null | undefined): EmailLocale {
  * raccontare il club sarebbe offensivo: la mail dice che la tessera
  * adesso c'è, che è loro, e che il prezzo di favore è il nostro modo
  * di dire grazie.
+ *
+ * **Rinnovo** va a chi ha appena pagato l'anno successivo: è una
+ * ricevuta, non una presentazione. Dice che il pagamento è arrivato,
+ * fino a quando vale la tessera e quanto ha pagato. I vantaggi non si
+ * rielencano a chi li ha già usati per un anno.
  *
  * Il corpo centrale — numero, scadenza, cosa comprende — è lo stesso:
  * le promesse arrivano da lib/member-benefits.ts, così non possono
@@ -81,7 +86,7 @@ function vantaggi(locale: EmailLocale) {
   }</table>`;
 }
 
-export type MembershipEmailKind = 'benvenuto' | 'attivazione';
+export type MembershipEmailKind = 'benvenuto' | 'attivazione' | 'rinnovo';
 
 export interface MembershipEmailData {
   fullName: string | null;
@@ -90,6 +95,8 @@ export interface MembershipEmailData {
   /** Quanto costerà il rinnovo a questa persona. */
   renewalCents?: number | null;
   standardCents?: number | null;
+  /** Quanto ha pagato adesso: serve solo alla mail del rinnovo. */
+  paidCents?: number | null;
 }
 
 /* ── Chi arriva da zero ───────────────────────────────────────────── */
@@ -138,6 +145,16 @@ const COPY = {
     senzaSconto: (data: string, prezzo: string) =>
       `La tessera vale fino al ${data}, poi si rinnova a ${prezzo}. Ti scriveremo prima: nessun ` +
       'addebito automatico.',
+
+    rinnovoOggetto: (id: string | null) =>
+      id ? `Tessera VIVO rinnovata: ${id}` : 'Tessera VIVO rinnovata',
+    rinnovoTitolo: 'La tua tessera è rinnovata',
+    rinnovoGrazie:
+      'Pagamento ricevuto, tessera rinnovata. Il numero resta lo stesso, cambia solo la scadenza: ' +
+      'non devi fare niente.',
+    rinnovoImporto: (importo: string) => `Hai pagato <strong>${importo}</strong>.`,
+    rinnovoAnnoNuovo:
+      'Un altro anno di serate, visite in cantina e sconti riservati. Ci vediamo alla prossima.',
   },
 
   en: {
@@ -181,6 +198,16 @@ const COPY = {
     senzaSconto: (data: string, prezzo: string) =>
       `Your card runs until ${data}, then renews at ${prezzo}. We’ll write to you first: no ` +
       'automatic charges.',
+
+    rinnovoOggetto: (id: string | null) =>
+      id ? `VIVO membership renewed: ${id}` : 'VIVO membership renewed',
+    rinnovoTitolo: 'Your membership is renewed',
+    rinnovoGrazie:
+      'Payment received, membership renewed. Your number stays the same, only the expiry date ' +
+      'changes: there is nothing for you to do.',
+    rinnovoImporto: (importo: string) => `You paid <strong>${importo}</strong>.`,
+    rinnovoAnnoNuovo:
+      'Another year of nights, winery visits and members’ discounts. See you at the next one.',
   },
 
   fr: {
@@ -224,6 +251,17 @@ const COPY = {
     senzaSconto: (data: string, prezzo: string) =>
       `Ta carte est valable jusqu’au ${data}, puis se renouvelle à ${prezzo}. On t’écrira avant : ` +
       'aucun prélèvement automatique.',
+
+    rinnovoOggetto: (id: string | null) =>
+      id ? `Carte VIVO renouvelée : ${id}` : 'Carte VIVO renouvelée',
+    rinnovoTitolo: 'Ta carte est renouvelée',
+    rinnovoGrazie:
+      'Paiement reçu, carte renouvelée. Ton numéro ne change pas, seule la date d’échéance ' +
+      'change : tu n’as rien à faire.',
+    rinnovoImporto: (importo: string) => `Tu as payé <strong>${importo}</strong>.`,
+    rinnovoAnnoNuovo:
+      'Une autre année de soirées, de visites dans les domaines et de remises réservées. ' +
+      'À la prochaine.',
   },
 } as const;
 
@@ -286,11 +324,45 @@ function attivazione(d: MembershipEmailData, locale: EmailLocale) {
   };
 }
 
+/* ── Chi ha appena rinnovato ──────────────────────────────────────── */
+
+/**
+ * La ricevuta del rinnovo.
+ *
+ * Qui i vantaggi non si rielencano: chi rinnova li conosce, li ha
+ * usati per un anno. Servono tre cose e basta: che il pagamento e'
+ * arrivato, fino a quando vale la tessera, e quanto ha pagato.
+ */
+function rinnovo(d: MembershipEmailData, locale: EmailLocale) {
+  const t = COPY[locale];
+  const nome = (d.fullName ?? '').trim().split(' ')[0];
+
+  return {
+    subject: t.rinnovoOggetto(d.memberId),
+    html: emailShell(
+      [
+        heading(t.rinnovoTitolo),
+        para(t.ciao(nome)),
+        para(t.rinnovoGrazie),
+        tessera(d.memberId, d.expiresAt, locale),
+        d.paidCents != null ? para(t.rinnovoImporto(eur(d.paidCents))) : '',
+        divider(),
+        para(t.rinnovoAnnoNuovo),
+        `<div style="margin:24px 0 0;">${ctaButton(t.bottone, 'https://vivowineclub.com/members')}</div>`,
+        para(t.firma, 'font-size:13px;color:#7a4a4a;'),
+        para(t.rispondi, 'font-size:13px;color:#7a4a4a;'),
+      ].join(''),
+    ),
+  };
+}
+
 export function membershipEmail(
   kind: MembershipEmailKind,
   d: MembershipEmailData,
   rawLocale?: string | null,
 ): { subject: string; html: string } {
   const locale = emailLocale(rawLocale);
-  return kind === 'benvenuto' ? benvenuto(d, locale) : attivazione(d, locale);
+  if (kind === 'benvenuto') return benvenuto(d, locale);
+  if (kind === 'rinnovo') return rinnovo(d, locale);
+  return attivazione(d, locale);
 }
