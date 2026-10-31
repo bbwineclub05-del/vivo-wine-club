@@ -1,6 +1,8 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import generato from './home-reels.generated.json';
+
 /**
  * I video che scorrono in home, presi dalla cartella dove stanno.
  *
@@ -21,6 +23,17 @@ import { join } from 'node:path';
  *
  * I due gruppi vengono alternati, cosi' la riga non e' prima tutta
  * verticale e poi tutta orizzontale.
+ *
+ * Dove si legge la cartella, e dove no. In sviluppo si guarda il
+ * disco a ogni richiesta, cosi' un file appena messo si vede
+ * ricaricando. In produzione no: su Vercel `public` sta sulla rete di
+ * distribuzione e dentro la funzione che genera le pagine non c'e',
+ * quindi leggerla trovava il vuoto e la striscia mostrava sei volte
+ * il video di ripiego. Li' si usa l'elenco scritto durante il build
+ * da `scripts/genera-reels.mjs`, quando i file ci sono davvero.
+ *
+ * Per chi carica i video non cambia niente: si mettono sempre nella
+ * cartella. Cambia solo che l'elenco si aggiorna quando si pubblica.
  *
  * In `public/home/link.json` ogni file puo' avere l'indirizzo del
  * post da cui viene: la scheda diventa cliccabile e porta li'. E' un
@@ -130,7 +143,13 @@ export interface Copertina {
   poster?: string;
 }
 
+/** In produzione la cartella non si vede: vale quello che ha trovato il build. */
+const DAL_DISCO = process.env.NODE_ENV === 'development';
+
 export function videoCopertina(): Copertina {
+  if (!DAL_DISCO) {
+    return generato.copertina ?? { src: '/videosito-corto.mp4', poster: '/vigna.jpg' };
+  }
   const video = join(CARTELLA, 'copertina.mp4');
   if (!existsSync(video)) {
     return { src: '/videosito-corto.mp4', poster: '/vigna.jpg' };
@@ -150,11 +169,11 @@ const RIPIEGO: HomeReel[] = Array.from({ length: 6 }, () => ({
 const MINIMO = 6;
 
 export function homeReels(): HomeReel[] {
-  const verticali = leggi('verticali');
-  const orizzontali = leggi('orizzontali');
-  if (verticali.length === 0 && orizzontali.length === 0) return RIPIEGO;
+  const misti = DAL_DISCO
+    ? alterna(leggi('verticali'), leggi('orizzontali'))
+    : (generato.reels as HomeReel[]);
 
-  const misti = alterna(verticali, orizzontali);
+  if (misti.length === 0) return RIPIEGO;
 
   // Con due o tre clip la fila finirebbe prima del bordo dello schermo
   // e si vedrebbe il vuoto girare: si ripetono finche' bastano. Con

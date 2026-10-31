@@ -1,0 +1,72 @@
+{
+  "reels": [
+    {
+      "src": "/home/verticali/cantina-5041.mp4",
+      "poster": "/home/verticali/cantina-5041.jpg",
+      "orientamento": "verticale",
+      "link": "https://www.instagram.com/p/DcbfYSuI193/"
+    },
+    {
+      "poster": "/home/verticali/foto-01.jpg",
+      "orientamento": "verticale",
+      "link": "https://www.instagram.com/p/Dd9XOztCP0u/?img_index=11"
+    },
+    {
+      "src": "/home/verticali/festa-0620.mp4",
+      "poster": "/home/verticali/festa-0620.jpg",
+      "orientamento": "verticale"
+    },
+    {
+      "poster": "/home/verticali/foto-02.jpg",
+      "orientamento": "verticale",
+      "link": "https://www.instagram.com/p/DeR7KtEIvlY/"
+    },
+    {
+      "src": "/home/verticali/serata-1021.mp4",
+      "poster": "/home/verticali/serata-1021.jpg",
+      "orientamento": "verticale",
+      "link": "https://www.instagram.com/reel/De37A5DMgfR/"
+    },
+    {
+      "poster": "/home/verticali/foto-03.jpg",
+      "orientamento": "verticale",
+      "link": "https://www.instagram.com/p/DeT3qG6CBCK/?img_index=3"
+    },
+    {
+      "src": "/home/verticali/spesa.mp4",
+      "poster": "/home/verticali/spesa.jpg",
+      "orientamento": "verticale",
+      "link": "https://www.instagram.com/reel/De39UhQMDSU/"
+    },
+    {
+      "poster": "/home/verticali/foto-1822.jpg",
+      "orientamento": "verticale",
+      "link": "https://www.instagram.com/p/DclxU8BiGoZ/?img_index=1"
+    },
+    {
+      "src": "/home/verticali/visita-1750.mp4",
+      "poster": "/home/verticali/visita-1750.jpg",
+      "orientamento": "verticale",
+      "link": "https://www.instagram.com/p/DclxU8BiGoZ/?img_index=1"
+    },
+    {
+      "src": "/home/orizzontali/prime-alture.mp4",
+      "poster": "/home/orizzontali/prime-alture.jpg",
+      "orientamento": "orizzontale",
+      "link": "https://www.instagram.com/p/DeR7KtEIvlY/"
+    },
+    {
+      "src": "/home/orizzontali/serata-1015.mp4",
+      "poster": "/home/orizzontali/serata-1015.jpg",
+      "orientamento": "orizzontale",
+      "link": "https://www.instagram.com/p/DehpFCIoZkA/"
+    },
+    {
+      "src": "/home/orizzontali/utopia-1610.mp4",
+      "poster": "/home/orizzontali/utopia-1610.jpg",
+      "orientamento": "orizzontale",
+      "link": "https://www.instagram.com/p/Dey1WA2oqYT/"
+    }
+  ],
+  "copertina": null
+}

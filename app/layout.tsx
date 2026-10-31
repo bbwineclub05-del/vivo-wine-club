@@ -93,13 +93,12 @@ export default async function RootLayout({
     >
       <head>
         <meta name="google" content="notranslate" />
-        {/* Preload hero background video */}
-        <link
-          rel="preload"
-          as="video"
-          href="/videosito-corto.mp4"
-          type="video/mp4"
-        />
+        {/* Qui c'era il precaricamento del filmato in cima alla home.
+            Due motivi per toglierlo: `as="video"` non e' un valore
+            che i browser riconoscano, e lo dicevano in console a ogni
+            visita; e la scheda che lo mostra chiede `preload="none"`,
+            quindi il precaricamento remava contro, tirando giu' il
+            file intero prima ancora che servisse. */}
       </head>
       <body className="antialiased">
         <NextIntlClientProvider locale={locale} messages={messages} formats={{}} timeZone="UTC" now={new Date()}>
