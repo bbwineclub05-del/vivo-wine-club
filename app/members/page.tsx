@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState, Suspense } from 'react';
+import { Caricamento } from '@/components/ui/Caricamento';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -419,8 +420,8 @@ function OverviewSection({
         <div className="rounded-2xl border border-rule-paper p-5">
           <p className="mb-4 text-fine text-on-paper-muted">La tua tessera</p>
           {cardLoading ? (
-            <div className="flex h-44 items-center justify-center">
-              <span className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+            <div className="flex h-44 items-center justify-center text-accent">
+              <Caricamento dimensione={92} />
             </div>
           ) : cardData ? (
             <>

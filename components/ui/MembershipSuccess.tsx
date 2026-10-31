@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Caricamento } from '@/components/ui/Caricamento';
 import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 
@@ -52,7 +53,11 @@ export function MembershipSuccess({ sessionId }: { sessionId: string | null }) {
   }, [sessionId]);
 
   if (state === 'checking') {
-    return <p className="text-lead text-on-paper-muted">{t('paidChecking')}</p>;
+    return (
+      <div className="text-accent">
+        <Caricamento dimensione={108} etichetta={t('paidChecking')} />
+      </div>
+    );
   }
 
   if (state === 'failed') {

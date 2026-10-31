@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback, Suspense } from 'react';
+import { Caricamento } from '@/components/ui/Caricamento';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import { CheckCircle, XCircle, Loader2, QrCode, KeyRound, RotateCcw } from 'lucide-react';
@@ -80,8 +81,8 @@ function QrScanner({ onScan, paused }: { onScan: (token: string) => void; paused
 function ResultScreen({ result, onReset }: { result: ScanResult; onReset: () => void }) {
   if (result.status === 'loading') {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 py-8">
-        <Loader2 size={40} className="animate-spin text-[#731515]" />
+      <div className="flex flex-col items-center justify-center gap-4 py-8 text-[#731515]">
+        <Caricamento dimensione={120} />
         <p className="text-sm text-[#7a4a4a] tracking-widest">VERIFYING…</p>
       </div>
     );

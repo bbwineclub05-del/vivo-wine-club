@@ -402,3 +402,34 @@ body::after {
    is lightened to #AA4848 (3.49:1) and stays in the same family. */
 .ds-accent-letter            { color: var(--color-accent); }
 .ds-on-ink .ds-accent-letter { color: var(--color-accent-soft); }
+
+/* Il logo che si riempie, al posto della rotella.
+   Si anima l'altezza di un rettangolo dentro una maschera: non e' una
+   proprieta' da compositore, ma il rettangolo e' piccolo, non ha
+   testo dentro e non sposta niente intorno, quindi il browser lo
+   ridisegna e basta. Un `transform: scaleY` costerebbe meno ma
+   stirerebbe il colore invece di farlo salire, e su una sfumatura si
+   vedrebbe.
+
+   Non arriva mai al bordo: si ferma al 92% e ridiscende. Un'attesa
+   che si riempie fino in cima e poi riparte da zero sembra un errore
+   ogni volta; un livello che oscilla sembra qualcosa che lavora. */
+.vivo-riempie {
+  height: 12%;
+  animation: vivo-riempie 2.1s cubic-bezier(0.45, 0, 0.3, 1) infinite;
+  /* Il pelo del liquido non e' una riga tirata col righello: gli
+     ultimi pixel in alto sfumano, cosi' il livello sembra salire
+     invece che essere tagliato. */
+  -webkit-mask-image: linear-gradient(to top, #000 calc(100% - 7px), transparent);
+  mask-image: linear-gradient(to top, #000 calc(100% - 7px), transparent);
+}
+
+@keyframes vivo-riempie {
+  0%   { height: 10%; }
+  55%  { height: 92%; }
+  100% { height: 10%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vivo-riempie { animation: none; height: 55%; }
+}

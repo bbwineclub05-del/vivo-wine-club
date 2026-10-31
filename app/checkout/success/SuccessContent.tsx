@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useEffect, useRef, useState } from 'react';
+import { Caricamento } from '@/components/ui/Caricamento';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -106,8 +107,8 @@ function Contenuto() {
 
   if (tipo === 'loading') {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <span className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+      <div className="flex min-h-[60vh] items-center justify-center text-accent">
+        <Caricamento dimensione={116} />
       </div>
     );
   }
