@@ -26,6 +26,7 @@ interface DbEvent {
   type: string;
   section: string;
   date: string;
+  date_month_only: boolean;
   time: string | null;
   location: string;
   location_full: string;
@@ -53,7 +54,8 @@ interface DbEvent {
 type FormData = Omit<DbEvent, 'id' | 'slug' | 'stripe_product_id' | 'stripe_price_id' | 'created_at'>;
 
 const BLANK: FormData = {
-  title: '', type: 'WINERY VISIT', section: 'winery_visit', date: '', time: '',
+  title: '', type: 'WINERY VISIT', section: 'winery_visit', date: '', date_month_only: false,
+  time: '',
   location: '', location_full: '', description: '',
   price: 0, capacity: null, status: 'open',
   published: false, title_strikethrough: false, guest_list_enabled: false,
@@ -83,6 +85,21 @@ function fmtDate(iso: string) {
   const [y, m, d] = iso.split('-');
   const mesi = ['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
   return `${parseInt(d)} ${mesi[parseInt(m) - 1]} ${y}`;
+}
+
+/** Il mese per esteso, come lo legge chi guarda il sito. */
+function fmtMese(iso: string) {
+  if (!iso) return '—';
+  const mesi = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno',
+                'Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+  const [y, m] = iso.split('-');
+  return `${mesi[parseInt(m) - 1] ?? ''} ${y}`;
+}
+
+/** La data come la vede il pubblico: col giorno, o solo il mese. */
+function fmtQuando(e: { date: string; date_month_only?: boolean }) {
+  if (!e.date) return '—';
+  return e.date_month_only ? fmtMese(e.date) : fmtDate(e.date);
 }
 
 /** Lo stato dell'evento, in italiano e nei toni dell'area. */
@@ -307,6 +324,24 @@ function EventForm({
           <Label>Data *</Label>
           <input className={inputCls} type="date" value={f.date}
             onChange={e => set('date', e.target.value)} required />
+          {/* Il giorno serve comunque: ordina il calendario e dice cos'è
+              passato. Questa spunta decide solo cosa legge il pubblico. */}
+          <label className="mt-2.5 flex cursor-pointer items-start gap-2.5">
+            <input
+              type="checkbox"
+              className="mt-0.5 accent-[#731515]"
+              checked={f.date_month_only ?? false}
+              onChange={e => set('date_month_only', e.target.checked)}
+            />
+            <span className="text-[13px] leading-snug text-[#7A5252]">
+              Del giorno non sono sicuro: mostra solo il mese
+              <span className="block text-[12px] text-[#7A5252]/70">
+                In pagina si legge «{f.date ? fmtMese(f.date) : 'Dicembre 2026'}». Metti comunque
+                una data qui sopra — meglio il primo del mese — perché serve a ordinare il
+                calendario. L’evento resta fra i prossimi fino a fine mese.
+              </span>
+            </span>
+          </label>
         </div>
 
         {/* Time */}
@@ -676,7 +711,7 @@ function GuestListDrawer({
             {event.title}
           </h2>
           <p className="mt-0.5 truncate text-fine text-on-paper-muted">
-            {event.date ? fmtDate(event.date) : ''}{event.location ? ` · ${event.location}` : ''}
+            {fmtQuando(event)}{event.location ? ` · ${event.location}` : ''}
           </p>
         </div>
       </div>
@@ -931,7 +966,7 @@ export default function EventManager() {
       label: 'Data',
       render: (e) => (
         <span className="ds-numeric">
-          {fmtDate(e.date)}
+          {fmtQuando(e)}
           {e.time ? ` · ${e.time}` : ''}
         </span>
       ),
@@ -1127,6 +1162,7 @@ export default function EventManager() {
                   title:              mode.edit.title,
                   type:               mode.edit.type,
                   date:               mode.edit.date,
+                  date_month_only:    mode.edit.date_month_only ?? false,
                   time:               mode.edit.time,
                   location:           mode.edit.location,
                   location_full:      mode.edit.location_full,

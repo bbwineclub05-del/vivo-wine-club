@@ -9,6 +9,7 @@ import { Lock, MapPin } from 'lucide-react';
 
 import EventStatusBadge from '@/components/EventStatusBadge';
 import {
+  eventDateStack,
   getEventDisplayStatus,
   sectionFromType,
   type EventData,
@@ -134,12 +135,20 @@ export function ClubEvents({ events }: { events: EventData[] }) {
                   aria-label={event.title}
                 >
                   <span className="text-fine font-medium uppercase text-accent-soft">
-                    {new Date(`${event.date.slice(0, 10)}T12:00:00Z`).toLocaleString(locale, {
-                      weekday: 'short',
-                      timeZone: 'UTC',
-                    })}
+                    {event.dateMonthOnly
+                      ? eventDateStack(event).top
+                      : new Date(`${event.date.slice(0, 10)}T12:00:00Z`).toLocaleString(locale, {
+                          weekday: 'short',
+                          timeZone: 'UTC',
+                        })}
                   </span>
-                  <span className="ds-display ds-numeric text-title leading-none">{event.day}</span>
+                  <span
+                    className={`ds-display ds-numeric leading-none ${
+                      event.dateMonthOnly ? 'text-subtitle' : 'text-title'
+                    }`}
+                  >
+                    {eventDateStack(event).bottom}
+                  </span>
                 </Link>
 
                 {event.image_url && (

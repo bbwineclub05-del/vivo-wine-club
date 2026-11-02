@@ -27,11 +27,16 @@ export function PageHead({
   return (
     <header className="mb-7 flex flex-wrap items-start justify-between gap-4">
       <div className="min-w-0">
-        <h1 className="ds-display text-[26px] leading-none tracking-[-0.03em] lg:text-[32px]">
+        {/* Sul telefono questo titolo è già scritto nella barra in alto,
+            che dice sempre dove sei. Scriverlo due volte a dieci
+            centimetri di distanza non aggiunge niente e ruba una riga
+            di schermo a chi ne ha di meno. Resta nel DOM, nascosto:
+            serve ancora a chi naviga con lo screen reader. */}
+        <h1 className="ds-display text-[26px] leading-none tracking-[-0.03em] max-lg:sr-only lg:text-[32px]">
           {title}
         </h1>
         {subtitle && (
-          <p className="mt-2.5 max-w-[62ch] text-body text-on-paper-muted">{subtitle}</p>
+          <p className="max-w-[62ch] text-body text-on-paper-muted lg:mt-2.5">{subtitle}</p>
         )}
       </div>
       {action}

@@ -10,6 +10,8 @@ export interface DbEvent {
   type: string;
   section: EventSection;
   date: string;              // ISO: "2026-05-12"
+  /** true = del giorno non si sa niente, vale solo il mese. */
+  date_month_only?: boolean;
   time: string | null;       // "19:00"
   location: string;          // short
   location_full: string;     // full address
@@ -53,6 +55,7 @@ export function dbEventToEventData(e: DbEvent): EventData {
     type:                e.type,
     section:             e.section ?? sectionFromType(e.type),
     date:                e.date,
+    dateMonthOnly:       e.date_month_only ?? false,
     month:               d.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' }).toUpperCase(),
     day:                 String(d.getUTCDate()).padStart(2, '0'),
     year:                String(d.getUTCFullYear()),
@@ -72,14 +75,61 @@ export function dbEventToEventData(e: DbEvent): EventData {
 }
 
 /**
+ * L'ultimo giorno in cui l'evento è ancora davanti a noi.
+ *
+ * Di norma è il giorno dell'evento. Ma quando si sa solo il mese, la
+ * data scritta è un segnaposto — di solito il primo — e prenderla alla
+ * lettera farebbe sparire dal calendario il due del mese un evento che
+ * deve ancora succedere. Allora vale fino all'ultimo giorno del mese.
+ */
+export function eventLastDay(event: { date: string; dateMonthOnly?: boolean }): string {
+  const iso = event.date.slice(0, 10);
+  if (!event.dateMonthOnly) return iso;
+  const [y, m] = iso.split('-').map(Number);
+  // Il giorno zero del mese dopo è l'ultimo di questo.
+  const ultimo = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  return `${iso.slice(0, 7)}-${String(ultimo).padStart(2, '0')}`;
+}
+
+/**
+ * La data come si scrive in pagina.
+ *
+ * Un solo posto, perché "19 DEC 2026" e "DEC 2026" devono restare la
+ * stessa decisione presa una volta: sparsa su dodici componenti,
+ * prima o poi da qualche parte il giorno ricompare.
+ */
+export function eventDateLabel(
+  event: { month: string; day: string; year: string; dateMonthOnly?: boolean },
+  order: 'dmy' | 'mdy' = 'dmy',
+): string {
+  if (event.dateMonthOnly) return `${event.month} ${event.year}`;
+  return order === 'mdy'
+    ? `${event.month} ${event.day}, ${event.year}`
+    : `${event.day} ${event.month} ${event.year}`;
+}
+
+/**
+ * Le due righe del riquadro-data delle schede: mese sopra, giorno
+ * sotto. Senza il giorno, sotto va l'anno — il riquadro non resta mai
+ * mezzo vuoto, e si legge comunque come una data.
+ */
+export function eventDateStack(
+  event: { month: string; day: string; year: string; dateMonthOnly?: boolean },
+): { top: string; bottom: string; small: boolean } {
+  return event.dateMonthOnly
+    ? { top: event.month, bottom: event.year, small: true }
+    : { top: event.month, bottom: event.day, small: false };
+}
+
+/**
  * Compute the effective display status of an event.
  * Checks in order: date past → manually closed → soldout → soon → open
  */
 export function getEventDisplayStatus(
-  event: { status: EventStatus; date: string; registrationClosed?: boolean },
+  event: { status: EventStatus; date: string; dateMonthOnly?: boolean; registrationClosed?: boolean },
   today: string,
 ): DisplayStatus {
-  if (event.date.slice(0, 10) < today) return 'past';
+  if (eventLastDay(event) < today) return 'past';
   if (event.status === 'completed') return 'past';
   if (event.registrationClosed) return 'closed';
   if (event.status === 'soldout') return 'soldout';
@@ -93,6 +143,8 @@ export interface EventData {
   type: string;
   section?: EventSection;
   date: string;              // ISO "YYYY-MM-DD" — raw DB value
+  /** true = in pagina si scrive solo il mese, mai il giorno. */
+  dateMonthOnly?: boolean;
   month: string;
   day: string;
   year: string;

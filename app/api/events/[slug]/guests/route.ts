@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { requireAdminOrStaff } from '@/lib/auth-guard';
 import { emailShell, heading, para, divider } from '@/lib/email-shell';
 import { getClientIp, PRIVACY_POLICY_VERSION } from '@/lib/consent';
+import { NON_SOCIO, socioInRegola } from '@/lib/soci';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -173,7 +174,7 @@ export async function POST(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: eventRow, error: evtErr } = await (db as any)
     .from('events')
-    .select('id, title, date, time, location, location_full, guest_list_enabled, is_list_only, price, location_map_url, parking_map_url, parking_map_url_2')
+    .select('id, title, date, time, location, location_full, guest_list_enabled, is_list_only, members_only, price, location_map_url, parking_map_url, parking_map_url_2')
     .eq('slug', slug)
     .single();
 
@@ -182,6 +183,11 @@ export async function POST(
   }
   if (!eventRow.guest_list_enabled && !eventRow.is_list_only) {
     return NextResponse.json({ error: 'Lista invitati non attiva per questo evento.' }, { status: 403 });
+  }
+  // Anche iscriversi gratis a una lista è un posto in sala: se l'evento
+  // è riservato, lo è da tutte e due le porte.
+  if (eventRow.members_only && !(await socioInRegola(db, email))) {
+    return NextResponse.json({ error: NON_SOCIO.it, membersOnly: true }, { status: 403 });
   }
 
   // Check for duplicate email on same event

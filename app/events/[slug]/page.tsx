@@ -7,7 +7,8 @@ import { getTranslations } from 'next-intl/server';
 import { SiteNav } from '@/components/ui/SiteNav';
 import { SiteFooter } from '@/components/ui/SiteFooter';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { dbEventToEventData, getEventDisplayStatus, type EventData, type DbEvent, type DisplayStatus } from '@/lib/events';
+import { dbEventToEventData,
+  eventDateLabel, getEventDisplayStatus, type EventData, type DbEvent, type DisplayStatus } from '@/lib/events';
 import EventGuestForm from '@/components/EventGuestForm';
 import EventViewTracker from '@/components/EventViewTracker';
 
@@ -192,7 +193,7 @@ export default async function EventPage({ params, searchParams }: {
               {event.title}
             </h1>
             <p className="ds-on-ink mt-3 text-body text-on-ink-muted">
-              {event.day} {event.month} {event.year}
+              {eventDateLabel(event)}
               {event.time ? ` · ${event.time}` : ''} · {event.location}
             </p>
           </div>
@@ -214,7 +215,7 @@ export default async function EventPage({ params, searchParams }: {
                 <Info
                   icon={<CalendarDays size={18} strokeWidth={1.8} />}
                   label={t('labelDate')}
-                  value={`${event.day} ${event.month} ${event.year}`}
+                  value={eventDateLabel(event)}
                 />
                 {event.time && (
                   <Info icon={<Clock size={18} strokeWidth={1.8} />} label={t('labelTime')} value={event.time} />
@@ -270,7 +271,7 @@ export default async function EventPage({ params, searchParams }: {
                   <EventGuestForm
                     eventSlug={event.slug}
                     eventTitle={event.title}
-                    eventDate={`${event.day} ${event.month} ${event.year}`}
+                    eventDate={eventDateLabel(event)}
                     eventLocation={event.location}
                     partnerCode={partnerCode}
                     showRouteOption={!!raw.parking_map_url_2}
@@ -285,7 +286,7 @@ export default async function EventPage({ params, searchParams }: {
               <div className="sticky top-24 rounded-2xl border border-rule-paper p-6">
                 <p className="ds-numeric text-[26px] font-medium">{prezzo}</p>
                 <p className="mt-1 text-fine text-on-paper-muted">
-                  {event.day} {event.month} · {event.location}
+                  {eventDateLabel(event)} · {event.location}
                 </p>
                 <div className="mt-5">
                   <Azione

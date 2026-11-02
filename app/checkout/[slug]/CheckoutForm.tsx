@@ -39,12 +39,16 @@ function eur(n: number) {
 }
 
 export default function CheckoutForm({
-  event, refCode, partnerCode,
+  event, refCode, partnerCode, emailIniziale, benvenuto,
 }: {
   event: EventData;
   refCode?: string;
   partnerCode?: string;
   referralEnabled?: boolean;
+  /** Gia' verificata alla porta di un evento riservato: non si richiede. */
+  emailIniziale?: string;
+  /** Il nome del socio riconosciuto, se c'e'. */
+  benvenuto?: string | null;
 }) {
   const t = useTranslations('events');
   const tc = useTranslations('consent');
@@ -55,8 +59,10 @@ export default function CheckoutForm({
   const [qty, setQty] = useState(1);
   const [nome, setNome] = useState('');
   const [cognome, setCognome] = useState('');
-  const [email, setEmail] = useState('');
-  const [email2, setEmail2] = useState('');
+  /* Chi ha gia' dimostrato chi e' alla porta non riscrive l'indirizzo
+     due volte: lo sappiamo, ed e' quello a cui va il biglietto. */
+  const [email, setEmail] = useState(emailIniziale ?? '');
+  const [email2, setEmail2] = useState(emailIniziale ?? '');
   const [telefono, setTelefono] = useState('');
   const [codiceAmico, setCodiceAmico] = useState(refCode ?? '');
   const [consenso, setConsenso] = useState(false);
@@ -213,15 +219,23 @@ export default function CheckoutForm({
             </Campo>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Campo label={t('coEmail')}>
-              <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={campo} autoComplete="email" placeholder="tu@email.com" />
-            </Campo>
-            <Campo label={t('coEmailConfirm')}>
-              <input required type="email" value={email2} onChange={(e) => setEmail2(e.target.value)} className={campo} autoComplete="off" placeholder="tu@email.com" />
-              {emailDiverse && <span className="mt-1.5 block text-fine text-accent">{t('coEmailMismatch')}</span>}
-            </Campo>
-          </div>
+          {emailIniziale ? (
+            <p className="text-fine text-on-paper-muted">
+              {benvenuto ? `Bentornato, ${benvenuto}. ` : ''}
+              Tessera in corso: il biglietto arriva a{' '}
+              <strong className="font-medium text-on-paper">{emailIniziale}</strong>.
+            </p>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Campo label={t('coEmail')}>
+                <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={campo} autoComplete="email" placeholder="tu@email.com" />
+              </Campo>
+              <Campo label={t('coEmailConfirm')}>
+                <input required type="email" value={email2} onChange={(e) => setEmail2(e.target.value)} className={campo} autoComplete="off" placeholder="tu@email.com" />
+                {emailDiverse && <span className="mt-1.5 block text-fine text-accent">{t('coEmailMismatch')}</span>}
+              </Campo>
+            </div>
+          )}
 
           <div className="grid gap-4 sm:grid-cols-2">
             <Campo label={t('coPhone')}>

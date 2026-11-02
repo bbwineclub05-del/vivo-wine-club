@@ -50,7 +50,16 @@ export const metadata: Metadata = {
   icons: {
     icon:       '/vivo-favicon.png',
     shortcut:   '/vivo-favicon.png',
-    apple:      '/vivo-favicon.png',
+    apple:      '/apple-touch-icon.png',
+  },
+  /* iOS legge il manifest dalla versione 16.4 in poi. Questo dice la
+     stessa cosa nel modo che capiscono anche i telefoni più vecchi, e
+     dà all'icona un nome corto: sotto un'icona ci stanno dodici
+     caratteri, "Vivo Wine Club" diventerebbe "Vivo Wine C…". */
+  appleWebApp: {
+    capable: true,
+    title: 'VIVO',
+    statusBarStyle: 'black-translucent',
   },
   openGraph: {
     title:       'Vivo Wine Club',

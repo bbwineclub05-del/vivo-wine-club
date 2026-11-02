@@ -540,6 +540,11 @@ export default function FinanceManager({ isAdmin = false }: { isAdmin?: boolean 
 
   const { ok, drift, balances } = useMemo(() => checkBooks(entries), [entries]);
 
+  /* Una riga senza tipo non sa dire cosa ha fatto ai soldi, quindi i
+     saldi la saltano — ma l'elenco la mostra lo stesso. Finché nessuno
+     lo dice, in registro c'è una spesa che la cassa non ha pagato. */
+  const senzaTipo = useMemo(() => rows.filter((r) => !r.entry_type).length, [rows]);
+
   const nameOf = useCallback(
     (email: string) => members.find((m) => m.email === email)?.name ?? email,
     [members],
@@ -771,6 +776,14 @@ export default function FinanceManager({ isAdmin = false }: { isAdmin?: boolean 
                 {!ok && (
                   <p className="mt-2 text-fine font-medium text-accent">
                     Scarto: {formatEur(drift)}. C&apos;è una riga che non quadra.
+                  </p>
+                )}
+                {senzaTipo > 0 && (
+                  <p className="mt-2 text-fine font-medium text-accent">
+                    {senzaTipo === 1
+                      ? 'Un movimento non dice se è una spesa, un’entrata o un rimborso, e resta fuori da questi conti.'
+                      : `${senzaTipo} movimenti non dicono se sono spese, entrate o rimborsi, e restano fuori da questi conti.`}{' '}
+                    Aprili da Movimenti e salvali col tipo giusto.
                   </p>
                 )}
               </section>

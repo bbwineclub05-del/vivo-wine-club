@@ -3,9 +3,10 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { SiteNav } from '@/components/ui/SiteNav';
+import SoloSoci from './SoloSoci';
 import { SiteFooter } from '@/components/ui/SiteFooter';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { dbEventToEventData, getEventDisplayStatus, type EventData, type DbEvent } from '@/lib/events';
+import { dbEventToEventData, eventDateLabel, getEventDisplayStatus, type EventData, type DbEvent } from '@/lib/events';
 import CheckoutForm from './CheckoutForm';
 
 export const dynamic = 'force-dynamic';
@@ -100,6 +101,26 @@ export default async function CheckoutPage({
     return <EventChiuso event={event} stato={displayStatus} />;
   }
 
+  // Riservato ai soci: prima la porta, poi il modulo. Il controllo che
+  // conta e' nel server del checkout; questo serve solo a non far
+  // compilare tutto a chi verrebbe respinto alla fine.
+  if (event.membersOnly) {
+    return (
+      <>
+        <SiteNav />
+        <main className="ds bg-paper text-on-paper">
+          <SoloSoci
+            event={event}
+            refCode={refCode}
+            partnerCode={partnerCode}
+            referralEnabled={referralEnabled}
+          />
+        </main>
+        <SiteFooter />
+      </>
+    );
+  }
+
   return (
     <>
       <SiteNav />
@@ -141,7 +162,7 @@ async function EventChiuso({ event, stato }: { event: EventData; stato: string }
           </h1>
           <p className="mt-4 text-lead text-on-paper-muted">{event.title}</p>
           <p className="mt-2 text-body text-on-paper-muted">
-            {event.day} {event.month} {event.year} · {event.location}
+            {eventDateLabel(event)} · {event.location}
           </p>
           <p className="mt-6 text-body text-on-paper-muted">{t('coPastBody')}</p>
 

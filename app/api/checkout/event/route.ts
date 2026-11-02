@@ -7,6 +7,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { generateTicketPdf } from '@/lib/ticket-pdf';
 import { emailShell, heading, para, ctaButton, divider } from '@/lib/email-shell';
 import { getClientIp, PRIVACY_POLICY_VERSION, TERMS_OF_SERVICE_VERSION } from '@/lib/consent';
+import { NON_SOCIO, socioInRegola } from '@/lib/soci';
 
 /** Resolve event by slug from Supabase */
 async function resolveEvent(slug: string): Promise<EventData | undefined> {
@@ -516,6 +517,16 @@ export async function POST(request: Request) {
   if (!event)                  return NextResponse.json({ error: 'Event not found' },       { status: 404 });
   if (event.status !== 'open') return NextResponse.json({ error: 'Event not available' },   { status: 400 });
   if (qty < 1 || qty > 10)     return NextResponse.json({ error: 'Invalid ticket count' },  { status: 400 });
+
+  // Riservato ai soci: qui, e non nel browser. La pagina lo chiede
+  // prima per cortesia, ma è questa riga a decidere — chi arriva
+  // dritto alla rotta con una chiamata sua trova lo stesso muro.
+  if (event.membersOnly) {
+    const socio = await socioInRegola(getSupabaseAdmin(), email);
+    if (!socio) {
+      return NextResponse.json({ error: NON_SOCIO.it, membersOnly: true }, { status: 403 });
+    }
+  }
 
   const total       = event.price * qty;
   const upsellItems = rawUpsellItems ?? [];
