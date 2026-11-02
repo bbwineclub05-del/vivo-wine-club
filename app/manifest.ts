@@ -32,9 +32,12 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: '#1a0505',
     theme_color: '#1a0505',
     lang: 'it',
+    // Due file, non uno: Android ritaglia l'icona in tondo, e un logo
+    // largo quanto sta bene in un quadrato perde le punte nel cerchio.
+    // Quella `maskable` tiene il segno piu' stretto apposta.
     icons: [
-      { src: '/apple-touch-icon.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-      { src: '/apple-touch-icon.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+      { src: '/icona-app.png', sizes: '1024x1024', type: 'image/png', purpose: 'any' },
+      { src: '/icona-app-maskable.png', sizes: '1024x1024', type: 'image/png', purpose: 'maskable' },
     ],
   };
 }

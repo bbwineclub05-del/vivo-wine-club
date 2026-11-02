@@ -50,7 +50,7 @@ export const metadata: Metadata = {
   icons: {
     icon:       '/vivo-favicon.png',
     shortcut:   '/vivo-favicon.png',
-    apple:      '/apple-touch-icon.png',
+    apple:      '/icona-app.png',
   },
   /* iOS legge il manifest dalla versione 16.4 in poi. Questo dice la
      stessa cosa nel modo che capiscono anche i telefoni più vecchi, e
@@ -59,7 +59,13 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     title: 'VIVO',
-    statusBarStyle: 'black-translucent',
+    // Non `black-translucent`: quello manda la pagina **sotto** l'ora e
+    // la batteria, e allora ogni schermata deve ricordarsi di lasciare
+    // lo spazio. Basta che una se lo dimentichi — e se lo dimenticava
+    // la barra dell'area riservata — perche' il titolo finisca sopra
+    // l'orologio. Cosi' invece e' iOS a tenersi la sua striscia, una
+    // volta per tutte le schermate.
+    statusBarStyle: 'black',
   },
   openGraph: {
     title:       'Vivo Wine Club',
