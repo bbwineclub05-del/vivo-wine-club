@@ -473,6 +473,135 @@ function EntryDetail({
 }
 
 /* ─────────────────────────────────────────────
+   Allinea la cassa
+───────────────────────────────────────────── */
+/**
+ * Quando il registro e il conto non dicono la stessa cifra.
+ *
+ * Succede, e non per forza perché qualcuno ha sbagliato: righe vecchie
+ * importate male, incassi segnati fuori tempo, spese pagate e mai
+ * scritte. Rincorrere ogni riga di tre anni fa costa settimane e non
+ * si finisce mai.
+ *
+ * Allora si fa quello che si fa con una cassa vera: la si conta, e la
+ * differenza diventa un movimento. Non un numero corretto a mano da
+ * qualche parte — **una riga**, con la sua data, la sua causale e il
+ * suo autore, che si vede in elenco come tutte le altre e si può
+ * togliere se si scopre da dove veniva il buco.
+ *
+ * Si scrive quanto c'è davvero. La differenza e il verso li calcola
+ * lui: chiedere all'utente se è un'entrata o un'uscita vuol dire
+ * chiedergli di fare una sottrazione con un segno, che è esattamente
+ * il momento in cui si sbaglia.
+ */
+function RettificaCassa({
+  token,
+  cassaOra,
+  onClose,
+  onSaved,
+}: {
+  token: string;
+  /** Quanto dice il registro adesso, in centesimi. */
+  cassaOra: number;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [vero, setVero] = useState('');
+  const [causale, setCausale] = useState('Rettifica di cassa');
+  const [salvando, setSalvando] = useState(false);
+  const [errore, setErrore] = useState('');
+
+  const cents = toCents(vero);
+  const delta = cents === null ? null : cents - cassaOra;
+  const valido = delta !== null && delta !== 0 && causale.trim().length > 0;
+
+  async function salva() {
+    if (!valido) return;
+    setErrore('');
+    setSalvando(true);
+    try {
+      const res = await fetch('/api/finance/entries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          // Senza persona: è la cassa del club che si muove, non il
+          // conto di qualcuno.
+          entry_type: delta! > 0 ? 'income' : 'expense',
+          amount: centsToInput(Math.abs(delta!)),
+          description: causale.trim(),
+          member_email: null,
+          date: today(),
+          category: null,
+          notes:
+            `Allineamento al conto reale: il registro diceva ${formatEur(cassaOra)}, ` +
+            `sul conto c'erano ${formatEur(cents!)}.`,
+        }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error ?? 'Errore.');
+      onSaved();
+      onClose();
+    } catch (e) {
+      setErrore(e instanceof Error ? e.message : 'Errore.');
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  return (
+    <Sheet
+      open
+      title="Allinea la cassa"
+      onClose={onClose}
+      footer={
+        <ActionButton onClick={salva} disabled={!valido || salvando} className="w-full">
+          {salvando ? 'Salvo…' : 'Registra la rettifica'}
+        </ActionButton>
+      }
+    >
+      <p className="text-body text-on-paper-muted">
+        Il registro dice <strong className="font-medium text-on-paper">{formatEur(cassaOra)}</strong>.
+        Scrivi quanto c’è davvero sul conto: la differenza diventa un movimento, con la sua
+        causale, visibile in elenco come tutti gli altri.
+      </p>
+
+      <div className="mt-6 flex flex-col gap-4">
+        <Field label="Quanto c’è davvero">
+          <TextInput
+            inputMode="decimal"
+            value={vero}
+            onChange={(e) => setVero(e.target.value)}
+            placeholder="0,00"
+            autoFocus
+          />
+        </Field>
+
+        <Field label="Causale" hint="Come la leggerà chi apre il registro fra un anno">
+          <TextInput value={causale} onChange={(e) => setCausale(e.target.value)} />
+        </Field>
+      </div>
+
+      {delta !== null && delta !== 0 && (
+        <p className="mt-5 rounded-2xl border border-rule-paper p-4 text-body">
+          {delta > 0 ? 'In cassa c’è più di quanto risulta: ' : 'In cassa c’è meno di quanto risulta: '}
+          <strong className="font-medium">
+            {delta > 0 ? 'un’entrata' : 'un’uscita'} di {formatEur(Math.abs(delta))}
+          </strong>
+          .
+        </p>
+      )}
+      {delta === 0 && (
+        <p className="mt-5 text-body text-on-paper-muted">
+          Combacia già: non c’è niente da registrare.
+        </p>
+      )}
+
+      {errore && <p className="mt-4 text-fine font-medium text-accent">{errore}</p>}
+    </Sheet>
+  );
+}
+
+/* ─────────────────────────────────────────────
    Finance
 ───────────────────────────────────────────── */
 export default function FinanceManager({ isAdmin = false }: { isAdmin?: boolean }) {
@@ -485,6 +614,7 @@ export default function FinanceManager({ isAdmin = false }: { isAdmin?: boolean 
 
   const [tab, setTab] = useState<'saldi' | 'movimenti'>('saldi');
   const [detail, setDetail] = useState<RawRow | null>(null);
+  const [rettifica, setRettifica] = useState(false);
   const [form, setForm] = useState<
     | {
         preset?: { entry_type: EntryType; member_email: string; amount: string; description: string };
@@ -543,8 +673,6 @@ export default function FinanceManager({ isAdmin = false }: { isAdmin?: boolean 
   /* Una riga senza tipo non sa dire cosa ha fatto ai soldi, quindi i
      saldi la saltano — ma l'elenco la mostra lo stesso. Finché nessuno
      lo dice, in registro c'è una spesa che la cassa non ha pagato. */
-  const senzaTipo = useMemo(() => rows.filter((r) => !r.entry_type).length, [rows]);
-
   const nameOf = useCallback(
     (email: string) => members.find((m) => m.email === email)?.name ?? email,
     [members],
@@ -778,14 +906,15 @@ export default function FinanceManager({ isAdmin = false }: { isAdmin?: boolean 
                     Scarto: {formatEur(drift)}. C&apos;è una riga che non quadra.
                   </p>
                 )}
-                {senzaTipo > 0 && (
-                  <p className="mt-2 text-fine font-medium text-accent">
-                    {senzaTipo === 1
-                      ? 'Un movimento non dice se è una spesa, un’entrata o un rimborso, e resta fuori da questi conti.'
-                      : `${senzaTipo} movimenti non dicono se sono spese, entrate o rimborsi, e restano fuori da questi conti.`}{' '}
-                    Aprili da Movimenti e salvali col tipo giusto.
-                  </p>
-                )}
+                {/* I conti possono tornare fra loro e non corrispondere
+                    lo stesso al conto in banca: la coerenza interna non
+                    sa niente dei soldi veri. */}
+                <button
+                  onClick={() => setRettifica(true)}
+                  className="mt-3 text-fine font-medium text-on-paper-muted underline underline-offset-2 hover:text-accent"
+                >
+                  La cassa non corrisponde al conto?
+                </button>
               </section>
             </div>
           )}
@@ -891,6 +1020,15 @@ export default function FinanceManager({ isAdmin = false }: { isAdmin?: boolean 
             setDetail(null);
             load();
           }}
+        />
+      )}
+
+      {rettifica && (
+        <RettificaCassa
+          token={token}
+          cassaOra={balances.clubCash}
+          onClose={() => setRettifica(false)}
+          onSaved={load}
         />
       )}
     </div>
