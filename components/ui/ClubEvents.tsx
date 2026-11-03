@@ -150,16 +150,16 @@ export function ClubEvents({ events }: { events: EventData[] }) {
                         })}
                   </span>
                   {event.dateMonthOnly ? (
-                    <>
-                      {/* Giorno non ancora deciso: un trattino, che
-                          sotto il nome del mese si legge da solo. */}
-                      <span className="ds-display text-title leading-none text-on-paper-muted sm:hidden">
-                        –
-                      </span>
-                      <span className="ds-display ds-numeric hidden text-subtitle leading-none sm:block">
-                        {eventDateStack(event).bottom}
-                      </span>
-                    </>
+                    /* Giorno non ancora deciso: la casella resta
+                       vuota. Un trattino si legge come "annullato" e
+                       una scritta "da definire" e' una riga in piu' da
+                       leggere in un elenco che va scorso: il vuoto
+                       sotto il nome del mese dice la stessa cosa e non
+                       chiede niente. Lo spazio resta occupato, quindi
+                       i titoli restano in colonna. */
+                    <span className="ds-display ds-numeric hidden text-subtitle leading-none sm:block">
+                      {eventDateStack(event).bottom}
+                    </span>
                   ) : (
                     <span className="ds-display ds-numeric text-title leading-none">
                       {eventDateStack(event).bottom}

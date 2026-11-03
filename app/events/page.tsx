@@ -14,15 +14,8 @@ import { dbEventToEventData, type DbEvent, type EventData } from '@/lib/events';
 
 export const dynamic = 'force-dynamic';
 
-const FORMATS = [
-  { id: 'party', name: 'Wine Party', descKey: 'formatPartyDesc' },
-  { id: 'lounge', name: 'Wine Lounge', descKey: 'formatLoungeDesc' },
-  { id: 'visits', name: 'Winery Visits', descKey: 'formatVisitsDesc' },
-] as const;
-
 export default async function EventsPage() {
   const t = await getTranslations('site.club');
-  const tf = await getTranslations('ambassador');
 
   // Unchanged query: published, from today, soonest first.
   let events: EventData[] = [];
@@ -71,18 +64,12 @@ export default async function EventsPage() {
           </div>
         </Section>
 
-        {/* ── The three formats ───────────────────────────────── */}
-        <Section ground="paper-soft">
-          <h2 className="ds-display text-title">{t('formatsTitle')}</h2>
-          <dl className="mt-12 grid gap-x-10 gap-y-10 md:grid-cols-3">
-            {FORMATS.map((f) => (
-              <div key={f.id} id={f.id} className="scroll-mt-28 border-t border-rule-paper pt-5">
-                <dt className="text-subtitle font-medium">{f.name}</dt>
-                <dd className="mt-3 text-body text-on-paper-muted">{tf(f.descKey)}</dd>
-              </div>
-            ))}
-          </dl>
-        </Section>
+        {/* I tre formati stavano qui, sotto il calendario: Wine
+            Party, Wine Lounge, Winery Visit, spiegati uno per uno.
+            Erano la didascalia di una cosa gia' detta — nel calendario
+            ogni serata porta il suo tipo scritto in chiaro, e sopra
+            c'e' il filtro con gli stessi tre nomi. Tre paragrafi per
+            ripetere tre parole gia' lette due volte. */}
 
         {/* ── The estates ─────────────────────────────────────
             Reached from the two pages that link back to #estates. */}
