@@ -128,13 +128,20 @@ export function ClubEvents({ events }: { events: EventData[] }) {
                   faded ? 'opacity-55' : ''
                 }`}
               >
-                {/* Date */}
+                {/* Date
+                    Sul telefono resta il giorno e basta. Il mese e'
+                    gia' scritto grande sopra il gruppo, il giorno
+                    della settimana e' un terzo corpo di testo in una
+                    colonna larga tre centimetri, e sotto "Dicembre"
+                    un secondo "dic 2026" e' la stessa cosa detta due
+                    volte. Sul computer, dove lo spazio c'e', resta
+                    tutto. */}
                 <Link
                   href={href}
-                  className="flex w-[56px] shrink-0 flex-col items-center no-underline sm:w-[72px]"
+                  className="flex w-[48px] shrink-0 flex-col items-center no-underline sm:w-[72px]"
                   aria-label={event.title}
                 >
-                  <span className="text-fine font-medium uppercase text-accent-soft">
+                  <span className="hidden text-fine font-medium uppercase text-accent-soft sm:block">
                     {event.dateMonthOnly
                       ? eventDateStack(event).top
                       : new Date(`${event.date.slice(0, 10)}T12:00:00Z`).toLocaleString(locale, {
@@ -142,13 +149,22 @@ export function ClubEvents({ events }: { events: EventData[] }) {
                           timeZone: 'UTC',
                         })}
                   </span>
-                  <span
-                    className={`ds-display ds-numeric leading-none ${
-                      event.dateMonthOnly ? 'text-subtitle' : 'text-title'
-                    }`}
-                  >
-                    {eventDateStack(event).bottom}
-                  </span>
+                  {event.dateMonthOnly ? (
+                    <>
+                      {/* Giorno non ancora deciso: un trattino, che
+                          sotto il nome del mese si legge da solo. */}
+                      <span className="ds-display text-title leading-none text-on-paper-muted sm:hidden">
+                        –
+                      </span>
+                      <span className="ds-display ds-numeric hidden text-subtitle leading-none sm:block">
+                        {eventDateStack(event).bottom}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="ds-display ds-numeric text-title leading-none">
+                      {eventDateStack(event).bottom}
+                    </span>
+                  )}
                 </Link>
 
                 {event.image_url && (
@@ -176,7 +192,12 @@ export function ClubEvents({ events }: { events: EventData[] }) {
                   >
                     {event.title}
                   </Link>
-                  <p className="mt-1.5 flex items-center gap-2 text-body text-on-paper-muted">
+                  {/* L'indirizzo per esteso non serve a scegliere, e
+                      troncato a meta' non serve a niente: su un
+                      telefono si legge "Utopia, 60 Rue de l'Arbre
+                      Sec, 7…". Chi vuole sapere dov'e' apre
+                      l'evento. */}
+                  <p className="mt-1.5 hidden items-center gap-2 text-body text-on-paper-muted sm:flex">
                     <MapPin size={14} strokeWidth={1.7} className="shrink-0 text-accent-soft" />
                     <span className="truncate">{event.locationFull}</span>
                   </p>
@@ -184,8 +205,9 @@ export function ClubEvents({ events }: { events: EventData[] }) {
 
                 <div className="flex w-full shrink-0 items-center gap-3 sm:w-auto">
                   {event.membersOnly && (
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/8 px-3 py-1.5 text-fine font-medium text-accent">
-                      <Lock size={13} strokeWidth={2} />
+                    <span className="inline-flex items-center gap-1 rounded-full border border-accent/30 bg-accent/8 px-2.5 py-1 text-[11px] font-medium leading-none text-accent sm:gap-1.5 sm:px-3 sm:py-1.5 sm:text-fine">
+                      <Lock size={11} strokeWidth={2} className="sm:hidden" />
+                      <Lock size={13} strokeWidth={2} className="hidden sm:block" />
                       {te('membersOnly')}
                     </span>
                   )}
