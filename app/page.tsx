@@ -146,7 +146,14 @@ export default async function Home() {
           </ButtonLink>
         </Section>
 
-        {/* ── Vivo Club ─────────────────────────────────────────── */}
+        {/* ── Vivo Club ───────────────────────────────────────────
+            Tre bande scure di fila, chiuse in un fondo scuro loro.
+            Senza, alle giunture si vedeva una riga chiara: le altezze
+            delle bande cadono su frazioni di pixel, il browser
+            arrotonda, e nella fessura che resta si vedeva il fondo
+            pagina, che e' rosa chiaro. Su un telefono, dove i pixel
+            sono piu' piccoli di quelli veri, succedeva sempre. */}
+        <div className="bg-ink">
         <Section ground="ink" bleed width="full" tight>
           <Chapter lines={['Vivo', 'Club']} accent={[1, 1]} />
         </Section>
@@ -183,6 +190,8 @@ export default async function Home() {
             </ButtonLink>
           </div>
         </Section>
+        </div>
+
         {/* Chi lavora con noi, l'ultima cosa prima del piede. */}
         <Section width="wide" ground="paper-soft">
           <h2 className="ds-display mb-10 text-title">{t('sponsors.title')}</h2>
