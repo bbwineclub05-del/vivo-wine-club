@@ -1,6 +1,6 @@
 import { getLocale, getTranslations } from 'next-intl/server';
 
-import { benefitGroupsFor } from '@/lib/member-benefits';
+import { benefitGroupsFor, sintesiFor } from '@/lib/member-benefits';
 import {
   FOUNDING_OFFER_CENTS, FREE_UNTIL, STANDARD_PRICE_CENTS,
 } from '@/lib/membership';
@@ -49,12 +49,22 @@ export async function MembershipValue({
   ground = 'paper',
   titolo = true,
   prezzo = true,
+  sintesi = false,
 }: {
   ground?: 'paper' | 'ink';
   /** Spento dove il titolo lo mette gia' la pagina attorno. */
   titolo?: boolean;
   /** Spento dove il prezzo lo dice la pagina dove si paga. */
   prezzo?: boolean;
+  /**
+   * Tre punti invece di nove, e del prezzo solo che oggi non si paga.
+   *
+   * E' la home: li' non si decide se iscriversi, si decide se andare
+   * a vedere. Nove voci e tre cifre lette di sfuggita non convincono
+   * nessuno, e rispondono a domande che non ci si e' ancora fatti. Il
+   * racconto per intero sta una pagina piu' in la', dove serve.
+   */
+  sintesi?: boolean;
 }) {
   const t = await getTranslations('membership');
   const locale = await getLocale();
@@ -70,12 +80,22 @@ export async function MembershipValue({
       <div>
         {titolo && <h2 className="ds-display text-title">{t('whatTitle')}</h2>}
 
-        {/* Tre righe, non tre colonne. In colonna i tre mucchi finivano
-            ad altezze diverse e i filetti non si incontravano mai: la
-            prima colonna sembrava storta. In riga il filetto corre da
-            un bordo all'altro, e di filetti ce ne sono tre invece di
-            nove. L'etichetta sta a sinistra, come in un indice. */}
-        <div className={`${titolo ? 'mt-9' : ''} border-t ${bordo}`}>
+        {sintesi ? (
+          <dl className={`${titolo ? 'mt-9' : ''} border-t ${bordo}`}>
+            {sintesiFor(locale).map((v) => (
+              <div key={v.title} className={`border-b ${bordo} py-5`}>
+                <dt className="text-subtitle font-medium">{v.title}</dt>
+                <dd className={`mt-1.5 text-body ${smorzato}`}>{v.body}</dd>
+              </div>
+            ))}
+          </dl>
+        ) : (
+          /* Tre righe, non tre colonne. In colonna i tre mucchi finivano
+             ad altezze diverse e i filetti non si incontravano mai: la
+             prima colonna sembrava storta. In riga il filetto corre da
+             un bordo all'altro, e di filetti ce ne sono tre invece di
+             nove. L'etichetta sta a sinistra, come in un indice. */
+          <div className={`${titolo ? 'mt-9' : ''} border-t ${bordo}`}>
           {gruppi.map((g) => (
             <section
               key={g.id}
@@ -96,14 +116,8 @@ export async function MembershipValue({
             </section>
           ))}
         </div>
+        )}
       </div>
-
-      {/* Il pacco di benvenuto non e' un vantaggio in piu' da
-          incolonnare: e' l'unica cosa che arriva a casa, e chiude. */}
-      <p className={`text-body ${smorzato}`}>
-        <span className="font-medium text-accent">{t('packTitle')}:</span>{' '}
-        {t('packBody')}
-      </p>
 
       {prezzo && (
       <div>
@@ -113,13 +127,21 @@ export async function MembershipValue({
         </p>
         <div className={`mt-5 flex max-w-[66ch] flex-col gap-3 text-body ${smorzato}`}>
           <p>{t('priceFreeUntil', { free: giorno(FREE_UNTIL, locale) })}</p>
-          <p>
-            {t('priceRenew', {
-              offer: euro(FOUNDING_OFFER_CENTS),
-              full: euro(STANDARD_PRICE_CENTS),
-            })}
-          </p>
-          <p>{t('priceAfter', { full: euro(STANDARD_PRICE_CENTS) })}</p>
+          {/* Le cifre del rinnovo no: in home sono la risposta a una
+              domanda che nessuno si e' ancora fatto, e un numero
+              letto prima di sapere cosa si compra e' solo un motivo
+              per non cliccare. Stanno dove ci si iscrive. */}
+          {!sintesi && (
+            <>
+              <p>
+                {t('priceRenew', {
+                  offer: euro(FOUNDING_OFFER_CENTS),
+                  full: euro(STANDARD_PRICE_CENTS),
+                })}
+              </p>
+              <p>{t('priceAfter', { full: euro(STANDARD_PRICE_CENTS) })}</p>
+            </>
+          )}
         </div>
       </div>
       )}

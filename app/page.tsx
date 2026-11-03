@@ -177,8 +177,12 @@ export default async function Home() {
           <p className="text-fine uppercase tracking-[0.22em] text-rose">{t('club.memberLine')}</p>
           <h3 className="ds-display mt-4 text-title">{t('club.valueTitle')}</h3>
 
+          {/* Tre punti, non nove, e del prezzo solo che oggi non si
+              paga. Qui non si decide se iscriversi: si decide se
+              andare a vedere. Il resto sta su /membership, dove la
+              domanda e' gia' un'altra. */}
           <div className="mt-10">
-            <MembershipValue ground="ink" titolo={false} />
+            <MembershipValue ground="ink" titolo={false} sintesi />
           </div>
 
           <div className="mt-12 flex flex-wrap items-center gap-x-6 gap-y-4">

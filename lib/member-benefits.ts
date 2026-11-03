@@ -26,14 +26,12 @@ const ICONE: Record<string, Benefit['icon']> = {
   selection: 'star',
   mappa: 'map',
   riservati: 'lock',
-  pack: 'gift',
 };
 
 const TESTI: Record<BenefitLocale, Record<string, { title: string; body: string }>> = {
   it: {
     trips:     { title: 'VIVO Wine Trips',            body: 'Qualche giorno in un territorio del vino, in gruppo.' },
     maison:    { title: 'VIVO Maison',                body: 'La casa del club: cene e degustazioni a porte chiuse.' },
-    pack:      { title: 'Il pacco di benvenuto',      body: 'Il cavatappi VIVO, spedito a casa.' },
     visite:    { title: 'Visite in cantina',          body: 'Barolo, Bolgheri, Franciacorta, Bordeaux e molto altro.' },
     eventi:    { title: 'Eventi VIVO',                body: 'Ingresso gratuito o prezzo riservato.' },
     riservati: { title: 'Serate solo per soci',       body: 'Quasi tutte le nostre serate.' },
@@ -45,7 +43,6 @@ const TESTI: Record<BenefitLocale, Record<string, { title: string; body: string 
   en: {
     trips:     { title: 'VIVO Wine Trips',            body: 'A few days in a wine country, as a group.' },
     maison:    { title: 'VIVO Maison',                body: 'The club house: dinners and tastings behind closed doors.' },
-    pack:      { title: 'The welcome pack',           body: 'The VIVO corkscrew, posted to you.' },
     visite:    { title: 'Winery visits',              body: 'Barolo, Bolgheri, Franciacorta, Bordeaux and plenty more.' },
     eventi:    { title: 'VIVO events',                body: 'Free entry or a members’ price.' },
     riservati: { title: 'Members-only nights',        body: 'Nearly every night we throw.' },
@@ -57,7 +54,6 @@ const TESTI: Record<BenefitLocale, Record<string, { title: string; body: string 
   fr: {
     trips:     { title: 'VIVO Wine Trips',            body: 'Quelques jours dans une région du vin, en groupe.' },
     maison:    { title: 'VIVO Maison',                body: 'La maison du club : dîners et dégustations à huis clos.' },
-    pack:      { title: 'Le pack de bienvenue',       body: 'Le tire-bouchon VIVO, envoyé chez vous.' },
     visite:    { title: 'Visites de domaines',        body: 'Barolo, Bolgheri, Franciacorta, Bordeaux et bien d’autres.' },
     eventi:    { title: 'Événements VIVO',            body: 'Entrée gratuite ou tarif membre.' },
     riservati: { title: 'Soirées réservées aux membres', body: 'Presque toutes nos soirées.' },
@@ -74,12 +70,15 @@ const TESTI: Record<BenefitLocale, Record<string, { title: string; body: string 
  * Prima quello per cui uno si iscrive davvero — le serate riservate,
  * le cantine, i viaggi, la Maison — e dopo le cose che contano ma
  * non fanno alzare nessuno dal divano: gli sconti, la mappa, la
- * lista delle bottiglie. Il pacco di benvenuto chiude, perche' e'
- * l'unica cosa che arriva a casa.
+ * lista delle bottiglie.
+ *
+ * Quello che arriva a casa quando ci si iscrive non e' scritto da
+ * nessuna parte, ed e' voluto: una sorpresa annunciata non e' piu'
+ * una sorpresa.
  */
 const ORDINE = [
   'riservati', 'eventi', 'visite', 'trips', 'maison',
-  'rete', 'merch', 'selection', 'mappa', 'pack',
+  'rete', 'merch', 'selection', 'mappa',
 ] as const;
 
 export function benefitsFor(locale: string | null | undefined): Benefit[] {
@@ -99,9 +98,6 @@ export const BENEFITS = benefitsFor('it');
  * due secondi e si scorre oltre. Tre mucchi da tre invece si tengono
  * a mente, e ognuno risponde a una domanda diversa: dove si entra,
  * dove si va, quanto si risparmia.
- *
- * Il pacco di benvenuto resta fuori: e' l'unica cosa che arriva a
- * casa, e chiude la sezione da solo.
  */
 const GRUPPI = [
   { id: 'porte',  voci: ['riservati', 'eventi', 'maison'] },
@@ -128,4 +124,38 @@ export function benefitGroupsFor(locale: string | null | undefined): BenefitGrou
     titolo: TITOLI_GRUPPI[l][g.id],
     voci: g.voci.map((id) => ({ id, icon: ICONE[id], ...TESTI[l][id] })),
   }));
+}
+
+/* ── I tre punti della home ───────────────────────────────────────── */
+
+/**
+ * Le nove voci qui sopra rispondono a chi sta per pagare. In home no:
+ * li' si decide solo se vale la pena cliccare, e nove righe lette di
+ * sfuggita non decidono niente. Tre si ricordano.
+ *
+ * Stanno nello stesso file delle altre perche' sono la stessa
+ * promessa detta piu' corta, e se una cambia devono cambiare
+ * entrambe: due file diversi diventano due promesse diverse.
+ */
+const SINTESI: Record<BenefitLocale, { title: string; body: string }[]> = {
+  it: [
+    { title: 'Eventi esclusivi', body: 'Serate riservate ai soci, in Italia e in Francia.' },
+    { title: 'Viaggi in cantina', body: 'Le migliori cantine fra Francia e Italia, scelte da noi.' },
+    { title: 'Sconti esclusivi', body: 'Enoteche e cantine convenzionate, e tutto il nostro shop.' },
+  ],
+  en: [
+    { title: 'Members-only events', body: 'Nights for members, in Italy and France.' },
+    { title: 'Winery trips', body: 'The best estates in France and Italy, picked by us.' },
+    { title: 'Members-only discounts', body: 'Partner wine shops and estates, and everything we make.' },
+  ],
+  fr: [
+    { title: 'Événements exclusifs', body: 'Des soirées réservées aux membres, en Italie et en France.' },
+    { title: 'Voyages dans les domaines', body: 'Les meilleurs domaines de France et d’Italie, choisis par nous.' },
+    { title: 'Remises exclusives', body: 'Cavistes et domaines partenaires, et tout notre shop.' },
+  ],
+};
+
+export function sintesiFor(locale: string | null | undefined) {
+  const l: BenefitLocale = locale === 'en' || locale === 'fr' ? locale : 'it';
+  return SINTESI[l];
 }

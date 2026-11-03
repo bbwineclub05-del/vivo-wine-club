@@ -93,9 +93,22 @@ export function Marquee({
     ro.observe(el);
     for (const figlio of Array.from(el.children)) ro.observe(figlio);
 
-    // Nel verso contrario si parte da meta': andando all'indietro da
-    // zero si finirebbe subito contro il bordo.
-    if (reverse) el.scrollLeft = meta;
+    /* Dove siamo, tenuto qui e non chiesto al browser.
+     *
+     * Prima la posizione si rileggeva da `scrollLeft` a ogni
+     * fotogramma. Funziona finche' il passo e' almeno un pixel — e su
+     * un computer lo e'. Su un telefono no: il nastro e' corto, quindi
+     * il passo vale un quarto di pixel, e Safari conserva `scrollLeft`
+     * come numero intero. Scrivi 0,26 e rileggi 0: la fila riparte
+     * ogni volta da dove era, e resta ferma. Andando all'indietro
+     * invece l'arrotondamento cade dall'altra parte e la fila si
+     * muove, a scatti di un pixel — ecco perche' delle due file degli
+     * sponsor se ne inchiodava una sola, e solo sul telefono.
+     *
+     * Tenendo il conto noi, i quarti di pixel si sommano e dopo
+     * quattro fotogrammi il pixel c'e'. */
+    let dove = reverse ? meta : 0;
+    el.scrollLeft = dove;
 
     function passo(ora: number) {
       frame = requestAnimationFrame(passo);
@@ -103,11 +116,11 @@ export function Marquee({
       ultimo = ora;
       if (!el || fermo > 0 || dt === 0 || meta <= 0) return;
 
-      const px = (meta / speed) * (dt / 1000);
-      let x = el.scrollLeft + (reverse ? -px : px);
-      if (x >= meta) x -= meta;
-      if (x <= 0) x += meta;
-      el.scrollLeft = x;
+      dove += (meta / speed) * (dt / 1000) * (reverse ? -1 : 1);
+      // Il giro: la meta' puo' essere cambiata di misura mentre
+      // scorrevamo, quindi si riporta dentro, non si sottrae e basta.
+      dove = ((dove % meta) + meta) % meta;
+      el.scrollLeft = dove;
     }
     frame = requestAnimationFrame(passo);
 
@@ -135,6 +148,7 @@ export function Marquee({
     function mollato() {
       if (!giu) return;
       giu = false;
+      dove = el!.scrollLeft;
       // `trascinato` resta vero finche' il clic non e' passato.
       setTimeout(() => { trascinato = false; }, 0);
     }
@@ -145,7 +159,11 @@ export function Marquee({
     /* Si trattiene solo mentre qualcuno la sta spingendo: il mouse
        che passa sopra non la ferma piu'. */
     const trattieni = () => { fermo += 1; };
-    const lascia = () => { fermo = Math.max(0, fermo - 1); };
+    const lascia = () => {
+      fermo = Math.max(0, fermo - 1);
+      // Col dito ha scorso il browser, non noi: riallinea il conto.
+      if (fermo === 0 && el) dove = el.scrollLeft;
+    };
 
     if (!guidabile) {
       return () => { cancelAnimationFrame(frame); ro.disconnect(); };

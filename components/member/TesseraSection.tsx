@@ -198,8 +198,6 @@ export default function TesseraSection({ token, name }: { token: string; name: s
         })}
       </div>
 
-      <p className="mt-6 text-fine text-on-paper-muted">{t('welcomePack')}</p>
-
       {/* Quello che forse faremo, se lo volete. */}
       <div className="mt-6">
         <BottigliaPanel token={token} name={name} />
