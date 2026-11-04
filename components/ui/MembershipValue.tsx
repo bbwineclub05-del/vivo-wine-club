@@ -1,6 +1,6 @@
 import { getLocale, getTranslations } from 'next-intl/server';
 
-import { benefitGroupsFor, sintesiFor } from '@/lib/member-benefits';
+import { benefitsFor, sintesiFor } from '@/lib/member-benefits';
 import {
   FOUNDING_OFFER_CENTS, FREE_UNTIL, STANDARD_PRICE_CENTS,
 } from '@/lib/membership';
@@ -17,13 +17,14 @@ import {
  * lo stesso posto da cui le prendono l'area del socio e le mail di
  * benvenuto. Una promessa sola, in un posto solo.
  *
- * Erano nove riquadri uguali, tre per riga, ognuno con la sua
- * icona. Una griglia cosi' non si legge: si guarda due secondi e si
- * scorre via, e su un telefono erano due schermi pieni. Adesso sono
- * tre mucchi da tre, scritti come un indice: il nome a sinistra, la
- * riga che spiega accanto. Niente icone, niente caselle. Le icone
- * erano dieci simboli diversi che dicevano meno delle dieci parole
- * che avevano sotto.
+ * Erano nove voci in una griglia, e sono diventate cinque in un
+ * elenco numerato. Nove non erano piu' generose di cinque: tre o
+ * quattro dicevano la stessa cosa con parole diverse, e un elenco
+ * che si ripete si legge come una promessa gonfiata. Una griglia poi
+ * serve a confrontare, e qui non c'e' niente da confrontare: c'e' da
+ * leggere. Su un telefono le sue celle si incolonnavano in nove
+ * scatole identiche, due schermi pieni che si scorrono senza averne
+ * letta una.
  *
  * Anche i prezzi arrivano dalle regole vere (`lib/membership.ts`):
  * se cambia la data dello sconto, cambia la frase, e non possono
@@ -73,7 +74,7 @@ export async function MembershipValue({
   const smorzato = scuro ? 'text-on-ink-muted' : 'text-on-paper-muted';
   const bordo = scuro ? 'border-rule-ink' : 'border-rule-paper';
 
-  const gruppi = benefitGroupsFor(locale);
+  const voci = benefitsFor(locale);
 
   return (
     <div className="flex flex-col gap-12">
@@ -81,6 +82,7 @@ export async function MembershipValue({
         {titolo && <h2 className="ds-display text-title">{t('whatTitle')}</h2>}
 
         {sintesi ? (
+          /* In home: tre righe e via. */
           <dl className={`${titolo ? 'mt-9' : ''} border-t ${bordo}`}>
             {sintesiFor(locale).map((v) => (
               <div key={v.title} className={`border-b ${bordo} py-5`}>
@@ -90,32 +92,41 @@ export async function MembershipValue({
             ))}
           </dl>
         ) : (
-          /* Tre righe, non tre colonne. In colonna i tre mucchi finivano
-             ad altezze diverse e i filetti non si incontravano mai: la
-             prima colonna sembrava storta. In riga il filetto corre da
-             un bordo all'altro, e di filetti ce ne sono tre invece di
-             nove. L'etichetta sta a sinistra, come in un indice. */
-          <div className={`${titolo ? 'mt-9' : ''} border-t ${bordo}`}>
-          {gruppi.map((g) => (
-            <section
-              key={g.id}
-              className={`grid gap-x-10 gap-y-3 border-b ${bordo} py-5 md:grid-cols-[clamp(140px,15vw,210px)_1fr]`}
-            >
-              <h3 className="text-fine font-medium uppercase tracking-[0.14em] text-accent md:pt-1">
-                {g.titolo}
-              </h3>
-
-              <dl className="grid gap-x-10 gap-y-2.5 md:grid-cols-3">
-                {g.voci.map((b) => (
-                  <div key={b.id} className="text-fine">
-                    <dt className="inline text-body font-medium">{b.title}.</dt>{' '}
-                    <dd className={`inline ${smorzato}`}>{b.body}</dd>
-                  </div>
-                ))}
-              </dl>
-            </section>
-          ))}
-        </div>
+          /* Qui invece si legge per decidere, e allora servono le
+             parole intere.
+             Prima era una griglia: tre etichette a sinistra e nove
+             celle a destra, tre per riga. Su un telefono quelle celle
+             si incolonnano e diventano nove scatole uguali una sotto
+             l'altra — si scorre fino in fondo senza averne letta una.
+             Una griglia fa confrontare, e qui non c'e' niente da
+             confrontare: c'e' da leggere.
+             Adesso e' un elenco numerato. Il numero grande da' il
+             passo e dice quante sono, cosi' si sa quando finisce; il
+             titolo si legge da solo anche scorrendo in fretta; la
+             riga sotto spiega a chi si e' fermato. Uno per riga,
+             uguale sul telefono e sul computer: non c'e' un ordine
+             di lettura da indovinare. */
+          <ol className={`${titolo ? 'mt-10' : ''} border-t ${bordo}`}>
+            {voci.map((v, i) => (
+              <li
+                key={v.id}
+                className={`grid grid-cols-[2.2rem_1fr] gap-x-4 border-b ${bordo} py-6 sm:grid-cols-[4rem_1fr] sm:gap-x-8 sm:py-8`}
+              >
+                <span
+                  aria-hidden="true"
+                  className="ds-display ds-numeric text-[22px] leading-none text-accent/35 sm:text-[34px]"
+                >
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <div className="min-w-0">
+                  <h3 className="ds-display text-[20px] leading-tight tracking-[-0.02em] sm:text-[26px]">
+                    {v.title}
+                  </h3>
+                  <p className={`mt-2 max-w-[52ch] text-body ${smorzato}`}>{v.body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
         )}
       </div>
 

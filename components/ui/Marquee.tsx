@@ -122,7 +122,29 @@ export function Marquee({
       dove = ((dove % meta) + meta) % meta;
       el.scrollLeft = dove;
     }
-    frame = requestAnimationFrame(passo);
+
+    /* Il ciclo gira solo quando la fila e' dalle parti dello schermo.
+       Prima andava sempre: tre file che scrivono `scrollLeft` sessanta
+       volte al secondo, anche quando la pagina e' ferma tremila pixel
+       piu' in giu' e non le guarda nessuno. Ogni scrittura e' un
+       ricalcolo di impaginazione che il browser deve fare comunque. */
+    let acceso = false;
+    function accendi() {
+      if (acceso) return;
+      acceso = true;
+      ultimo = 0;   // riparte senza saltare in avanti
+      frame = requestAnimationFrame(passo);
+    }
+    function spegni() {
+      if (!acceso) return;
+      acceso = false;
+      cancelAnimationFrame(frame);
+    }
+    const inVista = new IntersectionObserver(
+      ([v]) => (v.isIntersecting ? accendi() : spegni()),
+      { rootMargin: '200px' },
+    );
+    inVista.observe(el);
 
     /* Trascinamento col mouse. Soglia di quattro pixel: sotto, e'
        un clic con la mano poco ferma, non una trascinata. */
@@ -166,7 +188,7 @@ export function Marquee({
     };
 
     if (!guidabile) {
-      return () => { cancelAnimationFrame(frame); ro.disconnect(); };
+      return () => { spegni(); inVista.disconnect(); ro.disconnect(); };
     }
 
     el.addEventListener('pointerdown', trattieni);
@@ -179,7 +201,8 @@ export function Marquee({
     window.addEventListener('touchend', lascia);
 
     return () => {
-      cancelAnimationFrame(frame);
+      spegni();
+      inVista.disconnect();
       ro.disconnect();
       el.removeEventListener('pointerdown', trattieni);
       el.removeEventListener('pointerdown', premuto);

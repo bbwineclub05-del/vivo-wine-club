@@ -80,27 +80,34 @@ export function VideoCard({
   /* Fuori dallo schermo si mette in pausa: una fila di clip costa una
      decodifica, non sei.
 
-     Dentro una striscia che scorre pero' no. La scheda esce e rientra
-     dal bordo in continuazione, e ogni passaggio sarebbe un
-     `pause()` e un `play()`: il video riparte, salta, e si vede. Con
-     `continuo` parte quando compare e da li' in poi va avanti. */
+     Dentro una striscia che scorre la scheda non guarda se stessa. La
+     scheda esce e rientra dal bordo della striscia in continuazione, e
+     mettere in pausa a ogni passaggio farebbe ripartire il video a
+     scatti: si vede. Pero' guardare solo se e' comparsa una volta
+     voleva dire non fermarla mai piu', e una striscia di dodici clip
+     continuava a decodificare dodici filmati anche tremila pixel piu'
+     in giu', per tutta la visita — con la pagina che si trascinava.
+     Allora il riferimento e' la striscia intera: finche' e' dalle
+     parti dello schermo le clip vanno, quando lo schermo e' altrove
+     si fermano tutte insieme, e nessuno le vede fermarsi. */
   useEffect(() => {
     const el = ref.current;
     if (!el || reduce) return;
 
-    if (continuo) {
-      if (visible) void el.play().catch(() => {});
-      return;
-    }
+    if (continuo && !visible) return;
+
+    const osservato = continuo
+      ? (el.closest('[data-fila]') as HTMLElement | null) ?? el
+      : el;
 
     const io = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) void el.play().catch(() => {});
         else el.pause();
       },
-      { threshold: 0.25 },
+      continuo ? { rootMargin: '200px' } : { threshold: 0.25 },
     );
-    io.observe(el);
+    io.observe(osservato);
     return () => io.disconnect();
   }, [reduce, continuo, visible]);
 
