@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { ArrowLeft, MapPin } from 'lucide-react';
@@ -44,6 +44,7 @@ interface Winery {
   event_slug: string | null;
   lat: number | null;
   lng: number | null;
+  hidden?: boolean;
 }
 
 interface Wine {
@@ -77,6 +78,21 @@ export default async function WineryPage({ params }: { params: Promise<{ slug: s
   if (!winery) notFound();
 
   const w = winery as Winery;
+
+  // Una cantina nascosta è un doppione: si va alla scheda visibile con
+  // lo stesso nome, e se non c'è la pagina non esiste.
+  if (w.hidden) {
+    const { data: twin } = await db
+      .from('wineries')
+      .select('slug')
+      .eq('name', w.name)
+      .eq('hidden', false)
+      .limit(1)
+      .maybeSingle();
+    if (twin?.slug) redirect(`/wineries/${twin.slug}`);
+    notFound();
+  }
+
   const wines = (wineRows ?? []) as Wine[];
   const paragraphs = (w.description ?? '')
     .split(/\n\n+/)

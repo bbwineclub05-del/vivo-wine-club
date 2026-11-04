@@ -46,6 +46,7 @@ interface Winery {
   lat: number | null;
   lng: number | null;
   coords_precise: boolean | null;
+  hidden?: boolean;
 }
 
 function fmtDate(iso: string | null) {
@@ -68,7 +69,7 @@ export default function WineriesMapManager() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       setToken(session?.access_token ?? '');
-      const res = await fetch('/api/wineries');
+      const res = await fetch('/api/wineries?includeHidden=1');
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? 'Impossibile leggere le cantine.');
       setList(json.wineries ?? []);
@@ -175,6 +176,7 @@ export default function WineriesMapManager() {
                   <span className="mt-0.5 block truncate text-fine text-on-paper-muted">
                     {[w.region, w.country].filter(Boolean).join(', ') || 'senza regione'}
                     {w.visit_date ? ` · visitata il ${fmtDate(w.visit_date)}` : ''}
+                    {w.hidden ? ' · nascosta dal sito' : ''}
                   </span>
                 </span>
               </button>
