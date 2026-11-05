@@ -46,7 +46,7 @@ const TESTI: Record<LinguaInvito, {
     titolo: 'Ti aspettiamo nel club',
     sottotitolo: 'Un invito a diventare socio di VIVO Wine Club',
     cosaSiamo:
-      'VIVO è il club di chi il vino lo beve senza farne una liturgia: serate, visite in cantina e viaggi, per una generazione a cui il vino è stato raccontato male.',
+      'VIVO è una community di under 30 che si trova davanti a una bottiglia: serate, visite in cantina e viaggi, fra l’Italia e la Francia.',
     etichettaPunti: 'Cosa dà la tessera',
     gratis: (data, offerta, pieno) =>
       `<strong style="color:#1a0505;" class="em-value">Adesso l’iscrizione è gratuita.</strong> Non si paga fino al ${data}: diventi socio oggi e lo sei per tutto il resto dell’anno. Chi entra adesso rinnova il 2027 a ${offerta} invece di ${pieno}.`,
@@ -60,7 +60,7 @@ const TESTI: Record<LinguaInvito, {
     titolo: 'Come and join us',
     sottotitolo: 'An invitation to become a member of VIVO Wine Club',
     cosaSiamo:
-      'VIVO is the club for people who drink wine without the liturgy: nights, winery visits and trips, for a generation that has been told about wine badly.',
+      'VIVO is a community of under-30s meeting over a bottle: nights, winery visits and trips, across Italy and France.',
     etichettaPunti: 'What the membership gives you',
     gratis: (data, offerta, pieno) =>
       `<strong style="color:#1a0505;" class="em-value">Joining is free right now.</strong> There is nothing to pay until ${data}: become a member today and you are one for the rest of the year. Join now and you renew 2027 at ${offerta} instead of ${pieno}.`,
@@ -74,7 +74,7 @@ const TESTI: Record<LinguaInvito, {
     titolo: 'On t’attend au club',
     sottotitolo: 'Une invitation à devenir membre du VIVO Wine Club',
     cosaSiamo:
-      'VIVO, c’est le club de ceux qui boivent le vin sans en faire une liturgie : des soirées, des visites de domaines et des voyages, pour une génération à qui on a mal raconté le vin.',
+      'VIVO, c’est une communauté de moins de 30 ans qui se retrouve autour d’une bouteille : des soirées, des visites de domaines et des voyages, entre l’Italie et la France.',
     etichettaPunti: 'Ce que l’adhésion te donne',
     gratis: (data, offerta, pieno) =>
       `<strong style="color:#1a0505;" class="em-value">L’adhésion est gratuite en ce moment.</strong> Rien à payer jusqu’au ${data} : tu deviens membre aujourd’hui et tu l’es pour tout le reste de l’année. En entrant maintenant, tu renouvelles 2027 à ${offerta} au lieu de ${pieno}.`,
