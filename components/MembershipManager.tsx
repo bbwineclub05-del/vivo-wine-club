@@ -1,10 +1,13 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Search, X } from 'lucide-react';
+import { Search, Send, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useOverlayBackClose } from '@/lib/useMobileOverlay';
-import { ActionButton, EmptyState, PageHead, Sheet } from '@/components/admin/ui';
+import { ActionButton, EmptyState, Field, PageHead, Sheet, TextInput } from '@/components/admin/ui';
+// Solo il tipo: importare anche l'elenco trascinerebbe nel browser
+// tutto il modello della mail, che e' roba che vive sul server.
+import type { LinguaInvito } from '@/lib/emails/invito-membership';
 import {
   STATUS_LABEL,
   daysLeft,
@@ -263,6 +266,122 @@ function Detail({
 }
 
 /* ─────────────────────────────────────────────
+   Invita qualcuno
+───────────────────────────────────────────── */
+/**
+ * Un indirizzo, e parte l'invito.
+ *
+ * Non crea una tessera: chi riceve la mail si iscrive dal sito come
+ * chiunque altro. Cosi' se non lo fa non resta in giro una riga a
+ * meta' che qualcuno dovra' ripulire fra sei mesi.
+ *
+ * La lingua la scegli tu. Non c'e' niente da cui indovinarla — non
+ * un profilo, non un browser, non una cronologia — e scrivere a un
+ * francese in italiano, in una mail che e' il primo contatto, e'
+ * peggio che chiederlo.
+ */
+const LINGUE_INVITO: { id: LinguaInvito; label: string }[] = [
+  { id: 'it', label: 'Italiano' },
+  { id: 'en', label: 'English' },
+  { id: 'fr', label: 'Français' },
+];
+
+function Invito({ onClose }: { onClose: () => void }) {
+  const [email, setEmail] = useState('');
+  const [lingua, setLingua] = useState<LinguaInvito>('it');
+  const [inCorso, setInCorso] = useState(false);
+  const [errore, setErrore] = useState('');
+  const [fatto, setFatto] = useState('');
+
+  const valido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+
+  async function invia() {
+    if (!valido) return;
+    setErrore('');
+    setInCorso(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/memberships/invite', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.access_token ?? ''}`,
+        },
+        body: JSON.stringify({ email: email.trim(), lingua }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error ?? 'Errore.');
+      setFatto(email.trim());
+      setEmail('');
+    } catch (e) {
+      setErrore(e instanceof Error ? e.message : 'Errore.');
+    } finally {
+      setInCorso(false);
+    }
+  }
+
+  return (
+    <Sheet
+      open
+      title="Invita qualcuno"
+      onClose={onClose}
+      footer={
+        <ActionButton onClick={invia} disabled={!valido || inCorso} className="w-full">
+          {inCorso ? 'Mando…' : 'Manda l’invito'}
+        </ActionButton>
+      }
+    >
+      <p className="text-body text-on-paper-muted">
+        Parte una mail che racconta il club e porta alla pagina di iscrizione. Non crea nessuna
+        tessera: la fa la persona, dal sito.
+      </p>
+
+      <div className="mt-6 flex flex-col gap-5">
+        <Field label="Email">
+          <TextInput
+            type="email"
+            inputMode="email"
+            autoComplete="off"
+            value={email}
+            onChange={(e) => { setEmail(e.target.value); setErrore(''); setFatto(''); }}
+            placeholder="nome@esempio.it"
+            autoFocus
+          />
+        </Field>
+
+        <div>
+          <p className="mb-2 text-fine font-medium">In che lingua</p>
+          <div className="flex gap-2">
+            {LINGUE_INVITO.map((l) => (
+              <button
+                key={l.id}
+                onClick={() => setLingua(l.id)}
+                aria-pressed={lingua === l.id}
+                className={`min-h-[44px] flex-1 rounded-full border px-3 text-fine font-medium transition-colors ${
+                  lingua === l.id
+                    ? 'border-accent bg-accent text-paper'
+                    : 'border-rule-paper text-on-paper hover:border-accent/40'
+                }`}
+              >
+                {l.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {fatto && (
+        <p className="mt-5 rounded-2xl border border-rule-paper p-4 text-body">
+          Invito mandato a <strong className="font-medium">{fatto}</strong>. Puoi scriverne un
+          altro qui sopra.
+        </p>
+      )}
+      {errore && <p className="mt-5 text-fine font-medium text-accent">{errore}</p>}
+    </Sheet>
+  );
+}
+
+/* ─────────────────────────────────────────────
    Membership
 ───────────────────────────────────────────── */
 export default function MembershipManager() {
@@ -272,6 +391,7 @@ export default function MembershipManager() {
   const [filter, setFilter] = useState<MembershipStatus | ''>('');
   const [query, setQuery] = useState('');
   const [detail, setDetail] = useState<Row | null>(null);
+  const [invito, setInvito] = useState(false);
 
   const load = useCallback(async () => {
     setError('');
@@ -339,6 +459,12 @@ export default function MembershipManager() {
       <PageHead
         title="Membership"
         subtitle={`${rows.length} ${rows.length === 1 ? 'tessera' : 'tessere'}. Lo stato si ricava dalla scadenza, non è un campo da aggiornare.`}
+        action={
+          <ActionButton onClick={() => setInvito(true)}>
+            <Send size={16} strokeWidth={1.9} />
+            Invita
+          </ActionButton>
+        }
       />
 
       {error ? (
@@ -424,12 +550,15 @@ export default function MembershipManager() {
                     onClick={() => setDetail(r)}
                     className="flex min-h-[68px] w-full items-center gap-3 rounded-2xl border border-rule-paper px-3.5 py-3 text-left transition-colors hover:border-accent/40"
                   >
+                    {/* La targhetta sta in fondo alla riga, non attaccata
+                        al nome: appesa al nome cadeva ogni volta in un
+                        punto diverso — "Luca" la portava a sinistra,
+                        "Giuliano PELLEGRINI" molto piu' in la' — e un
+                        elenco in cui la stessa cosa non sta mai nello
+                        stesso posto si legge una riga per volta. */}
                     <span className="min-w-0 flex-1">
-                      <span className="flex items-center gap-2">
-                        <span className="min-w-0 truncate text-body">
-                          {r.full_name || r.email}
-                        </span>
-                        <StatusPill status={status} />
+                      <span className="block truncate text-body">
+                        {r.full_name || r.email}
                       </span>
                       <span className="mt-0.5 block truncate text-fine text-on-paper-muted">
                         {r.member_id ? `${r.member_id} · ` : ''}
@@ -438,6 +567,7 @@ export default function MembershipManager() {
                           : `scade il ${fmtDate(r.expires_at)} · fra ${left} ${left === 1 ? 'giorno' : 'giorni'}`}
                       </span>
                     </span>
+                    <StatusPill status={status} />
                   </button>
                 );
               })}
@@ -447,6 +577,7 @@ export default function MembershipManager() {
       )}
 
       <Detail row={detail} onClose={() => setDetail(null)} onChanged={load} />
+      {invito && <Invito onClose={() => setInvito(false)} />}
     </div>
   );
 }
