@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { pixel } from '@/lib/pixel';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle, User, Mail, Phone, Loader2, Route } from 'lucide-react';
+import { Check, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import ConsentCheckbox from '@/components/ConsentCheckbox';
 
@@ -18,8 +18,33 @@ interface Props {
   eventPrice?:     number;   // >0 means "pagamento all'ingresso" (list-only events with price)
 }
 
-const INPUT_CLS =
-  'w-full bg-white border border-[#e8d5d5] text-[#1a0505] px-4 py-3 placeholder:text-[#7a4a4a]/35 focus:outline-none focus:border-[#731515]/50 transition-colors duration-200 rounded-lg';
+/**
+ * Il modulo della lista invitati, nel sistema del sito.
+ *
+ * Era rimasto scritto nella lingua di prima: colori battuti a mano,
+ * caratteri dichiarati riga per riga, etichette in maiuscoletto
+ * spaziato con un'iconcina davanti a ognuna. In mezzo a una pagina
+ * rifatta si vedeva, e sembrava un pezzo di un altro sito.
+ *
+ * Adesso usa gli stessi campi della pagina di acquisto: stesso
+ * bordo, stesso raggio, stesse etichette. Le icone accanto a "Nome"
+ * e "Email" non le ho rimesse — un'iconcina davanti alla parola
+ * "Email" non dice niente che la parola non dica gia'.
+ *
+ * Il funzionamento non cambia di una riga: cambia come si vede.
+ */
+const CAMPO =
+  'w-full rounded-2xl border border-rule-paper bg-paper px-4 py-3.5 text-body ' +
+  'placeholder:text-on-paper-muted/50 focus:border-accent/50 focus:outline-none [font-size:16px]';
+
+function Campo({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-fine font-medium">{label}</span>
+      {children}
+    </label>
+  );
+}
 
 export default function EventGuestForm({ eventSlug, eventTitle, eventDate, eventLocation, partnerCode, showRouteOption, eventPrice = 0 }: Props) {
   const t  = useTranslations('events');
@@ -86,95 +111,76 @@ export default function EventGuestForm({ eventSlug, eventTitle, eventDate, event
   }
 
   return (
-    <div id="guest-form" className="mt-12 bg-white border border-[#eddada] rounded-xl p-6 sm:p-8">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="text-[9px] tracking-[0.5em] text-[#731515] mb-2">{t('guestListLabel')}</div>
-        <h2
-          className="text-2xl font-light text-[#1a0505] leading-tight"
-          style={{ fontFamily: 'var(--font-syne)' }}
-        >
+    <div id="guest-form" className="rounded-2xl border border-rule-paper p-6 sm:p-8">
+      <div className="mb-7">
+        <p className="text-fine font-medium uppercase tracking-[0.14em] text-accent">
+          {t('guestListLabel')}
+        </p>
+        <h2 className="ds-display mt-2 text-[22px] leading-tight tracking-[-0.02em]">
           {t('guestListHeading')}
         </h2>
-        <p
-          className="text-sm text-[#7a4a4a]/70 mt-2 leading-relaxed"
-          style={{ fontFamily: 'var(--font-nunito)' }}
-        >
-          {t('guestListSubtitle')}
-        </p>
+        <p className="mt-2 max-w-[52ch] text-body text-on-paper-muted">{t('guestListSubtitle')}</p>
+
         {eventPrice > 0 && (
-          <div className="mt-3 flex items-center gap-2 text-sm text-[#731515] bg-[#fdf6f6] border border-[#eddada] rounded-lg px-4 py-2.5" style={{ fontFamily: 'var(--font-nunito)' }}>
-            <span className="font-semibold">€{eventPrice}</span>
-            <span className="text-[#7a4a4a]/60">·</span>
-            <span>{t('paymentAtDoorNote')}</span>
-          </div>
+          <p className="mt-4 rounded-2xl border border-rule-paper px-4 py-3 text-body">
+            <span className="ds-numeric font-medium">€{eventPrice}</span>
+            <span className="text-on-paper-muted"> · {t('paymentAtDoorNote')}</span>
+          </p>
         )}
       </div>
 
       <AnimatePresence mode="wait">
         {success ? (
-          /* ── Success state ── */
+          /* ── Fatto ── */
           <motion.div
             key="success"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="flex flex-col items-center gap-4 py-8 text-center"
+            className="flex flex-col items-center gap-5 py-6 text-center"
           >
-            <div className="w-14 h-14 rounded-full bg-[#f5f0f0] flex items-center justify-center">
-              <CheckCircle size={28} className="text-[#731515]" strokeWidth={1.25} />
-            </div>
+            <span className="grid h-12 w-12 place-items-center rounded-full bg-accent text-paper">
+              <Check size={22} strokeWidth={2.2} />
+            </span>
             <div>
-              <p
-                className="text-base font-medium text-[#1a0505] mb-1"
-                style={{ fontFamily: 'var(--font-syne)' }}
-              >
+              <p className="ds-display text-[20px] leading-tight tracking-[-0.02em]">
                 {t('registrationSuccessTitle')}
               </p>
-              <p
-                className="text-sm text-[#7a4a4a]/70 leading-relaxed"
-                style={{ fontFamily: 'var(--font-nunito)' }}
-              >
+              <p className="mt-2 max-w-[44ch] text-body text-on-paper-muted">
                 {t('registrationSuccessMsg', { title: eventTitle })}
               </p>
             </div>
-            <div className="mt-2 px-5 py-3 bg-[#fdf6f6] border border-[#eddada] rounded-lg text-sm text-[#7a4a4a] w-full max-w-xs text-left space-y-1">
-              <p className="text-[10px] tracking-[0.3em] text-[#731515] mb-2">{t('registrationSummary')}</p>
-              <p style={{ fontFamily: 'var(--font-nunito)' }}>{eventDate} · {eventLocation}</p>
+
+            <dl className="w-full max-w-xs rounded-2xl border border-rule-paper px-5 py-4 text-left">
+              <dt className="text-fine font-medium uppercase tracking-[0.14em] text-accent">
+                {t('registrationSummary')}
+              </dt>
+              <dd className="mt-2 text-body">{eventDate} · {eventLocation}</dd>
               {showRouteOption && routeOption && (
-                <p className="text-[#731515] font-semibold" style={{ fontFamily: 'var(--font-nunito)' }}>
+                <dd className="mt-1 text-body font-medium">
                   {routeOption === '40km' ? t('routeOption40') : t('routeOption80')}
-                </p>
+                </dd>
               )}
               {eventPrice > 0 && (
-                <p className="text-[#731515] font-semibold" style={{ fontFamily: 'var(--font-nunito)' }}>
+                <dd className="mt-1 text-body font-medium">
                   €{eventPrice} · {t('paymentAtDoor')}
-                </p>
+                </dd>
               )}
-            </div>
-            <p
-              className="text-[11px] text-[#7a4a4a]/45 text-center"
-              style={{ fontFamily: 'var(--font-nunito)' }}
-            >
-              {t('spamNote')}
-            </p>
+            </dl>
+
+            <p className="text-fine text-on-paper-muted">{t('spamNote')}</p>
           </motion.div>
         ) : (
-          /* ── Form ── */
+          /* ── Il modulo ── */
           <motion.form
             key="form"
             onSubmit={handleSubmit}
-            className="flex flex-col gap-4"
+            className="flex flex-col gap-5"
             initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* First name */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] tracking-[0.3em] text-[#731515] flex items-center gap-1.5">
-                  <User size={10} />
-                  {t('fieldFirstName')} *
-                </label>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Campo label={t('fieldFirstName')}>
                 <input
                   type="text"
                   required
@@ -182,17 +188,11 @@ export default function EventGuestForm({ eventSlug, eventTitle, eventDate, event
                   value={form.first_name}
                   onChange={set('first_name')}
                   placeholder="Marco"
-                  className={INPUT_CLS}
-                  style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
+                  className={CAMPO}
                 />
-              </div>
+              </Campo>
 
-              {/* Last name */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] tracking-[0.3em] text-[#731515] flex items-center gap-1.5">
-                  <User size={10} />
-                  {t('fieldLastName')} *
-                </label>
+              <Campo label={t('fieldLastName')}>
                 <input
                   type="text"
                   required
@@ -200,17 +200,11 @@ export default function EventGuestForm({ eventSlug, eventTitle, eventDate, event
                   value={form.last_name}
                   onChange={set('last_name')}
                   placeholder="Rossi"
-                  className={INPUT_CLS}
-                  style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
+                  className={CAMPO}
                 />
-              </div>
+              </Campo>
 
-              {/* Email */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] tracking-[0.3em] text-[#731515] flex items-center gap-1.5">
-                  <Mail size={10} />
-                  EMAIL *
-                </label>
+              <Campo label="Email">
                 <input
                   type="email"
                   required
@@ -218,69 +212,51 @@ export default function EventGuestForm({ eventSlug, eventTitle, eventDate, event
                   value={form.email}
                   onChange={set('email')}
                   placeholder="marco@example.com"
-                  className={INPUT_CLS}
-                  style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
+                  className={CAMPO}
                 />
-              </div>
+              </Campo>
 
-              {/* Phone */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] tracking-[0.3em] text-[#731515] flex items-center gap-1.5">
-                  <Phone size={10} />
-                  {t('fieldPhone')}
-                </label>
+              <Campo label={t('fieldPhone')}>
                 <input
                   type="tel"
                   autoComplete="tel"
                   value={form.phone}
                   onChange={set('phone')}
                   placeholder="+39 333 000 0000"
-                  className={INPUT_CLS}
-                  style={{ fontFamily: 'var(--font-nunito)', fontSize: '16px' }}
+                  className={CAMPO}
                 />
-              </div>
+              </Campo>
             </div>
 
-            {/* ── Route selector (Wine Ride only) ── */}
+            {/* ── Il percorso: solo per il Wine Ride ── */}
             {showRouteOption && (
-              <div className="flex flex-col gap-2.5 pt-1">
-                <label className="text-[10px] tracking-[0.3em] text-[#731515] flex items-center gap-1.5">
-                  <Route size={10} />
-                  {t('routeOptionLabel')} *
-                </label>
+              <div>
+                <p className="mb-2 text-fine font-medium">{t('routeOptionLabel')}</p>
                 <div className="grid grid-cols-2 gap-3">
                   {(['40km', '80km'] as const).map((opt) => (
                     <button
                       key={opt}
                       type="button"
                       onClick={() => setRouteOption(opt)}
-                      className={`flex flex-col items-center justify-center gap-1.5 py-5 rounded-xl border-2 transition-all duration-200 ${
+                      aria-pressed={routeOption === opt}
+                      className={`flex min-h-[76px] flex-col items-center justify-center gap-1 rounded-2xl border transition-colors ${
                         routeOption === opt
-                          ? 'border-[#731515] bg-[#731515] text-white shadow-sm'
-                          : 'border-[#e8d5d5] bg-white text-[#4a2a2a] hover:border-[#731515]/40 hover:bg-[#fdf6f6]'
+                          ? 'border-accent bg-accent text-paper'
+                          : 'border-rule-paper hover:border-accent/40'
                       }`}
                     >
-                      <span
-                        className="text-2xl font-bold"
-                        style={{ fontFamily: 'var(--font-syne)' }}
-                      >
+                      <span className="ds-display ds-numeric text-[26px] leading-none">
                         {opt === '40km' ? '40' : '80'}
                       </span>
-                      <span
-                        className={`text-[10px] tracking-[0.3em] ${routeOption === opt ? 'text-white/80' : 'text-[#7a4a4a]/60'}`}
-                        style={{ fontFamily: 'var(--font-nunito)' }}
-                      >
-                        KM
-                      </span>
+                      <span className="text-fine uppercase tracking-[0.14em] opacity-70">km</span>
                     </button>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* ── Consent ── */}
-            <div className="flex flex-col gap-3 pt-1">
-              {/* Required: Privacy Policy */}
+            {/* ── Consensi ── */}
+            <div className="flex flex-col gap-3">
               <ConsentCheckbox
                 id="guest-consent-privacy"
                 required
@@ -288,13 +264,12 @@ export default function EventGuestForm({ eventSlug, eventTitle, eventDate, event
                 onChange={setConsentPrivacy}
                 label={tc.rich('privacyRequired', {
                   privacyLink: (chunks) => (
-                    <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline hover:text-[#731515] transition-colors">
+                    <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-accent">
                       {chunks}
                     </a>
                   ),
                 })}
               />
-              {/* Optional: newsletter — must never block submit */}
               <ConsentCheckbox
                 id="guest-consent-marketing"
                 required={false}
@@ -308,8 +283,7 @@ export default function EventGuestForm({ eventSlug, eventTitle, eventDate, event
               <motion.p
                 initial={{ opacity: 0, y: -4 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-xs text-[#731515] bg-[#731515]/8 border border-[#731515]/20 px-4 py-3 rounded-lg"
-                style={{ fontFamily: 'var(--font-nunito)' }}
+                className="rounded-2xl border border-accent/30 bg-accent/5 px-4 py-3 text-fine font-medium text-accent"
               >
                 {error}
               </motion.p>
@@ -318,23 +292,17 @@ export default function EventGuestForm({ eventSlug, eventTitle, eventDate, event
             <button
               type="submit"
               disabled={loading || !consentPrivacy}
-              className="mt-1 w-full sm:w-auto sm:self-start inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-[#731515] text-white text-[11px] tracking-[0.35em] hover:bg-[#9b2323] disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-300 rounded-lg"
-              style={{ fontFamily: 'var(--font-nunito)' }}
+              className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-accent px-7 text-fine font-medium text-paper transition-opacity hover:opacity-90 disabled:opacity-45 sm:w-auto sm:self-start"
             >
               {loading ? (
                 <>
-                  <Loader2 size={13} className="animate-spin" />
+                  <Loader2 size={16} className="animate-spin" />
                   {t('submittingRegistration')}
                 </>
               ) : t('submitRegistration')}
             </button>
 
-            <p
-              className="text-[11px] text-[#7a4a4a]/50"
-              style={{ fontFamily: 'var(--font-nunito)' }}
-            >
-              {t('registrationNote')}
-            </p>
+            <p className="text-fine text-on-paper-muted">{t('registrationNote')}</p>
           </motion.form>
         )}
       </AnimatePresence>

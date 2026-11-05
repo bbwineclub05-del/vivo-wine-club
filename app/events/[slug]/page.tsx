@@ -149,6 +149,11 @@ export default async function EventPage({ params, searchParams }: {
   const oggi = new Date().toISOString().slice(0, 10);
   const stato = getEventDisplayStatus(event, oggi);
   const isListOnly = !!raw.is_list_only;
+  /* Le stesse condizioni per cui `Azione` disegna il collegamento al
+     pagamento invece di un'etichetta spenta o di un salto al modulo.
+     Scritte una volta sola: due elenchi di casi che devono restare
+     uguali prima o poi smettono di esserlo. */
+  const vaAlPagamento = !isListOnly && stato === 'open';
   const capienza = raw.capacity && raw.capacity > 0 ? raw.capacity : null;
 
   const etichette = {
@@ -298,7 +303,16 @@ export default async function EventPage({ params, searchParams }: {
                     pieno
                   />
                 </div>
-                <p className="mt-3 text-center text-fine text-on-paper-muted">{t('secureCheckout')}</p>
+                {/* Solo quando un checkout c'e' davvero. Su un evento
+                    gratuito a lista il pulsante scende al modulo qui
+                    sotto, e questa riga prometteva un pagamento che
+                    non esiste: chi la leggeva pensava di essere
+                    mandato da un'altra parte. E a evento chiuso o
+                    esaurito il pulsante non porta da nessuna parte,
+                    quindi non c'e' niente da annunciare. */}
+                {vaAlPagamento && (
+                  <p className="mt-3 text-center text-fine text-on-paper-muted">{t('secureCheckout')}</p>
+                )}
               </div>
             </aside>
           </div>
