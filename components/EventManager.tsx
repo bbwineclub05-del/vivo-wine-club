@@ -964,29 +964,41 @@ export default function EventManager() {
     {
       key: 'date',
       label: 'Data',
+      nowrap: true,
       render: (e) => (
-        <span className="ds-numeric">
-          {fmtQuando(e)}
-          {e.time ? ` · ${e.time}` : ''}
-        </span>
+        <>
+          <span className="ds-numeric">{fmtQuando(e)}</span>
+          {e.time && <span className="ds-numeric text-on-paper-muted"> · {e.time}</span>}
+        </>
       ),
     },
     {
       key: 'place',
       label: 'Luogo',
       desktopOnly: true,
-      render: (e) => <span className="text-on-paper-muted">{e.location_full || e.location || '—'}</span>,
+      // Tagliato invece che mandato a capo: un indirizzo lungo non
+      // vale due righe in una tabella che si scorre con l'occhio, e
+      // per intero si legge aprendo l'evento.
+      render: (e) => (
+        <span className="block max-w-[30ch] truncate text-on-paper-muted" title={e.location_full || e.location || ''}>
+          {e.location_full || e.location || '—'}
+        </span>
+      ),
     },
     {
       key: 'status',
       label: 'Stato',
       align: 'right',
+      nowrap: true,
+      width: '150px',
       render: (e) => <StatusPill status={e.status} />,
     },
     {
       key: 'published',
       label: 'Sul sito',
       align: 'right',
+      nowrap: true,
+      width: '150px',
       // The single most consequential flag on this screen: an event that
       // is not published simply does not exist for anyone outside.
       render: (e) =>

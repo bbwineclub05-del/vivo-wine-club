@@ -157,6 +157,14 @@ export interface Column<T> {
   /** Hidden on a phone: detail that does not earn its line there. */
   desktopOnly?: boolean;
   align?: 'left' | 'right';
+  /**
+   * Il contenuto non va a capo. Per le colonne corte e di forma fissa
+   * — una data, una targhetta — che andando a capo fanno crescere la
+   * riga e disallineano tutte le altre.
+   */
+  nowrap?: boolean;
+  /** Larghezza fissa sul computer, es. `'160px'`. */
+  width?: string;
   render: (row: T) => ReactNode;
 }
 
@@ -193,9 +201,10 @@ export function DataList<T>({
                 <th
                   key={c.key}
                   scope="col"
+                  style={c.width ? { width: c.width } : undefined}
                   className={`px-5 py-3.5 text-fine font-medium text-on-paper-muted ${
                     c.align === 'right' ? 'text-right' : 'text-left'
-                  }`}
+                  } ${c.nowrap ? 'whitespace-nowrap' : ''}`}
                 >
                   {c.label}
                 </th>
@@ -214,7 +223,9 @@ export function DataList<T>({
                 {columns.map((c) => (
                   <td
                     key={c.key}
-                    className={`px-5 py-4 text-body ${c.align === 'right' ? 'text-right' : 'text-left'}`}
+                    className={`px-5 py-4 text-body ${c.align === 'right' ? 'text-right' : 'text-left'} ${
+                      c.nowrap ? 'whitespace-nowrap' : ''
+                    }`}
                   >
                     {c.render(row)}
                   </td>
@@ -411,7 +422,11 @@ export function StatusPill({
     off: 'border-rule-paper bg-paper-soft text-on-paper-muted/70',
   }[tone];
   return (
-    <span className={`inline-flex items-center rounded-full border px-3 py-1 text-fine font-medium ${skin}`}>
+    /* `whitespace-nowrap`: "tutto esaurito" e "non pubblicato" sono
+       due parole, e senza questo la seconda finiva sotto la prima
+       dentro il tondo — due righe alte in mezzo a righe da una, e la
+       tabella sembrava storta. */
+    <span className={`inline-flex items-center whitespace-nowrap rounded-full border px-3 py-1 text-fine font-medium ${skin}`}>
       {children}
     </span>
   );
