@@ -38,6 +38,32 @@ function eur(n: number) {
   return `${Number.isInteger(n) ? n : n.toFixed(2).replace('.', ',')} €`;
 }
 
+const campo =
+  'w-full rounded-2xl border border-rule-paper bg-paper px-4 py-3.5 text-body placeholder:text-on-paper-muted/60 focus:border-accent/50 focus:outline-none [font-size:16px]';
+
+/**
+ * Etichetta e campo.
+ *
+ * Sta **fuori** dal modulo, e non e' un dettaglio di ordine: definito
+ * dentro, a ogni ridisegno questa funzione e' una funzione nuova, e
+ * React non vede lo stesso componente di prima ma uno diverso. Allora
+ * butta via la casella e ne crea un'altra uguale — con dentro il
+ * testo giusto, perche' quello sta nello stato, ma senza il cursore.
+ * Scrivere il proprio nome voleva dire cliccare prima di ogni
+ * lettera.
+ */
+function Campo({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-fine font-medium">
+        {label}
+        {hint && <span className="ml-2 font-normal text-on-paper-muted">{hint}</span>}
+      </span>
+      {children}
+    </label>
+  );
+}
+
 export default function CheckoutForm({
   event, refCode, partnerCode, emailIniziale, benvenuto,
 }: {
@@ -184,21 +210,6 @@ export default function CheckoutForm({
       setErrore(err instanceof Error ? err.message : 'Qualcosa è andato storto.');
       setInCorso(false);
     }
-  }
-
-  const campo =
-    'w-full rounded-2xl border border-rule-paper bg-paper px-4 py-3.5 text-body placeholder:text-on-paper-muted/60 focus:border-accent/50 focus:outline-none [font-size:16px]';
-
-  function Campo({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
-    return (
-      <label className="block">
-        <span className="mb-1.5 block text-fine font-medium">
-          {label}
-          {hint && <span className="ml-2 font-normal text-on-paper-muted">{hint}</span>}
-        </span>
-        {children}
-      </label>
-    );
   }
 
   return (
