@@ -267,6 +267,8 @@
     "coAdded": "Aggiunto",
     "coSummary": "Riepilogo",
     "coTicketsLine": "{n} × biglietto",
+    "coMemberPrice": "Prezzo riservato ai soci",
+    "coMemberUsed": "Il tuo sconto socio per questa serata l’hai già usato: questo biglietto è a prezzo pieno.",
     "coTotal": "Totale",
     "coPay": "Paga {total}",
     "coPaying": "Un attimo…",

@@ -8,6 +8,8 @@ import { generateTicketPdf } from '@/lib/ticket-pdf';
 import { emailShell, heading, para, ctaButton, divider } from '@/lib/email-shell';
 import { getClientIp, PRIVACY_POLICY_VERSION, TERMS_OF_SERVICE_VERSION } from '@/lib/consent';
 import { NON_SOCIO, socioInRegola } from '@/lib/soci';
+import { contoPerEmail } from '@/lib/sconto-socio';
+import { euroInCentesimi } from '@/lib/prezzo-evento';
 
 /** Resolve event by slug from Supabase */
 async function resolveEvent(slug: string): Promise<EventData | undefined> {
@@ -354,9 +356,12 @@ export async function sendEventConfirmationEmails(params: {
   partnerCode?: string;
   /** La lingua di chi ha comprato. Se manca, inglese. */
   locale?:      string | null;
+  /** Quanti biglietti dell'ordine hanno avuto il prezzo riservato: 0 o 1. */
+  bigliettiSocio?: number;
 } & ConsentParams) {
   const {
     orderId, event, firstName, lastName, email, phone, qty, total, partnerCode, locale,
+    bigliettiSocio = 0,
     consentPrivacyAcceptedAt, consentPrivacyVersion, consentTermsAcceptedAt, consentTermsVersion,
     consentMarketing, consentMarketingAcceptedAt, consentPhotoVideo, consentIp,
   } = params;
@@ -369,11 +374,15 @@ export async function sendEventConfirmationEmails(params: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db = getSupabaseAdmin() as any;
   const ticketIds = Array.from({ length: qty }, (_, i) => `${orderId}-${i + 1}`);
-  const ticketRows = ticketIds.map((tid) => ({
+  /* Il primo biglietto dell'ordine porta il segno dello sconto, se
+     c'e' stato. Serve al prossimo acquisto: e' cosi' che sappiamo
+     che quel socio per questa serata lo sconto l'ha gia' speso. */
+  const ticketRows = ticketIds.map((tid, i) => ({
     order_id:       tid,
     qr_code:        tid,
     event_id:       event.slug,
     email:          email,
+    member_price_applied: i < bigliettiSocio,
     name:           `${firstName} ${lastName}`,
     phone:          phone || null,
     checked_in:     false,
@@ -528,7 +537,26 @@ export async function POST(request: Request) {
     }
   }
 
-  const total       = event.price * qty;
+  /* Il prezzo lo rifa' il server, sempre, con la stessa funzione che
+     il modulo ha usato per mostrarlo. Quello che arriva dal browser
+     e' una richiesta, non un importo: chi vuole puo' scrivere quello
+     che gli pare nei dati che manda. */
+  const { data: prezzi } = await (getSupabaseAdmin() as unknown as {
+    from: (t: string) => {
+      select: (c: string) => { eq: (k: string, v: string) => { maybeSingle: () => Promise<{ data: { member_price: number | null } | null }> } };
+    };
+  }).from('events').select('member_price').eq('slug', slug).maybeSingle();
+
+  const conto = await contoPerEmail({
+    db: getSupabaseAdmin(),
+    slug,
+    email,
+    qty,
+    prezzoCents: Math.round(event.price * 100),
+    prezzoSocioCents: euroInCentesimi(prezzi?.member_price ?? null),
+  });
+
+  const total       = conto.totaleCents / 100;
   const upsellItems = rawUpsellItems ?? [];
   const upsellTotal = upsellItems.reduce((sum, item) => sum + (item.price ?? 0), 0);
   const grandTotal  = total + upsellTotal;
@@ -541,6 +569,7 @@ export async function POST(request: Request) {
   if (grandTotal === 0) {
     await sendEventConfirmationEmails({
       orderId, event, firstName, lastName, email, phone, qty, total, partnerCode,
+      bigliettiSocio: conto.bigliettiSocio,
       locale: body.locale ?? null,
       consentPrivacyAcceptedAt:   consentNow,
       consentPrivacyVersion:      PRIVACY_POLICY_VERSION,
@@ -572,16 +601,29 @@ export async function POST(request: Request) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const lineItems: any[] = [];
 
-  if (event.price > 0) {
+  const descrizioneEvento = `${event.month} ${event.day}, ${event.year} · ${event.locationFull}`;
+
+  /* Due righe quando lo sconto socio si applica: una al prezzo
+     riservato e le altre a prezzo pieno. Separate e non mediate,
+     cosi' chi guarda la ricevuta di Stripe vede perche' ha pagato
+     quella cifra. */
+  if (conto.bigliettiSocio > 0) {
     lineItems.push({
-      quantity: qty,
+      quantity: conto.bigliettiSocio,
+      price_data: {
+        currency:    'eur',
+        unit_amount: Math.round((conto.totaleCents - Math.round(event.price * 100) * (qty - conto.bigliettiSocio))),
+        product_data: { name: `${event.title} · socio`, description: descrizioneEvento },
+      },
+    });
+  }
+  if (qty - conto.bigliettiSocio > 0 && event.price > 0) {
+    lineItems.push({
+      quantity: qty - conto.bigliettiSocio,
       price_data: {
         currency:     'eur',
         unit_amount:  Math.round(event.price * 100),
-        product_data: {
-          name:        event.title,
-          description: `${event.month} ${event.day}, ${event.year} · ${event.locationFull}`,
-        },
+        product_data: { name: event.title, description: descrizioneEvento },
       },
     });
   }
@@ -615,6 +657,12 @@ export async function POST(request: Request) {
       buyer_email:      email,
       buyer_phone:      phone,
       ticket_count:     String(qty),
+      biglietti_socio:  String(conto.bigliettiSocio),
+      // Il totale dei soli biglietti, deciso qui. Chi conferma non
+      // puo' ricalcolarlo: non sa chi e' socio ne' se lo sconto era
+      // gia' stato speso, e rifacendo il conto a prezzo pieno
+      // scriverebbe nella mail una cifra diversa da quella pagata.
+      event_total_cents: String(conto.totaleCents),
       locale:           typeof body.locale === 'string' ? body.locale.slice(0, 8) : '',
       ref_code:         refCode     ?? '',
       partner_code:     partnerCode ?? '',

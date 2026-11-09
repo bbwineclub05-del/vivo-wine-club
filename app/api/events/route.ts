@@ -78,7 +78,7 @@ export async function POST(request: Request) {
       title, type, date, time, location, location_full, description,
       price, capacity, status, published, title_strikethrough, image_url, sort_order,
       is_list_only, guest_list_enabled, referral_enabled, registration_closed, members_only,
-      location_map_url, parking_map_url, parking_map_url_2, date_month_only,
+      location_map_url, parking_map_url, parking_map_url_2, date_month_only, member_price,
     } = body as {
       title: string; type?: string; date: string; time?: string;
       location: string; location_full?: string; description: string;
@@ -91,7 +91,7 @@ export async function POST(request: Request) {
       location_map_url?: string | null;
       parking_map_url?: string | null;
       parking_map_url_2?: string | null;
-      date_month_only?: boolean;
+      date_month_only?: boolean; member_price?: number | null;
     };
 
     if (!title || !date || !location || !description) {
@@ -151,6 +151,7 @@ export async function POST(request: Request) {
         referral_enabled:     (!is_list_only && (price ?? 0) > 0) ? (referral_enabled ?? false) : false,
         registration_closed:  registration_closed ?? false,
         date_month_only:      date_month_only ?? false,
+        member_price:         member_price ?? null,
         members_only:         members_only ?? false,
         stripe_product_id,
         stripe_price_id,

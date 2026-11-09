@@ -49,7 +49,14 @@ export async function GET(request: Request) {
       }
 
       const qty   = parseInt(meta.ticket_count, 10) || 1;
-      const total = event.price * qty;
+      /* Il totale e il numero di biglietti scontati arrivano da chi ha
+         creato il pagamento: li' si sapeva chi e' socio e se lo
+         sconto era gia' stato speso, qui no. Il prezzo pieno resta
+         come ripiego per i pagamenti partiti prima che esistesse lo
+         sconto riservato. */
+      const bigliettiSocio = parseInt(meta.biglietti_socio ?? '0', 10) || 0;
+      const totaleCents = parseInt(meta.event_total_cents ?? '', 10);
+      const total = Number.isFinite(totaleCents) ? totaleCents / 100 : event.price * qty;
 
       const metaConsentMarketing = meta.consent_marketing === 'true';
       await sendEventConfirmationEmails({
@@ -62,6 +69,7 @@ export async function GET(request: Request) {
         qty,
         total,
         partnerCode: meta.partner_code || undefined,
+        bigliettiSocio,
         locale:      meta.locale || null,
         consentPrivacyAcceptedAt:   meta.consent_privacy_at,
         consentPrivacyVersion:      meta.consent_privacy_version,

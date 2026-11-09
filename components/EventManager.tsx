@@ -32,6 +32,8 @@ interface DbEvent {
   location_full: string;
   description: string;
   price: number;
+  /** Quanto paga un socio. Vuoto = come tutti gli altri. */
+  member_price: number | null;
   capacity: number | null;
   status: 'open' | 'soldout' | 'soon' | 'completed';
   published: boolean;
@@ -57,7 +59,7 @@ const BLANK: FormData = {
   title: '', type: 'WINERY VISIT', section: 'winery_visit', date: '', date_month_only: false,
   time: '',
   location: '', location_full: '', description: '',
-  price: 0, capacity: null, status: 'open',
+  price: 0, member_price: null, capacity: null, status: 'open',
   published: false, title_strikethrough: false, guest_list_enabled: false,
   is_list_only: false, referral_enabled: false, registration_closed: false,
   members_only: false,
@@ -414,6 +416,34 @@ function EventForm({
             </p>
           )}
         </div>
+
+        {/* Prezzo riservato ai soci */}
+        {f.price > 0 && !f.is_list_only && (
+          <div>
+            <Label>Prezzo per i soci (€), vuoto = come tutti</Label>
+            <input
+              className={inputCls}
+              type="number"
+              min={0}
+              step="0.5"
+              value={f.member_price ?? ''}
+              onChange={e => set('member_price', e.target.value === '' ? null : (parseFloat(e.target.value) || 0))}
+            />
+            <p className="mt-1 text-fine text-[#7A5252]">
+              Si scrive quanto paga un socio, non lo sconto: se la serata costa {f.price} € e ai
+              soci la fai {Math.max(0, Math.round((f.price * 0.8) * 2) / 2)}, qui va{' '}
+              {Math.max(0, Math.round((f.price * 0.8) * 2) / 2)}. Vale per un biglietto a socio:
+              chi ne compra due paga il secondo pieno, e chi torna per la stessa serata paga
+              pieno anche il primo.
+            </p>
+            {f.member_price != null && f.member_price >= f.price && (
+              <p className="mt-1 text-fine font-medium text-[#731515]">
+                Cosi&apos; un socio pagherebbe quanto tutti gli altri, o di piu&apos;: lo sconto
+                non verra&apos; applicato.
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Capacity */}
         <div>
@@ -1180,6 +1210,7 @@ export default function EventManager() {
                   location_full:      mode.edit.location_full,
                   description:        mode.edit.description,
                   price:              mode.edit.price,
+                  member_price:       mode.edit.member_price ?? null,
                   capacity:           mode.edit.capacity,
                   status:             mode.edit.status,
                   published:          mode.edit.published,

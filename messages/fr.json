@@ -267,6 +267,8 @@
     "coAdded": "Ajouté",
     "coSummary": "Récapitulatif",
     "coTicketsLine": "{n} × billet",
+    "coMemberPrice": "Tarif membre",
+    "coMemberUsed": "Tu as déjà utilisé ta remise membre pour cette soirée : ce billet est au tarif plein.",
     "coTotal": "Total",
     "coPay": "Payer {total}",
     "coPaying": "Un instant…",

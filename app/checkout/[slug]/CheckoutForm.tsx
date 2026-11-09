@@ -71,6 +71,16 @@ export default function CheckoutForm({
   const [inCorso, setInCorso] = useState(false);
   const [errore, setErrore] = useState('');
 
+  /* Quanto costano i biglietti per *questa* persona.
+     Il prezzo riservato ai soci dipende dall'email, quindi non si puo'
+     calcolare qui: lo chiede al server mentre si scrive, e il server
+     lo rifa' comunque al momento di pagare. Finche' non risponde vale
+     il prezzo pieno, che e' il ripiego giusto — nessuno si arrabbia
+     se paga meno del previsto. */
+  const [conto, setConto] = useState<{
+    totaleCents: number; bigliettiSocio: number; risparmioCents: number; giaUsato: boolean;
+  } | null>(null);
+
   const [extra, setExtra] = useState<UpsellConfig[]>([]);
   const [scelti, setScelti] = useState<Set<string>>(new Set());
 
@@ -111,10 +121,31 @@ export default function CheckoutForm({
     }).catch(() => {});
   }
 
+  /* Mezzo secondo dopo l'ultimo tasto: non una chiamata per lettera. */
+  useEffect(() => {
+    if (emailIniziale == null && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setConto(null); return; }
+    const indirizzo = emailIniziale ?? email;
+    let valido = true;
+    const attesa = setTimeout(async () => {
+      try {
+        const r = await fetch('/api/checkout/prezzo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slug: event.slug, email: indirizzo, qty }),
+        });
+        const d = await r.json();
+        if (valido && r.ok) setConto(d);
+      } catch { /* resta il prezzo pieno */ }
+    }, 500);
+    return () => { valido = false; clearTimeout(attesa); };
+  }, [email, emailIniziale, qty, event.slug]);
+
+  const bigliettiCents = conto?.totaleCents ?? Math.round(event.price * 100) * qty;
+
   const totaleExtra = extra
     .filter((c) => scelti.has(c.id))
     .reduce((s, c) => s + Number(c.products.price), 0);
-  const totale = event.price * qty + totaleExtra;
+  const totale = bigliettiCents / 100 + totaleExtra;
   const emailDiverse = email2.length > 0 && email !== email2;
 
   async function invia(e: React.FormEvent) {
@@ -320,8 +351,17 @@ export default function CheckoutForm({
         <dl className="flex flex-col gap-2">
           <div className="flex justify-between text-body">
             <dt className="text-on-paper-muted">{t('coTicketsLine', { n: qty })}</dt>
-            <dd className="ds-numeric">{eur(event.price * qty)}</dd>
+            <dd className="ds-numeric">{eur(bigliettiCents / 100)}</dd>
           </div>
+          {conto && conto.bigliettiSocio > 0 && (
+            <div className="flex justify-between text-fine text-accent">
+              <dt>{t('coMemberPrice')}</dt>
+              <dd className="ds-numeric">− {eur(conto.risparmioCents / 100)}</dd>
+            </div>
+          )}
+          {conto?.giaUsato && (
+            <p className="text-fine text-on-paper-muted">{t('coMemberUsed')}</p>
+          )}
           {extra.filter((c) => scelti.has(c.id)).map((c) => (
             <div key={c.id} className="flex justify-between text-body">
               <dt className="text-on-paper-muted">{c.products.title}</dt>
