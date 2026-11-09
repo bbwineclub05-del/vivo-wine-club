@@ -18,7 +18,7 @@ export interface SponsorLogo {
 export const SPONSOR_LOGOS: SponsorLogo[] = [
   { name: 'Atelier Vini', src: '/sponsors/atelier-vini.png', href: 'https://www.atelierviniecultura.com/' },
   { name: 'Il Canto del Gallo', src: '/sponsors/canto-del-gallo.png', href: 'https://ilcantodelgallowinebar.it/' },
-  { name: 'Enoteca Bonetti', src: '/sponsors/enoteca-bonetti.jpg' },
+  { name: 'Enoteca Bonetti', src: '/sponsors/enoteca-bonetti.jpg', href: 'https://enotecabonetti.it/' },
   { name: 'Bertani', src: '/wineries/bertani logo .png', href: 'https://www.bertani.net/' },
   { name: 'Sandrone', src: '/sponsors/sandrone.avif', href: 'https://sandroneluciano.com/it/web/?lev1=99&age=over18' },
   { name: 'Monterossa', src: '/sponsors/Monterossa.png', href: 'https://www.monterossa.com/' },

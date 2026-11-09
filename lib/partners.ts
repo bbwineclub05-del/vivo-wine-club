@@ -137,7 +137,7 @@ export const PARTNERS: Partner[] = [
     slug:     'canto-del-gallo',
     name:     'Il Canto del Gallo',
     category: 'location',
-    logo:     '/sponsors/canto-del-gallo.jpg',
+    logo:     '/sponsors/canto-del-gallo.png',
     subtitle: {
       it: 'Wine Bar & Gastronomia',
       en: 'Wine Bar & Gastronomia',
@@ -152,5 +152,23 @@ export const PARTNERS: Partner[] = [
     phone:       '+39 340 7911024',
     email:       'info@ilcantodelgallowinebar.it',
     externalUrl: 'https://ilcantodelgallowinebar.it/',
+  },
+  {
+    slug:     'enoteca-bonetti',
+    name:     'Enoteca Bonetti',
+    category: 'location',
+    logo:     '/sponsors/enoteca-bonetti.jpg',
+    subtitle: {
+      it: 'Enoteca',
+      en: 'Wine Shop',
+      fr: 'Caviste',
+    },
+    shortDesc: {
+      it: 'In via Dante, nel centro di Brescia, l’enoteca che consigliamo in città. Una selezione che tiene insieme i grandi nomi italiani e francesi, e molto altro scelto bottiglia per bottiglia.',
+      en: 'On via Dante, in the centre of Brescia, the wine shop we point people to. A selection that holds together the great Italian and French names, and plenty more chosen bottle by bottle.',
+      fr: 'Via Dante, au centre de Brescia, la cave que nous recommandons en ville. Une sélection qui réunit les grands noms italiens et français, et bien d’autres choisis bouteille par bouteille.',
+    },
+    address:     'Via Dante, 14, 25122 Brescia BS, Italia',
+    externalUrl: 'https://enotecabonetti.it/',
   },
 ];
