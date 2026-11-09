@@ -40,7 +40,6 @@ interface DbEvent {
   title_strikethrough: boolean;
   guest_list_enabled: boolean;
   is_list_only: boolean;
-  referral_enabled: boolean;
   registration_closed: boolean;
   members_only: boolean;
   image_url: string | null;
@@ -61,7 +60,7 @@ const BLANK: FormData = {
   location: '', location_full: '', description: '',
   price: 0, member_price: null, capacity: null, status: 'open',
   published: false, title_strikethrough: false, guest_list_enabled: false,
-  is_list_only: false, referral_enabled: false, registration_closed: false,
+  is_list_only: false, registration_closed: false,
   members_only: false,
   image_url: null, location_map_url: null, parking_map_url: null, parking_map_url_2: null, sort_order: 0,
 };
@@ -526,14 +525,6 @@ function EventForm({
             <div className="flex items-center gap-2 text-fine text-accent">
               <span className="text-accent">✓</span> Lista invitati attiva automaticamente (Solo lista)
             </div>
-          )}
-          {!f.is_list_only && f.price > 0 && (
-            <Toggle
-              label="Programma referral attivo"
-              hint="Chi porta cinque amici riceve il premio. Widget visibile al checkout."
-              checked={f.referral_enabled ?? false}
-              onChange={v => set('referral_enabled', v)}
-            />
           )}
           <Toggle
             label="Solo soci"
@@ -1217,7 +1208,6 @@ export default function EventManager() {
                   title_strikethrough: mode.edit.title_strikethrough,
                   guest_list_enabled:   mode.edit.guest_list_enabled ?? false,
                   is_list_only:         mode.edit.is_list_only ?? false,
-                  referral_enabled:     mode.edit.referral_enabled ?? false,
                   registration_closed:  mode.edit.registration_closed ?? false,
                   members_only:         mode.edit.members_only ?? false,
                   image_url:           mode.edit.image_url,

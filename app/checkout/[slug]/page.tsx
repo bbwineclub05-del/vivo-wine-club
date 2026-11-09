@@ -70,11 +70,9 @@ export default async function CheckoutPage({
 }) {
   const { slug } = await params;
   const sp          = await searchParams;
-  const refCode     = typeof sp.ref     === 'string' ? sp.ref.toUpperCase()     : undefined;
   const partnerCode = typeof sp.partner === 'string' ? sp.partner.toUpperCase() : undefined;
 
   let event: EventData | undefined;
-  let referralEnabled = false;
 
   // Try DB first
   try {
@@ -87,8 +85,6 @@ export default async function CheckoutPage({
       .single();
     if (data) {
       event          = dbEventToEventData(data as DbEvent);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      referralEnabled = !!(data as any).referral_enabled;
     }
   } catch {/* fall through */}
 
@@ -117,9 +113,7 @@ export default async function CheckoutPage({
         <main className="ds bg-paper text-on-paper">
           <SoloSoci
             event={event}
-            refCode={refCode}
             partnerCode={partnerCode}
-            referralEnabled={referralEnabled}
           />
         </main>
         <SiteFooter />
@@ -133,9 +127,7 @@ export default async function CheckoutPage({
       <main className="ds bg-paper text-on-paper">
         <CheckoutForm
           event={event}
-          refCode={refCode}
           partnerCode={partnerCode}
-          referralEnabled={referralEnabled}
         />
       </main>
       <SiteFooter />

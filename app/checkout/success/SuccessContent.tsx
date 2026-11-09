@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { CalendarDays, Check, MapPin } from 'lucide-react';
-import ReferralShare from '@/components/ReferralShare';
 import { useCart } from '@/contexts/CartContext';
 import { pixel } from '@/lib/pixel';
 
@@ -38,11 +37,6 @@ function Contenuto() {
   const [evento, setEvento] = useState<EventInfo | null>(null);
   const [email, setEmail] = useState('');
   const [nome, setNome] = useState('');
-  const [referralAttivo, setReferralAttivo] = useState(false);
-  const [codice, setCodice] = useState<string | null>(null);
-  const [usi, setUsi] = useState(0);
-  const [premio, setPremio] = useState(false);
-  const [codicePremio, setCodicePremio] = useState<string | null>(null);
   const pixelFatto = useRef(false);
 
   useEffect(() => {
@@ -51,13 +45,12 @@ function Contenuto() {
     const orderId = params.get('order_id');
     const qEmail = params.get('email') ?? '';
 
-    const leggi = (data: { type?: string; event?: EventInfo; buyer_email?: string; buyer_name?: string; referral_enabled?: boolean }) => {
+    const leggi = (data: { type?: string; event?: EventInfo; buyer_email?: string; buyer_name?: string }) => {
       if (data.type === 'event' && data.event) {
         setEvento(data.event);
         setTipo('event');
         if (data.buyer_email) setEmail(data.buyer_email);
         if (data.buyer_name) setNome(data.buyer_name);
-        if (data.referral_enabled) setReferralAttivo(true);
       } else {
         setTipo('merch');
       }
@@ -86,24 +79,6 @@ function Contenuto() {
     pixelFatto.current = true;
     pixel.purchase(tipo === 'event' && evento ? { content_name: evento.title } : {});
   }, [tipo, evento]);
-
-  useEffect(() => {
-    if (!email || !evento?.slug || !referralAttivo) return;
-    fetch('/api/referral/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, event_slug: evento.slug, name: nome }),
-    })
-      .then((r) => r.json())
-      .then((d) => {
-        if (!d.code) return;
-        setCodice(d.code);
-        setUsi(d.uses ?? 0);
-        setPremio(d.reward_unlocked ?? false);
-        setCodicePremio(d.reward_code ?? null);
-      })
-      .catch(() => {});
-  }, [email, nome, evento?.slug, referralAttivo]);
 
   if (tipo === 'loading') {
     return (
@@ -154,20 +129,6 @@ function Contenuto() {
           </dl>
 
           <p className="mt-3 text-fine text-on-paper-muted">{t('okCheckSpam')}</p>
-
-          {referralAttivo && (
-            <div className="mt-10">
-              <ReferralShare
-                referralCode={codice}
-                eventSlug={evento.slug}
-                eventTitle={evento.title}
-                loading={!codice}
-                initialUses={usi}
-                initialRewardUnlocked={premio}
-                initialRewardCode={codicePremio}
-              />
-            </div>
-          )}
 
           <div className="mt-10 flex flex-wrap gap-3">
             <Link href="/events" className={`${bottone} bg-accent text-paper`}>{t('okSeeEvents')}</Link>

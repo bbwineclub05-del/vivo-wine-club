@@ -28,14 +28,10 @@ import CheckoutForm from './CheckoutForm';
  */
 export default function SoloSoci({
   event,
-  refCode,
   partnerCode,
-  referralEnabled,
 }: {
   event: EventData;
-  refCode?: string;
   partnerCode?: string;
-  referralEnabled?: boolean;
 }) {
   const [email, setEmail] = useState('');
   const [verificando, setVerificando] = useState(false);
@@ -85,9 +81,7 @@ export default function SoloSoci({
     return (
       <CheckoutForm
         event={event}
-        refCode={refCode}
         partnerCode={partnerCode}
-        referralEnabled={referralEnabled}
         emailIniziale={email}
         benvenuto={nome}
       />

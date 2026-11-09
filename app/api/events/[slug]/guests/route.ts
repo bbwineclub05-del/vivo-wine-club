@@ -106,33 +106,7 @@ export async function GET(
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  // Enrich guests with referral reward info (join by email + event_slug)
-  const guestList = guests ?? [];
-  if (guestList.length > 0) {
-    const emails = [...new Set(guestList.map((g: { email: string }) => g.email))];
-    const { data: refCodes } = await db
-      .from('referral_codes')
-      .select('owner_email, reward_unlocked, reward_code')
-      .eq('event_slug', slug)
-      .in('owner_email', emails);
-
-    if (refCodes && refCodes.length > 0) {
-      type RefRow = { owner_email: string; reward_unlocked: boolean; reward_code: string | null };
-      const refMap = new Map((refCodes as RefRow[]).map((rc) =>
-        [rc.owner_email, { reward_unlocked: rc.reward_unlocked, reward_code: rc.reward_code }]
-      ));
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      for (const g of guestList as any[]) {
-        const ref = refMap.get(g.email);
-        if (ref) {
-          g.referral_reward_unlocked = ref.reward_unlocked;
-          g.referral_reward_code     = ref.reward_code;
-        }
-      }
-    }
-  }
-
-  return NextResponse.json({ guests: guestList });
+  return NextResponse.json({ guests: guests ?? [] });
 }
 
 /* ── POST /api/events/[slug]/guests  (public — no auth required) ── */

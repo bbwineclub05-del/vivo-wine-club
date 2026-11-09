@@ -77,7 +77,7 @@ export async function POST(request: Request) {
     const {
       title, type, date, time, location, location_full, description,
       price, capacity, status, published, title_strikethrough, image_url, sort_order,
-      is_list_only, guest_list_enabled, referral_enabled, registration_closed, members_only,
+      is_list_only, guest_list_enabled, registration_closed, members_only,
       location_map_url, parking_map_url, parking_map_url_2, date_month_only, member_price,
     } = body as {
       title: string; type?: string; date: string; time?: string;
@@ -86,7 +86,7 @@ export async function POST(request: Request) {
       published?: boolean; title_strikethrough?: boolean;
       image_url?: string; sort_order?: number;
       is_list_only?: boolean; guest_list_enabled?: boolean;
-      referral_enabled?: boolean; registration_closed?: boolean;
+      registration_closed?: boolean;
       members_only?: boolean;
       location_map_url?: string | null;
       parking_map_url?: string | null;
@@ -148,7 +148,6 @@ export async function POST(request: Request) {
         sort_order:         sort_order ?? 0,
         is_list_only:         is_list_only ?? false,
         guest_list_enabled:   guest_list_enabled ?? (is_list_only ? true : false),
-        referral_enabled:     (!is_list_only && (price ?? 0) > 0) ? (referral_enabled ?? false) : false,
         registration_closed:  registration_closed ?? false,
         date_month_only:      date_month_only ?? false,
         member_price:         member_price ?? null,

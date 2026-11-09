@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Check, FileDown, Loader2, Plus, Star, Trash2 } from 'lucide-react';
+import { Check, FileDown, Loader2, Plus, Trash2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { ActionButton, EmptyState, SearchField } from '@/components/admin/ui';
 import { scaricaBlobGenerato } from '@/lib/scarica';
@@ -27,8 +27,6 @@ interface Guest {
   checked_in_at?: string | null;
   created_at: string;
   partner_code?: string | null;
-  referral_reward_unlocked?: boolean;
-  referral_reward_code?: string | null;
 }
 
 interface Props {
@@ -356,16 +354,10 @@ export default function EventGuestPanel({ event, accessToken, onGuestEnabled }: 
                   {guest.partner_code && partner.has(guest.partner_code) && (
                     <p className="text-fine text-on-paper-muted">{partner.get(guest.partner_code)}</p>
                   )}
-                  <p className="flex items-center gap-1.5 truncate text-body font-medium">
+                  <p className="truncate text-body font-medium">
                     {guest.last_name} {guest.first_name}
-                    {guest.referral_reward_unlocked && (
-                      <Star
-                        size={14}
-                        className="shrink-0 fill-amber-400 text-amber-500"
-                        aria-label={`Premio referral${guest.referral_reward_code ? `: ${guest.referral_reward_code}` : ''}`}
-                      />
-                    )}
                   </p>
+
                   <p className="mt-0.5 flex flex-wrap gap-x-3 truncate text-fine text-on-paper-muted">
                     <span>{guest.email}</span>
                     {guest.phone && <span>{guest.phone}</span>}

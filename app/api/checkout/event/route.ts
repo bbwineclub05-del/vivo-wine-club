@@ -39,7 +39,6 @@ interface Body {
   lastName:    string;
   email:       string;
   phone:       string;
-  refCode?:    string;
   partnerCode?: string;
   upsellItems?: { configId: string; title: string; price: number }[];
   consentPrivacyTerms?: boolean;
@@ -506,7 +505,7 @@ export async function sendEventConfirmationEmails(params: {
 export async function POST(request: Request) {
   try {
   const body: Body = await request.json();
-  const { slug, qty, firstName, lastName, email, phone, refCode, partnerCode, upsellItems: rawUpsellItems } = body;
+  const { slug, qty, firstName, lastName, email, phone, partnerCode, upsellItems: rawUpsellItems } = body;
   const consentPrivacyTerms = body.consentPrivacyTerms === true;
   const consentMarketing    = body.consentMarketing === true;
   const consentPhotoVideo   = body.consentPhotoVideo === true;
@@ -581,18 +580,6 @@ export async function POST(request: Request) {
       consentIp,
     });
 
-    // Referral attribution for free events (non-blocking)
-    if (refCode) {
-      fetch(`${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vivowineclub.com'}/api/referral/use`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({
-          ref_code:      refCode,
-          used_by_email: email.toLowerCase(),
-          event_slug:    slug,
-        }),
-      }).catch(() => {/* non-fatal */});
-    }
 
     return NextResponse.json({ url: `/checkout/success?order_id=${encodeURIComponent(orderId)}&email=${encodeURIComponent(email)}&slug=${encodeURIComponent(slug)}` });
   }
@@ -664,7 +651,6 @@ export async function POST(request: Request) {
       // scriverebbe nella mail una cifra diversa da quella pagata.
       event_total_cents: String(conto.totaleCents),
       locale:           typeof body.locale === 'string' ? body.locale.slice(0, 8) : '',
-      ref_code:         refCode     ?? '',
       partner_code:     partnerCode ?? '',
       upsell_items:     upsellItems.length > 0 ? JSON.stringify(upsellItems).slice(0, 500) : '',
       consent_privacy_at:      consentNow,

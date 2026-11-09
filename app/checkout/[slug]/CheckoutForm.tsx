@@ -65,12 +65,10 @@ function Campo({ label, hint, children }: { label: string; hint?: string; childr
 }
 
 export default function CheckoutForm({
-  event, refCode, partnerCode, emailIniziale, benvenuto,
+  event, partnerCode, emailIniziale, benvenuto,
 }: {
   event: EventData;
-  refCode?: string;
   partnerCode?: string;
-  referralEnabled?: boolean;
   /** Gia' verificata alla porta di un evento riservato: non si richiede. */
   emailIniziale?: string;
   /** Il nome del socio riconosciuto, se c'e'. */
@@ -90,7 +88,6 @@ export default function CheckoutForm({
   const [email, setEmail] = useState(emailIniziale ?? '');
   const [email2, setEmail2] = useState(emailIniziale ?? '');
   const [telefono, setTelefono] = useState('');
-  const [codiceAmico, setCodiceAmico] = useState(refCode ?? '');
   const [consenso, setConsenso] = useState(false);
   const [marketing, setMarketing] = useState(false);
   const [foto, setFoto] = useState(false);
@@ -191,7 +188,6 @@ export default function CheckoutForm({
           lastName: cognome,
           email,
           phone: telefono,
-          refCode: codiceAmico.trim().toUpperCase() || undefined,
           partnerCode,
           upsellItems: extra
             .filter((c) => scelti.has(c.id))
@@ -282,9 +278,6 @@ export default function CheckoutForm({
           <div className="grid gap-4 sm:grid-cols-2">
             <Campo label={t('coPhone')}>
               <input required type="tel" value={telefono} onChange={(e) => setTelefono(e.target.value)} className={campo} autoComplete="tel" placeholder="+39 000 000 0000" />
-            </Campo>
-            <Campo label={t('coRef')} hint={t('coRefHint')}>
-              <input value={codiceAmico} onChange={(e) => setCodiceAmico(e.target.value)} className={`${campo} uppercase`} />
             </Campo>
           </div>
         </div>

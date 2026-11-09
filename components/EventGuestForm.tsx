@@ -12,7 +12,6 @@ interface Props {
   eventTitle:      string;
   eventDate:       string;   // e.g. "12 LUG 2026"
   eventLocation:   string;
-  refCode?:        string;   // incoming ?ref= from URL (user referral) — ignored for list-only
   partnerCode?:    string;   // incoming ?partner= from URL (organisation tracking)
   showRouteOption?: boolean; // true only for Vivo Wine Ride
   eventPrice?:     number;   // >0 means "pagamento all'ingresso" (list-only events with price)

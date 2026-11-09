@@ -32,7 +32,6 @@ export async function GET(request: Request) {
     if (meta.type === 'event') {
       // Resolve event from Supabase
       let event;
-      let referralEnabled = false;
       try {
         const supabaseAdmin = getSupabaseAdmin();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -40,8 +39,6 @@ export async function GET(request: Request) {
           .from('events').select('*').eq('slug', meta.event_slug).single();
         if (data) {
           event = dbEventToEventData(data as DbEvent);
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          referralEnabled = !!(data as any).referral_enabled;
         }
       } catch {/* ignore */}
       if (!event) {
@@ -98,26 +95,12 @@ export async function GET(request: Request) {
         }
       } catch { /* non-fatal */ }
 
-      // Referral attribution for paid events (non-blocking)
-      if (meta.ref_code) {
-        fetch(`${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vivowineclub.com'}/api/referral/use`, {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({
-            ref_code:      meta.ref_code,
-            used_by_email: meta.buyer_email.toLowerCase(),
-            event_slug:    meta.event_slug,
-          }),
-        }).catch(() => {/* non-fatal */});
-      }
-
       return NextResponse.json({
         ok:               true,
         type:             'event',
         order_id:         meta.order_id,
         buyer_email:      meta.buyer_email,
         buyer_name:       `${meta.buyer_first_name} ${meta.buyer_last_name}`.trim(),
-        referral_enabled: referralEnabled,
         event: {
           title:        event.title,
           month:        event.month,
