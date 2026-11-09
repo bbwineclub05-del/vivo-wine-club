@@ -18,6 +18,28 @@ export const maxDuration = 60;
  * Also callable manually from the admin area (no CRON_SECRET required when
  * called with Authorization: Bearer <admin-token>).
  */
+
+/**
+ * Dal titolo dell'evento al nome della cantina.
+ *
+ * Il titolo e' «Wine Visit - Grattamacco», perche' quello e' il nome
+ * di una serata. Ma nell'elenco delle tenute la cantina si chiama
+ * Grattamacco: accanto a Ornellaia e Sassicaia, «Wine Visit -
+ * Ornellaia» si legge come un errore, ed e' anche quello che finisce
+ * nel titolo della sua pagina.
+ *
+ * Si toglie solo quello che e' davvero un prefisso di serata, con il
+ * suo separatore. Una cantina che si chiamasse «Visitandine» resta
+ * «Visitandine»: senza il separatore non si tocca niente.
+ */
+export function nomeCantina(titolo: string): string {
+  const pulito = titolo
+    .replace(/^\s*(vivo\s+)?(wine|winery)?\s*visit[a]?\s*[-–—:@]\s*/i, '')
+    .trim();
+  // Se la regola ha mangiato tutto, il titolo originale e' meglio di
+  // una riga senza nome.
+  return pulito || titolo.trim();
+}
 export async function GET(request: Request) {
   // Accept either CRON_SECRET (Vercel cron) or admin Bearer token (manual trigger)
   const cronSecret  = process.env.CRON_SECRET;
@@ -57,6 +79,7 @@ export async function GET(request: Request) {
     }
 
     const rows = (events ?? []) as { slug: string; title: string; date: string; location_full: string | null; location: string | null }[];
+
     if (rows.length === 0) {
       return NextResponse.json({ message: 'Nessun evento winery_visit passato trovato.', created: 0 });
     }
@@ -64,7 +87,7 @@ export async function GET(request: Request) {
     // Upsert each as a winery entry (ignoreDuplicates = idempotent)
     const wineryRows = rows.map((e) => ({
       slug:       e.slug,
-      name:       e.title,
+      name:       nomeCantina(e.title),
       visit_date: e.date,
       event_slug: e.slug,
     }));
