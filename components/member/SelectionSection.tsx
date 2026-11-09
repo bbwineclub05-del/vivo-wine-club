@@ -113,12 +113,31 @@ export default function SelectionSection({ token }: { token: string }) {
                 key={v.id}
                 className="flex w-[min(78vw,320px)] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-rule-paper"
               >
-                <div className="grid aspect-[4/3] place-items-center bg-paper-soft">
+                {/* Un rettangolo di altezza fissa, e la foto dentro
+                    tenuta fuori dal flusso.
+                    Prima il riquadro era `aspect-[4/3]` e la foto
+                    `h-full`: un'altezza in percentuale dentro un box
+                    che la sua altezza la ricava dalla proporzione e'
+                    un cerchio, il browser rinuncia e disegna la foto
+                    alla sua misura naturale. Una bottiglia da duemila
+                    pixel faceva crescere la scheda con se'.
+                    `absolute` toglie la foto dal flusso, cosi' non
+                    puo' piu' decidere quanto e' alta la scheda.
+                    E `object-contain`: una bottiglia tagliata da un
+                    riquadro orizzontale si vede a fette. */}
+                <div className="relative h-48 shrink-0 overflow-hidden bg-paper-soft sm:h-56">
                   {v.photo_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={v.photo_url} alt={v.name} loading="lazy" className="h-full w-full object-cover" />
+                    <img
+                      src={v.photo_url}
+                      alt={v.name}
+                      loading="lazy"
+                      className="absolute inset-0 h-full w-full object-contain p-3"
+                    />
                   ) : (
-                    <Wine size={34} strokeWidth={1.4} className="text-accent/40" />
+                    <span className="absolute inset-0 grid place-items-center">
+                      <Wine size={34} strokeWidth={1.4} className="text-accent/40" />
+                    </span>
                   )}
                 </div>
 
