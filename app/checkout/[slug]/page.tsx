@@ -94,10 +94,16 @@ export default async function CheckoutPage({
 
   if (!event) notFound();
 
-  // Past or closed event: show "concluso" page instead of checkout form
+  /* Si compra solo quando l'evento e' davvero aperto.
+     Prima `soon` non era nell'elenco: un evento ancora da aprire si
+     poteva comprare arrivando qui con il suo indirizzo, e dall'area
+     del socio ci si arrivava con un clic. Il pagamento lo fermava la
+     rotta piu' avanti, quindi soldi non ne ha presi nessuno — ma la
+     persona compilava nome, cognome, telefono e consensi per
+     scoprire alla fine che non si poteva. */
   const today         = new Date().toISOString().slice(0, 10);
   const displayStatus = getEventDisplayStatus(event, today);
-  if (displayStatus === 'past' || displayStatus === 'closed' || displayStatus === 'soldout') {
+  if (displayStatus !== 'open') {
     return <EventChiuso event={event} stato={displayStatus} />;
   }
 
@@ -150,6 +156,7 @@ async function EventChiuso({ event, stato }: { event: EventData; stato: string }
   const titolo =
     stato === 'closed' ? t('coClosedTitle')
     : stato === 'soldout' ? t('coSoldOutTitle')
+    : stato === 'soon' ? t('coSoonTitle')
     : t('coPastTitle');
 
   return (
@@ -164,7 +171,9 @@ async function EventChiuso({ event, stato }: { event: EventData; stato: string }
           <p className="mt-2 text-body text-on-paper-muted">
             {eventDateLabel(event)} · {event.location}
           </p>
-          <p className="mt-6 text-body text-on-paper-muted">{t('coPastBody')}</p>
+          <p className="mt-6 text-body text-on-paper-muted">
+            {stato === 'soon' ? t('coSoonBody') : t('coPastBody')}
+          </p>
 
           <div className="mt-9 flex flex-wrap justify-center gap-3">
             <Link

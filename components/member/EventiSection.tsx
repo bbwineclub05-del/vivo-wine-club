@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { CalendarDays, Download, MapPin } from 'lucide-react';
 import { Head, Panel } from '@/components/member/MemberShell';
+import { getEventDisplayStatus, type DisplayStatus } from '@/lib/events';
 
 /**
  * I tuoi biglietti e cosa viene dopo, nella stessa schermata.
@@ -23,6 +24,9 @@ interface Biglietto {
 
 interface Evento {
   slug: string;
+  status: 'open' | 'soldout' | 'soon' | 'completed';
+  registrationClosed?: boolean;
+  isListOnly?: boolean;
   title: string;
   date: string;
   time: string | null;
@@ -39,6 +43,8 @@ function fmtDate(iso: string, locale: string) {
 
 export default function EventiSection({ token }: { token: string }) {
   const t = useTranslations('member');
+  const tc = useTranslations('common');
+  const oggi = new Date().toISOString().slice(0, 10);
   const locale = useLocale();
   const [biglietti, setBiglietti] = useState<Biglietto[]>([]);
   const [eventi, setEventi] = useState<Evento[]>([]);
@@ -104,24 +110,40 @@ export default function EventiSection({ token }: { token: string }) {
         </Panel>
       ) : (
         <div className="flex flex-col gap-2">
-          {eventi.map((e) => (
-            <Link
-              key={e.slug}
-              href={`/checkout/${e.slug}`}
-              className="flex items-center gap-3.5 rounded-2xl border border-rule-paper px-4 py-3.5 transition-colors hover:border-accent/40"
-            >
-              <CalendarDays size={19} strokeWidth={1.7} className="shrink-0 text-accent" />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-body font-medium">{e.title}</span>
-                <span className="mt-0.5 block truncate text-fine capitalize text-on-paper-muted">
-                  {data(e.date)}{e.time ? ` · ${e.time}` : ''} · {e.location}
+          {eventi.map((e) => {
+            /* Qui dentro si compra solo quello che si puo' comprare
+               anche dal sito pubblico. Prima ogni data portava al
+               pagamento, comprese quelle ancora da aprire: il socio
+               compilava tutto e si prendeva un errore alla fine.
+               Quando non e' aperta, la riga porta alla pagina
+               dell'evento e dice a che punto siamo. */
+            const stato: DisplayStatus = getEventDisplayStatus(
+              { status: e.status, date: e.date, registrationClosed: e.registrationClosed },
+              oggi,
+            );
+            const siCompra = stato === 'open';
+
+            return (
+              <Link
+                key={e.slug}
+                href={siCompra ? `/checkout/${e.slug}` : `/events/${e.slug}`}
+                className="flex items-center gap-3.5 rounded-2xl border border-rule-paper px-4 py-3.5 transition-colors hover:border-accent/40"
+              >
+                <CalendarDays size={19} strokeWidth={1.7} className="shrink-0 text-accent" />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-body font-medium">{e.title}</span>
+                  <span className="mt-0.5 block truncate text-fine capitalize text-on-paper-muted">
+                    {data(e.date)}{e.time ? ` · ${e.time}` : ''} · {e.location}
+                  </span>
                 </span>
-              </span>
-              <span className="ds-numeric shrink-0 text-fine text-on-paper-muted">
-                {e.price ? `${e.price} €` : t('gratis')}
-              </span>
-            </Link>
-          ))}
+                <span className="shrink-0 text-fine text-on-paper-muted">
+                  {siCompra
+                    ? <span className="ds-numeric">{e.price ? `${e.price} €` : t('gratis')}</span>
+                    : tc(stato === 'soldout' ? 'soldOut' : stato === 'closed' ? 'registrationsClosed' : 'comingSoon')}
+                </span>
+              </Link>
+            );
+          })}
         </div>
       )}
 
