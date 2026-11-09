@@ -186,7 +186,7 @@ export default function SelectionSection({ token }: { token: string }) {
                   <div className="mt-auto pt-4">
                     {v.price_cents != null && (
                       <p className="ds-numeric text-body font-medium text-accent">
-                        {t('intorno', { price: eur(v.price_cents) })}
+                        {eur(v.price_cents)}
                       </p>
                     )}
 
