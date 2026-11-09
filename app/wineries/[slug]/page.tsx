@@ -39,7 +39,10 @@ interface Winery {
   country: string | null;
   classification: string | null;
   short_description: string | null;
+  /** L'inglese: c'era prima delle altre due, e resta il ripiego. */
   description: string | null;
+  description_it: string | null;
+  description_fr: string | null;
   visit_date: string | null;
   event_slug: string | null;
   lat: number | null;
@@ -94,7 +97,16 @@ export default async function WineryPage({ params }: { params: Promise<{ slug: s
   }
 
   const wines = (wineRows ?? []) as Wine[];
-  const paragraphs = (w.description ?? '')
+  /* La descrizione nella lingua di chi legge, e l'inglese quando
+     quella lingua non c'e'. Non e' un ripiego triste: trentaquattro
+     schede sono nate in inglese, e una riga in inglese si legge, una
+     riga vuota no. */
+  const descrizione =
+    (locale === 'it' ? w.description_it : locale === 'fr' ? w.description_fr : null)
+    || w.description
+    || '';
+
+  const paragraphs = descrizione
     .split(/\n\n+/)
     .map((p) => p.trim())
     .filter(Boolean);
