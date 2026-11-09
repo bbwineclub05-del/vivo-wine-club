@@ -104,7 +104,12 @@ export default function EstatesGrid({ limit, initialRegion }: { limit?: number; 
                     alt={w.name}
                     width={160}
                     height={80}
-                    className="h-20 w-full object-contain"
+                    // `mix-blend-multiply`: diversi loghi arrivano come
+                    // jpg su fondo bianco, e il riquadro qui sotto e'
+                    // carta calda — senza, si vedrebbe un rettangolo
+                    // bianco attorno al segno. Cosi' il bianco sparisce
+                    // e i png trasparenti non se ne accorgono.
+                    className="h-20 w-full object-contain mix-blend-multiply"
                     sizes="(max-width: 768px) 45vw, 200px"
                   />
                 ) : (

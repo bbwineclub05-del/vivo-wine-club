@@ -145,7 +145,10 @@ export default async function WineryPage({ params }: { params: Promise<{ slug: s
             {w.logo_url && (
               <div className="flex w-full max-w-[260px] shrink-0 items-center justify-center rounded-2xl border border-rule-paper bg-paper-soft p-6">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={w.logo_url} alt={w.name} className="max-h-24 w-auto object-contain" />
+                {/* `mix-blend-multiply`: vedi la nota in EstatesGrid —
+                    diversi loghi sono jpg su fondo bianco e qui sotto
+                    c'e' carta calda. */}
+                <img src={w.logo_url} alt={w.name} className="max-h-24 w-auto object-contain mix-blend-multiply" />
               </div>
             )}
           </div>
