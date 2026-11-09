@@ -155,34 +155,6 @@ export default function SelectionSection({ token }: { token: string }) {
                     </p>
                   )}
 
-                  {/* La nota sta chiusa.
-                      Aperta, su schede larghe trecento pixel, erano
-                      cinque righe che spingevano prezzo e pulsanti
-                      sotto il bordo: per sapere quanto costa una
-                      bottiglia bisognava leggersi perche' ci piace.
-                      Chiusa, la scheda dice nome, annata, prezzo e
-                      dove trovarla in un colpo d'occhio, e il
-                      racconto arriva a chi lo chiede. */}
-                  {nota(v) && (
-                    <div className="mt-3">
-                      <button
-                        onClick={() => setNotaAperta((p) => (p === v.id ? null : v.id))}
-                        aria-expanded={notaAperta === v.id}
-                        className="flex items-center gap-1.5 text-fine font-medium text-accent"
-                      >
-                        {t('laNota')}
-                        <ChevronDown
-                          size={15}
-                          strokeWidth={2}
-                          className={`transition-transform duration-200 ${notaAperta === v.id ? 'rotate-180' : ''}`}
-                        />
-                      </button>
-                      {notaAperta === v.id && (
-                        <p className="mt-2 text-fine text-on-paper">{nota(v)}</p>
-                      )}
-                    </div>
-                  )}
-
                   <div className="mt-auto pt-4">
                     {v.price_cents != null && (
                       <p className="ds-numeric text-body font-medium text-accent">
@@ -190,7 +162,7 @@ export default function SelectionSection({ token }: { token: string }) {
                       </p>
                     )}
 
-                    <div className="mt-3 flex flex-wrap gap-2">
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
                       {v.winery_slug && (
                         <Link
                           href={`/wineries/${v.winery_slug}`}
@@ -210,7 +182,34 @@ export default function SelectionSection({ token }: { token: string }) {
                           <ExternalLink size={13} />
                         </a>
                       )}
+
+                      {/* La freccia del racconto, in fondo a destra.
+                          Senza etichetta: accanto a due pulsanti che
+                          una parola ce l'hanno, una terza parola
+                          faceva sembrare tutto ugualmente
+                          importante, e il tondino si capisce da se'.
+                          La parola resta per chi legge con lo screen
+                          reader, che una freccia non la sente. */}
+                      {nota(v) && (
+                        <button
+                          onClick={() => setNotaAperta((p) => (p === v.id ? null : v.id))}
+                          aria-expanded={notaAperta === v.id}
+                          aria-label={t('laNota')}
+                          title={t('laNota')}
+                          className="ml-auto grid h-10 w-10 shrink-0 place-items-center rounded-full border border-rule-paper text-accent transition-colors hover:border-accent/50"
+                        >
+                          <ChevronDown
+                            size={17}
+                            strokeWidth={2}
+                            className={`transition-transform duration-200 ${notaAperta === v.id ? 'rotate-180' : ''}`}
+                          />
+                        </button>
+                      )}
                     </div>
+
+                    {nota(v) && notaAperta === v.id && (
+                      <p className="mt-3 text-fine text-on-paper">{nota(v)}</p>
+                    )}
                   </div>
                 </div>
               </article>
