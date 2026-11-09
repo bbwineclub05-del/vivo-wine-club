@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { ChevronLeft, ChevronRight, ExternalLink, Wine } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, ExternalLink, Wine } from 'lucide-react';
 import { Head, Panel } from '@/components/member/MemberShell';
 
 /**
@@ -42,6 +42,9 @@ export default function SelectionSection({ token }: { token: string }) {
   const locale = useLocale();
   const [vini, setVini] = useState<Vino[]>([]);
   const [loading, setLoading] = useState(true);
+  /* Una aperta per volta: due note aperte in un carosello fanno due
+     schede di altezza diversa affiancate, e la fila sembra rotta. */
+  const [notaAperta, setNotaAperta] = useState<string | null>(null);
   const pista = useRef<HTMLDivElement>(null);
 
   const carica = useCallback(async () => {
@@ -152,7 +155,33 @@ export default function SelectionSection({ token }: { token: string }) {
                     </p>
                   )}
 
-                  {nota(v) && <p className="mt-3 text-fine text-on-paper">{nota(v)}</p>}
+                  {/* La nota sta chiusa.
+                      Aperta, su schede larghe trecento pixel, erano
+                      cinque righe che spingevano prezzo e pulsanti
+                      sotto il bordo: per sapere quanto costa una
+                      bottiglia bisognava leggersi perche' ci piace.
+                      Chiusa, la scheda dice nome, annata, prezzo e
+                      dove trovarla in un colpo d'occhio, e il
+                      racconto arriva a chi lo chiede. */}
+                  {nota(v) && (
+                    <div className="mt-3">
+                      <button
+                        onClick={() => setNotaAperta((p) => (p === v.id ? null : v.id))}
+                        aria-expanded={notaAperta === v.id}
+                        className="flex items-center gap-1.5 text-fine font-medium text-accent"
+                      >
+                        {t('laNota')}
+                        <ChevronDown
+                          size={15}
+                          strokeWidth={2}
+                          className={`transition-transform duration-200 ${notaAperta === v.id ? 'rotate-180' : ''}`}
+                        />
+                      </button>
+                      {notaAperta === v.id && (
+                        <p className="mt-2 text-fine text-on-paper">{nota(v)}</p>
+                      )}
+                    </div>
+                  )}
 
                   <div className="mt-auto pt-4">
                     {v.price_cents != null && (
