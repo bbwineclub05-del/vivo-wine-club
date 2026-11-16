@@ -57,6 +57,26 @@ export async function GET(request: Request) {
     );
     const byId = new Map(profiles.map((p) => [p.id, p]));
 
+    /* Il telefono e la citta' stanno in due posti.
+     *
+     * `profiles` e' la scheda di chi ha un account, e li' dentro il
+     * telefono ce l'hanno in sei su ventotto: nessuno lo chiede al
+     * momento di registrarsi. `memberships` invece e' il modulo di
+     * iscrizione al club, che il telefono lo chiede, e li' ce l'hanno
+     * in quarantanove su cinquantasette.
+     *
+     * Il CRM guardava solo il primo posto, quindi mostrava un trattino
+     * a quasi tutti pur avendo il numero a due tabelle di distanza.
+     * Adesso guarda tutti e due, e vince quello che c'e'.
+     */
+    const anagrafiche = await fetchAllRows<{
+      email: string; phone: string | null; city: string | null;
+    }>(db, (q) => q.from('memberships').select('email, phone, city'));
+
+    const perEmail = new Map(
+      anagrafiche.map((m) => [String(m.email ?? '').trim().toLowerCase(), m]),
+    );
+
     // ── I biglietti, solo quelli pagati ──
     const tickets = await fetchAllRows<{
       email: string | null; event_id: string | null; payment_status: string | null;
@@ -87,8 +107,8 @@ export async function GET(request: Request) {
         id: u.id,
         email: u.email ?? '',
         name: p?.full_name?.trim() || u.email?.split('@')[0] || 'Senza nome',
-        city: p?.city ?? null,
-        phone: p?.phone ?? null,
+        city: p?.city?.trim() || perEmail.get(email)?.city?.trim() || null,
+        phone: p?.phone?.trim() || perEmail.get(email)?.phone?.trim() || null,
         member_id: p?.member_id ?? null,
         member_since: p?.member_since ?? null,
         // Senza profilo è un account registrato, non un membro.

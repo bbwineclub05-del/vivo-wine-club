@@ -201,6 +201,10 @@ function Detail({
       <dl className="grid gap-px overflow-hidden rounded-2xl border border-rule-paper bg-rule-paper">
         {[
           { k: 'Email', v: row.email },
+          // Il numero c'era nei dati dal giorno dell'iscrizione, ma
+          // questa scheda non lo mostrava: per leggerlo bisognava
+          // aprire Supabase.
+          { k: 'Telefono', v: row.phone?.trim() || '—' },
           { k: 'Socio dal', v: fmtDate(row.started_at) },
           { k: 'Scade il', v: fmtDate(row.expires_at) },
           { k: 'Benvenuto', v: row.welcome_sent_at ? `mandato il ${fmtDate(row.welcome_sent_at)}` : 'mai mandato' },
