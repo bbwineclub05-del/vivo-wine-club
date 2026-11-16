@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Search, Send, X } from 'lucide-react';
+import { Check, Phone, Search, Send, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useOverlayBackClose } from '@/lib/useMobileOverlay';
 import { ActionButton, EmptyState, Field, PageHead, Sheet, TextInput } from '@/components/admin/ui';
@@ -39,7 +39,7 @@ interface Payment {
   paid_at: string | null;
 }
 
-type Row = Membership & { payments: Payment[]; welcome_sent_at?: string | null };
+type Row = Membership & { payments: Payment[]; welcome_sent_at?: string | null; phone?: string | null };
 
 const PAYMENT_LABEL: Record<Payment['status'], string> = {
   paid: 'Pagato',
@@ -280,6 +280,77 @@ function Detail({
  * francese in italiano, in una mail che e' il primo contatto, e'
  * peggio che chiederlo.
  */
+/* ─────────────────────────────────────────────
+   I numeri, da copiare
+───────────────────────────────────────────── */
+/**
+ * I telefoni dei soci che si stanno guardando, pronti da incollare.
+ *
+ * Non si aggiunge nessuno a un gruppo WhatsApp dal sito: non e' una
+ * cosa che manca a noi, e' WhatsApp che non lo permette, e ognuno
+ * decide chi puo' aggiungerlo. Quindi il massimo utile e' questo:
+ * prendere i numeri gia' puliti e incollarli una volta sola, invece
+ * di aprire cinquantasette schede a mano.
+ *
+ * Prende quelli dell'elenco che hai davanti, non tutti: se hai
+ * filtrato "Attiva" copi solo i soci in regola, che e' quasi sempre
+ * quello che serve.
+ */
+function Numeri({ righe, onClose }: { righe: Row[]; onClose: () => void }) {
+  const [copiato, setCopiato] = useState(false);
+
+  /* Le rubriche vogliono il prefisso internazionale e niente spazi.
+     Chi ha scritto "333 1234567" in un modulo intendeva un numero
+     italiano: senza il prefisso WhatsApp non lo trova. */
+  const puliti = righe
+    .map((r) => (r.phone ?? '').replace(/[\s.()/-]/g, '').trim())
+    .filter(Boolean)
+    .map((n) => (n.startsWith('+') ? n : n.startsWith('00') ? `+${n.slice(2)}` : `+39${n.replace(/^0+/, '')}`));
+
+  const unici = [...new Set(puliti)];
+  const senza = righe.length - puliti.length;
+
+  async function copia() {
+    try {
+      await navigator.clipboard.writeText(unici.join('\n'));
+      setCopiato(true);
+      setTimeout(() => setCopiato(false), 2000);
+    } catch { /* qualche browser non lo permette: restano leggibili sotto */ }
+  }
+
+  return (
+    <Sheet
+      open
+      title="I numeri"
+      onClose={onClose}
+      footer={
+        <ActionButton onClick={copia} disabled={unici.length === 0} className="w-full">
+          {copiato ? <><Check size={16} strokeWidth={2.2} /> Copiati</> : `Copia ${unici.length} numeri`}
+        </ActionButton>
+      }
+    >
+      <p className="text-body text-on-paper-muted">
+        I telefoni dei {righe.length} soci che stai guardando, uno per riga e con il prefisso.
+        Incollali nella rubrica o direttamente in WhatsApp quando aggiungi alla community.
+      </p>
+      {senza > 0 && (
+        <p className="mt-2 text-fine text-on-paper-muted">
+          {senza} {senza === 1 ? 'non ha' : 'non hanno'} lasciato un numero.
+        </p>
+      )}
+
+      <pre className="mt-5 max-h-[46vh] overflow-auto rounded-2xl border border-rule-paper p-4 text-fine leading-relaxed">
+        {unici.join('\n') || 'Nessun numero qui dentro.'}
+      </pre>
+
+      <p className="mt-4 text-fine text-on-paper-muted">
+        Un socio può avere impostato WhatsApp perché nessuno lo aggiunga ai gruppi: in quel caso
+        non comparirà, e l&apos;unico modo è mandargli il link.
+      </p>
+    </Sheet>
+  );
+}
+
 const LINGUE_INVITO: { id: LinguaInvito; label: string }[] = [
   { id: 'it', label: 'Italiano' },
   { id: 'en', label: 'English' },
@@ -392,6 +463,7 @@ export default function MembershipManager() {
   const [query, setQuery] = useState('');
   const [detail, setDetail] = useState<Row | null>(null);
   const [invito, setInvito] = useState(false);
+  const [numeri, setNumeri] = useState(false);
 
   const load = useCallback(async () => {
     setError('');
@@ -460,10 +532,16 @@ export default function MembershipManager() {
         title="Membership"
         subtitle={`${rows.length} ${rows.length === 1 ? 'tessera' : 'tessere'}. Lo stato si ricava dalla scadenza, non è un campo da aggiornare.`}
         action={
-          <ActionButton onClick={() => setInvito(true)}>
-            <Send size={16} strokeWidth={1.9} />
-            Invita
-          </ActionButton>
+          <div className="flex flex-wrap gap-2.5">
+            <ActionButton variant="quiet" onClick={() => setNumeri(true)}>
+              <Phone size={16} strokeWidth={1.9} />
+              Numeri
+            </ActionButton>
+            <ActionButton onClick={() => setInvito(true)}>
+              <Send size={16} strokeWidth={1.9} />
+              Invita
+            </ActionButton>
+          </div>
         }
       />
 
@@ -578,6 +656,7 @@ export default function MembershipManager() {
 
       <Detail row={detail} onClose={() => setDetail(null)} onChanged={load} />
       {invito && <Invito onClose={() => setInvito(false)} />}
+      {numeri && <Numeri righe={visible} onClose={() => setNumeri(false)} />}
     </div>
   );
 }
