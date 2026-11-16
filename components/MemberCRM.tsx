@@ -37,7 +37,10 @@ interface Member {
   phone: string | null;
   member_id: string | null;
   member_since: number | null;
+  /** 'Socio' se ha una tessera valida oggi, altrimenti niente. */
   tier: string | null;
+  /** Nel team del club: un ruolo, non un livello di tessera. */
+  staff: boolean;
   created_at: string;
   last_sign_in: string | null;
   events: string[];
@@ -45,7 +48,7 @@ interface Member {
   spend: number;
 }
 
-const TIERS = ['Member', 'Founder', 'Staff'] as const;
+const TIERS = ['Socio'] as const;
 const NO_TIER = 'Registrato';
 
 function tierOf(m: Member) {
@@ -60,9 +63,9 @@ function fmtDate(iso: string | null) {
 }
 
 function TierPill({ tier }: { tier: string }) {
-  // Solo "Member" è acceso: è l'unico che risponde alla domanda per cui
+  // Solo "Socio" è acceso: è l'unico che risponde alla domanda per cui
   // si apre questa pagina.
-  const strong = tier === 'Member';
+  const strong = tier === 'Socio';
   return (
     <span
       className={`inline-flex shrink-0 items-center whitespace-nowrap rounded-full border px-2.5 py-0.5 text-fine ${
@@ -85,6 +88,11 @@ function MemberSheet({ member, onClose }: { member: Member | null; onClose: () =
     <Sheet open title={member.name} onClose={onClose}>
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <TierPill tier={tierOf(member)} />
+        {member.staff && (
+          <span className="inline-flex shrink-0 items-center whitespace-nowrap rounded-full border border-rule-paper px-2.5 py-0.5 text-fine text-on-paper-muted">
+            Team
+          </span>
+        )}
         {member.member_id && (
           <span className="text-fine text-on-paper-muted">Tessera {member.member_id}</span>
         )}
@@ -261,7 +269,8 @@ export default function MemberCRM() {
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
     return members.filter((m) => {
-      if (tier && tierOf(m) !== tier) return false;
+      if (tier === 'team') { if (!m.staff) return false; }
+      else if (tier && tierOf(m) !== tier) return false;
       if (q && !`${m.name} ${m.email} ${m.member_id ?? ''}`.toLowerCase().includes(q)) return false;
       return true;
     });
@@ -315,10 +324,14 @@ export default function MemberCRM() {
       ) : (
         <>
           <div className="-mx-1 mb-4 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {[{ id: '', label: `Tutti · ${members.length}` }, ...[...TIERS, NO_TIER].map((t) => ({
-              id: t,
-              label: `${t} · ${counts[t] ?? 0}`,
-            }))].map((o) => (
+            {/* Il team e' un filtro a parte: uno dello staff puo'
+                essere anche socio, e metterlo fra le tessere vorrebbe
+                dire sceglierne una delle due. */}
+            {[
+              { id: '', label: `Tutti · ${members.length}` },
+              ...[...TIERS, NO_TIER].map((t) => ({ id: t, label: `${t} · ${counts[t] ?? 0}` })),
+              { id: 'team', label: `Team · ${members.filter((m) => m.staff).length}` },
+            ].map((o) => (
               <button
                 key={o.id || 'all'}
                 onClick={() => setTier(o.id)}
@@ -367,6 +380,9 @@ export default function MemberCRM() {
                     <span className="flex items-center gap-2">
                       <span className="min-w-0 truncate text-body">{m.name}</span>
                       <TierPill tier={tierOf(m)} />
+                      {m.staff && (
+                        <span className="shrink-0 whitespace-nowrap text-fine text-on-paper-muted">Team</span>
+                      )}
                     </span>
                     <span className="mt-0.5 flex flex-wrap items-center gap-x-3 truncate text-fine text-on-paper-muted">
                       {m.email}

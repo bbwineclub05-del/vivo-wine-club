@@ -71,10 +71,41 @@ export async function GET(request: Request) {
      */
     const anagrafiche = await fetchAllRows<{
       email: string; phone: string | null; city: string | null;
-    }>(db, (q) => q.from('memberships').select('email, phone, city'));
+      member_id: string | null; expires_at: string; cancelled_at: string | null;
+    }>(db, (q) => q.from('memberships').select('email, phone, city, member_id, expires_at, cancelled_at'));
 
     const perEmail = new Map(
       anagrafiche.map((m) => [String(m.email ?? '').trim().toLowerCase(), m]),
+    );
+
+    /* Chi e' socio, e chi lo e' soltanto nei ricordi.
+     *
+     * Fino a ieri questa pagina leggeva `profiles.tier`, una parola
+     * scritta a mano quando "essere socio" non era ancora una tessera
+     * con una scadenza. E' rimasta ferma a prima di ottobre:
+     * quarantadue persone etichettate "Registrato" avevano la tessera
+     * attiva, e il CRM le chiamava registrate.
+     *
+     * Adesso la domanda e' la stessa che si fa il resto del sito: ha
+     * una tessera non scaduta e non annullata? Non si legge piu' un
+     * campo, si guarda un fatto.
+     *
+     * Lo staff resta a parte perche' e' un ruolo, non un livello di
+     * tessera: uno dello staff puo' benissimo essere anche socio, e
+     * mescolarli vorrebbe dire perdere l'uno o l'altro.
+     */
+    const oggi = new Date().toISOString().slice(0, 10);
+    const socio = (email: string) => {
+      const m = perEmail.get(email);
+      return !!m && !m.cancelled_at && String(m.expires_at ?? '').slice(0, 10) >= oggi;
+    };
+
+    const staff = new Set(
+      (await fetchAllRows<{ email: string; active: boolean | null }>(db, (q) =>
+        q.from('team_members').select('email, active'),
+      ))
+        .filter((t) => t.active !== false)
+        .map((t) => String(t.email ?? '').trim().toLowerCase()),
     );
 
     // ── I biglietti, solo quelli pagati ──
@@ -109,10 +140,11 @@ export async function GET(request: Request) {
         name: p?.full_name?.trim() || u.email?.split('@')[0] || 'Senza nome',
         city: p?.city?.trim() || perEmail.get(email)?.city?.trim() || null,
         phone: p?.phone?.trim() || perEmail.get(email)?.phone?.trim() || null,
-        member_id: p?.member_id ?? null,
+        member_id: p?.member_id ?? perEmail.get(email)?.member_id ?? null,
         member_since: p?.member_since ?? null,
-        // Senza profilo è un account registrato, non un membro.
-        tier: p?.tier ?? null,
+        // Non più l'etichetta scritta a mano: la tessera che c'è o non c'è.
+        tier: socio(email) ? 'Socio' : null,
+        staff: staff.has(email),
         created_at: u.created_at,
         last_sign_in: u.last_sign_in_at ?? null,
         events: t.events,
