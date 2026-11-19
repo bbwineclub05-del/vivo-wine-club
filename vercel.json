@@ -15,6 +15,10 @@
     {
       "path": "/api/cron/membership-reminder",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/eventi-settimana",
+      "schedule": "0 8 * * 1"
     }
   ]
 }
