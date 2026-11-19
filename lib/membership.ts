@@ -60,7 +60,7 @@ export function daysBetween(from: string, to: string): number {
 /* ── Eta' ─────────────────────────────────────────────────────────── */
 
 /**
- * Il club e' per chi ha meno di trent'anni.
+ * Il club e' per chi ha meno di trentacinque anni.
  *
  * Non e' un dettaglio di stile: e' l'unica cosa che tiene insieme le
  * serate, ed e' anche quello che le cantine comprano quando lavorano
@@ -73,7 +73,7 @@ export function daysBetween(from: string, to: string): number {
  * e' un controllo.
  */
 export const ETA_MINIMA = 18;
-export const ETA_MASSIMA = 30;
+export const ETA_MASSIMA = 35;
 
 /** Gli anni compiuti a una certa data. */
 export function ageOn(dob: string, on = today()): number {
@@ -94,11 +94,11 @@ export function maxDob(on = today()): string {
   return isoDate(d);
 }
 
-/** La nascita piu' lontana ammessa: chi e' nato prima ha gia' trent'anni. */
+/** La nascita piu' lontana ammessa: chi e' nato prima ha superato l'eta'. */
 export function minDob(on = today()): string {
   const d = new Date(`${on.slice(0, 10)}T00:00:00`);
   d.setFullYear(d.getFullYear() - ETA_MASSIMA);
-  d.setDate(d.getDate() + 1); // il giorno del trentesimo compleanno e' gia' fuori
+  d.setDate(d.getDate() + 1); // il giorno del compleanno di troppo e' gia' fuori
   return isoDate(d);
 }
 

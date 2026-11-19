@@ -115,7 +115,7 @@ const SAVOYE: Record<CaseLocale, CaseStudy> = {
         occhiello: 'Due mercati',
         titolo: 'Francia e Italia, nella stessa sera',
         corpo:
-          'Per una maison francese il pubblico italiano under 30 era un mercato mai toccato. Una serata a Parigi lo ha raggiunto senza uscire dalla città.',
+          'Per una maison francese il pubblico italiano under 35 era un mercato mai toccato. Una serata a Parigi lo ha raggiunto senza uscire dalla città.',
         media: MEDIA.gente,
         verso: 'alto',
       },
@@ -201,7 +201,7 @@ const SAVOYE: Record<CaseLocale, CaseStudy> = {
         occhiello: 'Two markets',
         titolo: 'France and Italy, in one evening',
         corpo:
-          'For a French house, the Italian under-30 crowd was a market it had never touched. One night in Paris reached it without leaving the city.',
+          'For a French house, the Italian under-35 crowd was a market it had never touched. One night in Paris reached it without leaving the city.',
         media: MEDIA.gente,
         verso: 'alto',
       },
@@ -287,7 +287,7 @@ const SAVOYE: Record<CaseLocale, CaseStudy> = {
         occhiello: 'Deux marchés',
         titolo: 'La France et l’Italie, le même soir',
         corpo:
-          'Pour une maison française, le public italien de moins de 30 ans était un marché jamais touché. Une soirée à Paris l’a atteint sans quitter la ville.',
+          'Pour une maison française, le public italien de moins de 35 ans était un marché jamais touché. Une soirée à Paris l’a atteint sans quitter la ville.',
         media: MEDIA.gente,
         verso: 'alto',
       },
