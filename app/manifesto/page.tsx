@@ -46,6 +46,18 @@ const STORIA = [
   { posto: 'story3Place', corpo: 'story3Body' },
 ] as const;
 
+/**
+ * I cinque valori della Carta, in ordine.
+ *
+ * Qui stanno solo i numeri: il testo vive nelle traduzioni, perche'
+ * la Carta esiste in tre lingue e un manifesto scritto meta' in
+ * italiano dentro il codice non si traduce piu'.
+ */
+const VALORI = [1, 2, 3, 4, 5] as const;
+
+/** Le sei righe dell'impegno reciproco. */
+const IMPEGNI = [1, 2, 3, 4, 5, 6] as const;
+
 export default async function ManifestoPage() {
   const t = await getTranslations('site.manifesto');
   const tw = await getTranslations('whoWeAre');
@@ -66,6 +78,7 @@ export default async function ManifestoPage() {
           <div className="mt-10 max-w-[62ch] space-y-5 text-lead text-on-paper-muted">
             <p>{t('body1')}</p>
             <p>{t('body2')}</p>
+            <p>{t('body3')}</p>
           </div>
         </Section>
 
@@ -87,6 +100,109 @@ export default async function ManifestoPage() {
               </li>
             ))}
           </ol>
+        </Section>
+
+        {/* ── I cinque valori ──────────────────────────────────
+            Due colonne sul computer: a sinistra il numero, il nome e
+            la frase che lo riassume, a destra come lo si vive. Chi
+            scorre legge la colonna di sinistra come un indice e si
+            ferma dove gli serve; chi legge tutto trova il resto
+            accanto, non sotto. Sul telefono tornano uno sotto
+            l'altro, nello stesso ordine in cui si leggono. */}
+        <Section>
+          <h2 className="ds-display text-title">{t('valuesTitle')}</h2>
+          <p className="mt-5 max-w-[56ch] text-lead text-on-paper-muted">{t('valuesIntro')}</p>
+
+          <ol className="mt-14 space-y-12 lg:space-y-16">
+            {VALORI.map((n) => (
+              <li
+                key={n}
+                className="grid gap-x-12 gap-y-6 border-t border-rule-paper pt-7 lg:grid-cols-[minmax(0,26ch)_1fr]"
+              >
+                <div>
+                  <p className="ds-numeric text-fine text-accent-soft">
+                    {`0${n}`}
+                  </p>
+                  <h3 className="ds-display mt-2 text-subtitle">{t(`value${n}Title`)}</h3>
+                  <p className="mt-3 max-w-[34ch] text-body italic text-on-paper-muted">
+                    {t(`value${n}Claim`)}
+                  </p>
+                </div>
+
+                <div className="max-w-[62ch]">
+                  <p className="text-body text-on-paper-muted">{t(`value${n}Body`)}</p>
+
+                  <p className="mt-7 text-fine font-medium uppercase tracking-[0.1em] text-on-paper">
+                    {t('doLabel')}
+                  </p>
+                  <ul className="mt-3 space-y-2.5">
+                    {[1, 2].map((i) => (
+                      <li key={i} className="flex gap-3 text-body text-on-paper-muted">
+                        <span aria-hidden="true" className="mt-[0.6em] h-[3px] w-[3px] shrink-0 rounded-full bg-accent" />
+                        {t(`value${n}Do${i}`)}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </Section>
+
+        {/* ── L'impegno reciproco ───────────────────────────────
+            I valori di sopra sono quello che chiediamo; questo e'
+            quello che promettiamo. Separarlo dalla lista e' il punto
+            del capitolo: messo in coda ai valori sembrerebbe il
+            sesto. */}
+        <Section ground="paper-soft">
+          <div className="grid gap-x-12 gap-y-8 lg:grid-cols-[minmax(0,34ch)_1fr]">
+            <div>
+              <h2 className="ds-display text-title">{t('commitTitle')}</h2>
+              <p className="mt-5 max-w-[38ch] text-body text-on-paper-muted">{t('commitIntro')}</p>
+            </div>
+
+            <div>
+              <ul className="divide-y divide-rule-paper border-y border-rule-paper">
+                {IMPEGNI.map((n) => (
+                  <li key={n} className="py-4 text-body text-on-paper-muted lg:text-lead">
+                    {t(`commit${n}`)}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-7 max-w-[62ch] text-body text-on-paper-muted">{t('commitClose')}</p>
+            </div>
+          </div>
+        </Section>
+
+        {/* ── L'orizzonte ───────────────────────────────────────
+            Mission e vision una accanto all'altra, e sotto il claim
+            da solo, grande quanto il resto del capitolo: e' la riga
+            che la gente ricorda, e in mezzo a un paragrafo non la
+            ricorderebbe nessuno. */}
+        <Section ground="ink">
+          <h2 className="ds-display text-title">{t('horizonTitle')}</h2>
+
+          <div className="mt-12 grid gap-x-12 gap-y-10 md:grid-cols-2">
+            {([
+              ['missionLabel', 'missionBody'],
+              ['visionLabel', 'visionBody'],
+            ] as const).map(([etichetta, corpo]) => (
+              <div key={etichetta} className="border-t border-rule-ink pt-5">
+                <h3 className="text-fine font-medium uppercase tracking-[0.1em] text-on-ink-muted">
+                  {t(etichetta)}
+                </h3>
+                <p className="mt-4 max-w-[46ch] text-lead">{t(corpo)}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-16 border-t border-rule-ink pt-8">
+            <h3 className="text-fine font-medium uppercase tracking-[0.1em] text-on-ink-muted">
+              {t('claimLabel')}
+            </h3>
+            <p className="ds-display mt-5 text-statement">Make wine young again.</p>
+            <p className="mt-8 text-body text-on-ink-muted">{t('horizonClose')}</p>
+          </div>
         </Section>
 
         {/* ── Founders ────────────────────────────────────────── */}
