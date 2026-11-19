@@ -281,6 +281,8 @@ function EntryForm({
   members,
   editTarget,
   defaultDate,
+  defaultPlatform,
+  recenti,
   onClose,
   onSaved,
 }: {
@@ -288,6 +290,10 @@ function EntryForm({
   members: TeamMember[];
   editTarget?: PedEntry | null;
   defaultDate?: string;
+  /** La piattaforma che si sta guardando: quasi sempre quella giusta. */
+  defaultPlatform?: string;
+  /** Da cui ricopiare, per non riscrivere ogni volta le stesse cose. */
+  recenti: PedEntry[];
   onClose: () => void;
   onSaved: (e: PedEntry) => void;
 }) {
@@ -296,7 +302,7 @@ function EntryForm({
     date: editTarget?.date.slice(0, 10) ?? defaultDate ?? ymd(new Date()),
     title: editTarget?.title ?? '',
     description: editTarget?.description ?? '',
-    platform: editTarget?.platform ?? 'Instagram',
+    platform: editTarget?.platform ?? defaultPlatform ?? 'Instagram',
     content_type: editTarget?.content_type ?? 'Post',
     assigned_to: editTarget?.assigned_to ?? '',
     notes: editTarget?.notes ?? '',
@@ -307,6 +313,21 @@ function EntryForm({
 
   function set<K extends keyof typeof form>(k: K, v: (typeof form)[K]) {
     setForm((p) => ({ ...p, [k]: v }));
+  }
+
+  /* Riprende tutto tranne la data: quella l'hai gia' scelta tu
+     aprendo il giorno, ed e' l'unica cosa che di sicuro cambia fra un
+     contenuto e il successivo. */
+  function riprendi(e: PedEntry) {
+    setForm((p) => ({
+      ...p,
+      title: e.title,
+      description: e.description ?? '',
+      platform: e.platform,
+      content_type: e.content_type,
+      assigned_to: e.assigned_to ?? '',
+      notes: e.notes ?? '',
+    }));
   }
 
   /**
@@ -395,6 +416,36 @@ function EntryForm({
           placeholder="Cosa pubblichiamo?"
           className="!py-4 !text-[19px]"
         />
+
+        {/* Da cui ripartire.
+            Un piano editoriale e' fatto di cose che tornano: la stessa
+            rubrica ogni martedi', lo stesso formato per la stessa
+            persona. Riscriverla da capo ogni volta e' il motivo per cui
+            su un telefono nessuno la compila.
+            Una fila che scorre col dito e non va a capo: su uno schermo
+            stretto tre suggerimenti incolonnati mangerebbero mezzo
+            modulo prima che si veda un campo. */}
+        {!isEdit && recenti.length > 0 && (
+          <div>
+            <p className="mb-2 text-fine font-medium text-on-paper-muted">Riparti da</p>
+            <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {recenti.map((r) => (
+                <button
+                  key={r.id}
+                  onClick={() => riprendi(r)}
+                  className="inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-full border border-rule-paper px-3.5 text-fine transition-colors hover:border-accent/40"
+                >
+                  <span
+                    aria-hidden="true"
+                    className="h-2 w-2 shrink-0 rounded-full"
+                    style={{ backgroundColor: colorOfPlatform(r.platform) }}
+                  />
+                  <span className="max-w-[26ch] truncate">{r.title}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Platforms as tappable chips rather than a dropdown: it is the
             field people change most, and here it takes one tap. */}
@@ -517,6 +568,11 @@ export default function PedManager() {
   const [listFilter, setListFilter] = useState<'todo' | 'published' | 'all'>('todo');
   const [detail, setDetail] = useState<PedEntry | null>(null);
   const [formFor, setFormFor] = useState<{ edit?: PedEntry | null; date?: string } | null>(null);
+  /* Quale piano si sta guardando. Vuoto = tutti insieme.
+     Il team media non lavora sul piano del club: lavora su Instagram,
+     oppure su TikTok. Un piano solo con dentro tutto li' costringe a
+     filtrare con gli occhi ogni volta che apre la pagina. */
+  const [canale, setCanale] = useState('');
 
   // In the parent, not in the sheet: see the note in TaskBoard.
   useOverlayBackClose(!!formFor, () => setFormFor(null));
@@ -603,9 +659,32 @@ export default function PedManager() {
     setDetail((d) => (d && d.id === entry.id ? entry : d));
   }
 
+  /* Un posto solo da cui pesca tutto il resto. */
+  const visibili = useMemo(
+    () => (canale ? entries.filter((e) => e.platform === canale) : entries),
+    [entries, canale],
+  );
+
+  /* I suggerimenti: gli ultimi scritti, uno per titolo.
+     Se stai guardando un canale sono i suoi, perche' e' li' che stai
+     lavorando. Sei: su un telefono la fila si scorre col dito, e oltre
+     la mezza dozzina si cerca invece di scegliere. */
+  const recenti = useMemo(() => {
+    const visti = new Set<string>();
+    return [...visibili]
+      .sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''))
+      .filter((e) => {
+        const k = e.title.trim().toLowerCase();
+        if (!k || visti.has(k)) return false;
+        visti.add(k);
+        return true;
+      })
+      .slice(0, 6);
+  }, [visibili]);
+
   /* ── Calendar: one source per platform in use, plus the events ── */
   const sources = useMemo<CalendarSource[]>(() => {
-    const used = PLATFORMS.filter((p) => entries.some((e) => e.platform === p));
+    const used = PLATFORMS.filter((p) => visibili.some((e) => e.platform === p));
     const list: CalendarSource[] = used.map((p) => ({
       key: p,
       label: p,
@@ -613,10 +692,10 @@ export default function PedManager() {
     }));
     if (events.length) list.push({ key: EVENTS_SOURCE, label: 'Eventi VIVO', color: '#A3561A' });
     return list;
-  }, [entries, events]);
+  }, [visibili, events]);
 
   const calendarItems = useMemo<CalendarItem[]>(() => {
-    const out: CalendarItem[] = entries.map((e) => ({
+    const out: CalendarItem[] = visibili.map((e) => ({
       id: `ped-${e.id}`,
       date: e.date.slice(0, 10),
       title: e.title,
@@ -636,11 +715,11 @@ export default function PedManager() {
       });
     }
     return out;
-  }, [entries, events]);
+  }, [visibili, events]);
 
   /* ── List: newest month first, and inside it by date ── */
   const months = useMemo(() => {
-    const kept = entries.filter((e) =>
+    const kept = visibili.filter((e) =>
       listFilter === 'all'
         ? true
         : listFilter === 'published'
@@ -659,9 +738,9 @@ export default function PedManager() {
         label: monthLabel(`${key}-01`),
         list: list.sort((a, b) => a.date.localeCompare(b.date)),
       }));
-  }, [entries, listFilter]);
+  }, [visibili, listFilter]);
 
-  const todoCount = entries.filter((e) => e.status !== 'published').length;
+  const todoCount = visibili.filter((e) => e.status !== 'published').length;
 
   return (
     <div>
@@ -670,6 +749,43 @@ export default function PedManager() {
         subtitle="Cosa esce, dove e quando, accanto agli eventi del club."
         action={<NewButton label="Nuovo contenuto" onClick={() => setFormFor({})} />}
       />
+
+      {/* I piani, uno per canale.
+          Chi fa i contenuti non lavora sul piano del club: lavora su
+          Instagram, oppure su TikTok. Un piano solo con dentro tutto
+          costringe a filtrare con gli occhi a ogni apertura. Qui e' un
+          tocco, e vale per il calendario e per l'elenco insieme.
+          Compaiono solo i canali che hanno qualcosa dentro: un
+          pulsante che apre sempre il vuoto e' un pulsante che si
+          impara a saltare. */}
+      <div className="-mx-1 mb-4 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {[{ id: '', label: 'Tutto', n: entries.length }, ...PLATFORMS
+          .map((p) => ({ id: p, label: p, n: entries.filter((e) => e.platform === p).length }))
+          .filter((p) => p.n > 0)].map((c) => {
+          const on = canale === c.id;
+          const colore = c.id ? colorOfPlatform(c.id) : null;
+          return (
+            <button
+              key={c.id || 'tutto'}
+              onClick={() => setCanale(c.id)}
+              aria-pressed={on}
+              className={`inline-flex min-h-[44px] shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-3.5 text-fine font-medium transition-colors ${
+                on ? 'border-accent bg-accent text-paper' : 'border-rule-paper text-on-paper'
+              }`}
+            >
+              {colore && (
+                <span
+                  aria-hidden="true"
+                  className="h-2 w-2 shrink-0 rounded-full"
+                  style={{ backgroundColor: on ? 'currentColor' : colore }}
+                />
+              )}
+              {c.label}
+              <span className={on ? 'opacity-70' : 'text-on-paper-muted'}>{c.n}</span>
+            </button>
+          );
+        })}
+      </div>
 
       <div className="mb-5 flex rounded-full border border-rule-paper p-1 lg:w-fit">
         {(
@@ -733,11 +849,17 @@ export default function PedManager() {
 
           {months.length === 0 ? (
             <EmptyState
-              title="Niente da mostrare"
+              title={canale ? `Niente su ${canale}` : 'Niente da mostrare'}
               body={
-                listFilter === 'todo'
-                  ? 'Nessun contenuto in attesa di pubblicazione.'
-                  : 'Aggiungi un contenuto e comparirà qui, raggruppato per mese.'
+                /* Col filtro acceso il vuoto non vuol dire che il
+                   piano e' vuoto: vuol dire che quel canale lo e'. */
+                canale
+                  ? listFilter === 'todo'
+                    ? `Nessun contenuto ${canale} in attesa di pubblicazione.`
+                    : `Nessun contenuto per ${canale}. Gli altri canali li trovi su «Tutto».`
+                  : listFilter === 'todo'
+                    ? 'Nessun contenuto in attesa di pubblicazione.'
+                    : 'Aggiungi un contenuto e comparirà qui, raggruppato per mese.'
               }
               action={<NewButton label="Nuovo contenuto" onClick={() => setFormFor({})} />}
             />
@@ -776,6 +898,8 @@ export default function PedManager() {
           members={members}
           editTarget={formFor.edit}
           defaultDate={formFor.date}
+          defaultPlatform={canale || undefined}
+          recenti={recenti}
           onClose={() => setFormFor(null)}
           onSaved={handleSaved}
         />
