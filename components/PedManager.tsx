@@ -823,6 +823,11 @@ export default function PedManager() {
           onDayAdd={(date) => setFormFor({ date })}
           addLabel="Contenuto"
           emptyDayLabel="Niente in programma questo giorno."
+          /* L'elenco ce l'ha gia' la linguetta qui sopra, e i canali
+             sono i pulsanti grandi in cima: tenerli anche dentro il
+             calendario vuol dire due comandi per la stessa cosa. */
+          views={['month', 'week']}
+          showSources={false}
         />
       ) : (
         <div className="flex flex-col gap-7">

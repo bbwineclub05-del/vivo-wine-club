@@ -119,6 +119,8 @@ export function Calendar({
   onDayAdd,
   addLabel = 'Aggiungi',
   emptyDayLabel = 'Niente in programma',
+  views = ['month', 'week', 'agenda'],
+  showSources = true,
 }: {
   items: CalendarItem[];
   sources: CalendarSource[];
@@ -127,9 +129,25 @@ export function Calendar({
   onDayAdd?: (date: string) => void;
   addLabel?: string;
   emptyDayLabel?: string;
+  /**
+   * Quali viste offrire. Chi ha gia' un suo "Elenco" fuori dal
+   * calendario non ne vuole un secondo qui dentro: due voci che si
+   * chiamano uguale e fanno cose diverse sono peggio di una in meno.
+   */
+  views?: CalendarView[];
+  /**
+   * I pallini per accendere e spegnere i calendari. Si spengono dove
+   * la stessa scelta e' gia' fatta sopra, con dei pulsanti piu'
+   * grandi: ripeterla qui vuol dire due comandi per una cosa sola,
+   * che prima o poi si contraddicono sotto gli occhi di chi guarda.
+   */
+  showSources?: boolean;
 }) {
   const today = ymd(new Date());
-  const [view, setView] = useState<CalendarView>('month');
+  /* Si parte dalla prima vista offerta: se qualcuno togliesse il mese
+     dall'elenco, partire dal mese darebbe una vista che non si puo'
+     piu' raggiungere. */
+  const [view, setView] = useState<CalendarView>(views[0] ?? 'month');
   const [cursor, setCursor] = useState(() => {
     const d = new Date();
     return { year: d.getFullYear(), month: d.getMonth() };
@@ -270,32 +288,44 @@ export function Calendar({
         </button>
       </div>
 
-      {/* ── View switch. Full width on a phone, where the thumb wants
-          the whole row; its own size on a desktop, where stretching
-          three words across a thousand pixels just looks lost. ── */}
-      <div className="flex rounded-full border border-rule-paper p-1 lg:w-fit">
-        {(
-          [
-            { id: 'month', label: 'Mese' },
-            { id: 'week', label: 'Settimana' },
-            { id: 'agenda', label: 'Elenco' },
-          ] as { id: CalendarView; label: string }[]
-        ).map((v) => (
-          <button
-            key={v.id}
-            onClick={() => setView(v.id)}
-            aria-pressed={view === v.id}
-            className={`min-h-[42px] flex-1 rounded-full px-3 text-fine font-medium transition-colors lg:flex-none lg:px-7 ${
-              view === v.id ? 'bg-accent text-paper' : 'text-on-paper-muted hover:text-on-paper'
-            }`}
-          >
-            {v.label}
-          </button>
-        ))}
-      </div>
+      {/* ── Lo scambio di vista.
+          A tre voci prende la riga intera, perche' il pollice la
+          vuole tutta. A due resta piccolo e a sinistra: due parole
+          stirate su mezzo schermo sembrano un errore, e quella riga
+          serve ad altro. ── */}
+      {views.length > 1 && (
+        <div
+          className={`flex rounded-full border border-rule-paper p-1 ${
+            views.length > 2 ? 'lg:w-fit' : 'w-fit'
+          }`}
+        >
+          {(
+            [
+              { id: 'month', label: 'Mese' },
+              { id: 'week', label: 'Settimana' },
+              { id: 'agenda', label: 'Elenco' },
+            ] as { id: CalendarView; label: string }[]
+          )
+            .filter((v) => views.includes(v.id))
+            .map((v) => (
+              <button
+                key={v.id}
+                onClick={() => setView(v.id)}
+                aria-pressed={view === v.id}
+                className={`rounded-full font-medium transition-colors ${
+                  views.length > 2
+                    ? 'min-h-[42px] flex-1 px-3 text-fine lg:flex-none lg:px-7'
+                    : 'min-h-[38px] px-4 text-fine'
+                } ${view === v.id ? 'bg-accent text-paper' : 'text-on-paper-muted hover:text-on-paper'}`}
+              >
+                {v.label}
+              </button>
+            ))}
+        </div>
+      )}
 
       {/* ── Which calendars are showing ── */}
-      {sources.length > 1 && (
+      {showSources && sources.length > 1 && (
         <div className="flex flex-wrap gap-2">
           {sources.map((s) => {
             const on = !hidden.has(s.key);
