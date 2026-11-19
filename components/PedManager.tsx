@@ -80,7 +80,11 @@ interface TeamMember {
 }
 
 const PLATFORMS = ['Instagram', 'TikTok', 'LinkedIn', 'Newsletter', 'Sito Web', 'Altro'];
-const CONTENT_TYPES = ['Post', 'Reel', 'Story', 'Articolo', 'Email', 'Video', 'Foto', 'Altro'];
+/* Quattro, non otto. Un elenco di formati lungo come un menu' si
+   sfoglia invece di sceglierlo, e meta' di quelli che c'erano non li
+   ha mai usati nessuno: su sessanta contenuti, tre. Chi apre il
+   modulo da un telefono li vuole tutti e quattro su una riga sola. */
+const CONTENT_TYPES = ['Post', 'Reel', 'Story', 'Locandina'];
 
 /**
  * Each platform keeps the colour people already associate with it —
@@ -133,10 +137,9 @@ const TYPE_COLOR_DEFAULT: Record<string, string> = {
   Post: '#2F6F4E',
   Reel: '#B5483C',
   Story: '#C98A1E',
-  Articolo: '#3F4B5B',
-  Email: '#7A4A9E',
-  Video: '#1F6F8B',
-  Foto: '#A3561A',
+  Locandina: '#3F4B5B',
+  /* Il colore di chi non rientra: i contenuti vecchi segnati Video o
+     Altro restano come sono, e si vedono grigi invece di sparire. */
   Altro: '#7A5252',
 };
 
@@ -616,7 +619,11 @@ function EntryForm({
 
         <Field label="Tipo">
           <div className="flex flex-wrap gap-2">
-            {CONTENT_TYPES.map((c) => {
+            {/* Se questa scheda porta un formato di quelli vecchi, resta
+                in fondo all'elenco: aprire un contenuto del quindici
+                settembre e salvarlo non deve cambiargli il tipo
+                sott'acqua. */}
+            {[...CONTENT_TYPES, ...(CONTENT_TYPES.includes(form.content_type) ? [] : [form.content_type])].map((c) => {
               const on = form.content_type === c;
               return (
                 <button
@@ -849,6 +856,18 @@ export default function PedManager() {
           label: p,
           color: colorOfPlatform(p),
         }));
+
+    /* "Altro" compare solo se serve davvero: e' dove finiscono i
+       contenuti segnati con un formato o un canale che non offriamo
+       piu'. Senza questa riga quei tre contenuti del passato
+       resterebbero senza colore, e un elemento senza colore in un
+       calendario a colori sembra un errore di caricamento. */
+    const fuori = canale
+      ? visibili.some((e) => !CONTENT_TYPES.includes(e.content_type))
+      : visibili.some((e) => !PLATFORMS.includes(e.platform));
+    if (fuori) {
+      list.push({ key: 'Altro', label: 'Altro', color: TYPE_COLOR_DEFAULT.Altro });
+    }
     if (events.length) list.push({ key: EVENTS_SOURCE, label: 'Eventi VIVO', color: '#A3561A' });
     return list;
   }, [visibili, events, canale, coloreTipo]);
