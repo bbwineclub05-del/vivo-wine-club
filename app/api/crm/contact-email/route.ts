@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import fs from 'fs';
 import path from 'path';
+import { testata } from '@/lib/email-shell';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -15,9 +16,7 @@ function buildContactHtml(subject: string, body: string): string {
 
   return `
 <div style="font-family:sans-serif;max-width:580px;margin:0 auto;color:#1a0505;">
-  <div style="text-align:center;background-color:#6b1a1a;padding:24px;margin-bottom:32px;">
-    <img src="https://vivowineclub.com/logobianco.png" style="height:52px;" alt="Vivo Wine Club" />
-  </div>
+  ${testata(580)}
   <div style="padding:0 8px;">
     <p style="margin:0 0 16px;color:#3a1a1a;line-height:1.7;">${htmlBody}</p>
   </div>

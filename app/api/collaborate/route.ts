@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
+import { testata } from '@/lib/email-shell';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 function confirmationHtml(name: string) {
   return `
 <div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1a0505;">
-  <div style="text-align:center;background-color:#6b1a1a;padding:24px;margin-bottom:32px;border-radius:4px;">
-    <img src="https://vivowineclub.com/logobianco.png" style="height:64px;" />
-  </div>
+  ${testata(560)}
   <h2 style="text-align:center;">We received your proposal.</h2>
   <p>Hi ${name},</p>
   <p>Thank you for reaching out to Vivo Wine Club. We have received your collaboration proposal and will get back to you as soon as possible.</p>

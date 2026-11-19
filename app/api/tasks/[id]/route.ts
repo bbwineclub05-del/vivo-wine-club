@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { testata } from '@/lib/email-shell';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -31,9 +32,7 @@ function taskDoneHtml(data: {
 
   return `
 <div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1a0505;">
-  <div style="text-align:center;background-color:#6b1a1a;padding:24px;margin-bottom:32px;border-radius:4px;">
-    <img src="https://vivowineclub.com/logobianco.png" style="height:64px;" />
-  </div>
+  ${testata(560)}
   <h2 style="margin-bottom:4px;">Task completed. ✓</h2>
   <p style="color:#7a4a4a;margin-top:0;">${data.assigneeName} marked a task as <strong>done</strong>.</p>
   <table style="width:100%;border-collapse:collapse;margin-top:24px;">

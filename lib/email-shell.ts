@@ -9,7 +9,74 @@
  * the light-mode colours silently.
  */
 
+/**
+ * Il logo bianco, per chi ha davvero un fondo scuro sotto.
+ */
 export const LOGO_URL = 'https://vivowineclub.com/logobianco.png';
+
+/**
+ * La testata, tutta intera, come immagine: logo bianco su bordeaux.
+ *
+ * Il colore sta dentro l'immagine e non dietro, e la fascia e' larga
+ * quanto la mail. Non per vezzo: la posta elettronica non permette di
+ * sapere se chi legge ha il tema chiaro o scuro — Gmail non scambia
+ * un'immagine in base al tema, e quindi un logo bianco su fondo
+ * trasparente sparirebbe su carta e uno nero sparirebbe al buio. Con
+ * la fascia dentro l'immagine la domanda non si pone: quello che si
+ * vede e' sempre bianco su bordeaux, e nessun programma di posta
+ * rovescia le immagini.
+ *
+ * Lo sfondo bordeaux resta dichiarato anche sulla casella che la
+ * contiene, per chi tiene le immagini spente: li' si vede la fascia
+ * col nome scritto sopra, invece di un buco bianco.
+ *
+ * PNG e non SVG, al doppio della misura a cui si vede: nella posta
+ * l'SVG quasi nessuno lo disegna, e gli schermi sono fitti.
+ */
+export const TESTATA =
+  'https://vjgwzhinjfvlspdcpukl.supabase.co/storage/v1/object/public/media/brand/testata-bordeaux.png';
+
+/** Il colore della fascia, lo stesso che sta dentro l'immagine. */
+export const BORDEAUX = '#731515';
+
+/**
+ * L'immagine della testata, da sola.
+ *
+ * Lo stile del testo non e' decorazione: e' quello che si vede al
+ * posto dell'immagine quando le immagini sono spente, ed e' il motivo
+ * per cui li' resta una fascia bordeaux col nome scritto sopra invece
+ * di un buco bianco.
+ */
+function imgTestata(larghezza: number): string {
+  const altezza = Math.round((larghezza * 150) / 560);
+  return `<img
+  src="${TESTATA}"
+  alt="Vivo Wine Club"
+  width="${larghezza}"
+  height="${altezza}"
+  style="display:block;border:0;-ms-interpolation-mode:bicubic;width:100%;max-width:${larghezza}px;height:auto;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:17px;letter-spacing:0.08em;line-height:${altezza}px;text-align:center;"
+/>`;
+}
+
+/**
+ * La testata completa, per le mail che non usano questa cornice.
+ *
+ * Erano otto o nove modelli con ognuno la sua striscia bordeaux
+ * dichiarata a mano: otto posti dove un giorno il colore cambia in
+ * sette. Adesso la testata e' una sola e sta qui.
+ */
+export function testata(larghezza = 560): string {
+  return `
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"
+       style="max-width:${larghezza}px;margin:0 auto 32px;">
+  <tr>
+    <td align="center" bgcolor="${BORDEAUX}"
+        style="background-color:${BORDEAUX};padding:0;line-height:0;font-size:0;border-radius:4px 4px 0 0;">
+      ${imgTestata(larghezza)}
+    </td>
+  </tr>
+</table>`;
+}
 
 // ── Full HTML document shell ─────────────────────────────────────────────────
 
@@ -30,6 +97,10 @@ export function emailShell(body: string): string {
     @media (prefers-color-scheme: dark) {
       body,  .em-bg      { background-color: #180303 !important; }
       .em-card           { background-color: #250606 !important; border-color: #3d1010 !important; }
+      /* La testata e' gia' bordeaux in entrambi i temi: l'immagine
+         porta con se' il proprio fondo, e qui si dice solo di non
+         schiarirlo. */
+      .em-header         { background-color: #731515 !important; }
       .em-body           { background-color: #250606 !important; }
       .em-footer         { background-color: #1c0404 !important; border-top-color: #3d1010 !important; }
       .em-h1             { color: #f5e8e8 !important; }
@@ -58,15 +129,11 @@ export function emailShell(body: string): string {
 
           <!-- Header -->
           <tr>
-            <td align="center" style="background-color:#1a0505;padding:26px 32px;border-radius:8px 8px 0 0;">
-              <!--[if mso]><table role="presentation" cellpadding="0" cellspacing="0"><tr><td align="center"><![endif]-->
-              <img
-                src="${LOGO_URL}"
-                alt="Vivo Wine Club"
-                width="140"
-                height="40"
-                style="display:block;border:0;-ms-interpolation-mode:bicubic;max-width:140px;height:auto;"
-              />
+            <td align="center" bgcolor="${BORDEAUX}"
+                style="background-color:${BORDEAUX};padding:0;line-height:0;font-size:0;border-radius:8px 8px 0 0;"
+                class="em-header">
+              <!--[if mso]><table role="presentation" cellpadding="0" cellspacing="0" width="560"><tr><td align="center"><![endif]-->
+              ${imgTestata(560)}
               <!--[if mso]></td></tr></table><![endif]-->
             </td>
           </tr>

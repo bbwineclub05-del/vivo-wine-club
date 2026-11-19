@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { supabase } from '@/lib/supabase';
+import { testata } from '@/lib/email-shell';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const WELCOME_HTML = `
 <div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1a0505;">
-  <div style="text-align:center;background-color:#6b1a1a;padding:24px;margin-bottom:32px;border-radius:4px;">
-    <img src="https://vivowineclub.com/logobianco.png" style="height:64px;" />
-  </div>
+  ${testata(560)}
   <h2 style="text-align:center;">You're on the list.</h2>
   <p style="text-align:center;">Good wine. Good music. Good people.</p>
   <p>You will be the first to hear about our exclusive events, winery visits and curated wine experiences.</p>

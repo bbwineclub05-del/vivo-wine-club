@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { requireAdminOrStaff } from '@/lib/auth-guard';
+import { testata } from '@/lib/email-shell';
 
 // Large recipient lists need several sequential batch calls (100/batch) to
 // Resend — without this, Vercel's default serverless timeout (as low as 10s)
@@ -24,9 +25,7 @@ function buildHtml(subject: string, body: string): string {
 
   return `
 <div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1a0505;">
-  <div style="text-align:center;background-color:#6b1a1a;padding:24px;margin-bottom:32px;border-radius:4px;">
-    <img src="https://vivowineclub.com/logobianco.png" style="height:56px;" alt="Vivo Wine Club" />
-  </div>
+  ${testata(560)}
   <p style="margin:0 0 16px;">${htmlBody}</p>
   <p style="margin-top:40px;color:#bbb;font-size:11px;text-align:center;border-top:1px solid #e8d5d5;padding-top:20px;">
     Vivo Wine Club · <a href="https://vivowineclub.com" style="color:#6b1a1a;">vivowineclub.com</a>
@@ -50,9 +49,7 @@ function buildEventHtml(params: {
 
   return `
 <div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1a0505;">
-  <div style="text-align:center;background-color:#6b1a1a;padding:24px;margin-bottom:32px;border-radius:4px;">
-    <img src="https://vivowineclub.com/logobianco.png" style="height:56px;" alt="Vivo Wine Club" />
-  </div>
+  ${testata(560)}
 
   <p style="font-size:11px;letter-spacing:0.3em;color:#731515;margin:0 0 12px;text-transform:uppercase;">NEW EVENT</p>
   <h2 style="font-weight:300;font-size:28px;margin:0 0 24px;line-height:1.2;">${eventTitle}</h2>

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { requireAdminOrStaff } from '@/lib/auth-guard';
 import { generateQuotePdf } from '@/lib/quote-pdf';
+import { testata } from '@/lib/email-shell';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -22,9 +23,7 @@ export async function POST(request: Request) {
       subject:  subject || `Proposta Evento | Vivo Wine Club`,
       html: `
 <div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1a0505;">
-  <div style="text-align:center;background-color:#731515;padding:28px;margin-bottom:32px;border-radius:4px;">
-    <img src="https://vivowineclub.com/logobianco.png" style="height:52px;" alt="Vivo Wine Club" />
-  </div>
+  ${testata(560)}
   <p style="margin:0 0 16px;font-size:15px;">Gentile <strong>${quoteData.clientName}</strong>,</p>
   <p style="margin:0 0 16px;color:#555;line-height:1.6;">
     In allegato trovi la nostra proposta evento / preventivo (N° ${quoteData.quoteNumber}).<br/>
