@@ -24,6 +24,13 @@ export async function PATCH(
   if (body.date         !== undefined) patch.date         = body.date;
   if (body.assigned_to  !== undefined) patch.assigned_to  = body.assigned_to  || null;
   if (body.notes        !== undefined) patch.notes        = body.notes        || null;
+  /* Vale la stessa regola del POST: sei cifre esadecimali o niente.
+     Vuoto vuol dire "come gli altri del suo formato", non "nero". */
+  if (body.color !== undefined) {
+    patch.color = typeof body.color === 'string' && /^#[0-9a-fA-F]{6}$/.test(body.color)
+      ? body.color.toLowerCase()
+      : null;
+  }
 
   const { data, error } = await db
     .from('ped_entries')

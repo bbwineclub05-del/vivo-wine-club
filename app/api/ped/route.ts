@@ -39,6 +39,11 @@ export async function POST(request: Request) {
     const status       = (fd.get('status')      as string | null) ?? 'planned';
     const assigned_to  = fd.get('assigned_to')  as string | null;
     const notes        = fd.get('notes')        as string | null;
+    const colorRaw     = fd.get('color')        as string | null;
+    /* Un colore e' sei cifre esadecimali e nient'altro: finisce dritto
+       dentro uno `style`, e li' non si lascia passare una stringa
+       scritta da qualcuno per comodita'. */
+    const color = colorRaw && /^#[0-9a-fA-F]{6}$/.test(colorRaw) ? colorRaw.toLowerCase() : null;
     const file         = fd.get('file')         as File   | null;
 
     if (!date || !title?.trim() || !platform || !content_type) {
@@ -77,6 +82,7 @@ export async function POST(request: Request) {
         status,
         assigned_to:  assigned_to?.trim() || null,
         notes:        notes?.trim() || null,
+        color,
         media_url,
       })
       .select()

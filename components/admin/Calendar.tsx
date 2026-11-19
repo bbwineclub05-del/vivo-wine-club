@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 
 /**
@@ -29,6 +29,12 @@ export interface CalendarItem {
   /** HH:MM, optional. Items with a time sort before those without. */
   time?: string | null;
   title: string;
+  /**
+   * Il colore di questo elemento, quando ne ha uno suo. Senza, vale
+   * quello del suo calendario: e' il caso normale, ed e' quello che
+   * rende leggibile un mese a colpo d'occhio.
+   */
+  color?: string;
   /** Which calendar this belongs to — a key in `sources`. */
   source: string;
   /** Second line in the day list. */
@@ -37,6 +43,12 @@ export interface CalendarItem {
   tint?: string | null;
   /** Struck through and faded. */
   done?: boolean;
+  /**
+   * Se questo elemento si puo' spostare e copiare da calendario. Un
+   * evento del club no: la sua data la decide altro, non chi compila
+   * il piano. Senza questo, niente doppio tocco e niente pulsanti.
+   */
+  movable?: boolean;
 }
 
 export interface CalendarSource {
@@ -110,6 +122,86 @@ export function longDay(date: string) {
   return `${WEEKDAYS[weekIndex(d.getDay())]} ${d.getDate()} ${MONTHS[d.getMonth()]}`;
 }
 
+/**
+ * Quanto tempo passa fra i due colpi di un doppio clic.
+ *
+ * Il dito e' veloce, il mouse no: su un trackpad mezzo secondo fra i
+ * due clic e' normale, ed e' anche il massimo che macOS considera un
+ * doppio clic. Con una finestra sola e stretta, da computer il doppio
+ * clic partiva come due clic singoli — e il contenuto si apriva due
+ * volte invece di offrire sposta e copia.
+ */
+function finestraDoppio() {
+  if (typeof window === 'undefined') return 300;
+  return window.matchMedia?.('(pointer: coarse)').matches ? 300 : 500;
+}
+
+/**
+ * Un tocco apre, due toccano un'altra corda.
+ *
+ * Non uso `dblclick`: appena il primo clic apre la scheda, il secondo
+ * cade sopra la scheda e il browser non lo riconosce piu' come la
+ * meta' di un doppio. Quindi il primo colpo aspetta: se ne arriva un
+ * altro dentro la finestra, l'apertura non avviene proprio.
+ *
+ * Il secondo colpo lo riconosco quando il dito scende, non quando il
+ * clic si chiude: cosi' i due pulsanti compaiono subito, mentre il
+ * dito e' ancora giu'.
+ *
+ * L'attesa si paga solo dove serve: su un contenuto che non si puo'
+ * spostare il tocco apre subito, come prima.
+ */
+function useDoppioTocco(singolo?: () => void, doppio?: () => void) {
+  const ultimo = useRef(0);
+  const attesa = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /* Il doppio e' gia' partito: il click che chiude il secondo colpo
+     non deve aprire niente. */
+  const consumato = useRef(false);
+
+  useEffect(
+    () => () => {
+      if (attesa.current) clearTimeout(attesa.current);
+    },
+    [],
+  );
+
+  function annulla() {
+    if (attesa.current) clearTimeout(attesa.current);
+    attesa.current = null;
+  }
+
+  return {
+    onPointerDown: () => {
+      if (!doppio) return;
+      const ora = Date.now();
+      if (ora - ultimo.current < finestraDoppio()) {
+        annulla();
+        ultimo.current = 0;
+        consumato.current = true;
+        doppio();
+        return;
+      }
+      ultimo.current = ora;
+    },
+    onClick: () => {
+      if (consumato.current) {
+        consumato.current = false;
+        return;
+      }
+      if (!singolo) return;
+      if (!doppio) {
+        singolo();
+        return;
+      }
+      annulla();
+      attesa.current = setTimeout(() => {
+        attesa.current = null;
+        singolo();
+      }, finestraDoppio());
+    },
+  };
+}
+
 /* ── Calendar ───────────────────────────────────────────────────── */
 
 export function Calendar({
@@ -121,6 +213,8 @@ export function Calendar({
   emptyDayLabel = 'Niente in programma',
   views = ['month', 'week', 'agenda'],
   showSources = true,
+  onItemMove,
+  onItemCopy,
 }: {
   items: CalendarItem[];
   sources: CalendarSource[];
@@ -142,6 +236,14 @@ export function Calendar({
    * che prima o poi si contraddicono sotto gli occhi di chi guarda.
    */
   showSources?: boolean;
+  /**
+   * Sposta e copia: due toccate su un elemento `movable` fanno
+   * comparire i due pulsanti, e il giorno di destinazione si sceglie
+   * toccandolo. Senza queste due funzioni il doppio tocco non esiste
+   * e il calendario resta quello di prima.
+   */
+  onItemMove?: (item: CalendarItem, date: string) => void;
+  onItemCopy?: (item: CalendarItem, date: string) => void;
 }) {
   const today = ymd(new Date());
   /* Si parte dalla prima vista offerta: se qualcuno togliesse il mese
@@ -155,6 +257,76 @@ export function Calendar({
   const [weekAnchor, setWeekAnchor] = useState(() => startOfWeek(new Date()));
   const [openDay, setOpenDay] = useState<string>(today);
   const [hidden, setHidden] = useState<Set<string>>(new Set());
+  /* L'elemento che mostra i due pulsanti, e l'azione in attesa di un
+     giorno. Restano accesi mentre si cambia mese: la data dove si
+     vuole portare una cosa quasi mai e' nel mese che si sta
+     guardando. */
+  const [scelto, setScelto] = useState<string | null>(null);
+  const [azione, setAzione] = useState<{ item: CalendarItem; kind: 'sposta' | 'copia' } | null>(
+    null,
+  );
+  const puoSpostare = !!onItemMove || !!onItemCopy;
+
+  /**
+   * Il tocco su un giorno: di norma lo apre, e quando c'e' un'azione
+   * in attesa la conclude. Un'azione a vuoto, sul giorno da cui si e'
+   * partiti, si annulla e basta: e' un ripensamento, non un errore.
+   */
+  function scegliGiorno(date: string) {
+    if (!azione) {
+      setOpenDay(date);
+      return;
+    }
+    const { item, kind } = azione;
+    if (date !== item.date.slice(0, 10)) {
+      if (kind === 'sposta') onItemMove?.(item, date);
+      else onItemCopy?.(item, date);
+    }
+    setAzione(null);
+    setScelto(null);
+    setOpenDay(date);
+  }
+
+  /**
+   * Un colpo altrove e i due pulsanti spariscono.
+   *
+   * Si ascolta il dito che scende, non il clic: cosi' se il colpo
+   * finisce su una cella, la cella si apre subito senza passare prima
+   * da "chiudi i pulsanti". I pulsanti stessi sono esclusi, altrimenti
+   * sparirebbero prima che il loro clic arrivi a destinazione.
+   *
+   * L'ascolto parte un giro dopo: il colpo che li ha appena aperti sta
+   * ancora salendo, e li chiuderebbe nello stesso istante.
+   */
+  useEffect(() => {
+    if (!scelto) return;
+    let via: (() => void) | undefined;
+    const avvio = setTimeout(() => {
+      const chiudi = (e: Event) => {
+        const t = e.target as HTMLElement | null;
+        if (t?.closest('[data-azioni]')) return;
+        setScelto(null);
+      };
+      document.addEventListener('pointerdown', chiudi, true);
+      const tasto = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') setScelto(null);
+      };
+      document.addEventListener('keydown', tasto);
+      via = () => {
+        document.removeEventListener('pointerdown', chiudi, true);
+        document.removeEventListener('keydown', tasto);
+      };
+    }, 0);
+    return () => {
+      clearTimeout(avvio);
+      via?.();
+    };
+  }, [scelto]);
+
+  function chiediAzione(item: CalendarItem, kind: 'sposta' | 'copia') {
+    setAzione({ item, kind });
+    setScelto(null);
+  }
 
   const colorOf = useMemo(() => {
     const map: Record<string, string> = {};
@@ -324,6 +496,26 @@ export function Calendar({
         </div>
       )}
 
+      {/* ── L'azione in attesa.
+          Sta sopra la griglia, non sull'elemento: una volta scelto
+          "sposta" la domanda non e' piu' su quello, e' su dove. ── */}
+      {azione && (
+        <div className="flex items-center gap-3 rounded-2xl border border-accent/55 bg-accent/5 px-3.5 py-2.5">
+          <span className="min-w-0 flex-1 text-fine leading-snug">
+            <span className="font-medium">{azione.kind === 'sposta' ? 'Sposta' : 'Copia'}</span>{' '}
+            <span className="text-on-paper-muted">
+              &laquo;{azione.item.title}&raquo;: tocca il giorno.
+            </span>
+          </span>
+          <button
+            onClick={() => setAzione(null)}
+            className="min-h-[38px] shrink-0 rounded-full border border-rule-paper px-3.5 text-fine font-medium"
+          >
+            Annulla
+          </button>
+        </div>
+      )}
+
       {/* ── Which calendars are showing ── */}
       {showSources && sources.length > 1 && (
         <div className="flex flex-wrap gap-2">
@@ -376,8 +568,19 @@ export function Calendar({
                 colorOf={colorOf}
                 isToday={cell.date === today}
                 isOpen={cell.date === openDay}
-                onOpen={() => setOpenDay(cell.date)}
+                onOpen={() => scegliGiorno(cell.date)}
                 onItemClick={onItemClick}
+                attesa={!!azione}
+                scelto={scelto}
+                onAzione={puoSpostare ? chiediAzione : undefined}
+                onDoppioTocco={
+                  puoSpostare
+                    ? (it) => {
+                        setOpenDay(cell.date);
+                        setScelto(it.id);
+                      }
+                    : undefined
+                }
               />
             ))}
           </div>
@@ -394,6 +597,9 @@ export function Calendar({
           onDayAdd={onDayAdd}
           addLabel={addLabel}
           emptyLabel={emptyDayLabel}
+          scelto={scelto}
+          onScegli={puoSpostare ? setScelto : undefined}
+          onAzione={puoSpostare ? chiediAzione : undefined}
         />
       )}
 
@@ -434,6 +640,10 @@ function DayCell({
   isOpen,
   onOpen,
   onItemClick,
+  attesa,
+  onDoppioTocco,
+  scelto,
+  onAzione,
 }: {
   cell: { date: string; day: number; inMonth: boolean };
   items: CalendarItem[];
@@ -442,18 +652,34 @@ function DayCell({
   isOpen: boolean;
   onOpen: () => void;
   onItemClick?: (item: CalendarItem) => void;
+  /** C'e' un'azione che aspetta un giorno: la cella e' un bersaglio. */
+  attesa: boolean;
+  onDoppioTocco?: (item: CalendarItem) => void;
+  /** L'elemento che ha chiesto i due pulsanti, se e' in questa cella. */
+  scelto?: string | null;
+  onAzione?: (item: CalendarItem, kind: 'sposta' | 'copia') => void;
 }) {
   // Up to three dots on a phone: past that the count says more than the
   // dots do, and four dots in 50px start to touch.
   const dots = items.slice(0, 3);
+  /* L'elemento scelto, se sta qui dentro: i due pulsanti devono
+     comparire sotto il cursore che ha fatto doppio clic, non nel
+     pannello del giorno, che da computer sta sotto la piega dello
+     schermo — da li' il doppio clic sembra non aver fatto niente. */
+  const quiScelto = scelto ? items.find((i) => i.id === scelto) : undefined;
 
   return (
+    <div className="relative flex h-full">
     <button
       onClick={onOpen}
       aria-label={longDay(cell.date)}
       aria-current={isToday ? 'date' : undefined}
-      className={`flex min-h-[58px] flex-col items-center gap-1 rounded-xl border p-1 text-left transition-colors lg:min-h-[104px] lg:items-stretch lg:gap-1.5 lg:p-1.5 ${
-        isOpen ? 'border-accent/55 bg-accent/5' : 'border-transparent hover:bg-paper-soft'
+      className={`flex min-h-[58px] w-full flex-col items-center gap-1 rounded-xl border p-1 text-left transition-colors lg:min-h-[104px] lg:items-stretch lg:gap-1.5 lg:p-1.5 ${
+        attesa
+          ? 'border-dashed border-accent/45 hover:bg-accent/10 active:bg-accent/20'
+          : isOpen
+            ? 'border-accent/55 bg-accent/5'
+            : 'border-transparent hover:bg-paper-soft'
       } ${cell.inMonth ? '' : 'opacity-35'}`}
     >
       <span
@@ -470,7 +696,7 @@ function DayCell({
           <span
             key={it.id}
             className="h-[5px] w-[5px] rounded-full"
-            style={{ backgroundColor: colorOf[it.source] ?? 'currentColor', opacity: it.done ? 0.4 : 1 }}
+            style={{ backgroundColor: it.color ?? colorOf[it.source] ?? 'currentColor', opacity: it.done ? 0.4 : 1 }}
           />
         ))}
       </span>
@@ -478,30 +704,84 @@ function DayCell({
       {/* Desktop: the items themselves. */}
       <span className="hidden min-w-0 flex-col gap-1 lg:flex">
         {items.slice(0, 3).map((it) => (
-          <span
+          <ChipGiorno
             key={it.id}
-            onClick={(e) => {
-              if (!onItemClick) return;
-              e.stopPropagation();
-              onItemClick(it);
-            }}
-            className={`block truncate rounded-md px-1.5 py-[3px] text-[11.5px] leading-tight ${
-              onItemClick ? 'cursor-pointer hover:brightness-95' : ''
-            } ${it.done ? 'line-through opacity-55' : ''}`}
-            style={{
-              backgroundColor: `${colorOf[it.source] ?? '#731515'}14`,
-              color: colorOf[it.source] ?? '#731515',
-            }}
-          >
-            {it.time ? `${it.time.slice(0, 5)} ` : ''}
-            {it.title}
-          </span>
+            item={it}
+            colorOf={colorOf}
+            /* Mentre un'azione aspetta un giorno, tutta la cella e' il
+               bersaglio: una pastiglia che si prende il tocco per se'
+               farebbe mancare il colpo proprio dove si mira. */
+            onItemClick={attesa ? undefined : onItemClick}
+            onDoppioTocco={attesa ? undefined : onDoppioTocco}
+          />
         ))}
         {items.length > 3 && (
           <span className="px-1.5 text-[11px] text-on-paper-muted">+{items.length - 3}</span>
         )}
       </span>
     </button>
+
+    {/* I due pulsanti, dentro la cella e sopra il resto. Solo da
+        computer: sul telefono la cella mostra pallini, e il posto dove
+        si decide e' la lista qui sotto, che li' e' sempre in vista. */}
+    {quiScelto && onAzione && (
+      <span data-azioni className="absolute inset-x-1 top-8 z-20 hidden gap-1 lg:flex">
+        <button
+          onClick={() => onAzione(quiScelto, 'sposta')}
+          className="flex-1 rounded-full bg-accent px-1 py-1 text-[11px] font-medium text-paper shadow-sm"
+        >
+          Sposta
+        </button>
+        <button
+          onClick={() => onAzione(quiScelto, 'copia')}
+          className="flex-1 rounded-full border border-accent/50 bg-paper px-1 py-1 text-[11px] font-medium text-accent shadow-sm"
+        >
+          Copia
+        </button>
+      </span>
+    )}
+    </div>
+  );
+}
+
+/** Una riga di contenuto dentro una cella, sul desktop. */
+function ChipGiorno({
+  item: it,
+  colorOf,
+  onItemClick,
+  onDoppioTocco,
+}: {
+  item: CalendarItem;
+  colorOf: Record<string, string>;
+  onItemClick?: (item: CalendarItem) => void;
+  onDoppioTocco?: (item: CalendarItem) => void;
+}) {
+  const doppio = it.movable && onDoppioTocco ? () => onDoppioTocco(it) : undefined;
+  const tocco = useDoppioTocco(onItemClick ? () => onItemClick(it) : undefined, doppio);
+
+  return (
+    <span
+            onPointerDown={(e) => {
+              if (!onItemClick) return;
+              e.stopPropagation();
+              tocco.onPointerDown();
+            }}
+            onClick={(e) => {
+              if (!onItemClick) return;
+              e.stopPropagation();
+              tocco.onClick();
+            }}
+            className={`block truncate rounded-md px-1.5 py-[3px] text-[11.5px] leading-tight ${
+              onItemClick ? 'cursor-pointer hover:brightness-95' : ''
+            } ${it.done ? 'line-through opacity-55' : ''}`}
+            style={{
+              backgroundColor: `${it.color ?? colorOf[it.source] ?? '#731515'}14`,
+              color: it.color ?? colorOf[it.source] ?? '#731515',
+            }}
+          >
+            {it.time ? `${it.time.slice(0, 5)} ` : ''}
+            {it.title}
+  </span>
   );
 }
 
@@ -515,6 +795,9 @@ function DayPanel({
   onDayAdd,
   addLabel,
   emptyLabel,
+  scelto,
+  onScegli,
+  onAzione,
 }: {
   date: string;
   items: CalendarItem[];
@@ -523,6 +806,9 @@ function DayPanel({
   onDayAdd?: (date: string) => void;
   addLabel: string;
   emptyLabel: string;
+  scelto?: string | null;
+  onScegli?: (id: string | null) => void;
+  onAzione?: (item: CalendarItem, kind: 'sposta' | 'copia') => void;
 }) {
   return (
     <section className="border-t border-rule-paper pt-4">
@@ -544,7 +830,15 @@ function DayPanel({
       ) : (
         <div className="flex flex-col gap-1.5">
           {items.map((it) => (
-            <ItemRow key={it.id} item={it} colorOf={colorOf} onClick={onItemClick} />
+            <ItemRow
+              key={it.id}
+              item={it}
+              colorOf={colorOf}
+              onClick={onItemClick}
+              scelto={scelto === it.id}
+              onScegli={onScegli}
+              onAzione={onAzione}
+            />
           ))}
         </div>
       )}
@@ -558,18 +852,38 @@ function ItemRow({
   item,
   colorOf,
   onClick,
+  scelto = false,
+  onScegli,
+  onAzione,
 }: {
   item: CalendarItem;
   colorOf: Record<string, string>;
   onClick?: (item: CalendarItem) => void;
+  /** Mostra i due pulsantini. */
+  scelto?: boolean;
+  onScegli?: (id: string | null) => void;
+  onAzione?: (item: CalendarItem, kind: 'sposta' | 'copia') => void;
 }) {
-  const color = colorOf[item.source] ?? '#731515';
+  const color = item.color ?? colorOf[item.source] ?? '#731515';
+  const spostabile = !!item.movable && !!onScegli && !!onAzione;
+  const tocco = useDoppioTocco(
+    onClick ? () => onClick(item) : undefined,
+    spostabile ? () => onScegli?.(scelto ? null : item.id) : undefined,
+  );
+
+  const azioni = scelto && spostabile;
 
   const body: ReactNode = (
     <>
-      <span className="w-[52px] shrink-0 text-fine tabular-nums text-on-paper-muted">
-        {item.time ? item.time.slice(0, 5) : '—'}
-      </span>
+      {/* Mentre ci sono i due pulsanti la colonna dell'ora sparisce:
+          sono cinquantadue pixel che su un telefono fanno la
+          differenza fra leggere il titolo e leggere meta' titolo, e
+          l'ora in quel momento non la sta cercando nessuno. */}
+      {!azioni && (
+        <span className="w-[52px] shrink-0 text-fine tabular-nums text-on-paper-muted">
+          {item.time ? item.time.slice(0, 5) : '—'}
+        </span>
+      )}
       <span className="h-8 w-[3px] shrink-0 rounded-full" style={{ backgroundColor: color }} />
       <span className="min-w-0 flex-1">
         <span className={`block truncate text-body ${item.done ? 'line-through opacity-55' : ''}`}>
@@ -591,13 +905,46 @@ function ItemRow({
   );
 
   const shell =
-    'flex min-h-[56px] w-full items-center gap-3 rounded-xl border border-rule-paper px-3 text-left transition-colors';
+    'flex min-h-[56px] w-full items-center gap-3 rounded-xl border px-3 text-left transition-colors';
 
-  if (!onClick) return <div className={shell}>{body}</div>;
+  if (!onClick) return <div className={`${shell} border-rule-paper`}>{body}</div>;
 
+  /* ── Due tocchi: i due pulsanti.
+     Stanno accanto al contenuto e non sopra: il contenuto resta
+     leggibile mentre si decide, e la riga non si muove sotto il dito.
+     Sono pulsanti veri, quindi vivono fuori dal pulsante della riga —
+     un pulsante dentro un pulsante non e' HTML valido, e sui browser
+     il tocco finisce dove capita. ── */
   return (
-    <button onClick={() => onClick(item)} className={`${shell} hover:border-accent/40 hover:bg-paper-soft`}>
-      {body}
-    </button>
+    <div
+      className={`${shell} ${
+        scelto ? 'border-accent/55 bg-accent/5' : 'border-rule-paper hover:border-accent/40 hover:bg-paper-soft'
+      }`}
+    >
+      <button
+        onPointerDown={tocco.onPointerDown}
+        onClick={tocco.onClick}
+        className="flex min-w-0 flex-1 items-center gap-3 self-stretch text-left"
+      >
+        {body}
+      </button>
+
+      {azioni && (
+        <span data-azioni className="flex shrink-0 items-center gap-1.5">
+          <button
+            onClick={() => onAzione?.(item, 'sposta')}
+            className="min-h-[38px] rounded-full bg-accent px-3 text-fine font-medium text-paper"
+          >
+            Sposta
+          </button>
+          <button
+            onClick={() => onAzione?.(item, 'copia')}
+            className="min-h-[38px] rounded-full border border-accent/50 px-3 text-fine font-medium text-accent"
+          >
+            Copia
+          </button>
+        </span>
+      )}
+    </div>
   );
 }

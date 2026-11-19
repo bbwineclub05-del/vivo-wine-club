@@ -5,7 +5,6 @@ import {
   Calendar as CalendarIcon,
   Check,
   List,
-  Palette,
   Paperclip,
   Pencil,
   Trash2,
@@ -58,6 +57,8 @@ interface PedEntry {
   status: PedStatus;
   assigned_to: string | null;
   notes: string | null;
+  /** Il colore scelto per questo contenuto. Vuoto = quello del formato. */
+  color: string | null;
   media_url: string | null;
   created_at: string;
 }
@@ -79,7 +80,12 @@ interface TeamMember {
   email: string;
 }
 
-const PLATFORMS = ['Instagram', 'TikTok', 'LinkedIn', 'Newsletter', 'Sito Web', 'Altro'];
+/* I tre posti dove il club pubblica davvero, piu' "Altro" per tutto
+   il resto. Newsletter e Sito Web erano due pulsanti che nessuno ha
+   mai premuto: su sessanta contenuti, zero. Un pulsante che apre
+   sempre il vuoto e' un pulsante che si impara a saltare, e intanto
+   manda a capo la riga su un telefono. */
+const PLATFORMS = ['Instagram', 'TikTok', 'LinkedIn', 'Altro'];
 /* Quattro, non otto. Un elenco di formati lungo come un menu' si
    sfoglia invece di sceglierlo, e meta' di quelli che c'erano non li
    ha mai usati nessuno: su sessanta contenuti, tre. Chi apre il
@@ -95,6 +101,9 @@ const PLATFORM_COLOR: Record<string, string> = {
   Instagram: '#C13584',
   TikTok: '#0F0F0F',
   LinkedIn: '#0A66C2',
+  /* Restano i colori di chi non c'e' piu' fra i pulsanti: un vecchio
+     contenuto su Newsletter o sul sito conserva il suo, invece di
+     diventare di colpo un altro colore nel calendario. */
   Newsletter: '#731515',
   'Sito Web': '#3F4B5B',
   Altro: '#7A5252',
@@ -143,113 +152,23 @@ const TYPE_COLOR_DEFAULT: Record<string, string> = {
   Altro: '#7A5252',
 };
 
-/** La tavolozza da cui si sceglie: colori che si distinguono fra loro
- *  anche su uno schermo piccolo e con poca luce. */
-const TAVOLOZZA = [
-  '#2F6F4E', '#B5483C', '#C98A1E', '#3F4B5B', '#7A4A9E',
-  '#1F6F8B', '#A3561A', '#731515', '#4A7A2F', '#7A5252',
-];
-
-/* ─────────────────────────────────────────────
-   I colori dei formati
-───────────────────────────────────────────── */
-/**
- * Si sceglie un colore per formato, e resta scelto per tutti.
- *
- * Una tavolozza di dieci invece di un selettore libero: dieci colori
- * scelti per distinguersi fra loro anche su un telefono con poca luce
- * valgono piu' di sedici milioni fra cui prendere due verdi uguali. E
- * si tocca, non si trascina, che su un telefono e' tutta un'altra
- * cosa.
- */
-function FoglioColori({
-  token,
-  valori,
-  onClose,
-  onSaved,
-}: {
-  token: string;
-  valori: Record<string, string>;
-  onClose: () => void;
-  onSaved: (c: Record<string, string>) => void;
-}) {
-  const [scelta, setScelta] = useState<Record<string, string>>(() => {
-    const base: Record<string, string> = {};
-    for (const t of CONTENT_TYPES) base[t] = valori[t] ?? TYPE_COLOR_DEFAULT[t] ?? TYPE_COLOR_DEFAULT.Altro;
-    return base;
-  });
-  const [salvando, setSalvando] = useState(false);
-  const [errore, setErrore] = useState('');
-
-  async function salva() {
-    setErrore('');
-    setSalvando(true);
-    try {
-      const r = await fetch('/api/ped/colori', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ colori: scelta }),
-      });
-      const d = await r.json();
-      if (!r.ok) throw new Error(d.error ?? 'Errore.');
-      onSaved(d.colori ?? scelta);
-      onClose();
-    } catch (e) {
-      setErrore(e instanceof Error ? e.message : 'Errore.');
-    } finally {
-      setSalvando(false);
-    }
-  }
-
-  return (
-    <Sheet
-      open
-      title="I colori dei formati"
-      onClose={onClose}
-      footer={
-        <ActionButton onClick={salva} disabled={salvando} className="w-full">
-          {salvando ? 'Salvo…' : 'Salva per tutti'}
-        </ActionButton>
-      }
-    >
-      <p className="text-body text-on-paper-muted">
-        Dentro un canale il calendario colora il formato, non il social: su Instagram sarebbe
-        tutto dello stesso colore. Questi colori li vede tutto il team.
-      </p>
-
-      <div className="mt-6 flex flex-col gap-5">
-        {CONTENT_TYPES.map((t) => (
-          <div key={t}>
-            <p className="mb-2 flex items-center gap-2 text-fine font-medium">
-              <span
-                aria-hidden="true"
-                className="h-3 w-3 shrink-0 rounded-full"
-                style={{ backgroundColor: scelta[t] }}
-              />
-              {t}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {TAVOLOZZA.map((c) => (
-                <button
-                  key={c}
-                  onClick={() => setScelta((p) => ({ ...p, [t]: c }))}
-                  aria-label={`${t}: ${c}`}
-                  aria-pressed={scelta[t] === c}
-                  className={`h-10 w-10 shrink-0 rounded-full border-2 transition-transform ${
-                    scelta[t] === c ? 'scale-110 border-on-paper' : 'border-transparent'
-                  }`}
-                  style={{ backgroundColor: c }}
-                />
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {errore && <p className="mt-5 text-fine font-medium text-accent">{errore}</p>}
-    </Sheet>
-  );
+/** Il colore di un formato: quello che vale quando il contenuto non
+ *  ne ha scelto uno suo. */
+function coloreFormato(t: string) {
+  return TYPE_COLOR_DEFAULT[t] ?? TYPE_COLOR_DEFAULT.Altro;
 }
+
+/** La tavolozza da cui si sceglie: colori che si distinguono fra loro
+ *  anche su uno schermo piccolo e con poca luce.
+ *
+ *  Minuscoli perche' minuscolo e' come li scrive il database: le due
+ *  rotte normalizzano il colore prima di salvarlo, e un '#2F6F4E' qui
+ *  dentro non sarebbe mai uguale al '#2f6f4e' che torna indietro.
+ *  Riaprendo un contenuto nessun pallino risulterebbe scelto. */
+const TAVOLOZZA = [
+  '#2f6f4e', '#b5483c', '#c98a1e', '#3f4b5b', '#7a4a9e',
+  '#1f6f8b', '#a3561a', '#731515', '#4a7a2f', '#7a5252',
+];
 
 /* ─────────────────────────────────────────────
    One entry, as a row
@@ -266,7 +185,10 @@ function EntryRow({
   showDate?: boolean;
 }) {
   const published = entry.status === 'published';
-  const color = colorOfPlatform(entry.platform);
+  /* Il suo, se l'ha scelto. Altrimenti quello del canale: nell'elenco
+     i canali sono mescolati, quindi li' la domanda e' sempre "dove
+     esce". */
+  const color = entry.color || colorOfPlatform(entry.platform);
 
   return (
     <div className="flex items-stretch rounded-2xl border border-rule-paper transition-colors hover:border-accent/35">
@@ -445,6 +367,7 @@ function EntryForm({
     content_type: editTarget?.content_type ?? 'Post',
     assigned_to: editTarget?.assigned_to ?? '',
     notes: editTarget?.notes ?? '',
+    color: editTarget?.color ?? '',
   }));
   const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
@@ -466,6 +389,7 @@ function EntryForm({
       content_type: e.content_type,
       assigned_to: e.assigned_to ?? '',
       notes: e.notes ?? '',
+      color: e.color ?? '',
     }));
   }
 
@@ -502,6 +426,7 @@ function EntryForm({
             content_type: form.content_type,
             assigned_to: form.assigned_to.trim() || null,
             notes: form.notes.trim() || null,
+            color: form.color || null,
           }),
         });
       } else {
@@ -514,6 +439,7 @@ function EntryForm({
         if (form.description.trim()) fd.append('description', form.description.trim());
         if (form.assigned_to.trim()) fd.append('assigned_to', form.assigned_to.trim());
         if (form.notes.trim()) fd.append('notes', form.notes.trim());
+        if (form.color) fd.append('color', form.color);
         if (file) fd.append('file', file);
         res = await fetch('/api/ped', {
           method: 'POST',
@@ -671,6 +597,49 @@ function EntryForm({
           />
         </Field>
 
+        {/* Il colore di questo contenuto.
+            Di norma lo decide il formato — tutti i reel dello stesso
+            colore — e va bene: e' quello che rende leggibile un mese
+            a colpo d'occhio. Ma chi compila il piano vuole poter dire
+            "questo no, questo e' la campagna di Natale" senza
+            ricolorare tutti i reel dell'anno, e allora il colore si
+            sceglie qui, su questa riga sola.
+            "Come il formato" e' la prima pastiglia e non un colore:
+            serve per tornare indietro, ed e' l'unica scelta che un
+            domani si aggiorna da sola se cambiate i colori. */}
+        <Field label="Colore">
+          <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <button
+              type="button"
+              onClick={() => set('color', '')}
+              aria-pressed={!form.color}
+              className={`inline-flex min-h-[44px] shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-3.5 text-fine font-medium transition-colors ${
+                !form.color ? 'border-accent text-accent' : 'border-rule-paper text-on-paper-muted'
+              }`}
+            >
+              <span
+                aria-hidden="true"
+                className="h-3 w-3 shrink-0 rounded-full"
+                style={{ backgroundColor: coloreFormato(form.content_type) }}
+              />
+              Come il formato
+            </button>
+            {TAVOLOZZA.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => set('color', c)}
+                aria-label={c}
+                aria-pressed={form.color === c}
+                className={`h-11 w-11 shrink-0 rounded-full border-2 transition-transform ${
+                  form.color === c ? 'scale-110 border-on-paper' : 'border-transparent'
+                }`}
+                style={{ backgroundColor: c }}
+              />
+            ))}
+          </div>
+        </Field>
+
         <Field label="Note interne" hint="(opzionale)">
           <TextArea
             rows={2}
@@ -716,16 +685,7 @@ export default function PedManager() {
      oppure su TikTok. Un piano solo con dentro tutto li' costringe a
      filtrare con gli occhi ogni volta che apre la pagina. */
   const [canale, setCanale] = useState('');
-  /* I colori dei formati, come li ha lasciati il team. Finche' non
-     arrivano valgono quelli di partenza: un calendario grigio mentre
-     si aspetta una risposta e' peggio di uno con i colori sbagliati
-     per mezzo secondo. */
-  const [coloriTipo, setColoriTipo] = useState<Record<string, string>>({});
-  const [apriColori, setApriColori] = useState(false);
-  const coloreTipo = useCallback(
-    (t: string) => coloriTipo[t] ?? TYPE_COLOR_DEFAULT[t] ?? TYPE_COLOR_DEFAULT.Altro,
-    [coloriTipo],
-  );
+
 
   // In the parent, not in the sheet: see the note in TaskBoard.
   useOverlayBackClose(!!formFor, () => setFormFor(null));
@@ -738,16 +698,11 @@ export default function PedManager() {
       } = await supabase.auth.getSession();
       const tk = session?.access_token ?? '';
       setToken(tk);
-      const [pedRes, evRes, memRes, colRes] = await Promise.all([
+      const [pedRes, evRes, memRes] = await Promise.all([
         fetch('/api/ped', { headers: { Authorization: `Bearer ${tk}` } }),
         fetch('/api/events/all'),
         fetch('/api/team/members', { headers: { Authorization: `Bearer ${tk}` } }),
-        fetch('/api/ped/colori', { headers: { Authorization: `Bearer ${tk}` } }),
       ]);
-      if (colRes.ok) {
-        const j = await colRes.json().catch(() => ({}));
-        if (j.colori) setColoriTipo(j.colori);
-      }
       const ped = await pedRes.json().catch(() => ({}));
       setEntries(ped.entries ?? []);
       if (evRes.ok) {
@@ -803,6 +758,59 @@ export default function PedManager() {
     [token],
   );
 
+  /**
+   * Sposta: la data e' l'unica cosa che cambia, e cambia subito sotto
+   * gli occhi. Se la chiamata fallisce il contenuto torna dov'era —
+   * un piano editoriale che mente sulle date non serve a niente.
+   */
+  const sposta = useCallback(
+    async (id: string, date: string) => {
+      const prima = entries.find((e) => e.id === id);
+      if (!prima) return;
+      setEntries((prev) => prev.map((e) => (e.id === id ? { ...e, date } : e)));
+      const res = await fetch(`/api/ped/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ date }),
+      });
+      if (!res.ok) {
+        setEntries((prev) => prev.map((e) => (e.id === id ? prima : e)));
+      }
+    },
+    [entries, token],
+  );
+
+  /**
+   * Copia: un contenuto nuovo con tutto uguale tranne la data, e da
+   * pubblicare anche se l'originale e' gia' uscito — e' il caso della
+   * rubrica che torna ogni settimana. Il file allegato non si porta
+   * dietro: quello cambia sempre, ed e' la prima cosa che si rifa'.
+   */
+  const copia = useCallback(
+    async (id: string, date: string) => {
+      const e = entries.find((x) => x.id === id);
+      if (!e) return;
+      const fd = new FormData();
+      fd.append('date', date);
+      fd.append('title', e.title);
+      fd.append('platform', e.platform);
+      fd.append('content_type', e.content_type);
+      fd.append('status', 'planned');
+      if (e.description) fd.append('description', e.description);
+      if (e.assigned_to) fd.append('assigned_to', e.assigned_to);
+      if (e.notes) fd.append('notes', e.notes);
+      if (e.color) fd.append('color', e.color);
+      const res = await fetch('/api/ped', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.entry) setEntries((prev) => [...prev, data.entry]);
+    },
+    [entries, token],
+  );
+
   function handleSaved(entry: PedEntry) {
     setEntries((prev) => {
       const i = prev.findIndex((e) => e.id === entry.id);
@@ -849,7 +857,7 @@ export default function PedManager() {
       ? CONTENT_TYPES.filter((t) => visibili.some((e) => e.content_type === t)).map((t) => ({
           key: t,
           label: t,
-          color: coloreTipo(t),
+          color: coloreFormato(t),
         }))
       : PLATFORMS.filter((p) => visibili.some((e) => e.platform === p)).map((p) => ({
           key: p,
@@ -870,13 +878,15 @@ export default function PedManager() {
     }
     if (events.length) list.push({ key: EVENTS_SOURCE, label: 'Eventi VIVO', color: '#A3561A' });
     return list;
-  }, [visibili, events, canale, coloreTipo]);
+  }, [visibili, events, canale]);
 
   const calendarItems = useMemo<CalendarItem[]>(() => {
     const out: CalendarItem[] = visibili.map((e) => ({
       id: `ped-${e.id}`,
       date: e.date.slice(0, 10),
       title: e.title,
+      color: e.color || undefined,
+      movable: true,
       source: canale
         ? (CONTENT_TYPES.includes(e.content_type) ? e.content_type : 'Altro')
         : (PLATFORMS.includes(e.platform) ? e.platform : 'Altro'),
@@ -927,15 +937,7 @@ export default function PedManager() {
       <PageHead
         title="Piano editoriale"
         subtitle="Cosa esce, dove e quando, accanto agli eventi del club."
-        action={
-          <div className="flex flex-wrap gap-2.5">
-            <ActionButton variant="quiet" onClick={() => setApriColori(true)}>
-              <Palette size={16} strokeWidth={1.9} />
-              Colori
-            </ActionButton>
-            <NewButton label="Nuovo contenuto" onClick={() => setFormFor({})} />
-          </div>
-        }
+        action={<NewButton label="Nuovo contenuto" onClick={() => setFormFor({})} />}
       />
 
       {/* I piani, uno per canale.
@@ -1036,6 +1038,8 @@ export default function PedManager() {
              calendario vuol dire due comandi per la stessa cosa. */
           views={['month', 'week']}
           showSources={false}
+          onItemMove={(item, date) => sposta(item.id.replace('ped-', ''), date)}
+          onItemCopy={(item, date) => copia(item.id.replace('ped-', ''), date)}
         />
       ) : (
         <div className="flex flex-col gap-7">
@@ -1104,15 +1108,6 @@ export default function PedManager() {
         onDelete={remove}
         onToggle={toggle}
       />
-
-      {apriColori && (
-        <FoglioColori
-          token={token}
-          valori={coloriTipo}
-          onClose={() => setApriColori(false)}
-          onSaved={setColoriTipo}
-        />
-      )}
 
       {formFor && (
         <EntryForm
