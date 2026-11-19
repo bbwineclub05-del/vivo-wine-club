@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 
 import { SLOGAN_LINES } from '@/lib/brand';
-import { homeReels, videoCopertina } from '@/lib/home-reels';
+import { homeReels } from '@/lib/home-reels';
 import { CREATOR_VISIBILE } from '@/lib/flags';
 import { ButtonLink } from '@/components/ui/Button';
 import { Chapter, Statement } from '@/components/ui/Chapter';
@@ -18,7 +18,6 @@ export default async function Home() {
   const t = await getTranslations('site');
   // Vedi `public/home/LEGGIMI.md`: i file li carica chi fa i video.
   const reels = homeReels();
-  const copertina = videoCopertina();
 
   return (
     <>
@@ -26,14 +25,23 @@ export default async function Home() {
 
       <main className="ds bg-paper text-on-paper">
         {/* ── Hero ──────────────────────────────────────────────────
-            The headline, the promise and both doors sit above the fold;
-            the film is the second beat, not the backdrop. */}
+            Lo slogan, la promessa e le due porte.
+            Il film d'apertura non c'e' piu': era il secondo tempo di
+            una pagina che il secondo tempo ce l'ha gia' nella fila di
+            video qui sotto, e due filmati di fila sulla stessa
+            schermata sono uno di troppo. Lo spazio che lascia non
+            resta vuoto, se lo prende il titolo. */}
         <Section width="wide" className="pb-0">
           <Chapter
             as="h1"
             size="statement"
             align="left"
             lines={SLOGAN_LINES as unknown as [string, string]}
+            /* Il titolo si prende lo spazio del film, ma non va mai a
+               capo: "make it VIVO" spezzato in due righe fa tre righe
+               storte invece di un titolo. L'estremo basso e' tarato
+               sullo schermo stretto, quello alto sul desktop. */
+            className="text-[clamp(2.2rem,11vw,7.5rem)]"
           />
 
           <div className="mt-10 flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
@@ -49,21 +57,11 @@ export default async function Home() {
           </div>
         </Section>
 
-        {/* Intro film, then the reels drifting past underneath it. */}
-        <Section width="wide" tight className="pt-10">
-          <VideoCard
-            priority
-            aspect="cinema"
-            rounded="rounded-3xl"
-            source={copertina}
-          />
-        </Section>
-
-        {/* Una riga fra il film e la fila: senza, il taglio fra i due
-            e' secco. Non ci rimettiamo lo slogan, che e' il titolo
-            grande qui sopra e a quattro centimetri di distanza
+        {/* Una riga fra il titolo e la fila: senza, il taglio fra i
+            due e' secco. Non ci rimettiamo lo slogan, che e' il
+            titolo grande qui sopra e a quattro centimetri di distanza
             suonerebbe come una ripetizione. */}
-        <Section width="wide" tight className="pb-6 pt-10">
+        <Section width="wide" tight className="pb-6 pt-12">
           <p className="ds-display max-w-[22ch] text-title">{t('reels.line')}</p>
         </Section>
 
@@ -79,8 +77,8 @@ export default async function Home() {
                 source={{ src: r.src, poster: r.poster, link: r.link }}
                 continuo
                 aspect={r.orientamento === 'orizzontale' ? 'wide' : 'reel'}
-                sizes={r.orientamento === 'orizzontale' ? '(max-width: 768px) 440px, 560px' : '(max-width: 768px) 140px, 176px'}
-                className="h-[248px] w-auto shrink-0 md:h-[312px]"
+                sizes={r.orientamento === 'orizzontale' ? '(max-width: 768px) 520px, 680px' : '(max-width: 768px) 166px, 216px'}
+                className="h-[296px] w-auto shrink-0 md:h-[384px]"
               />
             ))}
           </Marquee>
