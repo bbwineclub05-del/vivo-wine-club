@@ -5,6 +5,7 @@ import {
   Calendar as CalendarIcon,
   Check,
   List,
+  Palette,
   Paperclip,
   Pencil,
   Trash2,
@@ -78,7 +79,7 @@ interface TeamMember {
   email: string;
 }
 
-const PLATFORMS = ['Instagram', 'TikTok', 'LinkedIn', 'WhatsApp', 'Newsletter', 'Sito Web', 'Altro'];
+const PLATFORMS = ['Instagram', 'TikTok', 'LinkedIn', 'Newsletter', 'Sito Web', 'Altro'];
 const CONTENT_TYPES = ['Post', 'Reel', 'Story', 'Articolo', 'Email', 'Video', 'Foto', 'Altro'];
 
 /**
@@ -90,7 +91,6 @@ const PLATFORM_COLOR: Record<string, string> = {
   Instagram: '#C13584',
   TikTok: '#0F0F0F',
   LinkedIn: '#0A66C2',
-  WhatsApp: '#1EA75A',
   Newsletter: '#731515',
   'Sito Web': '#3F4B5B',
   Altro: '#7A5252',
@@ -110,6 +110,142 @@ function monthLabel(date: string) {
 
 function colorOfPlatform(p: string) {
   return PLATFORM_COLOR[p] ?? PLATFORM_COLOR.Altro;
+}
+
+/**
+ * I colori dei formati, e perche' ce ne vogliono due serie.
+ *
+ * Dentro Instagram il colore del social non divide niente: e' tutto
+ * rosa. Quello che si vuole sapere a colpo d'occhio li' dentro e'
+ * un'altra cosa — quanti reel, quante storie, quanti post — e allora
+ * il colore deve dirlo.
+ *
+ * Quindi: nel piano generale colora il canale, dentro un canale
+ * colora il formato. Non sono due sistemi che litigano, e' lo stesso
+ * sistema che risponde alla domanda che ha senso dove sei.
+ *
+ * Questi sono i colori di partenza. Si cambiano dal pulsante
+ * "Colori", e restano cambiati per tutti: un piano editoriale lo
+ * guardano in cinque, e cinque legende diverse sono peggio di una
+ * brutta.
+ */
+const TYPE_COLOR_DEFAULT: Record<string, string> = {
+  Post: '#2F6F4E',
+  Reel: '#B5483C',
+  Story: '#C98A1E',
+  Articolo: '#3F4B5B',
+  Email: '#7A4A9E',
+  Video: '#1F6F8B',
+  Foto: '#A3561A',
+  Altro: '#7A5252',
+};
+
+/** La tavolozza da cui si sceglie: colori che si distinguono fra loro
+ *  anche su uno schermo piccolo e con poca luce. */
+const TAVOLOZZA = [
+  '#2F6F4E', '#B5483C', '#C98A1E', '#3F4B5B', '#7A4A9E',
+  '#1F6F8B', '#A3561A', '#731515', '#4A7A2F', '#7A5252',
+];
+
+/* ─────────────────────────────────────────────
+   I colori dei formati
+───────────────────────────────────────────── */
+/**
+ * Si sceglie un colore per formato, e resta scelto per tutti.
+ *
+ * Una tavolozza di dieci invece di un selettore libero: dieci colori
+ * scelti per distinguersi fra loro anche su un telefono con poca luce
+ * valgono piu' di sedici milioni fra cui prendere due verdi uguali. E
+ * si tocca, non si trascina, che su un telefono e' tutta un'altra
+ * cosa.
+ */
+function FoglioColori({
+  token,
+  valori,
+  onClose,
+  onSaved,
+}: {
+  token: string;
+  valori: Record<string, string>;
+  onClose: () => void;
+  onSaved: (c: Record<string, string>) => void;
+}) {
+  const [scelta, setScelta] = useState<Record<string, string>>(() => {
+    const base: Record<string, string> = {};
+    for (const t of CONTENT_TYPES) base[t] = valori[t] ?? TYPE_COLOR_DEFAULT[t] ?? TYPE_COLOR_DEFAULT.Altro;
+    return base;
+  });
+  const [salvando, setSalvando] = useState(false);
+  const [errore, setErrore] = useState('');
+
+  async function salva() {
+    setErrore('');
+    setSalvando(true);
+    try {
+      const r = await fetch('/api/ped/colori', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ colori: scelta }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error ?? 'Errore.');
+      onSaved(d.colori ?? scelta);
+      onClose();
+    } catch (e) {
+      setErrore(e instanceof Error ? e.message : 'Errore.');
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  return (
+    <Sheet
+      open
+      title="I colori dei formati"
+      onClose={onClose}
+      footer={
+        <ActionButton onClick={salva} disabled={salvando} className="w-full">
+          {salvando ? 'Salvo…' : 'Salva per tutti'}
+        </ActionButton>
+      }
+    >
+      <p className="text-body text-on-paper-muted">
+        Dentro un canale il calendario colora il formato, non il social: su Instagram sarebbe
+        tutto dello stesso colore. Questi colori li vede tutto il team.
+      </p>
+
+      <div className="mt-6 flex flex-col gap-5">
+        {CONTENT_TYPES.map((t) => (
+          <div key={t}>
+            <p className="mb-2 flex items-center gap-2 text-fine font-medium">
+              <span
+                aria-hidden="true"
+                className="h-3 w-3 shrink-0 rounded-full"
+                style={{ backgroundColor: scelta[t] }}
+              />
+              {t}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {TAVOLOZZA.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => setScelta((p) => ({ ...p, [t]: c }))}
+                  aria-label={`${t}: ${c}`}
+                  aria-pressed={scelta[t] === c}
+                  className={`h-10 w-10 shrink-0 rounded-full border-2 transition-transform ${
+                    scelta[t] === c ? 'scale-110 border-on-paper' : 'border-transparent'
+                  }`}
+                  style={{ backgroundColor: c }}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {errore && <p className="mt-5 text-fine font-medium text-accent">{errore}</p>}
+    </Sheet>
+  );
 }
 
 /* ─────────────────────────────────────────────
@@ -573,6 +709,16 @@ export default function PedManager() {
      oppure su TikTok. Un piano solo con dentro tutto li' costringe a
      filtrare con gli occhi ogni volta che apre la pagina. */
   const [canale, setCanale] = useState('');
+  /* I colori dei formati, come li ha lasciati il team. Finche' non
+     arrivano valgono quelli di partenza: un calendario grigio mentre
+     si aspetta una risposta e' peggio di uno con i colori sbagliati
+     per mezzo secondo. */
+  const [coloriTipo, setColoriTipo] = useState<Record<string, string>>({});
+  const [apriColori, setApriColori] = useState(false);
+  const coloreTipo = useCallback(
+    (t: string) => coloriTipo[t] ?? TYPE_COLOR_DEFAULT[t] ?? TYPE_COLOR_DEFAULT.Altro,
+    [coloriTipo],
+  );
 
   // In the parent, not in the sheet: see the note in TaskBoard.
   useOverlayBackClose(!!formFor, () => setFormFor(null));
@@ -585,11 +731,16 @@ export default function PedManager() {
       } = await supabase.auth.getSession();
       const tk = session?.access_token ?? '';
       setToken(tk);
-      const [pedRes, evRes, memRes] = await Promise.all([
+      const [pedRes, evRes, memRes, colRes] = await Promise.all([
         fetch('/api/ped', { headers: { Authorization: `Bearer ${tk}` } }),
         fetch('/api/events/all'),
         fetch('/api/team/members', { headers: { Authorization: `Bearer ${tk}` } }),
+        fetch('/api/ped/colori', { headers: { Authorization: `Bearer ${tk}` } }),
       ]);
+      if (colRes.ok) {
+        const j = await colRes.json().catch(() => ({}));
+        if (j.colori) setColoriTipo(j.colori);
+      }
       const ped = await pedRes.json().catch(() => ({}));
       setEntries(ped.entries ?? []);
       if (evRes.ok) {
@@ -684,22 +835,32 @@ export default function PedManager() {
 
   /* ── Calendar: one source per platform in use, plus the events ── */
   const sources = useMemo<CalendarSource[]>(() => {
-    const used = PLATFORMS.filter((p) => visibili.some((e) => e.platform === p));
-    const list: CalendarSource[] = used.map((p) => ({
-      key: p,
-      label: p,
-      color: colorOfPlatform(p),
-    }));
+    /* Dentro un canale il colore del social non divide niente: e'
+       tutto dello stesso colore. Li' dentro colora il formato, che e'
+       la domanda che ci si fa davvero guardando un mese di Instagram. */
+    const list: CalendarSource[] = canale
+      ? CONTENT_TYPES.filter((t) => visibili.some((e) => e.content_type === t)).map((t) => ({
+          key: t,
+          label: t,
+          color: coloreTipo(t),
+        }))
+      : PLATFORMS.filter((p) => visibili.some((e) => e.platform === p)).map((p) => ({
+          key: p,
+          label: p,
+          color: colorOfPlatform(p),
+        }));
     if (events.length) list.push({ key: EVENTS_SOURCE, label: 'Eventi VIVO', color: '#A3561A' });
     return list;
-  }, [visibili, events]);
+  }, [visibili, events, canale, coloreTipo]);
 
   const calendarItems = useMemo<CalendarItem[]>(() => {
     const out: CalendarItem[] = visibili.map((e) => ({
       id: `ped-${e.id}`,
       date: e.date.slice(0, 10),
       title: e.title,
-      source: PLATFORMS.includes(e.platform) ? e.platform : 'Altro',
+      source: canale
+        ? (CONTENT_TYPES.includes(e.content_type) ? e.content_type : 'Altro')
+        : (PLATFORMS.includes(e.platform) ? e.platform : 'Altro'),
       detail: [e.content_type, e.assigned_to].filter(Boolean).join(' · ') || null,
       done: e.status === 'published',
     }));
@@ -715,7 +876,7 @@ export default function PedManager() {
       });
     }
     return out;
-  }, [visibili, events]);
+  }, [visibili, events, canale]);
 
   /* ── List: newest month first, and inside it by date ── */
   const months = useMemo(() => {
@@ -747,7 +908,15 @@ export default function PedManager() {
       <PageHead
         title="Piano editoriale"
         subtitle="Cosa esce, dove e quando, accanto agli eventi del club."
-        action={<NewButton label="Nuovo contenuto" onClick={() => setFormFor({})} />}
+        action={
+          <div className="flex flex-wrap gap-2.5">
+            <ActionButton variant="quiet" onClick={() => setApriColori(true)}>
+              <Palette size={16} strokeWidth={1.9} />
+              Colori
+            </ActionButton>
+            <NewButton label="Nuovo contenuto" onClick={() => setFormFor({})} />
+          </div>
+        }
       />
 
       {/* I piani, uno per canale.
@@ -786,6 +955,26 @@ export default function PedManager() {
           );
         })}
       </div>
+
+      {/* La legenda, solo dentro un canale e solo da leggere.
+          Qui il colore ha appena cambiato significato — non e' piu' il
+          social, e' il formato — e un colore che cambia senso senza
+          dirlo e' un colore che confonde. Non e' un filtro: di comandi
+          ce ne sono gia' abbastanza. */}
+      {canale && sources.some((x) => x.key !== EVENTS_SOURCE) && (
+        <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-fine text-on-paper-muted">
+          {sources.filter((x) => x.key !== EVENTS_SOURCE).map((x) => (
+            <span key={x.key} className="inline-flex items-center gap-1.5">
+              <span
+                aria-hidden="true"
+                className="h-2 w-2 shrink-0 rounded-full"
+                style={{ backgroundColor: x.color }}
+              />
+              {x.label}
+            </span>
+          ))}
+        </div>
+      )}
 
       <div className="mb-5 flex rounded-full border border-rule-paper p-1 lg:w-fit">
         {(
@@ -896,6 +1085,15 @@ export default function PedManager() {
         onDelete={remove}
         onToggle={toggle}
       />
+
+      {apriColori && (
+        <FoglioColori
+          token={token}
+          valori={coloriTipo}
+          onClose={() => setApriColori(false)}
+          onSaved={setColoriTipo}
+        />
+      )}
 
       {formFor && (
         <EntryForm
