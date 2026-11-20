@@ -113,36 +113,32 @@ export default async function ManifestoPage() {
           <h2 className="ds-display text-title">{t('valuesTitle')}</h2>
           <p className="mt-5 max-w-[56ch] text-lead text-on-paper-muted">{t('valuesIntro')}</p>
 
-          <ol className="mt-14 space-y-12 lg:space-y-16">
+          <ol className="mt-12 space-y-9 lg:space-y-11">
             {VALORI.map((n) => (
               <li
                 key={n}
-                className="grid gap-x-12 gap-y-6 border-t border-rule-paper pt-7 lg:grid-cols-[minmax(0,26ch)_1fr]"
+                className="grid gap-x-12 gap-y-4 border-t border-rule-paper pt-6 lg:grid-cols-[minmax(0,22ch)_1fr]"
               >
                 <div>
                   <p className="ds-numeric text-fine text-accent-soft">
                     {`0${n}`}
                   </p>
                   <h3 className="ds-display mt-2 text-subtitle">{t(`value${n}Title`)}</h3>
-                  <p className="mt-3 max-w-[34ch] text-body italic text-on-paper-muted">
-                    {t(`value${n}Claim`)}
-                  </p>
                 </div>
 
+                {/* La frase e il paragrafo, insieme a destra.
+                    Sotto ognuno dei cinque c'erano due punti su "come
+                    lo viviamo": dieci righe che spiegavano cinque
+                    titoli gia' chiari, e nessuno arrivava in fondo.
+                    Un manifesto che non si legge non e' un manifesto.
+                    Tolti quelli, la colonna di destra era rimasta
+                    piu' corta del titolo accanto, e ogni riga aveva
+                    un buco in mezzo: la frase in corsivo e' tornata
+                    di qua, dove continua nel paragrafo che la
+                    spiega. */}
                 <div className="max-w-[62ch]">
-                  <p className="text-body text-on-paper-muted">{t(`value${n}Body`)}</p>
-
-                  <p className="mt-7 text-fine font-medium uppercase tracking-[0.1em] text-on-paper">
-                    {t('doLabel')}
-                  </p>
-                  <ul className="mt-3 space-y-2.5">
-                    {[1, 2].map((i) => (
-                      <li key={i} className="flex gap-3 text-body text-on-paper-muted">
-                        <span aria-hidden="true" className="mt-[0.6em] h-[3px] w-[3px] shrink-0 rounded-full bg-accent" />
-                        {t(`value${n}Do${i}`)}
-                      </li>
-                    ))}
-                  </ul>
+                  <p className="text-lead italic text-on-paper">{t(`value${n}Claim`)}</p>
+                  <p className="mt-3 text-body text-on-paper-muted">{t(`value${n}Body`)}</p>
                 </div>
               </li>
             ))}
