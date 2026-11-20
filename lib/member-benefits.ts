@@ -13,13 +13,17 @@ export interface Benefit {
   id: string;
   title: string;
   body: string;
-  icon: 'grapes' | 'ticket' | 'lock' | 'map' | 'shirt' | 'percent' | 'star' | 'home' | 'plane' | 'gift';
+  icon:
+    | 'grapes' | 'ticket' | 'lock' | 'map' | 'shirt' | 'percent' | 'star'
+    | 'home' | 'plane' | 'gift' | 'mic' | 'briefcase';
 }
 
 const ICONE: Record<string, Benefit['icon']> = {
   serate: 'ticket',
   cantine: 'grapes',
   viaggi: 'plane',
+  talk: 'mic',
+  persone: 'briefcase',
   sconti: 'percent',
   selection: 'star',
 };
@@ -50,6 +54,14 @@ const TESTI: Record<BenefitLocale, Record<string, { title: string; body: string 
       title: 'I viaggi',
       body: 'Qualche giorno in un territorio del vino, in gruppo. Si parte in pochi e si torna amici.',
     },
+    talk:      {
+      title: 'I wine talk',
+      body: 'Incontri con chi nel vino decide: produttori, distributori, importatori, enologi, buyer. Si ascolta, e c’è spazio per fare domande.',
+    },
+    persone:   {
+      title: 'Chi conosci',
+      body: 'Nel vino si entra conoscendo qualcuno. Qui conosci aziende e persone che nel settore contano, e quando si apre una posizione la vedi prima.',
+    },
     sconti:    {
       title: 'Gli sconti',
       body: 'Enoteche e cantine convenzionate, e il tuo codice su tutto quello che produciamo.',
@@ -71,6 +83,14 @@ const TESTI: Record<BenefitLocale, Record<string, { title: string; body: string 
     viaggi:    {
       title: 'The trips',
       body: 'A few days in a wine country, as a group. You leave as a handful of people and come back friends.',
+    },
+    talk:      {
+      title: 'The wine talks',
+      body: 'Conversations with the people who decide in wine: producers, distributors, importers, winemakers, buyers. You listen, and there is room to ask.',
+    },
+    persone:   {
+      title: 'Who you know',
+      body: 'Wine is a business you get into by knowing someone. Here you meet the companies and the people who count, and you hear about a job before it is posted.',
     },
     sconti:    {
       title: 'The discounts',
@@ -94,6 +114,14 @@ const TESTI: Record<BenefitLocale, Record<string, { title: string; body: string 
       title: 'Les voyages',
       body: 'Quelques jours dans une région du vin, en groupe. On part à quelques-uns et on rentre amis.',
     },
+    talk:      {
+      title: 'Les wine talks',
+      body: 'Des rencontres avec celles et ceux qui décident dans le vin : producteurs, distributeurs, importateurs, œnologues, acheteurs. On écoute, et il y a de la place pour poser des questions.',
+    },
+    persone:   {
+      title: 'Les bonnes personnes',
+      body: 'Dans le vin, on entre en connaissant quelqu’un. Ici tu rencontres les maisons et les gens qui comptent, et tu vois les postes avant qu’ils ne soient publiés.',
+    },
     sconti:    {
       title: 'Les remises',
       body: 'Cavistes et domaines partenaires, et ton code sur tout ce que nous produisons.',
@@ -107,14 +135,20 @@ const TESTI: Record<BenefitLocale, Record<string, { title: string; body: string 
 
 /**
  * L'ordine in cui si leggono: prima quello per cui uno si iscrive
- * davvero — le serate, le cantine, i viaggi — e dopo le cose che
- * contano ma non fanno alzare nessuno dal divano.
+ * davvero, le serate, le cantine, i viaggi. Poi i wine talk e le
+ * persone che si conoscono, che non fanno iscrivere nessuno al primo
+ * sguardo ma sono quello che resta dopo un anno di tessera. In fondo
+ * le cose che contano e non fanno alzare nessuno dal divano.
+ *
+ * Due voci in piu', da cinque a sette, e non e' un ritorno alle nove
+ * di prima: quelle erano la stessa promessa detta tre volte, queste
+ * due sono due promesse che prima non facevamo.
  *
  * Quello che arriva a casa quando ci si iscrive non e' scritto da
  * nessuna parte, ed e' voluto: una sorpresa annunciata non e' piu'
  * una sorpresa.
  */
-const ORDINE = ['serate', 'cantine', 'viaggi', 'sconti', 'selection'] as const;
+const ORDINE = ['serate', 'cantine', 'viaggi', 'talk', 'persone', 'sconti', 'selection'] as const;
 
 export function benefitsFor(locale: string | null | undefined): Benefit[] {
   const l: BenefitLocale = locale === 'en' || locale === 'fr' ? locale : 'it';
