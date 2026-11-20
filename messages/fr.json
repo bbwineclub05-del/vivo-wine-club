@@ -542,6 +542,7 @@
       "club": "Club",
       "shop": "Shop",
       "manifesto": "Manifeste",
+      "work": "Nous rejoindre",
       "join": "Rejoindre",
       "menu": "Menu",
       "close": "Fermer",
@@ -719,9 +720,9 @@
     },
     "apply": {
       "metaTitle": "Travailler avec nous",
-      "metaDescription": "Ambassadeurs, entreprises, créateurs et équipe : dites-nous qui vous êtes.",
+      "metaDescription": "Team, ambassadeurs, entreprises et créateurs : dis-nous qui tu es.",
       "heading": "Dites-nous qui vous êtes.",
-      "intro": "Vous voulez devenir ambassadeur, travailler avec nous en tant qu'entreprise, rejoindre notre portefeuille de créateurs, ou faire partie de l'équipe ? Choisissez par où commencer : nous ne demandons que l'essentiel.",
+      "intro": "Tu veux rejoindre l’équipe qui fait tourner le club, devenir ambassadeur, travailler avec nous comme entreprise ou entrer dans notre portefeuille de créateurs ? Choisis par où commencer : on ne demande que l’essentiel.",
       "question": "Comment voulez-vous travailler avec nous ?",
       "kind": {
         "ambassador": {
@@ -737,8 +738,8 @@
           "hint": "Vous rejoignez notre portefeuille de créateurs."
         },
         "staff": {
-          "label": "Équipe",
-          "hint": "Vous voulez rejoindre l'équipe qui fait vivre le club."
+          "label": "Team",
+          "hint": "Tu rejoins l’équipe opérationnelle : événements, contenus, produit."
         }
       },
       "firstName": "Prénom",
@@ -759,13 +760,53 @@
         "ambassador": "Pourquoi voulez-vous amener VIVO dans votre ville ?",
         "company": "Qu'avez-vous en tête ?",
         "creator": "Dites-nous ce que vous faites et avec qui vous avez travaillé.",
-        "staff": "Que souhaiteriez-vous faire, et pourquoi ?"
+        "staff": "Qu’aimerais-tu faire, et pourquoi ?"
       },
       "submit": "Envoyer la candidature",
       "sending": "Envoi…",
       "error": "L'envoi a échoué. Réessayez.",
       "doneTitle": "C'est fait.",
-      "doneBody": "Nous avons reçu votre candidature. Nous revenons vers vous dès que nous l'aurons lue."
+      "doneBody": "Nous avons reçu votre candidature. Nous revenons vers vous dès que nous l'aurons lue.",
+      "crew": {
+        "title": "Ce que veut dire rejoindre l’équipe",
+        "lead": "Nous sommes jeunes, nous grandissons vite et nous avons besoin de monde. Apporte ce que tu sais faire et prouve-le sur le terrain : en échange nous t’ouvrons tout ce que le club ouvre. Les rôles ne sont pas figés.",
+        "b1Title": "Tout, gratuitement",
+        "b1Body": "Soirées, visites de domaines et wine talks, sans payer de billet.",
+        "b2Title": "Un réseau, pas une liste",
+        "b2Body": "Producteurs, distributeurs, œnologues, importateurs. Des gens que tu rencontres en travaillant avec eux, pas sur LinkedIn.",
+        "b3Title": "Une porte sur la carrière",
+        "b3Body": "Les postes qui s’ouvrent dans le vin passent d’abord par celles et ceux qui sont déjà là.",
+        "b4Title": "Des choses qui sortent vraiment",
+        "b4Body": "Ce que tu fais finit dans un vrai événement, sur un vrai canal. Avec ton nom dessus.",
+        "teamsTitle": "Les trois pôles",
+        "teamsLead": "Choisis où tu veux être. Si tu hésites, dis-le dans ton message.",
+        "teamLabel": "Dans quel pôle ?",
+        "teamRequired": "Choisis un pôle pour continuer.",
+        "media": {
+          "label": "Media & marketing",
+          "hint": "Contenus, réseaux, montage vidéo, l’IA au service du récit du club."
+        },
+        "events": {
+          "label": "Events & partnership",
+          "hint": "Soirées et visites de domaines, partenariats à conclure, domaines et lieux."
+        },
+        "tech": {
+          "label": "Tech & development",
+          "hint": "Le site, l’espace membres, de nouveaux outils IA."
+        }
+      },
+      "amb": {
+        "title": "Ce que fait un ambassadeur VIVO",
+        "lead": "Tu as un lieu, un domaine, ou simplement l’envie de faire bouger les choses autour du vin ? Tu organises des événements VIVO là où tu es. Tu apportes le lieu et les gens, nous apportons le nom, le format et le travail de l’équipe.",
+        "b1Title": "Là où tu es",
+        "b1Body": "Ta ville, ta région, ta cave. Il n’y a pas de liste d’attente de lieux approuvés.",
+        "b2Title": "L’équipe travaille avec toi",
+        "b2Body": "Déroulé, domaines, prix, billets, logistique. Tu ne prépares pas la soirée tout seul.",
+        "b3Title": "La promotion, c’est nous",
+        "b3Body": "Visuels, vidéos et contenus prêts à publier, plus nos canaux pour pousser l’événement.",
+        "b4Title": "Ce qu’il t’en reste",
+        "b4Body": "Tu as un lieu ? La soirée te fait entrer du monde. Sinon, elle te laisse un réseau dans le vin et des événements à toi."
+      }
     },
     "reels": {
       "line": "Soirées, domaines, voyages."

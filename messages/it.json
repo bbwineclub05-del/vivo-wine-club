@@ -542,6 +542,7 @@
       "club": "Club",
       "shop": "Shop",
       "manifesto": "Manifesto",
+      "work": "Lavora con noi",
       "join": "Diventa member",
       "menu": "Menu",
       "close": "Chiudi",
@@ -719,9 +720,9 @@
     },
     "apply": {
       "metaTitle": "Lavora con noi",
-      "metaDescription": "Ambassador, aziende, creator e staff: raccontaci chi sei.",
+      "metaDescription": "Team, ambassador, aziende e creator: raccontaci chi sei.",
       "heading": "Raccontaci chi sei.",
-      "intro": "Vuoi diventare ambassador, lavorare con noi come azienda, entrare nel nostro portafoglio come creator, o lavorare nel team? Scegli da dove vuoi partire: ti chiediamo solo quello che serve.",
+      "intro": "Vuoi entrare nel team che fa funzionare il club, diventare ambassador, lavorare con noi come azienda o entrare nel nostro portafoglio come creator? Scegli da dove vuoi partire: ti chiediamo solo quello che serve.",
       "question": "Come vuoi lavorare con noi?",
       "kind": {
         "ambassador": {
@@ -737,8 +738,8 @@
           "hint": "Entri nel nostro portafoglio di creator e influencer."
         },
         "staff": {
-          "label": "Staff",
-          "hint": "Vuoi far parte del team che fa funzionare il club."
+          "label": "Team",
+          "hint": "Entri nel team operativo: eventi, contenuti, prodotto."
         }
       },
       "firstName": "Nome",
@@ -765,7 +766,47 @@
       "sending": "Invio…",
       "error": "Non sono riuscito a inviare. Riprova.",
       "doneTitle": "Ci siamo.",
-      "doneBody": "Abbiamo ricevuto la tua candidatura. Ti rispondiamo appena l'abbiamo letta."
+      "doneBody": "Abbiamo ricevuto la tua candidatura. Ti rispondiamo appena l'abbiamo letta.",
+      "crew": {
+        "title": "Che cosa vuol dire entrare nel team",
+        "lead": "Siamo giovani, cresciamo in fretta e abbiamo bisogno di persone. Porta quello che sai fare e dimostralo sul campo: in cambio ti apriamo tutto quello che apre il club. I ruoli non sono scolpiti.",
+        "b1Title": "Entri a tutto, gratis",
+        "b1Body": "Serate, visite in cantina e wine talk, senza pagare il biglietto.",
+        "b2Title": "Il network, non i contatti",
+        "b2Body": "Produttori, distributori, enologi, importatori. Gente che conosci lavorandoci insieme, non su LinkedIn.",
+        "b3Title": "Una porta sulla carriera",
+        "b3Body": "Le posizioni che si aprono nel vino le vede prima chi è già dentro.",
+        "b4Title": "Cose che escono davvero",
+        "b4Body": "Quello che fai finisce in un evento vero, su un canale vero. Con il tuo nome sopra.",
+        "teamsTitle": "Le tre aree",
+        "teamsLead": "Scegli dove vuoi stare. Se sei indeciso, dillo nel messaggio.",
+        "teamLabel": "In quale area?",
+        "teamRequired": "Scegli un’area per continuare.",
+        "media": {
+          "label": "Media & marketing",
+          "hint": "Contenuti, social, video editing, AI applicata al racconto del club."
+        },
+        "events": {
+          "label": "Events & partnership",
+          "hint": "Serate e visite in cantina, partnership da chiudere, rapporti con cantine e locali."
+        },
+        "tech": {
+          "label": "Tech & development",
+          "hint": "Il sito, l’area riservata, nuovi strumenti AI."
+        }
+      },
+      "amb": {
+        "title": "Che cosa fa un ambassador VIVO",
+        "lead": "Hai un locale, una cantina, o solo voglia di far succedere qualcosa intorno al vino? Organizzi eventi VIVO dove sei tu. Tu ci metti il posto e le persone, noi il nome, il format e il lavoro del team.",
+        "b1Title": "Dove vuoi tu",
+        "b1Body": "La tua città, la tua regione, la tua enoteca. Non c’è una lista di posti da aspettare.",
+        "b2Title": "Il team lavora con te",
+        "b2Body": "Scaletta, cantine, prezzi, biglietti, logistica. La serata non la prepari da solo.",
+        "b3Title": "La promozione la mettiamo noi",
+        "b3Body": "Grafiche, video e contenuti pronti, più i nostri canali a spingere l’evento.",
+        "b4Title": "Quello che ti resta",
+        "b4Body": "Hai un locale? L’evento ti porta dentro gente nuova. Non ce l’hai? Ti porta un network nel vino e serate tue da raccontare."
+      }
     },
     "reels": {
       "line": "Serate, cantine, viaggi."

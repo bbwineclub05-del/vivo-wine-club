@@ -31,6 +31,16 @@ const ALLOWED: Record<Kind, string[]> = {
   staff: ['first_name', 'last_name', 'phone', 'city', 'role', 'message'],
 };
 
+/**
+ * I tre team della crew, come li scrive il modulo.
+ *
+ * Il tipo resta `staff` anche se sul sito si chiama Crew: e' il nome
+ * che la colonna ha da sempre e che il CRM legge. Rinominarlo
+ * cambierebbe delle righe per cambiare una parola che gli utenti non
+ * vedono.
+ */
+const TEAM = ['Media & marketing', 'Events & partnership', 'Tech & development'];
+
 const text = (v: unknown, max = 2000) => {
   const s = typeof v === 'string' ? v.trim() : '';
   return s ? s.slice(0, max) : null;
@@ -67,6 +77,15 @@ export async function POST(request: Request) {
       consent_privacy_version: PRIVACY_POLICY_VERSION,
       consent_marketing: body.consent_marketing === true,
     };
+    /* Per la crew il team non e' un campo libero: se arriva altro,
+       si butta via invece di finire nel CRM come un ruolo inventato. */
+    if (kind === 'staff') {
+      const team = text(body.role, 60);
+      if (!team || !TEAM.includes(team)) {
+        return NextResponse.json({ error: 'Scegli uno dei tre team.' }, { status: 400 });
+      }
+    }
+
     for (const field of ALLOWED[kind]) {
       if (field === 'followers') {
         const n = Number(body.followers);

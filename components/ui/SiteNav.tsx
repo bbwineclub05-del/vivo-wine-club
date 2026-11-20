@@ -24,6 +24,10 @@ const TUTTE = [
   { href: '/events', key: 'club' },
   { href: '/wear-the-club', key: 'shop' },
   { href: '/manifesto', key: 'manifesto' },
+  /* "Lavora con noi" in barra, non solo in fondo alla pagina: chi
+     potrebbe entrare nel team la pagina delle candidature non la
+     cercava, perche' non sapeva che esistesse. */
+  { href: '/apply', key: 'work' },
 ] as const;
 
 /** Creator resta nell'elenco ma non si vede finche' l'interruttore e' spento. */
@@ -59,7 +63,10 @@ export function SiteNav() {
             <Image src="/main-logo.png" alt="Vivo Wine Club" width={74} height={28} priority />
           </Link>
 
-          <ul className="hidden flex-1 items-center gap-7 lg:flex">
+          {/* Lo spazio fra le voci si stringe dove la barra e' piena: con
+              "Lavora con noi" in piu' a 1024 il contenuto sbordava di
+              nove pixel, e la riga andava a capo. */}
+          <ul className="hidden flex-1 items-center gap-5 lg:flex xl:gap-7">
             {LINKS.map((l) => (
               <li key={l.href}>
                 <Link

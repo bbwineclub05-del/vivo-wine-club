@@ -542,6 +542,7 @@
       "club": "Club",
       "shop": "Shop",
       "manifesto": "Manifesto",
+      "work": "Work with us",
       "join": "Join",
       "menu": "Menu",
       "close": "Close",
@@ -719,9 +720,9 @@
     },
     "apply": {
       "metaTitle": "Work with us",
-      "metaDescription": "Ambassadors, companies, creators and staff: tell us who you are.",
+      "metaDescription": "Team, ambassadors, companies and creators: tell us who you are.",
       "heading": "Tell us who you are.",
-      "intro": "Do you want to become an ambassador, work with us as a company, join our creator roster, or work in the team? Pick where you want to start: we only ask what we need.",
+      "intro": "Want to join the team that runs the club, become an ambassador, work with us as a company, or join our creator roster? Pick where you want to start: we only ask what we need.",
       "question": "How do you want to work with us?",
       "kind": {
         "ambassador": {
@@ -737,8 +738,8 @@
           "hint": "You join our roster of creators and influencers."
         },
         "staff": {
-          "label": "Staff",
-          "hint": "You want to be part of the team behind the club."
+          "label": "Team",
+          "hint": "Join the team that makes it happen: events, content, product."
         }
       },
       "firstName": "First name",
@@ -765,7 +766,47 @@
       "sending": "Sending…",
       "error": "I couldn't send it. Please try again.",
       "doneTitle": "That's it.",
-      "doneBody": "We've got your application. We'll get back to you as soon as we've read it."
+      "doneBody": "We've got your application. We'll get back to you as soon as we've read it.",
+      "crew": {
+        "title": "What joining the team means",
+        "lead": "We are young, we are growing fast and we need people. Bring what you can do and prove it in the field: in exchange we open everything the club opens. Roles are not set in stone.",
+        "b1Title": "Everything, free",
+        "b1Body": "Evenings, winery visits and wine talks, without paying for a ticket.",
+        "b2Title": "A network, not a contact list",
+        "b2Body": "Producers, distributors, winemakers, importers. People you meet by working beside them, not on LinkedIn.",
+        "b3Title": "A door into the career",
+        "b3Body": "The wine jobs that open up go first to the people already inside.",
+        "b4Title": "Work that actually ships",
+        "b4Body": "What you make ends up in a real event, on a real channel. With your name on it.",
+        "teamsTitle": "The three areas",
+        "teamsLead": "Pick where you want to be. If you are unsure, say so in your message.",
+        "teamLabel": "Which area?",
+        "teamRequired": "Pick an area to continue.",
+        "media": {
+          "label": "Media & marketing",
+          "hint": "Content, social, video editing, AI for how the club is told."
+        },
+        "events": {
+          "label": "Events & partnership",
+          "hint": "Evenings and winery visits, partnerships to close, wineries and venues."
+        },
+        "tech": {
+          "label": "Tech & development",
+          "hint": "The site, the members area, new AI tools."
+        }
+      },
+      "amb": {
+        "title": "What a VIVO ambassador does",
+        "lead": "Do you have a venue, a winery, or just the urge to make something happen around wine? You run VIVO events where you are. You bring the place and the people, we bring the name, the format and the work of the team.",
+        "b1Title": "Wherever you are",
+        "b1Body": "Your city, your region, your wine shop. There is no waiting list of approved places.",
+        "b2Title": "The team works with you",
+        "b2Body": "Running order, wineries, pricing, tickets, logistics. You do not prepare the evening alone.",
+        "b3Title": "We bring the promotion",
+        "b3Body": "Artwork, video and content ready to publish, plus our channels pushing the event.",
+        "b4Title": "What stays with you",
+        "b4Body": "Got a venue? The evening brings new people in. No venue? It brings you a network in wine and events of your own to show."
+      }
     },
     "reels": {
       "line": "Nights, wineries, trips."

@@ -20,7 +20,9 @@ import { ApplyForm } from '@/components/ui/ApplyForm';
  */
 
 type Kind = 'ambassador' | 'company' | 'creator' | 'staff';
-const KINDS: Kind[] = ['ambassador', 'company', 'creator', 'staff'];
+/* Il team per primo: e' quello che cerchiamo, e in fondo a
+   quattro caselle non lo leggeva nessuno. */
+const KINDS: Kind[] = ['staff', 'ambassador', 'company', 'creator'];
 
 export async function generateMetadata() {
   const t = await getTranslations('site.apply');
