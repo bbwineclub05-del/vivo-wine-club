@@ -5,10 +5,17 @@ import { useTranslations } from 'next-intl';
 import { type DisplayStatus } from '@/lib/events';
 
 /**
- * The one control that turns a listing into a sale. Restyled for the 2026
- * system; the routing is untouched on purpose: `/checkout/{slug}` and
- * `/events/{slug}#guest-form` are already printed in emails and on
- * tickets in circulation.
+ * Il comando che trasforma un elenco in una vendita.
+ *
+ * Porta alla pagina dell'evento, non al pagamento. Chiedere la carta
+ * di credito a chi ha visto solo un titolo e una data vuol dire
+ * chiedere di decidere senza sapere: dove si tiene, che cosa si beve,
+ * chi ci sara'. La pagina dell'evento quelle cose le dice, e il
+ * pulsante per pagare sta li' sotto.
+ *
+ * Gli indirizzi restano quelli di sempre, `/checkout/{slug}` e
+ * `/events/{slug}`: sono stampati sui biglietti in circolazione e
+ * dentro alle mail gia' partite.
  */
 const PILL =
   'inline-flex min-h-[48px] items-center justify-center whitespace-nowrap rounded-full px-6 text-fine font-medium';
@@ -25,7 +32,7 @@ export default function EventStatusBadge({
   const t = useTranslations('events');
 
   if (displayStatus === 'open') {
-    const href = isListOnly ? `/events/${slug}#guest-form` : `/checkout/${slug}`;
+    const href = isListOnly ? `/events/${slug}#guest-form` : `/events/${slug}`;
     return (
       <Link
         href={href}

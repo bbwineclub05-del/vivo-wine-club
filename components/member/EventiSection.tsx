@@ -111,12 +111,12 @@ export default function EventiSection({ token }: { token: string }) {
       ) : (
         <div className="flex flex-col gap-2">
           {eventi.map((e) => {
-            /* Qui dentro si compra solo quello che si puo' comprare
-               anche dal sito pubblico. Prima ogni data portava al
-               pagamento, comprese quelle ancora da aprire: il socio
-               compilava tutto e si prendeva un errore alla fine.
-               Quando non e' aperta, la riga porta alla pagina
-               dell'evento e dice a che punto siamo. */
+            /* La riga porta sempre alla pagina dell'evento, aperta o
+               no. Al pagamento ci si arriva da li', dopo aver letto
+               dove si tiene e che cosa si beve: una data e un prezzo
+               non bastano per decidere. A destra resta scritto a che
+               punto siamo, cosi' si sa gia' dall'elenco se si puo'
+               comprare. */
             const stato: DisplayStatus = getEventDisplayStatus(
               { status: e.status, date: e.date, registrationClosed: e.registrationClosed },
               oggi,
@@ -126,7 +126,7 @@ export default function EventiSection({ token }: { token: string }) {
             return (
               <Link
                 key={e.slug}
-                href={siCompra ? `/checkout/${e.slug}` : `/events/${e.slug}`}
+                href={`/events/${e.slug}`}
                 className="flex items-center gap-3.5 rounded-2xl border border-rule-paper px-4 py-3.5 transition-colors hover:border-accent/40"
               >
                 <CalendarDays size={19} strokeWidth={1.7} className="shrink-0 text-accent" />
