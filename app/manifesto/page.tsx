@@ -12,23 +12,28 @@ export async function generateMetadata() {
   return { title: 'Manifesto | Vivo Wine Club', description: t('statement') };
 }
 
+/* I ritratti nuovi: maglietta del club al posto di giacca e
+   cravatta. Erano tre foto da curriculum su una pagina che dice che
+   il vino lo raccontiamo in un altro modo. */
 const FOUNDERS = [
-  { name: 'Giacomo Gallo', city: 'Turin', image: '/giacomo2.png', bioKey: 'bioGiacomo', linkedin: 'https://www.linkedin.com/in/giacomo-gallo-520a85286/' },
-  { name: 'Filippo Lombardi', city: 'Brescia', image: '/filippo-lombardi.png', bioKey: 'bioFilippo', linkedin: 'https://www.linkedin.com/in/filippolombardiofficial/' },
-  { name: 'Cristiano Michelotti', city: 'Florence', image: '/cristiano.png', bioKey: 'bioCristiano', linkedin: 'https://www.linkedin.com/in/cristiano-michelotti-799a49299/' },
+  { name: 'Giacomo Gallo', city: 'Turin', image: '/fondatori/giacomo.webp', bioKey: 'bioGiacomo', linkedin: 'https://www.linkedin.com/in/giacomo-gallo-520a85286/' },
+  { name: 'Filippo Lombardi', city: 'Brescia', image: '/fondatori/filippo.webp', bioKey: 'bioFilippo', linkedin: 'https://www.linkedin.com/in/filippolombardiofficial/' },
+  { name: 'Cristiano Michelotti', city: 'Florence', image: '/fondatori/cristiano.webp', bioKey: 'bioCristiano', linkedin: 'https://www.linkedin.com/in/cristiano-michelotti-799a49299/' },
 ] as const;
 
+/* L'ordine lo decide il club, non l'alfabeto: chi legge si ferma
+   sui primi nomi, e quelli vanno scelti. */
 const TEAM = [
-  { name: 'Carolina Maria Carra', role: 'Media', linkedin: 'https://www.linkedin.com/in/carolina-maria-carra/' },
-  { name: 'Elena Catellani', role: 'Media', linkedin: 'https://www.linkedin.com/in/elena-catellani-a70aa72b0/' },
-  { name: 'Marcello Abbadati', role: 'Events · Sommelier', linkedin: 'https://www.linkedin.com/in/marcelloabbadati/' },
-  { name: 'Giovanni Giachino', role: 'Events · Sommelier', linkedin: 'https://www.linkedin.com/in/giovanni-giachino-/' },
-  { name: 'Francesco Basile', role: 'Sponsorship', linkedin: 'https://www.linkedin.com/in/francesco-basile-a3b670265/' },
-  { name: 'Federico Paroli', role: 'Events', linkedin: 'https://www.linkedin.com/in/federico-paroli-a10793378/' },
+  { name: 'Francesco Basile', role: 'Board · Sponsorship', linkedin: 'https://www.linkedin.com/in/francesco-basile-a3b670265/' },
+  { name: 'Lorenzo Fioretti', role: 'Board · Sponsorship', linkedin: 'https://www.linkedin.com/in/lorenzo-fioretti-a6726a258/' },
   { name: 'Giulia Fascella', role: 'Media', linkedin: 'https://www.linkedin.com/in/giulia-fascella-4a0772366/' },
-  { name: 'Daniele Natalini', role: 'Media', linkedin: 'https://www.linkedin.com/in/daniele-natalini-076190381/' },
-  { name: 'Lorenzo Fioretti', role: 'Sponsorship', linkedin: 'https://www.linkedin.com/in/lorenzo-fioretti-a6726a258/' },
+  { name: 'Marcello Abbadati', role: 'Events', linkedin: 'https://www.linkedin.com/in/marcelloabbadati/' },
+  { name: 'Federico Paroli', role: 'Events', linkedin: 'https://www.linkedin.com/in/federico-paroli-a10793378/' },
+  { name: 'Elena Catellani', role: 'Media', linkedin: 'https://www.linkedin.com/in/elena-catellani-a70aa72b0/' },
+  { name: 'Carolina Maria Carra', role: 'Media', linkedin: 'https://www.linkedin.com/in/carolina-maria-carra/' },
+  { name: 'Giovanni Giachino', role: 'Events', linkedin: 'https://www.linkedin.com/in/giovanni-giachino-/' },
   { name: 'Edoardo Piceni', role: 'Tech', linkedin: 'https://www.linkedin.com/in/edoardo-antonio-piceni-89a132212/' },
+  { name: 'Daniele Natalini', role: 'Media', linkedin: 'https://www.linkedin.com/in/daniele-natalini-076190381/' },
 ] as const;
 
 /**
