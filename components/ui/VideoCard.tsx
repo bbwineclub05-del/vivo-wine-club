@@ -77,37 +77,35 @@ export function VideoCard({
     return () => io.disconnect();
   }, [priority, reduce, continuo]);
 
-  /* Fuori dallo schermo si mette in pausa: una fila di clip costa una
-     decodifica, non sei.
+  /* Suona solo quello che si vede.
 
-     Dentro una striscia che scorre la scheda non guarda se stessa. La
-     scheda esce e rientra dal bordo della striscia in continuazione, e
-     mettere in pausa a ogni passaggio farebbe ripartire il video a
-     scatti: si vede. Pero' guardare solo se e' comparsa una volta
-     voleva dire non fermarla mai piu', e una striscia di dodici clip
-     continuava a decodificare dodici filmati anche tremila pixel piu'
-     in giu', per tutta la visita — con la pagina che si trascinava.
-     Allora il riferimento e' la striscia intera: finche' e' dalle
-     parti dello schermo le clip vanno, quando lo schermo e' altrove
-     si fermano tutte insieme, e nessuno le vede fermarsi. */
+     Qui dentro c'era il riferimento alla striscia intera: finche' la
+     fila era dalle parti dello schermo andavano tutte le clip
+     insieme. Era scritto per non far ripartire a scatti le schede che
+     escono e rientrano dal bordo della striscia — ma il prezzo era
+     sedici filmati decodificati contemporaneamente, e la home
+     scorreva a trenta fotogrammi al secondo invece di sessanta.
+
+     Adesso il riferimento e' la finestra: una scheda suona mentre
+     attraversa lo schermo e si ferma quando e' uscita. Lo scatto
+     temuto non c'e' perche' la pausa non riavvolge niente: quando la
+     scheda rientra il filmato riprende dal fotogramma dove si era
+     fermato, e perche' la decodifica riparte trecento pixel prima del
+     bordo, cioe' mentre la scheda e' ancora fuori. */
   useEffect(() => {
     const el = ref.current;
     if (!el || reduce) return;
 
     if (continuo && !visible) return;
 
-    const osservato = continuo
-      ? (el.closest('[data-fila]') as HTMLElement | null) ?? el
-      : el;
-
     const io = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) void el.play().catch(() => {});
         else el.pause();
       },
-      continuo ? { rootMargin: '200px' } : { threshold: 0.25 },
+      continuo ? { rootMargin: '120px 300px' } : { threshold: 0.25 },
     );
-    io.observe(osservato);
+    io.observe(el);
     return () => io.disconnect();
   }, [reduce, continuo, visible]);
 
