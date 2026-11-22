@@ -252,7 +252,7 @@ export default async function ManifestoPage() {
                   href={m.linkedin}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group flex min-h-[64px] items-center justify-between gap-6 py-4"
+                  className="ds-press-soft group -mx-3 flex min-h-[64px] items-center justify-between gap-6 rounded-xl px-3 py-4 hover:bg-ink-soft"
                 >
                   <span className="text-subtitle">{m.name}</span>
                   <span className="shrink-0 text-fine text-on-ink-muted transition-colors group-hover:text-rose">
