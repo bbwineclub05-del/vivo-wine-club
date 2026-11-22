@@ -123,8 +123,20 @@ export function ClubEvents({ events }: { events: EventData[] }) {
               viewport={{ once: true, amount: 0.2 }}
               transition={{ duration: 0.5, delay: Math.min(i, 6) * 0.04, ease: [0.16, 1, 0.3, 1] }}
             >
+              {/* Tutta la riga e' il bersaglio.
+                  Prima erano tre collegamenti separati dentro la
+                  stessa riga: la data alta ventotto pixel, il titolo
+                  ventitre, e in mezzo lo spazio vuoto non portava da
+                  nessuna parte. Su un telefono un titolo alto
+                  ventitre pixel si manca.
+                  Adesso il collegamento del titolo si allarga su
+                  tutta la riga (l'`after` qui sotto), e la data e la
+                  foto tornano a essere quello che erano davvero: due
+                  pezzi della riga, non due porte per lo stesso
+                  posto. Il pulsante a destra resta sopra, con il suo
+                  indirizzo. */}
               <div
-                className={`flex flex-wrap items-center gap-x-6 gap-y-5 py-7 sm:flex-nowrap ${
+                className={`relative -mx-3 flex flex-wrap items-center gap-x-6 gap-y-5 rounded-2xl px-3 py-7 transition-colors duration-150 active:bg-paper-soft sm:flex-nowrap ${
                   faded ? 'opacity-55' : ''
                 }`}
               >
@@ -136,11 +148,7 @@ export function ClubEvents({ events }: { events: EventData[] }) {
                     un secondo "dic 2026" e' la stessa cosa detta due
                     volte. Sul computer, dove lo spazio c'e', resta
                     tutto. */}
-                <Link
-                  href={href}
-                  className="flex w-[48px] shrink-0 flex-col items-center no-underline sm:w-[72px]"
-                  aria-label={event.title}
-                >
+                <span className="flex w-[48px] shrink-0 flex-col items-center sm:w-[72px]">
                   <span className="hidden text-fine font-medium uppercase text-accent-soft sm:block">
                     {event.dateMonthOnly
                       ? eventDateStack(event).top
@@ -165,11 +173,10 @@ export function ClubEvents({ events }: { events: EventData[] }) {
                       {eventDateStack(event).bottom}
                     </span>
                   )}
-                </Link>
+                </span>
 
                 {event.image_url && (
-                  <Link
-                    href={href}
+                  <span
                     className="relative hidden h-[72px] w-[72px] shrink-0 overflow-hidden rounded-2xl border border-rule-paper sm:block"
                   >
                     <Image
@@ -177,16 +184,16 @@ export function ClubEvents({ events }: { events: EventData[] }) {
                       alt=""
                       fill
                       sizes="72px"
-                      className="object-cover transition-transform duration-500 hover:scale-105"
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
                     />
-                  </Link>
+                  </span>
                 )}
 
                 {/* Title and place */}
                 <div className="min-w-0 flex-1">
                   <Link
                     href={href}
-                    className={`block text-subtitle font-medium no-underline transition-colors hover:text-accent ${
+                    className={`block text-subtitle font-medium no-underline transition-colors after:absolute after:inset-0 after:content-[''] hover:text-accent ${
                       event.titleStrikethrough ? 'line-through decoration-accent/60' : ''
                     }`}
                   >
@@ -211,11 +218,13 @@ export function ClubEvents({ events }: { events: EventData[] }) {
                       {te('membersOnly')}
                     </span>
                   )}
-                  <EventStatusBadge
-                    displayStatus={status}
-                    slug={event.slug}
-                    isListOnly={event.isListOnly}
-                  />
+                  <span className="relative z-10">
+                    <EventStatusBadge
+                      displayStatus={status}
+                      slug={event.slug}
+                      isListOnly={event.isListOnly}
+                    />
+                  </span>
                 </div>
               </div>
             </motion.li>
