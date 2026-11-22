@@ -100,7 +100,7 @@ function Azione({ event, stato, isListOnly, partnerCode, etichette, pieno }: {
 
   if (isListOnly) {
     return (
-      <a href="#iscrizione" className={`${base} bg-accent text-paper transition-opacity hover:opacity-90`}>
+      <a href="#iscrizione" className={`${base} ds-press bg-accent text-paper hover:bg-accent-lift`}>
         <Ticket size={17} strokeWidth={1.9} />
         {etichette.list}
       </a>
@@ -110,7 +110,7 @@ function Azione({ event, stato, isListOnly, partnerCode, etichette, pieno }: {
   return (
     <Link
       href={partnerCode ? `/checkout/${event.slug}?partner=${partnerCode}` : `/checkout/${event.slug}`}
-      className={`${base} bg-accent text-paper transition-opacity hover:opacity-90`}
+      className={`${base} ds-press bg-accent text-paper hover:bg-accent-lift`}
     >
       <Ticket size={17} strokeWidth={1.9} />
       {etichette.book}

@@ -109,7 +109,7 @@ export function StockSection({
               type="button"
               disabled={busy || !cambiato}
               onClick={() => salva(variantId, size, qty)}
-              className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full bg-accent px-4 text-fine font-medium text-paper transition-colors hover:bg-accent-lift disabled:opacity-35"
+              className="ds-press inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full bg-accent px-4 text-fine font-medium text-paper transition-colors hover:bg-accent-lift disabled:opacity-35"
             >
               {busy ? <Loader2 size={14} className="animate-spin" /> : 'Salva'}
             </button>

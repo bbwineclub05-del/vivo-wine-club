@@ -153,9 +153,9 @@ export default function EntryGate() {
   }
 
   const primario =
-    'inline-flex min-h-[48px] w-full items-center justify-center rounded-full bg-accent px-5 text-fine font-medium text-paper transition-colors hover:bg-accent-lift';
+    'ds-press inline-flex min-h-[48px] w-full items-center justify-center rounded-full bg-accent px-5 text-fine font-medium text-paper hover:bg-accent-lift';
   const secondario =
-    'inline-flex min-h-[48px] flex-1 items-center justify-center rounded-full border border-on-ink/20 px-4 text-fine text-on-ink transition-colors hover:border-on-ink/45';
+    'ds-press inline-flex min-h-[48px] flex-1 items-center justify-center rounded-full border border-on-ink/20 px-4 text-fine text-on-ink hover:border-on-ink/45';
 
   return (
     <div

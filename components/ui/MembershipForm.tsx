@@ -336,7 +336,7 @@ export function MembershipForm() {
       <button
         type="submit"
         disabled={!canSubmit}
-        className="inline-flex min-h-[56px] items-center justify-center self-start rounded-full bg-accent px-8 text-fine font-medium text-paper transition-colors hover:bg-accent-lift disabled:opacity-50"
+        className="ds-press inline-flex min-h-[56px] items-center justify-center self-start rounded-full bg-accent px-8 text-fine font-medium text-paper hover:bg-accent-lift disabled:opacity-50"
       >
         {loading ? t('joining') : t('join')}
       </button>

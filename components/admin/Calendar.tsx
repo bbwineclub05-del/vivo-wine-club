@@ -728,7 +728,7 @@ function DayCell({
       <span data-azioni className="absolute inset-x-1 top-8 z-20 hidden gap-1 lg:flex">
         <button
           onClick={() => onAzione(quiScelto, 'sposta')}
-          className="flex-1 rounded-full bg-accent px-1 py-1 text-[11px] font-medium text-paper shadow-sm"
+          className="ds-press flex-1 rounded-full bg-accent px-1 py-1 text-[11px] font-medium text-paper shadow-sm"
         >
           Sposta
         </button>
@@ -817,7 +817,7 @@ function DayPanel({
         {onDayAdd && (
           <button
             onClick={() => onDayAdd(date)}
-            className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-accent px-4 text-fine font-medium text-paper transition-colors hover:bg-accent-lift"
+            className="ds-press inline-flex min-h-[44px] items-center gap-2 rounded-full bg-accent px-4 text-fine font-medium text-paper transition-colors hover:bg-accent-lift"
           >
             <Plus size={16} strokeWidth={2} />
             {addLabel}
@@ -933,7 +933,7 @@ function ItemRow({
         <span data-azioni className="flex shrink-0 items-center gap-1.5">
           <button
             onClick={() => onAzione?.(item, 'sposta')}
-            className="min-h-[38px] rounded-full bg-accent px-3 text-fine font-medium text-paper"
+            className="ds-press min-h-[38px] rounded-full bg-accent px-3 text-fine font-medium text-paper"
           >
             Sposta
           </button>

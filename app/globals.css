@@ -355,6 +355,43 @@ body::after {
   text-decoration-color: currentColor;
 }
 
+/* ── Il feedback alla pressione ───────────────────────────────────
+   Un comando deve rispondere quando il dito scende, non quando si
+   alza: appena compare un ritardo fra il tocco e la risposta, la
+   sensazione di toccare direttamente la cosa cade.
+
+   Sta qui e non in trenta file perche' il valore e' uno solo. La
+   curva e' decisa, non la ease-in-out di default, che parte lenta
+   proprio nell'istante in cui si sta guardando.
+
+   Due intensita': i pulsanti si stringono del tre per cento, le
+   superfici grandi (una scheda, una riga di elenco) dell'uno. Su un
+   riquadro largo mezzo schermo il tre per cento non e' una pressione,
+   e' un salto.
+
+   Con il movimento ridotto la risposta resta, ma smette di muoversi:
+   "meno movimento" non vuol dire "nessuna risposta". */
+:root {
+  --ds-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.ds-press,
+.ds-press-soft {
+  transition:
+    transform 150ms var(--ds-ease-out),
+    background-color 150ms var(--ds-ease-out),
+    border-color 150ms var(--ds-ease-out),
+    color 150ms var(--ds-ease-out),
+    opacity 150ms var(--ds-ease-out);
+}
+.ds-press:active      { transform: scale(0.97); }
+.ds-press-soft:active { transform: scale(0.99); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-press:active,
+  .ds-press-soft:active { transform: none; opacity: 0.8; }
+}
+
 /* Numerals line up in anything that compares values. */
 .ds-numeric {
   font-variant-numeric: tabular-nums;

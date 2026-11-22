@@ -138,7 +138,7 @@ export default function EventGuestForm({ eventSlug, eventTitle, eventDate, event
             transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
             className="flex flex-col items-center gap-5 py-6 text-center"
           >
-            <span className="grid h-12 w-12 place-items-center rounded-full bg-accent text-paper">
+            <span className="ds-press grid h-12 w-12 place-items-center rounded-full bg-accent text-paper">
               <Check size={22} strokeWidth={2.2} />
             </span>
             <div>
@@ -291,7 +291,7 @@ export default function EventGuestForm({ eventSlug, eventTitle, eventDate, event
             <button
               type="submit"
               disabled={loading || !consentPrivacy}
-              className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-accent px-7 text-fine font-medium text-paper transition-opacity hover:opacity-90 disabled:opacity-45 sm:w-auto sm:self-start"
+              className="ds-press inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-accent px-7 text-fine font-medium text-paper transition-opacity hover:opacity-90 disabled:opacity-45 sm:w-auto sm:self-start"
             >
               {loading ? (
                 <>

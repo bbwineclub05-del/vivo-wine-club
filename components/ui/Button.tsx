@@ -36,7 +36,9 @@ const BASE =
   'inline-flex items-center justify-center gap-2.5 rounded-full font-medium ' +
   'whitespace-nowrap select-none ' +
   'transition-[background-color,border-color,color,transform,box-shadow] duration-200 ease-out ' +
-  'active:translate-y-px ' +
+  /* Un pixel di spostamento non si sente sotto il dito. La scala si',
+     e si sente anche su uno schermo piccolo: vedi `.ds-press`. */
+  'active:scale-[0.97] ' +
   'disabled:opacity-45 disabled:pointer-events-none';
 
 interface Common {

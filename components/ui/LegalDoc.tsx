@@ -134,7 +134,7 @@ export async function LegalDoc({ document }: { document: LegalDocument }) {
                       <ul className="mt-4 flex flex-col gap-2.5">
                         {section.bullets.map((bullet, j) => (
                           <li key={j} className="flex gap-3 text-body text-on-paper-muted">
-                            <span aria-hidden className="mt-[0.55em] h-1 w-1 shrink-0 rounded-full bg-accent" />
+                            <span aria-hidden className="ds-press mt-[0.55em] h-1 w-1 shrink-0 rounded-full bg-accent" />
                             <span>{withLinks(bullet)}</span>
                           </li>
                         ))}

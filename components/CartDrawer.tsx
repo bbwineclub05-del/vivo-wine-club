@@ -321,7 +321,7 @@ export default function CartDrawer() {
                   <button
                     onClick={paga}
                     disabled={inCorso}
-                    className="inline-flex min-h-[56px] w-full items-center justify-center rounded-full bg-accent px-6 text-fine font-medium text-paper transition-opacity hover:opacity-90 disabled:opacity-50"
+                    className="ds-press inline-flex min-h-[56px] w-full items-center justify-center rounded-full bg-accent px-6 text-fine font-medium text-paper transition-opacity hover:opacity-90 disabled:opacity-50"
                   >
                     {inCorso ? t('cartCheckoutLoading') : t('cartCheckout')}
                   </button>

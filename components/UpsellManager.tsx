@@ -310,7 +310,7 @@ export default function UpsellManager() {
                         </span>
                       )}
                       {on && (
-                        <span className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-accent text-paper">
+                        <span className="ds-press absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-accent text-paper">
                           <Check size={15} strokeWidth={3} />
                         </span>
                       )}

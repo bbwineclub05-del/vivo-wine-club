@@ -208,7 +208,7 @@ function TaskRow({
           {task.priority === 'high' && !done && (
             <span
               aria-label="Priorità alta"
-              className="mt-[9px] h-[7px] w-[7px] shrink-0 rounded-full bg-accent"
+              className="ds-press mt-[9px] h-[7px] w-[7px] shrink-0 rounded-full bg-accent"
             />
           )}
           <span className={`min-w-0 text-body ${done ? 'line-through opacity-50' : ''}`}>

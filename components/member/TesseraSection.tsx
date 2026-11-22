@@ -187,7 +187,7 @@ export default function TesseraSection({ token, name }: { token: string; name: s
           const Icon = ICONE[b.icon];
           return (
             <div key={b.id} className="flex gap-4 rounded-2xl border border-rule-paper p-5">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent/10 text-accent">
+              <span className="ds-press grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent/10 text-accent">
                 <Icon size={19} strokeWidth={1.8} />
               </span>
               <div className="min-w-0">

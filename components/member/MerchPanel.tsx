@@ -50,7 +50,7 @@ export default function MerchPanel({ token }: { token: string }) {
   return (
     <div className="rounded-2xl border border-rule-paper p-5">
       <div className="flex items-start gap-4">
-        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent/10 text-accent">
+        <span className="ds-press grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent/10 text-accent">
           <ShoppingBag size={19} strokeWidth={1.8} />
         </span>
         <div className="min-w-0 flex-1">
@@ -74,7 +74,7 @@ export default function MerchPanel({ token }: { token: string }) {
 
       <Link
         href="/wear-the-club"
-        className="mt-3 inline-flex min-h-[48px] w-full items-center justify-center rounded-full bg-accent px-5 text-fine font-medium text-paper transition-opacity hover:opacity-90"
+        className="ds-press mt-3 inline-flex min-h-[48px] w-full items-center justify-center rounded-full bg-accent px-5 text-fine font-medium text-paper transition-opacity hover:opacity-90"
       >
         {t('merchVai')}
       </Link>

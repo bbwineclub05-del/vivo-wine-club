@@ -381,7 +381,7 @@ export default function CheckoutForm({
         <button
           type="submit"
           disabled={inCorso}
-          className="mt-5 inline-flex min-h-[56px] w-full items-center justify-center rounded-full bg-accent px-6 text-fine font-medium text-paper transition-opacity hover:opacity-90 disabled:opacity-50"
+          className="ds-press mt-5 inline-flex min-h-[56px] w-full items-center justify-center rounded-full bg-accent px-6 text-fine font-medium text-paper hover:bg-accent-lift disabled:opacity-50"
         >
           {inCorso ? t('coPaying') : gratis ? t('coAtDoor') : t('coPay', { total: eur(totale) })}
         </button>
@@ -403,7 +403,7 @@ export default function CheckoutForm({
           <button
             type="submit"
             disabled={inCorso}
-            className="inline-flex min-h-[52px] flex-1 items-center justify-center rounded-full bg-accent px-5 text-fine font-medium text-paper disabled:opacity-50"
+            className="ds-press inline-flex min-h-[52px] flex-1 items-center justify-center rounded-full bg-accent px-5 text-fine font-medium text-paper hover:bg-accent-lift disabled:opacity-50"
           >
             {inCorso ? t('coPaying') : gratis ? t('coAtDoor') : t('coPay', { total: eur(totale) })}
           </button>

@@ -131,7 +131,7 @@ export default function ResetPasswordPage() {
         <div className="mt-10 w-full max-w-[26rem] lg:mt-12">
           {fatto ? (
             <>
-              <span className="grid h-14 w-14 place-items-center rounded-full bg-accent text-paper">
+              <span className="ds-press grid h-14 w-14 place-items-center rounded-full bg-accent text-paper">
                 <Check size={26} strokeWidth={2.2} />
               </span>
               <h2 className="ds-display mt-6 text-title">{t('doneTitle')}</h2>
@@ -149,7 +149,7 @@ export default function ResetPasswordPage() {
                   </p>
                   <Link
                     href="/login"
-                    className="mt-5 inline-flex min-h-[52px] items-center justify-center rounded-full bg-accent px-6 text-fine font-medium text-paper"
+                    className="ds-press mt-5 inline-flex min-h-[52px] items-center justify-center rounded-full bg-accent px-6 text-fine font-medium text-paper"
                   >
                     {t('askAgain')}
                   </Link>
@@ -202,7 +202,7 @@ export default function ResetPasswordPage() {
                   <button
                     type="submit"
                     disabled={attesa || !pronto}
-                    className="mt-1 inline-flex min-h-[52px] items-center justify-center gap-2 rounded-full bg-accent px-6 text-fine font-medium text-paper transition-colors hover:bg-accent-lift disabled:opacity-55"
+                    className="ds-press mt-1 inline-flex min-h-[52px] items-center justify-center gap-2 rounded-full bg-accent px-6 text-fine font-medium text-paper transition-colors hover:bg-accent-lift disabled:opacity-55"
                   >
                     {attesa && <Loader2 size={16} className="animate-spin" />}
                     {attesa ? t('saving') : t('save')}

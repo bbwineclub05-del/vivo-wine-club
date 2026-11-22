@@ -170,7 +170,7 @@ async function EventChiuso({ event, stato }: { event: EventData; stato: string }
           <div className="mt-9 flex flex-wrap justify-center gap-3">
             <Link
               href="/events"
-              className="inline-flex min-h-[52px] items-center rounded-full bg-accent px-6 text-fine font-medium text-paper"
+              className="ds-press inline-flex min-h-[52px] items-center rounded-full bg-accent px-6 text-fine font-medium text-paper hover:bg-accent-lift"
             >
               {t('coSeeEvents')}
             </Link>

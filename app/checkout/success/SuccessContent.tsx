@@ -92,7 +92,7 @@ function Contenuto() {
 
   return (
     <div className="mx-auto max-w-[620px] px-5 py-14 lg:px-10 lg:py-20">
-      <span className="grid h-14 w-14 place-items-center rounded-full bg-accent text-paper">
+      <span className="ds-press grid h-14 w-14 place-items-center rounded-full bg-accent text-paper">
         <Check size={26} strokeWidth={2.2} />
       </span>
 

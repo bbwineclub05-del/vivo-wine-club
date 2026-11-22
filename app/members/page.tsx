@@ -360,7 +360,7 @@ function OverviewSection({
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
             title="Cambia foto"
-            className="absolute -bottom-0.5 -right-0.5 grid h-[26px] w-[26px] place-items-center rounded-full bg-accent text-paper transition-colors hover:bg-accent-lift disabled:opacity-50"
+            className="ds-press absolute -bottom-0.5 -right-0.5 grid h-[26px] w-[26px] place-items-center rounded-full bg-accent text-paper transition-colors hover:bg-accent-lift disabled:opacity-50"
           >
             {uploading ? <Loader2 size={12} className="animate-spin" /> : <Camera size={12} />}
           </button>

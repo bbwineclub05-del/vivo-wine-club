@@ -45,7 +45,7 @@ export function DoorCard({
     >
       <Link
         href={href}
-        className={`group flex h-full min-h-[300px] flex-col justify-between rounded-2xl p-8 md:p-9 ${skin}
+        className={`ds-press-soft group flex h-full min-h-[300px] flex-col justify-between rounded-2xl p-8 md:p-9 ${skin}
           transition-transform duration-300 ease-out hover:-translate-y-1`}
       >
         <div>

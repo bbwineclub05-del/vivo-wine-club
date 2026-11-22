@@ -77,7 +77,7 @@ export default function BottigliaPanel({ token, name }: { token: string; name: s
   return (
     <div className="rounded-2xl border border-accent/30 bg-accent/[0.06] p-5">
       <div className="flex items-start gap-4">
-        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent/10 text-accent">
+        <span className="ds-press grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent/10 text-accent">
           <Wine size={19} strokeWidth={1.8} />
         </span>
         <div className="min-w-0 flex-1">
@@ -124,7 +124,7 @@ export default function BottigliaPanel({ token, name }: { token: string; name: s
                 key={s.id}
                 onClick={() => alzaLaMano(s.id)}
                 disabled={occupato}
-                className="inline-flex min-h-[48px] items-center rounded-full bg-accent px-5 text-fine font-medium text-paper transition-opacity hover:opacity-90 disabled:opacity-60"
+                className="ds-press inline-flex min-h-[48px] items-center rounded-full bg-accent px-5 text-fine font-medium text-paper transition-opacity hover:opacity-90 disabled:opacity-60"
               >
                 {t(s.key)}
               </button>

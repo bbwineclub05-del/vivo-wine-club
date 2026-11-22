@@ -286,7 +286,7 @@ export default function ProductDetailClient({ product }: { product: ProductFull 
           <button
             onClick={aggiungi}
             disabled={esaurito}
-            className="mt-8 hidden min-h-[56px] w-full items-center justify-center gap-2 rounded-full bg-accent px-6 text-fine font-medium text-paper transition-opacity hover:opacity-90 disabled:opacity-45 lg:inline-flex"
+            className="ds-press mt-8 hidden min-h-[56px] w-full items-center justify-center gap-2 rounded-full bg-accent px-6 text-fine font-medium text-paper transition-opacity hover:opacity-90 disabled:opacity-45 lg:inline-flex"
           >
             {aggiunto ? <Check size={18} strokeWidth={2.4} /> : <ShoppingBag size={18} strokeWidth={1.9} />}
             {esaurito ? t('soldOut') : aggiunto ? t('added') : t('addToCart')}
@@ -354,7 +354,7 @@ export default function ProductDetailClient({ product }: { product: ProductFull 
           <button
             onClick={aggiungi}
             disabled={esaurito}
-            className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full bg-accent px-5 text-fine font-medium text-paper disabled:opacity-45"
+            className="ds-press inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full bg-accent px-5 text-fine font-medium text-paper disabled:opacity-45"
           >
             {aggiunto ? <Check size={18} strokeWidth={2.4} /> : <ShoppingBag size={17} strokeWidth={1.9} />}
             {esaurito ? t('soldOut') : aggiunto ? t('added') : t('addToCart')}

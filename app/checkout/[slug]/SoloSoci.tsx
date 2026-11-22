@@ -131,7 +131,7 @@ export default function SoloSoci({
         <button
           type="submit"
           disabled={verificando || !email.includes('@')}
-          className="mt-4 inline-flex min-h-[52px] w-full items-center justify-center rounded-full bg-accent px-6 text-fine font-medium text-paper disabled:opacity-45"
+          className="ds-press mt-4 inline-flex min-h-[52px] w-full items-center justify-center rounded-full bg-accent px-6 text-fine font-medium text-paper hover:bg-accent-lift disabled:opacity-45"
         >
           {verificando ? 'Controllo…' : 'Continua'}
         </button>
@@ -148,7 +148,7 @@ export default function SoloSoci({
           <div className="mt-5 flex flex-wrap gap-3">
             <Link
               href="/membership"
-              className="inline-flex min-h-[48px] items-center rounded-full bg-accent px-5 text-fine font-medium text-paper no-underline"
+              className="ds-press inline-flex min-h-[48px] items-center rounded-full bg-accent px-5 text-fine font-medium text-paper no-underline hover:bg-accent-lift"
             >
               Diventa socio
             </Link>

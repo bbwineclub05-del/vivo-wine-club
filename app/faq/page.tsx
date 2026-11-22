@@ -65,7 +65,7 @@ export default async function FaqPage() {
             </div>
             <Link
               href="/membership"
-              className="inline-flex min-h-[52px] shrink-0 items-center justify-center rounded-full bg-accent px-6 text-fine font-medium text-paper transition-opacity hover:opacity-90"
+              className="ds-press inline-flex min-h-[52px] shrink-0 items-center justify-center rounded-full bg-accent px-6 text-fine font-medium text-paper transition-opacity hover:opacity-90"
             >
               {t('ctaButton')}
             </Link>

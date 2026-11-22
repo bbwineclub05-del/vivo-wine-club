@@ -168,7 +168,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={attesa}
-              className="mt-1 inline-flex min-h-[52px] items-center justify-center gap-2 rounded-full bg-accent px-6 text-fine font-medium text-paper transition-colors hover:bg-accent-lift disabled:opacity-55"
+              className="ds-press mt-1 inline-flex min-h-[52px] items-center justify-center gap-2 rounded-full bg-accent px-6 text-fine font-medium text-paper transition-colors hover:bg-accent-lift disabled:opacity-55"
             >
               {attesa && <Loader2 size={16} className="animate-spin" />}
               {attesa ? t('entering') : t('enter')}

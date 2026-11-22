@@ -144,7 +144,7 @@ export function ApplyForm({ initialKind }: { initialKind?: Kind }) {
                 type="button"
                 onClick={() => setKind(k)}
                 aria-pressed={on}
-                className={`rounded-2xl border p-4 text-left transition-colors ${
+                className={`ds-press-soft rounded-2xl border p-4 text-left ${
                   on
                     ? "border-accent bg-accent text-paper"
                     : "border-rule-paper hover:border-accent/40"
@@ -216,7 +216,7 @@ export function ApplyForm({ initialKind }: { initialKind?: Kind }) {
                         type="button"
                         onClick={() => set("role", team.label)}
                         aria-pressed={on}
-                        className={`rounded-2xl border p-4 text-left transition-colors ${
+                        className={`ds-press-soft rounded-2xl border p-4 text-left ${
                           on
                             ? "border-accent bg-accent text-paper"
                             : "border-rule-paper bg-paper hover:border-accent/40"
@@ -371,7 +371,7 @@ export function ApplyForm({ initialKind }: { initialKind?: Kind }) {
           <button
             type="submit"
             disabled={sending}
-            className="inline-flex min-h-[56px] items-center justify-center self-start rounded-full bg-accent px-8 text-fine font-medium text-paper transition-colors hover:bg-accent-lift disabled:opacity-50"
+            className="ds-press inline-flex min-h-[56px] items-center justify-center self-start rounded-full bg-accent px-8 text-fine font-medium text-paper transition-colors hover:bg-accent-lift disabled:opacity-50"
           >
             {sending ? t("sending") : t("submit")}
           </button>

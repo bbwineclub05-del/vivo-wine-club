@@ -326,7 +326,7 @@ export default function AnalyticsDashboard() {
 
                     <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-paper-soft">
                       <div
-                        className="h-full rounded-full bg-accent"
+                        className="ds-press h-full rounded-full bg-accent"
                         style={{ width: `${Math.max((e.seats / maxSeats) * 100, 1.5)}%` }}
                       />
                     </div>

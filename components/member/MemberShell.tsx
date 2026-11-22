@@ -126,7 +126,7 @@ export function MemberShell({
                 on ? 'text-on-ink' : 'text-on-ink-muted'
               }`}
             >
-              {on && <span className="absolute inset-x-4 top-0 h-[2px] rounded-full bg-accent" />}
+              {on && <span className="ds-press absolute inset-x-4 top-0 h-[2px] rounded-full bg-accent" />}
               <Icon size={21} strokeWidth={on ? 2 : 1.6} />
               <span className="text-[10px] font-medium leading-none">{t(s.key)}</span>
             </button>

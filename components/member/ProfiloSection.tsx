@@ -122,7 +122,7 @@ export default function ProfiloSection({
               // eslint-disable-next-line @next/next/no-img-element
               <img src={avatar} alt="" className="h-16 w-16 rounded-full object-cover" />
             ) : (
-              <span className="grid h-16 w-16 place-items-center rounded-full bg-accent/10 text-body font-medium text-accent">
+              <span className="ds-press grid h-16 w-16 place-items-center rounded-full bg-accent/10 text-body font-medium text-accent">
                 {iniziali}
               </span>
             )}
@@ -130,7 +130,7 @@ export default function ProfiloSection({
               onClick={() => fileRef.current?.click()}
               disabled={caricando}
               aria-label={t('cambiaFoto')}
-              className="absolute -bottom-0.5 -right-0.5 grid h-7 w-7 place-items-center rounded-full bg-accent text-paper"
+              className="ds-press absolute -bottom-0.5 -right-0.5 grid h-7 w-7 place-items-center rounded-full bg-accent text-paper"
             >
               {caricando ? <Loader2 size={13} className="animate-spin" /> : <Camera size={13} />}
             </button>
@@ -156,7 +156,7 @@ export default function ProfiloSection({
         <button
           onClick={salva}
           disabled={salvando}
-          className="mt-4 inline-flex min-h-[48px] items-center rounded-full bg-accent px-6 text-fine font-medium text-paper disabled:opacity-50"
+          className="ds-press mt-4 inline-flex min-h-[48px] items-center rounded-full bg-accent px-6 text-fine font-medium text-paper disabled:opacity-50"
         >
           {salvando ? t('salvo') : t('salva')}
         </button>

@@ -273,7 +273,7 @@ export default function EventPartnerPanel({
                       role="img"
                       aria-label={`${pct}% degli iscritti all’evento`}
                     >
-                      <div className="h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
+                      <div className="ds-press h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
                     </div>
                   )}
 

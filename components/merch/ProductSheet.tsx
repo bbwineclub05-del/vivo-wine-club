@@ -130,7 +130,7 @@ export function ProductSheet({
             type="submit"
             form="prodotto"
             disabled={salvando}
-            className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-full bg-accent px-5 text-fine font-medium text-paper transition-colors hover:bg-accent-lift disabled:opacity-45"
+            className="ds-press inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-full bg-accent px-5 text-fine font-medium text-paper transition-colors hover:bg-accent-lift disabled:opacity-45"
           >
             {salvando && <Loader2 size={15} className="animate-spin" />}
             {salvando ? 'Salvo…' : modifica ? 'Salva' : 'Crea prodotto'}

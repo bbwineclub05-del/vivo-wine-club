@@ -154,7 +154,7 @@ export function AdminShell({
             onClick={() => setSheet('profile')}
             className="flex min-h-[48px] w-full items-center gap-3 rounded-xl px-3 text-left transition-colors hover:bg-ink-soft"
           >
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent text-fine font-semibold text-paper">
+            <span className="ds-press grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent text-fine font-semibold text-paper">
               {(userName ?? 'V').charAt(0).toUpperCase()}
             </span>
             <span className="min-w-0 flex-1 truncate text-body">{userName ?? 'Profilo'}</span>
@@ -204,7 +204,7 @@ export function AdminShell({
           aria-label="Profilo"
           className="grid h-11 w-11 place-items-center"
         >
-          <span className="grid h-9 w-9 place-items-center rounded-full bg-accent text-fine font-semibold text-paper">
+          <span className="ds-press grid h-9 w-9 place-items-center rounded-full bg-accent text-fine font-semibold text-paper">
             {(userName ?? 'V').charAt(0).toUpperCase()}
           </span>
         </button>
@@ -300,7 +300,7 @@ function RailItem({
       <Icon id={d.id} size={compact ? 19 : 20} />
       <span className={`flex-1 truncate ${compact ? 'text-fine' : 'text-body'}`}>{d.label}</span>
       {badge ? (
-        <span className="ds-numeric grid h-5 min-w-[20px] place-items-center rounded-full bg-accent px-1.5 text-[11px] font-semibold text-paper">
+        <span className="ds-press ds-numeric grid h-5 min-w-[20px] place-items-center rounded-full bg-accent px-1.5 text-[11px] font-semibold text-paper">
           {badge}
         </span>
       ) : null}
@@ -328,13 +328,13 @@ function TabItem({
       <span className="relative">
         {id === '__more' ? <LayoutGrid size={22} strokeWidth={1.7} /> : <Icon id={id} />}
         {badge ? (
-          <span className="ds-numeric absolute -right-2 -top-1 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-accent px-1 text-[10px] font-semibold text-paper">
+          <span className="ds-press ds-numeric absolute -right-2 -top-1 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-accent px-1 text-[10px] font-semibold text-paper">
             {badge}
           </span>
         ) : null}
       </span>
       <span className="text-[11px] font-medium leading-none">{label}</span>
-      {active && <span aria-hidden="true" className="absolute inset-x-5 top-0 h-[2px] rounded-full bg-accent" />}
+      {active && <span aria-hidden="true" className="ds-press absolute inset-x-5 top-0 h-[2px] rounded-full bg-accent" />}
     </button>
   );
 }
@@ -443,7 +443,7 @@ function SheetList({
               <span className="block truncate text-fine text-on-paper-muted">{d.hint}</span>
             </span>
             {d.id === 'applications' && pendingApplications ? (
-              <span className="ds-numeric grid h-6 min-w-[24px] shrink-0 place-items-center rounded-full bg-accent px-2 text-fine font-semibold text-paper">
+              <span className="ds-press ds-numeric grid h-6 min-w-[24px] shrink-0 place-items-center rounded-full bg-accent px-2 text-fine font-semibold text-paper">
                 {pendingApplications}
               </span>
             ) : null}

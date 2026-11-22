@@ -50,7 +50,7 @@ export function CaseTimeline({ tappe }: { tappe: CaseTappa[] }) {
             {/* Il pallino sulla linea. */}
             <span
               aria-hidden
-              className="absolute -left-[31px] top-1.5 h-2.5 w-2.5 rounded-full bg-accent sm:-left-[47px]"
+              className="ds-press absolute -left-[31px] top-1.5 h-2.5 w-2.5 rounded-full bg-accent sm:-left-[47px]"
             />
 
             {t.occhiello && (

@@ -72,7 +72,7 @@ function initials(name: string) {
 
 function Monogram({ name }: { name: string }) {
   return (
-    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent/10 text-fine font-medium text-accent">
+    <span className="ds-press grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent/10 text-fine font-medium text-accent">
       {initials(name)}
     </span>
   );
