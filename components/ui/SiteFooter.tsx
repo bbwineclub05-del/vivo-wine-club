@@ -102,10 +102,16 @@ export async function SiteFooter() {
           <p className="ds-numeric">
             © {new Date().getFullYear()} Vivo Wine Club. {t('footer.rights')}.
           </p>
-          <ul className="flex flex-wrap gap-x-6 gap-y-1">
+          {/* Alti quarantaquattro pixel come gli altri: erano
+              diciassette, cioe' meno della meta' di un polpastrello.
+              Il margine negativo tiene la riga visivamente dov'era. */}
+          <ul className="-my-2 flex flex-wrap items-center gap-x-6">
             {LEGAL.map((l) => (
               <li key={l.href}>
-                <Link href={l.href} className="ds-link no-underline hover:text-rose">
+                <Link
+                  href={l.href}
+                  className="ds-link inline-flex min-h-[44px] items-center no-underline hover:text-rose"
+                >
                   {tLegal(l.key)}
                 </Link>
               </li>

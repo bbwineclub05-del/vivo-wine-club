@@ -37,6 +37,11 @@ export function SiteNav() {
   const t = useTranslations('site.nav');
   const tNav = useTranslations('nav');
   const [open, setOpen] = useState(false);
+  /* Il filetto sotto la barra compare solo quando c'e' qualcosa che
+     le passa sotto. In cima alla pagina non separa niente: e' una
+     riga disegnata fra due superfici dello stesso colore, cioe'
+     rumore. */
+  const [staccata, setStaccata] = useState(false);
   const { user } = useAuth();
   const { itemCount, setIsOpen: openCart } = useCart();
   const reduce = useReducedMotion();
@@ -50,6 +55,13 @@ export function SiteNav() {
   }, [open]);
 
   useEffect(() => {
+    const guarda = () => setStaccata(window.scrollY > 8);
+    guarda();
+    window.addEventListener('scroll', guarda, { passive: true });
+    return () => window.removeEventListener('scroll', guarda);
+  }, []);
+
+  useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -57,7 +69,11 @@ export function SiteNav() {
 
   return (
     <>
-      <header className="ds sticky top-0 z-[200] border-b border-rule-paper bg-paper/85 backdrop-blur-md">
+      <header
+        className={`ds sticky top-0 z-[200] border-b bg-paper/85 backdrop-blur-md transition-colors duration-200 ${
+          staccata ? 'border-rule-paper' : 'border-transparent'
+        }`}
+      >
         <nav className="mx-auto flex h-[72px] max-w-[1440px] items-center gap-8 px-gutter md:px-10">
           <Link href="/" aria-label="Vivo Wine Club" className="shrink-0">
             <Image src="/main-logo.png" alt="Vivo Wine Club" width={74} height={28} priority />
@@ -98,7 +114,7 @@ export function SiteNav() {
             >
               <ShoppingBag size={19} strokeWidth={1.6} />
               {itemCount > 0 && (
-                <span className="ds-numeric absolute right-1.5 top-1.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-accent px-1 text-[10px] font-semibold text-paper">
+                <span className="ds-press ds-numeric absolute right-1.5 top-1.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-accent px-1 text-[10px] font-semibold text-paper">
                   {itemCount}
                 </span>
               )}
@@ -131,10 +147,15 @@ export function SiteNav() {
         {open && (
           <motion.div
             className="ds ds-on-ink fixed inset-0 z-[300] flex flex-col bg-ink text-on-ink lg:hidden"
-            initial={reduce ? false : { opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={reduce ? { opacity: 1 } : { opacity: 0 }}
-            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            /* Entra da destra, da dove sta il pulsante che l'ha
+               aperto, e se ne torna di la'. Una comparsa in
+               dissolvenza non ha provenienza: si capisce che e'
+               arrivato qualcosa, non da dove. Con il movimento
+               ridotto resta la dissolvenza e basta. */
+            initial={reduce ? false : { opacity: 0, x: '12%' }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={reduce ? { opacity: 1 } : { opacity: 0, x: '12%' }}
+            transition={{ duration: 0.24, ease: [0.23, 1, 0.32, 1] }}
           >
             <div className="flex h-[72px] shrink-0 items-center justify-between px-gutter">
               <Image src="/logobianco.png" alt="Vivo Wine Club" width={74} height={28} />
