@@ -70,6 +70,31 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Serve il consenso alla privacy.' }, { status: 400 });
     }
 
+    /* Telefono, citta' e "come ci hai conosciuto" sono obbligatori come
+       il resto. Lo erano gia' nel modulo — la fonte aveva perfino
+       l'asterisco accanto all'etichetta — ma il controllo stava solo
+       li', e un modulo non e' un controllo: e' un suggerimento che
+       chiunque puo' saltare. Due tessere francesi sono arrivate senza
+       numero, e un socio senza numero e' un socio che non possiamo
+       chiamare quando una serata cambia orario.
+
+       Del numero si contano le cifre e basta, senza imporre un
+       formato: in Francia si scrive 06 12 34 56 78, in Italia
+       +39 333 1234567, e rifiutare uno dei due vuol dire perdere un
+       socio per una regola nostra. */
+    const phone = String(body.phone ?? '').trim();
+    if (phone.replace(/\D/g, '').length < 6) {
+      return NextResponse.json({ error: 'Serve un numero di telefono.' }, { status: 400 });
+    }
+    const city = String(body.city ?? '').trim();
+    if (!city) {
+      return NextResponse.json({ error: 'Serve la citta\' di residenza.' }, { status: 400 });
+    }
+    const source = String(body.source ?? '').trim();
+    if (!source) {
+      return NextResponse.json({ error: 'Serve sapere come ci hai conosciuto.' }, { status: 400 });
+    }
+
     // Il club e' per chi ha meno di trent'anni. Il modulo lo dice
     // prima, ma e' qui che la regola vale: una richiesta puo' arrivare
     // da qualunque parte, non solo dal nostro modulo.
@@ -124,10 +149,10 @@ export async function POST(request: Request) {
           standard_price_cents: plan.standard_price_cents,
           offer_price_cents: plan.offer_price_cents,
           offer_expires_at: plan.offer_expires_at,
-          phone: String(body.phone ?? '').trim() || null,
-          city: String(body.city ?? '').trim() || null,
+          phone,
+          city,
           date_of_birth: dob,
-          source: String(body.source ?? '').trim() || null,
+          source,
           // La lingua del sito al momento dell'iscrizione: decide in
           // che lingua riceverà le mail, oggi e fra un anno.
           locale: emailLocale(body.locale),

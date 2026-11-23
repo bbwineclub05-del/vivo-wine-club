@@ -82,7 +82,16 @@ export function MembershipForm() {
   const dobOk = form.dateOfBirth.length > 0 && etaAmmessa(form.dateOfBirth);
   const dobFuori = form.dateOfBirth.length > 0 && !dobOk;
 
-  const canSubmit = emailsMatch && dobOk && privacy && age && !loading;
+  /* Il telefono: un numero, non un segno di spunta. Si contano le
+     cifre e basta — sei e' il minimo plausibile con il prefisso — e
+     non si impone un formato: i francesi scrivono 06 12 34 56 78, gli
+     italiani +39 333 1234567, e rifiutare uno dei due vuol dire
+     perdere un socio per una regola nostra. */
+  const telefonoOk = form.phone.replace(/\D/g, '').length >= 6;
+  const telefonoStorto = form.phone.trim().length > 0 && !telefonoOk;
+
+  const canSubmit =
+    emailsMatch && dobOk && telefonoOk && form.source !== '' && privacy && age && !loading;
 
   function set(field: keyof typeof form) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
@@ -239,12 +248,15 @@ export function MembershipForm() {
           <input
             id="m-phone"
             type="tel"
+            required
             placeholder="+39 000 000 0000"
             value={form.phone}
             onChange={set('phone')}
+            aria-invalid={telefonoStorto || undefined}
             className={FIELD}
             autoComplete="tel"
           />
+          {telefonoStorto && <p className="mt-2 text-fine text-accent">{t('phoneInvalid')}</p>}
         </div>
         <div>
           <Label htmlFor="m-city">{t('labelCity')}</Label>
@@ -281,7 +293,13 @@ export function MembershipForm() {
         </div>
         <div>
           <Label htmlFor="m-source">{t('labelSource')}</Label>
-          <select id="m-source" value={form.source} onChange={set('source')} className={FIELD}>
+          <select
+            id="m-source"
+            required
+            value={form.source}
+            onChange={set('source')}
+            className={FIELD}
+          >
             <option value="">{t('selectOption')}</option>
             <option value="Instagram">{t('sourceInstagram')}</option>
             <option value="TikTok">{t('sourceTiktok')}</option>
