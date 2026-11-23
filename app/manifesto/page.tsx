@@ -60,8 +60,15 @@ const STORIA = [
  */
 const VALORI = [1, 2, 3, 4, 5] as const;
 
-/** Le sei righe dell'impegno reciproco. */
-const IMPEGNI = [1, 2, 3, 4, 5, 6] as const;
+/**
+ * Le righe dell'impegno reciproco.
+ *
+ * Erano sei: due dicevano quello che dicono gia' due dei cinque
+ * valori — gli errori che diventano apprendimento, e la crescita
+ * delle persone. Ripetuta a tre centimetri di distanza, una promessa
+ * non vale il doppio: si legge come riempitivo.
+ */
+const IMPEGNI = [1, 2, 3, 4] as const;
 
 export default async function ManifestoPage() {
   const t = await getTranslations('site.manifesto');
@@ -83,7 +90,6 @@ export default async function ManifestoPage() {
           <div className="mt-10 max-w-[62ch] space-y-5 text-lead text-on-paper-muted">
             <p>{t('body1')}</p>
             <p>{t('body2')}</p>
-            <p>{t('body3')}</p>
           </div>
         </Section>
 
